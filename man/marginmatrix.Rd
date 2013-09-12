@@ -1,0 +1,70 @@
+\name{marginmatrix}
+\alias{marginmatrix}
+\title{Marginplot Matrix}
+\description{
+    Create a scatterplot matrix with information about missing/imputed values 
+    in the plot margins of each panel.
+}
+\usage{
+marginmatrix(x, delimiter = NULL, col = c("skyblue","red","red4",
+    "orange","orange4"), alpha = NULL, \dots)
+
+}
+\arguments{
+    \item{x}{a matrix or \code{data.frame}.}
+  	\item{delimiter}{a character-vector to distinguish between variables
+    	and imputation-indices for imputed variables (therefore, \code{x} needs
+    	to have \code{\link{colnames}}). If given, it is used to determine the corresponding
+    	imputation-index for any imputed variable (a logical-vector indicating
+    	which values of the variable have been imputed). If such imputation-indices
+    	are found, they are used for highlighting and the colors are adjusted 
+    	according to the given colors for imputed variables (see \code{col}).}
+    \item{col}{a vector of length five giving the colors to be used in the 
+        marginplots in the off-diagonal panels.  The first color is used for 
+        the scatterplot and the boxplots for the available data, the second/fourth 
+        color for the univariate scatterplots and boxplots for the missing/imputed 
+        values in one variable, and the third/fifth color for the frequency of 
+        missing/imputed values in both variables (see \sQuote{Details}).  If only 
+        one color is supplied, it is used for the bivariate and univariate 
+        scatterplots and the boxplots for missing/imputed values in one variable, 
+        whereas the boxplots for the available data are transparent.  Else 
+        if two colors are supplied, the second one is recycled.}
+    \item{alpha}{a numeric value between 0 and 1 giving the level of 
+        transparency of the colors, or \code{NULL}.  This can be used to
+        prevent overplotting.}
+    \item{\dots}{further arguments and graphical parameters to be 
+        passed to \code{\link{pairsVIM}} and \code{\link{marginplot}}.  
+        \code{par("oma")} will be set appropriately unless supplied 
+        (see \code{\link[graphics]{par}}).}
+}
+\details{
+    \code{marginmatrix} uses \code{\link{pairsVIM}} with a panel function 
+    based on \code{\link{marginplot}}.
+    
+    The graphical parameter \code{oma} will be set unless supplied as an 
+    argument.
+    
+}
+\references{
+M. Templ, A. Alfons, P. Filzmoser (2012)  
+Exploring incomplete data using visualization tools. 
+\emph{Journal of Advances in Data Analysis and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.  
+}
+\author{Andreas Alfons, modifications by Bernd Prantner}
+\seealso{
+    \code{\link{marginplot}}, \code{\link{pairsVIM}}, 
+    \code{\link{scattmatrixMiss}}
+}
+\examples{
+data(sleep, package = "VIM")
+## for missing values
+x <- sleep[, 1:5]
+x[,c(1,2,4)] <- log10(x[,c(1,2,4)])
+marginmatrix(x)
+
+## for imputed values
+x_imp <- kNN(sleep[, 1:5])
+x_imp[,c(1,2,4)] <- log10(x_imp[,c(1,2,4)])
+marginmatrix(x_imp, delimiter = "_imp")
+}
+\keyword{hplot}

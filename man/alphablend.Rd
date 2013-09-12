@@ -1,0 +1,25 @@
+\name{alphablend}
+\alias{alphablend}
+\title{Alphablending for colors}
+\description{
+    Convert colors to semitransparent colors.
+}
+\usage{
+alphablend(col, alpha = NULL, bg = NULL)
+}
+\arguments{
+    \item{col}{a vector specifying colors.}
+    \item{alpha}{a numeric vector containing the alpha values (between 0 
+        and 1).}
+    \item{bg}{the background color to be used for alphablending.  This can 
+        be used as a workaround for graphics devices that do not support 
+        semitransparent colors.}
+}
+\value{
+    a vector containing the semitransparent colors.
+}
+\author{Andreas Alfons}
+\examples{
+alphablend("red", 0.6)
+}
+\keyword{color}

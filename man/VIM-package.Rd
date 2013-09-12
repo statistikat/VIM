@@ -1,0 +1,54 @@
+\name{VIM-package}
+\alias{VIM-package}
+\alias{VIM}
+\docType{package}
+\title{Visualization and Imputation of Missing Values}
+\description{
+    This package introduces new tools for the visualization of missing or
+    imputed  values in \R, which can be used for exploring the data and the
+    structure of the missing  or imputed values. Depending on this structure,
+    they may help to identify the mechanism generating the missing values or
+    errors, which may have happened in the imputation process. This knowledge
+    is necessary for selecting an appropriate imputation method in order to
+    reliably estimate the missing values. Thus the visualization tools should
+    be applied before imputation and the diagnostic tools afterwards.
+    
+    Detecting missing values mechanisms is usually done by statistical tests 
+    or models.  Visualization of missing and imputed values can support the
+    test decision, but also reveals more details about the data structure. Most
+    notably, statistical requirements for a test can be checked graphically,
+    and problems like outliers or skewed data distributions can be discovered.
+    Furthermore, the included plot methods may also be able to detect missing 
+    values mechanisms in the first place.
+    
+    A graphical user interface available in the package VIMGUI allows an easy handling of the plot methods.  
+    In addition, \code{VIM} can be used for data from essentially any field.
+}
+\details{
+\tabular{ll}{
+Package: \tab VIM\cr
+Version: \tab 3.0.3\cr
+Date: \tab 2013-01-09\cr
+Depends: \tab R (>= 2.10),e1071,car, colorspace, nnet, robustbase, tcltk,
+tkrplot, sp, vcd, Rcpp\cr
+Imports: \tab car, colorspace, grDevices, robustbase, stats, tcltk, sp,
+utils, vcd\cr
+License: \tab GPL (>= 2)\cr
+URL: \tab http://cran.r-project.org/package=VIM\cr
+}
+}
+\references{
+M. Templ, A. Alfons, P. Filzmoser (2012)  
+Exploring incomplete data using visualization tools. 
+\emph{Journal of Advances in Data Analysis and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.  
+
+M. Templ, A. Kowarik, P. Filzmoser (2011)  
+Iterative stepwise regression imputation using standard and robust methods. 
+\emph{Journal of Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.  
+}
+\author{
+Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
+
+Maintainer: Matthias Templ <templ@tuwien.ac.at>
+}
+\keyword{package}

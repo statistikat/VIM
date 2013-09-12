@@ -1,0 +1,275 @@
+# ----------------------------------------------------------
+# Authors: Andreas Alfons, Bernd Prantner, Matthias Templ
+#          and Daniel Schopfhauser
+#          Vienna University of Technology
+# ----------------------------------------------------------
+
+scattmatrixMiss <- function(x, delimiter = NULL, highlight = NULL, 
+                            selection = c("any","all"), plotvars = NULL, 
+                            col = c("skyblue","red","orange"), alpha = NULL, 
+                            pch = c(1,3), lty = par("lty"), 
+                            diagonal = c("density","none"), 
+                            interactive = TRUE, ...)  {
+  UseMethod("scattmatrixMiss", x)
+}
+
+scattmatrixMiss.data.frame <- function(x, delimiter = NULL, highlight = NULL, 
+                                       selection = c("any","all"), plotvars = NULL, 
+                                       col = c("skyblue","red","orange"), alpha = NULL, 
+                                       pch = c(1,3), lty = par("lty"), 
+                                       diagonal = c("density","none"), 
+                                       interactive = TRUE, ...)  {
+  scattmatrixMiss_work(x, delimiter, highlight, selection, plotvars, 
+                       col, alpha, pch, lty, diagonal, interactive, ...)
+}
+
+scattmatrixMiss.survey.design <- function(x, delimiter = NULL, highlight = NULL, 
+                                          selection = c("any","all"), plotvars = NULL, 
+                                          col = c("skyblue","red","orange"), alpha = NULL, 
+                                          pch = c(1,3), lty = par("lty"), 
+                                          diagonal = c("density","none"), 
+                                          interactive = TRUE, ...)  {
+  scattmatrixMiss_work(x$variables, delimiter, highlight, selection, plotvars, 
+                       col, alpha, pch, lty, diagonal, interactive, ...)
+}
+
+scattmatrixMiss.default <- function(x, delimiter = NULL, highlight = NULL, 
+                                    selection = c("any","all"), plotvars = NULL, 
+                                    col = c("skyblue","red","orange"), alpha = NULL, 
+                                    pch = c(1,3), lty = par("lty"), 
+                                    diagonal = c("density","none"), 
+                                    interactive = TRUE, ...)  {
+  scattmatrixMiss_work(as.data.frame(x), delimiter, highlight, selection, plotvars, 
+                       col, alpha, pch, lty, diagonal, interactive, ...)
+}
+
+scattmatrixMiss_work <- function(x, delimiter = NULL, highlight = NULL, 
+        selection = c("any","all"), plotvars = NULL, 
+        col = c("skyblue","red","orange"), alpha = NULL, 
+        pch = c(1,3), lty = par("lty"), 
+        diagonal = c("density","none"), 
+        interactive = TRUE, ...) {
+    # initializations and error messages
+    if(!(inherits(x, c("data.frame","matrix")))) {
+        stop("'x' must be a data.frame or matrix")
+    }
+	imputed <- FALSE # indicates if there are Variables with missing-index
+	## delimiter ##
+	if(!is.null(delimiter)) {
+		tmp <- grep(delimiter, colnames(x)) # Position of the missing-index
+		if(length(tmp) > 0) {
+			imp_var <- x[, tmp, drop=FALSE]
+			x <- x[, -tmp, drop=FALSE]
+			
+			if(ncol(x) == 0) stop("Only the missing-index is given")
+			if(is.matrix(imp_var) && range(imp_var) == c(0,1)) imp_var <- apply(imp_var,2,as.logical)
+			
+			if(is.null(dim(imp_var))) {
+				if(!is.logical(imp_var)) stop("The missing-index of imputed Variables must be of the type logical")
+			} else {
+				if(!any(as.logical(lapply(imp_var,is.logical)))) stop("The missing-index of imputed Variables must be of the type logical")	
+			}
+			imputed <- TRUE
+		} else {
+			warning("'delimiter' is given, but no missing-index-Variable is found", call. = FALSE)
+		}
+	}
+	px <- ncol(x)
+    if(is.null(colnames(x))) colnames(x) <- defaultNames(px)
+    if(length(highlight) > px) stop("'highlight' is too long")
+    if(length(plotvars) > px) stop("'plotvars' is too long")
+    z <- if(is.null(plotvars)) x else x[, plotvars, drop=FALSE]
+    pz <- ncol(z)
+    if(pz < 2) stop("the data to be plotted must be at least 2-dimensional")
+    selection <- match.arg(selection)
+    if(length(col) == 0) col <- c("skyblue","red","orange")
+    if(length(pch) == 0) pch <- c(1,3)
+    if(length(col) == 1 && length(pch) == 1) {
+        stop("same color and plot symbol for observed and missing values")
+    }
+    if(length(col) == 1) col <- rep(col, 3)
+	else if(length(col) == 2) col <- rep(col,1:2)
+    else if(length(col) > 3) col <- col[1:3]
+    if(length(pch) == 1) pch <- rep(pch, 2)
+    else if(length(pch) > 2) pch <- pch[1:2]
+    # semitransparent colors
+    colalpha <- alphablend(col, alpha)
+    # prepare data
+    if(is.data.frame(z)) z <- data.matrix(z)
+    else if(mode(z) != "numeric") mode(z) <- "numeric"
+    # diagonal panel
+    diagonal <- match.arg(diagonal)
+    if(diagonal == "density") {
+        if(length(lty) == 0) lty <- par("lty")
+        if(length(lty) == 1) {
+            if(col[1] == col[2]) {
+				stop("same color and line type for observed and missing values")
+            } else if(col[1] == col[3]) {
+				stop("same color and line type for observed and imputed values")
+			}
+            lty <- rep.int(lty, 2)
+        }
+        else if(length(lty) > 2) lty <- lty[1:2]
+    }
+    # initialize call
+    localPairs <- function(..., colcomb, smooth, reg.line, legend.plot) {
+        pairsVIM(...)
+    }
+    ca <- as.call(list(localPairs, ...))
+    # back compatibility
+    if(missing(highlight) && !is.null(ca$colcomb)) {
+        if(length(ca$colcomb) && ca$colcomb[1] == "missnonmiss") {
+            highlight <- NULL
+        } else highlight <- ca$colcomb
+    }
+    if(interactive) {
+        # 'gap', 'oma' and 'layout' are needed later on
+        if(is.null(ca$oma)) {
+            # only 'oma' is used by 'pairsVIM' for outer margins
+            ca$oma <- rep.int(4, 4)
+            if(!is.null(ca$main)) ca$oma[3] <- 6
+            if(!is.null(ca$sub)) ca$oma[1] <- 5
+        }
+        if(is.null(ca$gap)) ca$gap <- 1
+        if(is.null(ca$layout)) ca$layout <- "matrix"
+    }
+    createPlot <- function() {
+        # find observations with missings
+        if(is.null(highlight)) {
+			if(!imputed) NAvec <- isNA(x, selection)
+			else NAvec <- isImp(x, pos = NULL, delimiter = delimiter, imp_var = imp_var, selection = selection)[["missh"]]
+		}
+        else {
+			if(!imputed) NAvec <- isNA(x[, highlight], selection)
+			else NAvec <- isImp(x[, highlight, drop=FALSE], pos = NULL, delimiter = delimiter, imp_var = imp_var, selection = selection)[["missh"]]
+		}
+        # panel functions
+        panel.miss <- function(x, y, ...) {
+            if(!imputed) {
+				miss <- NULL
+				color <- colalpha[2]
+			} else {
+				tmp <- isImp(cbind(x,y), pos = 1, delimiter = delimiter, imp_var = imp_var, selection = "none")
+				miss <- cbind(tmp[["misspos"]],tmp[["missh"]])
+				color <- colalpha[3]
+			}
+			xOK <- x[!NAvec, ,drop = FALSE]
+            yOK <- y[!NAvec, ,drop = FALSE]
+            points(xOK, yOK, col=colalpha[1], pch=pch[1], ...) 
+            rugNA(xOK, yOK, miss = miss[!NAvec,], side=1, col=colalpha[1])
+			rugNA(xOK, yOK, miss = miss[!NAvec,], side=2, col=colalpha[1])
+            xNA <- x[NAvec]
+            yNA <- y[NAvec]
+			points(xNA, yNA, col=color, pch=pch[2], ...)
+			rugNA(xNA, yNA, miss = miss[NAvec,], side=1, col=color)
+			rugNA(xNA, yNA, miss = miss[NAvec,], side=2, col=color)
+        }
+        panel.density <- function(x, ...) {
+            if(!all(is.na(x))) {
+                xobs <- x[!NAvec]
+                xobs <- xobs[is.finite(xobs)]
+                xNA <- x[NAvec]
+                xNA <- xNA[is.finite(xNA)]
+                rx <- range(x, finite=TRUE)
+                if(par("ylog")) {
+                    # y-axis should not be on logarithmic scale
+                    localPlot <- function(..., type, log, main, sub, xlab, ylab,
+                            ann, axes, frame.plot, panel.first, panel.last) {
+                        par(new=TRUE)
+                        log <- if(par("xlog")) "x" else ""
+                        plot(..., type="n", log=log, ann=FALSE, axes=FALSE)
+                    }
+                    localPlot(rx, rx, ...)
+                }
+                if(length(xobs)) dobs <- density(xobs, from=rx[1], to=rx[2])
+                else dobs <- list(x=NULL, y=NULL)
+                if(length(xNA)) dNA <- density(xNA, from=rx[1], to=rx[2])
+                else dNA <- list(x=NULL, y=NULL)
+                dy <- c(dobs$y, dNA$y)  # y-values of both densities
+                if(length(dy)) {  # cannot compute maximum otherwise 
+                    mdy <- max(c(dobs$y, dNA$y))
+                    lines(dobs$x, rx[1]+dobs$y*diff(rx)/mdy, 
+                        col=col[1], lty=lty[1], 
+                        ...)
+					if(!imputed) color <- col[2]
+					else color <- col[3]
+                    lines(dNA$x, rx[1]+dNA$y*diff(rx)/mdy, 
+                        col=color, lty=lty[2], 
+                        ...)
+                }
+            }
+        }
+#        panel.text <- function(x, y, txt, cex, font, ...) {
+#            usr <- par("usr")
+#            txt.width <- strwidth(txt, cex=cex, font=font, ...)
+#            txt.height <- strheight(txt, cex=cex, font=font, ...)
+#            if(txt.width < diff(usr[1:2]) && txt.height < diff(usr[3:4])) {
+#                text(x, y, txt, cex = cex, font = font, ...)
+#            }
+#        }
+        ca$x <- z
+        ca$panel <- panel.miss
+        ca$lower <- NULL
+        ca$upper <- NULL
+        ca$diagonal <- switch(diagonal, density=panel.density, none=NULL)
+#        ca$text.panel <- panel.text
+        eval(ca)
+    }
+    createPlot()
+    
+    # check for interactive graphics device
+    dev <- names(dev.cur())
+    interactiveDevices <- c("X11","quartz","windows")
+    if(interactive && any(!is.na(charmatch(interactiveDevices, dev)))) {
+        cat(paste("\nClick in a diagonal panel to add to", 
+                "or remove from the highlight selection.\n"))
+        cat(paste("To regain use of the VIM GUI and the R console,",
+                "click anywhere else in the graphics window.\n\n"))
+        # retrieve geometry of graphics device
+        gap <- ca$gap
+        oma <- ca$oma
+        rf <- if(pz == 2) 5/6 else 2/3  # reduction factor for line height
+        op <- par(mar=oma*rf, usr=c(0,1,0,1))
+        on.exit(par(op))
+        xcenter <- seq(from=1/(2*pz), by=1/pz, length.out=pz)
+        ycenter <- if(ca$layout == "matrix") rev(xcenter) else xcenter
+        cxy <- par("cxy")  # cxy[2] gives the line height of the graphics device
+        lxy <- 1/(2*pz) - gap*cxy[2]*rf/2  # half side length of the panels
+        xleft <- xcenter - lxy
+        ybottom <- ycenter - lxy
+        xright <- xcenter + lxy
+        ytop <- ycenter + lxy
+        # initializations for selection
+        cn <- colnames(x)
+        if(is.null(highlight)) highlight <- cn
+        else if(!is.character(highlight)) highlight <- cn[highlight]
+        plotvars <- colnames(z)
+        # start interactive session
+        highlightInfo(highlight, selection, imputed)  # print out current selection
+        pt <- locatorVIM(error=TRUE)
+        while(!is.null(pt)  && class(pt) != "try-error") {
+            i <- which(pt$y > ybottom & pt$y < ytop)
+            j <- which(pt$x > xleft & pt$x < xright)
+#            # can't happen since margins must be non-negative
+#            if(length(i) > 0) i <- i[1]
+#            if(length(j) > 0) j <- j[1]
+            if(length(i) && length(j) && i == j) {
+                highlight <- 
+                    if(plotvars[i] %in% highlight) 
+                        setdiff(highlight, plotvars[i]) 
+                    else c(highlight, plotvars[i])
+                createPlot()
+                highlightInfo(highlight, selection, imputed)  # print out current selection
+#                # make sure user coordinate system remains as set up above 
+#                # before locator is called again (pairs seems to leave user 
+#                # coordinates in an uncontrollable state if 'row1attop=FALSE') 
+#                par(mar=oma*rf, usr=c(0,1,0,1))
+                pt <- locatorVIM(error=TRUE)
+            }
+            else pt <- NULL
+        }
+        if(class(pt) == "try-error") on.exit()
+    }
+    
+    invisible()
+}

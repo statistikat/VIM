@@ -1,0 +1,152 @@
+\name{aggr}
+\alias{aggr}
+\alias{plot.aggr}
+\title{Aggregations for missing/imputed values}
+\description{
+  Calculate or plot the amount of missing/imputed values
+  in each variable and the amount of missing/imputed values
+  in certain combinations of variables.
+}
+\usage{
+aggr(x, delimiter = NULL, plot = TRUE, \dots)
+
+\method{plot}{aggr}(x, col = c("skyblue","red","orange"), bars = TRUE,
+    numbers = FALSE, prop = TRUE, combined = FALSE, varheight = FALSE,
+    only.miss = FALSE, border = par("fg"), sortVars = FALSE,
+    sortCombs = TRUE, ylabs = NULL, axes = TRUE, labels = axes,
+    cex.lab = 1.2, cex.axis = par("cex"), cex.numbers = par("cex"),
+    gap = 4, \dots)
+
+}
+\arguments{
+  \item{x}{a vector, matrix or \code{data.frame}.}
+  \item{delimiter}{a character-vector to distinguish between variables
+    	and imputation-indices for imputed variables (therefore, \code{x} needs
+    	to have \code{\link{colnames}}). If given, it is used to determine the corresponding
+    	imputation-index for any imputed variable (a logical-vector indicating
+    	which values of the variable have been imputed). If such imputation-indices
+    	are found, they are used for highlighting and the colors are adjusted 
+    	according to the given colors for imputed variables (see \code{col}).}
+  \item{plot}{a logical indicating whether the results should be plotted 
+    (the default is \code{TRUE}).}
+  \item{col}{a vector of length three giving the colors to be used for 
+    observed, missing and imputed data. If only one color is supplied, it is 
+    used for missing and imputed data and observed data is transparent. If 
+    only two colors are supplied, the first one is used for observed data and
+    the second color is used for missing and imputed data.}
+  \item{bars}{a logical indicating whether a small barplot for the 
+    frequencies of the different combinations should be drawn.}
+  \item{numbers}{a logical indicating whether the proportion or frequencies 
+    of the different combinations should be represented by numbers.}
+  \item{prop}{a logical indicating whether the proportion of missing/imputed values 
+    and combinations should be used rather than the total amount.}
+  \item{combined}{a logical indicating whether the two plots should be 
+    combined.  If \code{FALSE}, a separate barplot on the left hand side shows 
+    the amount of missing/imputed values in each variable.  If \code{TRUE}, a small 
+    version of this barplot is drawn on top of the plot for the combinations of 
+    missing/imputed and non-missing values.  See \dQuote{Details} for more information.}
+  \item{varheight}{a logical indicating whether the cell heights are given by 
+    the frequencies of occurrence of the corresponding combinations.}
+ \item{only.miss}{a logical indicating whether the small barplot for the 
+    frequencies of the combinations should only be drawn for combinations 
+    including missing/imputed values (if \code{bars} is \code{TRUE}).  This is useful 
+    if most observations are complete, in which case the corresponding bar would 
+    dominate the barplot such that the remaining bars are too compressed.  The 
+    proportion or frequency of complete observations (as determined by 
+    \code{prop}) is then represented by a number instead of a bar.}
+  \item{border}{the color to be used for the border of the bars and 
+    rectangles.  Use \code{border=NA} to omit borders.}
+  \item{sortVars}{a logical indicating whether the variables should be 
+    sorted by the number of missing/imputed values.}
+  \item{sortCombs}{a logical indicating whether the combinations should be 
+    sorted by the frequency of occurrence.}
+  \item{ylabs}{if \code{combined} is \code{TRUE}, a character string giving the 
+    y-axis label of the combined plot, otherwise a character vector of 
+    length two giving the y-axis labels for the two plots.}
+  \item{axes}{a logical indicating whether axes should be drawn.}
+  \item{labels}{either a logical indicating whether labels should be 
+    plotted on the x-axis, or a character vector giving the labels.}
+  \item{cex.lab}{the character expansion factor to be used for the axis labels.}
+  \item{cex.axis}{the character expansion factor to be used for the axis 
+    annotation.}
+  \item{cex.numbers}{the character expansion factor to be used for the 
+    proportion or frequencies of the different combinations}
+  \item{gap}{if \code{combined} is \code{FALSE}, a numeric value giving the 
+    distance between the two plots in margin lines.}
+  \item{\dots}{for \code{aggr} and \code{TKRaggr}, further arguments and 
+    graphical parameters to be passed to \code{\link{plot.aggr}}.  For 
+    \code{plot.aggr}, further graphical parameters to be passed down.  
+    \code{par("oma")} will be set appropriately unless supplied (see 
+    \code{\link[graphics]{par}}).}
+}
+\details{
+  Often it is of interest how many missing/imputed values are contained in each 
+  variable.  Even more interesting, there may be certain combinations of 
+  variables with a high number of missing/imputed values.
+  
+  If \code{combined} is \code{FALSE}, two separate plots are drawn for the 
+  missing/imputed values in each variable and the combinations of missing/imputed and 
+  non-missing values. The barplot on the left hand side shows the amount of 
+  missing/imputed values in each variable.  In the \emph{aggregation plot} on the right 
+  hand side, all existing combinations of missing/imputed and non-missing values in 
+  the observations are visualized.  Available, missing and imputed data are color
+  coded as given by \code{col}.  Additionally, there are two possibilities to 
+  represent the frequencies of occurrence of the different combinations.  The 
+  first option is to visualize the proportions or frequencies by a small bar 
+  plot and/or numbers.  The second option is to let the cell heights be given 
+  by the frequencies of the corresponding combinations. Furthermore, variables 
+  may be sorted by the number of missing/imputed values and combinations by the 
+  frequency of occurrence to give more power to finding the structure of 
+  missing/imputed values.
+  
+  If \code{combined} is \code{TRUE}, a small version of the barplot showing 
+  the amount of missing/imputed values in each variable is drawn on top of the 
+  aggregation plot.
+  
+  The graphical parameter \code{oma} will be set unless supplied as an 
+  argument.
+  
+}
+\value{
+  for \code{aggr}, a list of class \code{"aggr"} containing the following 
+  components:
+  \item{x}{the data used.}
+  \item{combinations}{a character vector representing the combinations of 
+    variables.}
+  \item{count}{the frequencies of these combinations.}
+  \item{percent}{the percentage of these combinations.}
+  \item{missings}{a \code{data.frame} containing the amount of missing/imputed values 
+    in each variable.}
+  \item{tabcomb}{the indicator matrix for the combinations of variables.}
+}
+\note{
+    Some of the argument names and positions have changed with version 1.3 
+    due to extended functionality and for more consistency with other plot 
+    functions in \code{VIM}.  For back compatibility, the arguments 
+    \code{labs} and \code{names.arg} can still be supplied to \code{\dots} 
+    and are handled correctly.  Nevertheless, they are deprecated and no 
+    longer documented.  Use \code{ylabs} and \code{labels} instead.
+}
+\references{
+M. Templ, A. Alfons, P. Filzmoser (2012)  
+Exploring incomplete data using visualization tools. 
+\emph{Journal of Advances in Data Analysis and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.  
+}
+\author{Andreas Alfons, Matthias Templ, modifications for displaying imputed values by Bernd Prantner}
+\seealso{
+  \code{\link{print.aggr}}, \code{\link{summary.aggr}}
+}
+\examples{
+data(sleep, package="VIM")
+## for missing values
+a <- aggr(sleep)
+a
+summary(a)
+
+## for imputed values
+sleep_IMPUTED <- kNN(sleep)
+a <- aggr(sleep_IMPUTED, delimiter="_imp")
+a
+summary(a)
+}
+\keyword{hplot}

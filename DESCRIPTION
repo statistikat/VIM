@@ -1,0 +1,24 @@
+Package: VIM
+Version: 4.0.0
+Date: 2013-09-30
+Title: Visualization and Imputation of Missing Values
+Author: Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
+Maintainer: Matthias Templ <matthias.templ@gmail.com>
+Depends: R (>= 2.13),e1071,car, colorspace, nnet, robustbase,sp, vcd, Rcpp
+Imports: car, colorspace, grDevices, robustbase, stats, tcltk, sp,
+        utils, vcd
+Description: This package introduces new tools for the visualization of
+        missing and/or imputed values, which can be used for exploring the
+        data and the structure of the missing and/or imputed values. Depending on
+        this structure of the missing values, the corresponding methods 
+        may help to identify the mechanism generating the
+        missings and allows to explore the data including missing values. 
+        In addition, the quality of imputation can be visually explored using various
+        univariate, bivariate, multiple and multivariate plot methods.
+        A graphical user interface available in the separate package VIMGUI allows an easy handling of
+        the implemented plot methods.
+LazyData: TRUE
+License: GPL (>= 2)
+https://github.com/alexkowa/VIM
+Repository: CRAN
+LinkingTo: Rcpp

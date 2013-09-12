@@ -1,0 +1,79 @@
+\name{mosaicMiss}
+\alias{mosaicMiss}
+\title{Mosaic plot with information about missing/imputed values}
+\description{
+  Create a mosaic plot with information about missing/imputed values.
+}
+\usage{
+mosaicMiss(x, delimiter = NULL, highlight = NULL, selection = c("any",
+    "all"), plotvars = NULL, col = c("skyblue","red","orange"),
+    labels = NULL, miss.labels = TRUE, \dots)
+}
+\arguments{
+  \item{x}{a matrix or \code{data.frame}.}
+  \item{delimiter}{a character-vector to distinguish between variables
+	and imputation-indices for imputed variables (therefore, \code{x} needs
+	to have \code{\link{colnames}}). If given, it is used to determine the corresponding
+	imputation-index for any imputed variable (a logical-vector indicating
+	which values of the variable have been imputed). If such imputation-indices
+	are found, they are used for highlighting and the colors are adjusted 
+	according to the given colors for imputed variables (see \code{col}).}
+  \item{highlight}{a vector giving the variables to be used for highlighting.  
+    If \code{NULL} (the default), all variables are used for highlighting.}
+  \item{selection}{the selection method for highlighting missing/imputed values in 
+    multiple highlight variables.  Possible values are \code{"any"} 
+    (highlighting of missing/imputed values in \emph{any} of the highlight variables) 
+    and \code{"all"} (highlighting of missing/imputed values in \emph{all} of the 
+    highlight variables).}
+  \item{plotvars}{a vector giving the categorical variables to be plotted.  If 
+    \code{NULL} (the default), all variables are plotted.}
+  \item{col}{a vector of length three giving the colors to be used for observed, 
+  	missing and imputed data. If only one color is supplied, the tiles corresponding 
+    to observed data are transparent and the supplied color is used for 
+    highlighting.}
+  \item{labels}{a list of arguments for the labeling function 
+    \code{\link[vcd]{labeling_border}}.}
+ \item{miss.labels}{either a logical indicating whether labels should be 
+   plotted for observed and missing/imputed (highlighted) data, or a character vector 
+   giving the labels.}
+  \item{\dots}{additional arguments to be passed to \code{\link[vcd]{mosaic}}.}
+}
+\details{
+  Mosaic plots are graphical representations of multi-way contingency tables.  
+  The frequencies of the different cells are visualized by area-proportional 
+  rectangles (tiles).  Additional tiles are be used to display the frequencies 
+  of missing/imputed values.  Furthermore, missing/imputed values in a certain variable or
+  combination of variables can be highlighted in order to explore their 
+  structure.
+}
+\value{
+  An object of class \code{"structable"} is returned invisibly.
+}
+\references{
+  Meyer, D., Zeileis, A. and Hornik, K. (2006) The \code{strucplot} framework: 
+  Visualizing multi-way contingency tables with \pkg{vcd}. \emph{Journal of 
+  Statistical Software}, \bold{17 (3)}, 1--48.
+  
+M. Templ, A. Alfons, P. Filzmoser (2012)  
+Exploring incomplete data using visualization tools. 
+\emph{Journal of Advances in Data Analysis and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.  
+}
+\author{Andreas Alfons, modifications by Bernd Prantner}
+\note{
+  This function uses the highly flexible \code{strucplot} framework of package 
+  \code{vcd}.
+}
+\seealso{
+  \code{\link{spineMiss}}, \code{\link[vcd]{mosaic}}
+}
+\examples{
+data(sleep, package = "VIM")
+## for missing values
+mosaicMiss(sleep, highlight = 4, 
+    plotvars = 8:10, miss.labels = FALSE)
+
+## for imputed values
+mosaicMiss(kNN(sleep), highlight = 4, 
+    plotvars = 8:10, delimiter = "_imp", miss.labels = FALSE)
+}
+\keyword{hplot}
