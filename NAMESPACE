@@ -1,4 +1,6 @@
-import(grDevices, sp, stats, utils,methods,MASS,nnet,e1071,grid,colorspace,robustbase)
+import(grDevices,
+Rcpp,sp, stats, utils,methods,MASS,nnet,e1071,grid,robustbase,
+colorspace)
 importFrom(car, box.cox, box.cox.powers)
 importFrom(nnet, multinom)
 importFrom(vcd, labeling_border, mosaic)
