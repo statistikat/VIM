@@ -4,9 +4,9 @@ Date: 2013-09-30
 Title: Visualization and Imputation of Missing Values
 Author: Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
 Maintainer: Matthias Templ <matthias.templ@gmail.com>
-Depends: R (>= 2.13),sp, Rcpp
-Imports: car, colorspace, grDevices, robustbase, stats, sp,
-        utils, vcd,MASS,nnet,e1071,grid,methods
+Depends: R (>= 2.13),colorspace,grid
+Imports: car, grDevices, robustbase, stats, sp,
+        utils, vcd,MASS,nnet,e1071,methods,Rcpp
 Description: This package introduces new tools for the visualization of
         missing and/or imputed values, which can be used for exploring the
         data and the structure of the missing and/or imputed values. Depending on
