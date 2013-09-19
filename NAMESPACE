@@ -1,7 +1,5 @@
-import(grDevices, sp, stats, utils)
+import(grDevices, sp, stats, utils,methods,MASS,nnet,e1071,grid,colorspace,robustbase)
 importFrom(car, box.cox, box.cox.powers)
-importFrom(colorspace, hex, RGB, polarLUV)
-importFrom(robustbase, covMcd)
 importFrom(nnet, multinom)
 importFrom(vcd, labeling_border, mosaic)
 useDynLib(VIM)
