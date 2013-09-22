@@ -39,7 +39,8 @@ export(
     scattMiss,
     spineMiss,
     gowerD,hotdeck,kNN,sampleCat,maxCat,which.minN,
-    vmGUIenvir
+    vmGUIenvir,
+		regressionImp
     )
 
 S3method(aggr, data.frame)
@@ -111,3 +112,7 @@ S3method(plot, aggr)
 S3method(print, aggr)
 S3method(print, summary.aggr)
 S3method(summary, aggr)
+
+S3method(regressionImp, data.frame)
+S3method(regressionImp, survey.design)
+S3method(regressionImp, default)
