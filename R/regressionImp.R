@@ -4,10 +4,10 @@
 
 
 
-#' Iterative robust model-based imputation (IRMI)
+#' Regression Imputation
 #' 
-#' In each step of the iteration, one variable is used as a response variable
-#' and the remaining variables serve as the regressors.
+#' Impute missing values based on a regression model.
+#' 
 #' 
 #' "lm" is used for family "normal" and glm for all other families.
 #' (Robust=TRUE: lmrob, glmrob)

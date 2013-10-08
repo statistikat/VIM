@@ -1,6 +1,6 @@
 \name{regressionImp}
 \alias{regressionImp}
-\title{Iterative robust model-based imputation (IRMI)}
+\title{Regression Imputation}
 \usage{
   regressionImp(formula, data, family = "AUTO",
     robust = FALSE, imp_var = TRUE, imp_suffix = "imp",
@@ -34,9 +34,7 @@
   the imputed data set.
 }
 \description{
-  In each step of the iteration, one variable is used as a
-  response variable and the remaining variables serve as
-  the regressors.
+  Impute missing values based on a regression model.
 }
 \details{
   "lm" is used for family "normal" and glm for all other
