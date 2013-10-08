@@ -4,6 +4,70 @@
 #          Vienna University of Technology
 # ----------------------------------------------------------
 
+
+
+#' Map with information about missing/imputed values
+#' 
+#' Map of observed and missing/imputed values.
+#' 
+#' If \code{interactive=TRUE}, detailed information for an observation can be
+#' printed on the console by clicking on the corresponding point.  Clicking in
+#' a region that does not contain any points quits the interactive session.
+#' 
+#' @param x a vector, matrix or \code{data.frame}.
+#' @param coords a \code{data.frame} or matrix with two columns giving the
+#' spatial coordinates of the observations.
+#' @param map a background map to be passed to \code{\link{bgmap}}.
+#' @param delimiter a character-vector to distinguish between variables and
+#' imputation-indices for imputed variables (therefore, \code{x} needs to have
+#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-index for any imputed variable (a logical-vector indicating which
+#' values of the variable have been imputed). If such imputation-indices are
+#' found, they are used for highlighting and the colors are adjusted according
+#' to the given colors for imputed variables (see \code{col}).
+#' @param selection the selection method for displaying missing/imputed values
+#' in the map.  Possible values are \code{"any"} (display missing/imputed
+#' values in \emph{any} variable) and \code{"all"} (display missing/imputed
+#' values in \emph{all} variables).
+#' @param col a vector of length three giving the colors to be used for
+#' observed, missing and imputed values.  If a single color is supplied, it is
+#' used for all values.
+#' @param alpha a numeric value between 0 and 1 giving the level of
+#' transparency of the colors, or \code{NULL}.  This can be used to prevent
+#' overplotting.
+#' @param pch a vector of length two giving the plot characters to be used for
+#' observed and missing/imputed values.  If a single plot character is
+#' supplied, it will be used for both.
+#' @param col.map the color to be used for the background map.
+#' @param legend a logical indicating whether a legend should be plotted.
+#' @param interactive a logical indicating whether information about selected
+#' observations can be displayed interactively (see \sQuote{Details}).
+#' @param \dots further graphical parameters to be passed to
+#' \code{\link{bgmap}} and \code{\link[graphics]{points}}.
+#' @author Matthias Templ, Andreas Alfons, modifications by Bernd Prantner
+#' @seealso \code{\link{bgmap}}, \code{\link{bubbleMiss}},
+#' \code{\link{colormapMiss}}
+#' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
+#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
+#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' @keywords hplot
+#' @examples
+#' 
+#' data(chorizonDL, package = "VIM")
+#' data(kola.background, package = "VIM")
+#' coo <- chorizonDL[, c("XCOO", "YCOO")]
+#' ## for missing values
+#' x <- chorizonDL[, c("As", "Bi")]
+#' mapMiss(x, coo, kola.background)
+#' 
+#' ## for imputed values
+#' x_imp <- kNN(chorizonDL[, c("As", "Bi")])
+#' mapMiss(x_imp, coo, kola.background, delimiter = "_imp")
+#' 
+#' @export mapMiss
+#' @S3method mapMiss data.frame
+#' @S3method mapMiss survey.design
+#' @S3method mapMiss default
 mapMiss <- function(x, coords, map, delimiter = NULL, selection = c("any","all"), 
                     col = c("skyblue","red","orange"), alpha = NULL, 
                     pch = c(19,15), col.map = grey(0.5), 

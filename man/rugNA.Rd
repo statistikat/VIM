@@ -1,38 +1,46 @@
 \name{rugNA}
 \alias{rugNA}
 \title{Rug representation of missing/imputed values}
-\description{
-    Add a rug representation of missing/imputed values in only one of the variables to 
-    scatterplots.
-}
 \usage{
-rugNA(x, y, ticksize = NULL, side = 1, col = "red", alpha = NULL,
-    miss = NULL, lwd = 0.5, \dots)
+  rugNA(x, y, ticksize = NULL, side = 1, col = "red",
+    alpha = NULL, miss = NULL, lwd = 0.5, ...)
 }
 \arguments{
-    \item{x, y}{numeric vectors.}
-    \item{ticksize}{the length of the ticks.  Positive lengths give inward 
-        ticks.}
-    \item{side}{an integer giving the side of the plot to draw the rug 
-        representation.}
-    \item{col}{the color to be used for the ticks.}
-    \item{alpha}{the alpha value (between 0 and 1).}
-    \item{miss}{a \code{data.frame} or \code{matrix} with two columns and logical
-    	values.	If \code{NULL}, \code{x} and \code{y} are searched for missing
-    	values, otherwise, the first column of \code{miss} is used to determine the
-    	imputed	values in \code{x} and the second one for the imputed values in
-    	\code{y}.}
-    \item{lwd}{the line width to be used for the ticks.}
-    \item{\dots}{further arguments to be passed to 
-        \code{\link[graphics]{Axis}}.}
+  \item{x,y}{numeric vectors.}
+
+  \item{ticksize}{the length of the ticks.  Positive
+  lengths give inward ticks.}
+
+  \item{side}{an integer giving the side of the plot to
+  draw the rug representation.}
+
+  \item{col}{the color to be used for the ticks.}
+
+  \item{alpha}{the alpha value (between 0 and 1).}
+
+  \item{miss}{a \code{data.frame} or \code{matrix} with two
+  columns and logical values. If \code{NULL}, \code{x} and
+  \code{y} are searched for missing values, otherwise, the
+  first column of \code{miss} is used to determine the
+  imputed values in \code{x} and the second one for the
+  imputed values in \code{y}.}
+
+  \item{lwd}{the line width to be used for the ticks.}
+
+  \item{\dots}{further arguments to be passed to
+  \code{\link[graphics]{Axis}}.}
+}
+\description{
+  Add a rug representation of missing/imputed values in
+  only one of the variables to scatterplots.
 }
 \details{
-If \code{side} is 1 or 3, the rug representation consists of values 
-available in \code{x} but missing/imputed in \code{y}.  Else if \code{side} 
-is 2 or 4, it consists of values available in \code{y} but missing/imputed 
-in \code{x}.
+  If \code{side} is 1 or 3, the rug representation consists
+  of values available in \code{x} but missing/imputed in
+  \code{y}.  Else if \code{side} is 2 or 4, it consists of
+  values available in \code{y} but missing/imputed in
+  \code{x}.
 }
-\author{Andreas Alfons, modifications by Bernd Prantner}
 \examples{
 data(tao, package = "VIM")
 ## for missing values
@@ -51,4 +59,8 @@ plot(x, y)
 rugNA(x, y, side = 1, col = "orange", miss = miss)
 rugNA(x, y, side = 2, col = "orange", miss = miss)
 }
+\author{
+  Andreas Alfons, modifications by Bernd Prantner
+}
 \keyword{color}
+

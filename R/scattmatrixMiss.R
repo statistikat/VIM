@@ -4,6 +4,101 @@
 #          Vienna University of Technology
 # ----------------------------------------------------------
 
+
+
+#' Scatterplot matrix with information about missing/imputed values
+#' 
+#' Scatterplot matrix in which observations with missing/imputed values in
+#' certain variables are highlighted.
+#' 
+#' \code{scattmatrixMiss} uses \code{\link{pairsVIM}} with a panel function
+#' that allows highlighting of missing/imputed values.
+#' 
+#' If \code{interactive=TRUE}, the variables to be used for highlighting can be
+#' selected interactively.  Observations with missing/imputed values in any or
+#' in all of the selected variables are highlighted (as determined by
+#' \code{selection}).  A variable can be added to the selection by clicking in
+#' a diagonal panel.  If a variable is already selected, clicking on the
+#' corresponding diagonal panel removes it from the selection.  Clicking
+#' anywhere else quits the interactive session.
+#' 
+#' The graphical parameter \code{oma} will be set unless supplied as an
+#' argument.
+#' 
+#' \code{TKRscattmatrixMiss} behaves like \code{scattmatrixMiss}, but uses
+#' \code{\link[tkrplot]{tkrplot}} to embed the plot in a \emph{Tcl/Tk} window.
+#' This is useful if the number of variables is large, because scrollbars allow
+#' to move from one part of the plot to another.
+#' 
+#' @param x a matrix or \code{data.frame}.
+#' @param delimiter a character-vector to distinguish between variables and
+#' imputation-indices for imputed variables (therefore, \code{x} needs to have
+#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-index for any imputed variable (a logical-vector indicating which
+#' values of the variable have been imputed). If such imputation-indices are
+#' found, they are used for highlighting and the colors are adjusted according
+#' to the given colors for imputed variables (see \code{col}).
+#' @param highlight a vector giving the variables to be used for highlighting.
+#' If \code{NULL} (the default), all variables are used for highlighting.
+#' @param selection the selection method for highlighting missing/imputed
+#' values in multiple highlight variables.  Possible values are \code{"any"}
+#' (highlighting of missing/imputed values in \emph{any} of the highlight
+#' variables) and \code{"all"} (highlighting of missing/imputed values in
+#' \emph{all} of the highlight variables).
+#' @param plotvars a vector giving the variables to be plotted.  If \code{NULL}
+#' (the default), all variables are plotted.
+#' @param col a vector of length three giving the colors to be used in the
+#' plot.  The second/third color will be used for highlighting missing/imputed
+#' values.
+#' @param alpha a numeric value between 0 and 1 giving the level of
+#' transparency of the colors, or \code{NULL}.  This can be used to prevent
+#' overplotting.
+#' @param pch a vector of length two giving the plot characters.  The second
+#' plot character will be used for the highlighted observations.
+#' @param lty a vector of length two giving the line types for the density
+#' plots in the diagonal panels (if \code{diagonal="density"}).  The second
+#' line type is used for the highlighted observations.  If a single value is
+#' supplied, it is used for both non-highlighted and highlighted observations.
+#' @param diagonal a character string specifying the plot to be drawn in the
+#' diagonal panels.  Possible values are \code{"density"} (density plots for
+#' non-highlighted and highlighted observations) and \code{"none"}.
+#' @param interactive a logical indicating whether the variables to be used for
+#' highlighting can be selected interactively (see \sQuote{Details}).
+#' @param \dots for \code{scattmatrixMiss}, further arguments and graphical
+#' parameters to be passed to \code{\link{pairsVIM}}.  \code{par("oma")} will
+#' be set appropriately unless supplied (see \code{\link[graphics]{par}}).  For
+#' \code{TKRscattmatrixMiss}, further arguments to be passed to
+#' \code{scattmatrixMiss}.
+#' @note Some of the argument names and positions have changed with version 1.3
+#' due to a re-implementation and for more consistency with other plot
+#' functions in \code{VIM}.  For back compatibility, the argument
+#' \code{colcomb} can still be supplied to \code{\dots{}} and is handled
+#' correctly.  Nevertheless, it is deprecated and no longer documented.  Use
+#' \code{highlight} instead.  The arguments \code{smooth}, \code{reg.line} and
+#' \code{legend.plot} are no longer used and ignored if supplied.
+#' @author Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
+#' @seealso \code{\link{pairsVIM}}, \code{\link{marginmatrix}}
+#' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
+#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
+#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' @keywords hplot
+#' @examples
+#' 
+#' data(sleep, package = "VIM")
+#' ## for missing values
+#' x <- sleep[, 1:5]
+#' x[,c(1,2,4)] <- log10(x[,c(1,2,4)])
+#' scattmatrixMiss(x, highlight = "Dream")
+#' 
+#' ## for imputed values
+#' x_imp <- kNN(sleep[, 1:5])
+#' x_imp[,c(1,2,4)] <- log10(x_imp[,c(1,2,4)])
+#' scattmatrixMiss(x_imp, delimiter = "_imp", highlight = "Dream")
+#' 
+#' @export scattmatrixMiss
+#' @S3method scattmatrixMiss data.frame
+#' @S3method scattmatrixMiss survey.design
+#' @S3method scattmatrixMiss default
 scattmatrixMiss <- function(x, delimiter = NULL, highlight = NULL, 
                             selection = c("any","all"), plotvars = NULL, 
                             col = c("skyblue","red","orange"), alpha = NULL, 

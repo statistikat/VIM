@@ -4,6 +4,64 @@
 #          Vienna University of Technology
 # ------------------------------------------
 
+
+
+#' Transformation and standardization
+#' 
+#' This function is used by the \code{VIM} GUI for transformation and
+#' standardization of the data.
+#' 
+#' 
+#' \bold{Transformation}:
+#' 
+#' \code{"none"}: no transformation is used.
+#' 
+#' \code{"logarithm"}: compute the the logarithm (to the base 10).
+#' 
+#' \code{"boxcox"}: apply a Box-Cox transformation. Powers may be specified or
+#' calculated with the function \code{\link[car]{powerTransform}}.
+#' 
+#' \bold{Standardization}:
+#' 
+#' \code{"none"}: no standardization is used.
+#' 
+#' \code{"classical"}: apply a \emph{z}-Transformation on each variable by
+#' using function \code{\link{scale}}.
+#' 
+#' \code{"robust"}: apply a robustified \emph{z}-Transformation by using median
+#' and MAD.
+#' 
+#' @param x a vector, matrix or \code{data.frame}.
+#' @param scaling the scaling to be applied to the data.  Possible values are
+#' \code{"none"}, \code{"classical"}, \code{MCD}, \code{"robust"} and
+#' \code{"onestep"}.
+#' @param transformation the transformation of the data.  Possible values are
+#' \code{"none"}, \code{"minus"}, \code{"reciprocal"}, \code{"logarithm"},
+#' \code{"exponential"}, \code{"boxcox"}, \code{"clr"}, \code{"ilr"} and
+#' \code{"alr"}.
+#' @param alpha a numeric parameter controlling the size of the subset for the
+#' \emph{MCD} (if \code{scaling="MCD"}). See \code{\link[robustbase]{covMcd}}.
+#' @param powers a numeric vector giving the powers to be used in the Box-Cox
+#' transformation (if \code{transformation="boxcox"}).  If \code{NULL}, the
+#' powers are calculated with function \code{\link[car]{powerTransform}}.
+#' @param start a constant to be added prior to Box-Cox transformation (if
+#' \code{transformation="boxcox"}).
+#' @param alrVar variable to be used as denominator in the additive logratio
+#' transformation (if \code{transformation="alr"}).
+#' @return Transformed and standardized data.
+#' @author Matthias Templ, modifications by Andreas Alfons
+#' @seealso \code{\link{scale}}, \code{\link[car]{powerTransform}}
+#' @keywords manip
+#' @examples
+#' 
+#' data(sleep, package = "VIM")
+#' x <- sleep[, c("BodyWgt", "BrainWgt")]
+#' prepare(x, scaling = "robust", transformation = "logarithm")
+#' 
+#' @export prepare
+#' @S3method prepare data.frame
+#' @S3method prepare survey.design
+#' @S3method prepare default
 prepare <- function(x, scaling = c("none","classical","MCD","robust","onestep"),
                     transformation = c("none","minus","reciprocal","logarithm",
                                        "exponential","boxcox","clr","ilr","alr"),
@@ -99,9 +157,9 @@ boxcoxVIM <- function(x, powers = NULL, start = 0) {
             i <- !is.na(x)
             xi <- x[i]
             if(length(xi) == 0) stop("all values in 'x' are NA")
-            powers <- box.cox.powers(xi)$lambda
+            powers <- powerTransform(xi)$lambda
         }
-        box.cox(x, powers, start)
+        bcPower(x, powers, start)
     } else {
         if(nrow(x) == 0) stop("'x' has no rows")
         else if(ncol(x) == 0) stop("'x' has no columns")
@@ -109,11 +167,11 @@ boxcoxVIM <- function(x, powers = NULL, start = 0) {
             i <- apply(x, 1, function(x) !any(is.na(x)))
             xi <- x[i,, drop=FALSE]
             if(nrow(xi) == 0) stop("all rows in 'x' contain NAs")
-            powers <- box.cox.powers(xi)$lambda
+            powers <- powerTransform(xi)$lambda
         }
         # box.cox only works with vectors
         # if x has only one column, the result of mapply is a vector
-        as.matrix(mapply(box.cox, x=x, p=powers, start=start))
+        as.matrix(mapply(bcPower, x=x, p=powers, start=start))
     }
 }
 

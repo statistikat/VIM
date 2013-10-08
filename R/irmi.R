@@ -1,3 +1,73 @@
+#' Iterative robust model-based imputation (IRMI)
+#' 
+#' In each step of the iteration, one variable is used as a response variable
+#' and the remaining variables serve as the regressors.
+#' 
+#' The method works sequentially and iterative. The method can deal with a
+#' mixture of continuous, semi-continuous, ordinal and nominal variables
+#' including outliers.
+#' 
+#' A full description of the method will be uploaded soon in form of a package
+#' vignette.
+#' 
+#' @param x data.frame or matrix
+#' @param eps threshold for convergency
+#' @param maxit maximum number of iterations
+#' @param mixed column index of the semi-continuous variables
+#' @param mixed.constant vector with length equal to the number of
+#' semi-continuous variables specifying the point of the semi-continuous
+#' distribution with non-zero probability
+#' @param count column index of count variables
+#' @param step a stepwise model selection is applied when the parameter is set
+#' to TRUE
+#' @param robust if TRUE, robust regression methods will be applied
+#' @param takeAll takes information of (initialised) missings in the response
+#' as well for regression imputation.
+#' @param noise irmi has the option to add a random error term to the imputed
+#' values, this creates the possibility for multiple imputation. The error term
+#' has mean 0 and variance corresponding to the variance of the regression
+#' residuals.
+#' @param noise.factor amount of noise.
+#' @param force if TRUE, the algorithm tries to find a solution in any case,
+#' possible by using different robust methods automatically.
+#' @param robMethod regression method when the response is continuous.
+#' @param force.mixed if TRUE, the algorithm tries to find a solution in any
+#' case, possible by using different robust methods automatically.
+#' @param addMixedFactors
+#' 
+#' if factor variables for the mixed variables should be created for the
+#' regression models
+#' @param mi number of multiple imputations.
+#' @param trace Additional information about the iterations when trace equals
+#' TRUE.
+#' @param init.method Method for initialization of missing values (kNN or
+#' median)
+#' @return the imputed data set.
+#' @author Matthias Templ, Alexander Kowarik
+#' @seealso \code{\link[mi]{mi}}
+#' @references M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
+#' regression imputation using standard and robust methods.  \emph{Journal of
+#' Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
+#' @keywords manip
+#' @examples
+#' 
+#' data(sleep)
+#' irmi(sleep)
+#' 
+#' data(testdata)
+#' imp_testdata1 <- irmi(testdata$wna,mixed=testdata$mixed)
+#' 
+#' # mixed.constant != 0 (-10)
+#' testdata$wna$m1[testdata$wna$m1==0] <- -10
+#' testdata$wna$m2 <- log(testdata$wna$m2+0.001)
+#' imp_testdata2 <- irmi(testdata$wna,mixed=testdata$mixed,mixed.constant=c(-10,log(0.001)))
+#' imp_testdata2$m2 <- exp(imp_testdata2$m2)-0.001
+#' 
+#' 
+#' @export irmi
+#' @S3method irmi data.frame
+#' @S3method irmi survey.design
+#' @S3method irmi default
 irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
                  robust=FALSE, takeAll=TRUE,
                  noise=TRUE, noise.factor=1, force=FALSE,
@@ -461,6 +531,31 @@ Inter.list <- function(A){ # common entries from a list of vectors
   levels(as.factor(a[TF]))
 }
 
+
+
+#' Initialization of missing values
+#' 
+#' Rough estimation of missing values in a vector according to its type.
+#' 
+#' Missing values are imputed with the mean for vectors of class
+#' \code{"numeric"}, with the median for vectors of class \code{"integer"}, and
+#' with the mode for vectors of class \code{"factor"}.  Hence, \code{x} should
+#' be prepared in the following way: assign class \code{"numeric"} to numeric
+#' vectors, assign class \code{"integer"} to ordinal vectors, and assign class
+#' \code{"factor"} to nominal or binary vectors.
+#' 
+#' @param x a vector.
+#' @param mixed a character vector containing the names of variables of type
+#' mixed (semi-continous).
+#' @param method Method used for Initialization (median or kNN)
+#' @param mixed.constant vector with length equal to the number of
+#' semi-continuous variables specifying the point of the semi-continuous
+#' distribution with non-zero probability
+#' @return the initialized vector.
+#' @note The function is used internally by some imputation algorithms.
+#' @author Matthias Templ, modifications by Andreas Alfons
+#' @keywords manip
+#' @export initialise
 `initialise` <- function(x,mixed,method="kNN",mixed.constant=NULL){
   if(method=="median"){
     for( j in 1:ncol(x) ) {

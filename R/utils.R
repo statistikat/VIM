@@ -13,38 +13,6 @@
 
 # ---------------------------------------
 
-## utility functions for GUI environment
-
-# access vmGUIenv
-vmGUIenv <- function() {
-  get("vmGUIenvir", envir=as.environment("package:VIM"))
-}
-
-# put in vmGUIenv
-putVm <- function(x, value) {
-  assign(x, value, envir=vmGUIenv())
-}
-
-# get from vmGUIenv
-getVm <- function (x, mode="any") { 
-  get(x, envir=vmGUIenv(), mode=mode, inherits=FALSE)
-}
-
-# does object exist in vmGUIenv?
-existsVm <- function (x, mode="any") { 
-  exists(x, envir=vmGUIenv(), mode=mode, inherits=FALSE)
-}
-
-
-
-rmVm <- function(...) {
-  localRm <- function(..., envir) rm(..., envir=vmGUIenv())
-  localRm(...)
-}
-
-
-
-
 
 ## get state for menu items and dialog elements
 
@@ -120,9 +88,24 @@ isImp <- function(x, pos, delimiter, imp_var, selection = c("none","any","all"))
   }
 }
 
+#' Count number of infinite or missing values
+#' 
+#' Count the number of infinite or missing values in a vector.
+#' 
+#' @aliases countInf countNA
+#' @param x a vector.
+#' @return  \code{countInf} returns the number of infinite values in \code{x}.
+#' \code{countNA} returns the number of missing values in \code{x}.
+#' @author Andreas Alfons
+#' @keywords utilities
+#' @examples
+#' data(sleep, package="VIM")
+#' countInf(log(sleep$Dream))
+#' countNA(sleep$Dream)
+#' @export countInf
 # count infinite values
 countInf <- function(x) length(which(is.infinite(x)))
-
+#' @export countNA
 # count missings
 countNA <- function(x) length(which(is.na(x)))
 

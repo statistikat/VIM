@@ -1,78 +1,103 @@
 \name{scattJitt}
 \alias{scattJitt}
 \title{Bivariate jitter plot}
-\description{
-    Create a bivariate jitter plot.
-}
 \usage{
-scattJitt(x, delimiter = NULL, col = c("skyblue","red","red4","orange",
-    "orange4"), alpha = NULL, cex = par("cex"), col.line = "lightgrey",
+  scattJitt(x, delimiter = NULL,
+    col = c("skyblue", "red", "red4", "orange", "orange4"),
+    alpha = NULL, cex = par("cex"), col.line = "lightgrey",
     lty = "dashed", lwd = par("lwd"), numbers = TRUE,
-    cex.numbers = par("cex"), main = NULL, sub = NULL, xlab = NULL,
-    ylab = NULL, axes = TRUE, frame.plot = axes,
-    labels = c("observed","missing","imputed"), \dots)
+    cex.numbers = par("cex"), main = NULL, sub = NULL,
+    xlab = NULL, ylab = NULL, axes = TRUE,
+    frame.plot = axes,
+    labels = c("observed", "missing", "imputed"), ...)
 }
 \arguments{
-    \item{x}{a \code{data.frame} or \code{matrix} with two columns.}
-    \item{delimiter}{a character-vector to distinguish between variables
-    	and imputation-indices for imputed variables (therefore, \code{x} needs
-    	to have \code{\link{colnames}}). If given, it is used to determine the
-    	corresponding imputation-index for any imputed variable (a logical-vector
-    	indicating which values of the variable have been imputed). If such
-    	imputation-indices are found, they are used for highlighting and the
-    	colors are adjusted	according to the given colors for imputed variables
-    	(see \code{col}).}
-    \item{col}{a vector of length five giving the colors to be used in the 
-        plot.  The first color will be used for complete observations, the 
-        second/fourth color for missing/imputed values in only one variable,
-        and the third/fifth color for missing/imputed values in both variables.
-        If only one color is supplied, it is used for all.
-        Else if two colors are supplied, the second one is recycled.}
-    \item{alpha}{a numeric value between 0 and 1 giving the level of 
-        transparency of the colors, or \code{NULL}.  This can be used to
-        prevent overplotting.}
-    \item{cex}{the character expansion factor for the plot characters.}
-    \item{col.line}{the color for the lines dividing the plot region.}
-    \item{lty}{the line type for the lines dividing the plot region (see 
-        \code{\link[graphics]{par}}).}
-    \item{lwd}{the line width for the lines dividing the plot region.}
-    \item{numbers}{a logical indicating whether the frequencies of 
-        observed and missing/imputed values should be displayed
-        (see \sQuote{Details}).}
-    \item{cex.numbers}{the character expansion factor to be used for the 
-        frequencies of the observed and missing/imputed values.}
-    \item{main, sub}{main and sub title.}
-    \item{xlab, ylab}{axis labels.}
-    \item{axes}{a logical indicating whether both axes should be drawn 
-        on the plot.  Use graphical parameter \code{"xaxt"} or \code{"yaxt"} 
-        to suppress just one of the axes.}
-    \item{frame.plot}{a logical indicating whether a box should be drawn 
-        around the plot.}
-    \item{labels}{a vector of length three giving the axis labels for the 
-        regions for observed, missing and imputed values (see \sQuote{Details}).}
-    \item{\dots}{further graphical parameters to be passed down (see 
-        \code{\link[graphics]{par}}).}
+  \item{x}{a \code{data.frame} or \code{matrix} with two
+  columns.}
+
+  \item{delimiter}{a character-vector to distinguish
+  between variables and imputation-indices for imputed
+  variables (therefore, \code{x} needs to have
+  \code{\link{colnames}}). If given, it is used to
+  determine the corresponding imputation-index for any
+  imputed variable (a logical-vector indicating which
+  values of the variable have been imputed). If such
+  imputation-indices are found, they are used for
+  highlighting and the colors are adjusted according to the
+  given colors for imputed variables (see \code{col}).}
+
+  \item{col}{a vector of length five giving the colors to
+  be used in the plot. The first color will be used for
+  complete observations, the second/fourth color for
+  missing/imputed values in only one variable, and the
+  third/fifth color for missing/imputed values in both
+  variables.  If only one color is supplied, it is used for
+  all.  Else if two colors are supplied, the second one is
+  recycled.}
+
+  \item{alpha}{a numeric value between 0 and 1 giving the
+  level of transparency of the colors, or \code{NULL}.
+  This can be used to prevent overplotting.}
+
+  \item{cex}{the character expansion factor for the plot
+  characters.}
+
+  \item{col.line}{the color for the lines dividing the plot
+  region.}
+
+  \item{lty}{the line type for the lines dividing the plot
+  region (see \code{\link[graphics]{par}}).}
+
+  \item{lwd}{the line width for the lines dividing the plot
+  region.}
+
+  \item{numbers}{a logical indicating whether the
+  frequencies of observed and missing/imputed values should
+  be displayed (see \sQuote{Details}).}
+
+  \item{cex.numbers}{the character expansion factor to be
+  used for the frequencies of the observed and
+  missing/imputed values.}
+
+  \item{main,sub}{main and sub title.}
+
+  \item{xlab,ylab}{axis labels.}
+
+  \item{axes}{a logical indicating whether both axes should
+  be drawn on the plot.  Use graphical parameter
+  \code{"xaxt"} or \code{"yaxt"} to suppress just one of
+  the axes.}
+
+  \item{frame.plot}{a logical indicating whether a box
+  should be drawn around the plot.}
+
+  \item{labels}{a vector of length three giving the axis
+  labels for the regions for observed, missing and imputed
+  values (see \sQuote{Details}).}
+
+  \item{\dots}{further graphical parameters to be passed
+  down (see \code{\link[graphics]{par}}).}
+}
+\description{
+  Create a bivariate jitter plot.
 }
 \details{
-    The amount of observed and missing/imputed values is visualized by jittered points.  
-    Thereby the plot region is divided into up to four regions according to 
-    the existence of missing/imputed values in one or both variables.  In addition, 
-    the amount of observed and missing/imputed values can be represented by a number.
+  The amount of observed and missing/imputed values is
+  visualized by jittered points.  Thereby the plot region
+  is divided into up to four regions according to the
+  existence of missing/imputed values in one or both
+  variables.  In addition, the amount of observed and
+  missing/imputed values can be represented by a number.
 }
 \note{
-    Some of the argument names and positions have changed with version 1.3 
-    due to extended functionality and for more consistency with other plot 
-    functions in \code{VIM}.  For back compatibility, the argument 
-    \code{cex.text} can still be supplied to \code{\dots} and is handled 
-    correctly.  Nevertheless, it is deprecated and no longer documented.  
-    Use \code{cex.numbers} instead.
+  Some of the argument names and positions have changed
+  with version 1.3 due to extended functionality and for
+  more consistency with other plot functions in \code{VIM}.
+  For back compatibility, the argument \code{cex.text} can
+  still be supplied to \code{\dots{}} and is handled
+  correctly.  Nevertheless, it is deprecated and no longer
+  documented.  Use \code{cex.numbers} instead.
 }
-\references{
-M. Templ, A. Alfons, P. Filzmoser (2012)  
-Exploring incomplete data using visualization tools. 
-\emph{Journal of Advances in Data Analysis and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.  
-}
-\author{Matthias Templ, modifications by Andreas Alfons and Bernd Prantner}
 \examples{
 data(tao, package = "VIM")
 ## for missing values
@@ -81,4 +106,15 @@ scattJitt(tao[, c("Air.Temp", "Humidity")])
 ## for imputed values
 scattJitt(kNN(tao[, c("Air.Temp", "Humidity")]), delimiter = "_imp")
 }
+\author{
+  Matthias Templ, modifications by Andreas Alfons and Bernd
+  Prantner
+}
+\references{
+  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+  incomplete data using visualization tools.  \emph{Journal
+  of Advances in Data Analysis and Classification}, Online
+  first. DOI: 10.1007/s11634-011-0102-y.
+}
 \keyword{hplot}
+

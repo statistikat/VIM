@@ -2,6 +2,46 @@
 # Author: Alexander Kowarik
 # ---------------------------------------
 
+
+
+#' Iterative robust model-based imputation (IRMI)
+#' 
+#' In each step of the iteration, one variable is used as a response variable
+#' and the remaining variables serve as the regressors.
+#' 
+#' "lm" is used for family "normal" and glm for all other families.
+#' (Robust=TRUE: lmrob, glmrob)
+#' 
+#' @param formula model formula to impute one variable
+#' @param data A data.frame or survey object containing the data
+#' @param family family argument for "glm" ("AUTO" tries to choose
+#' automatically, only really tested option!!!)
+#' @param robust TRUE/FALSE if robust regression should be used
+#' @param mod_cat TRUE/FALSE if TRUE for categorical variables the level with
+#' the highest prediction probability is selected, otherwise it is sampled
+#' according to the probabilities.
+#' @param imp_var TRUE/FALSE if a TRUE/FALSE variables for each imputed
+#' variable should be created show the imputation status
+#' @param imp_suffix suffix used for TF imputation variables
+#' @return the imputed data set.
+#' @author Alexander Kowarik
+#' @keywords manip
+#' @examples
+#' 
+#' data(sleep)
+#' sleepImp1 <- regressionImp(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
+#' sleepImp2 <- regressionImp(Sleep+Gest+Span+Dream+NonD~BodyWgt+BrainWgt,data=sleep)
+#' sleepImp3 <- regressionImp(Sleep+Gest+Span+Dream+NonD~BodyWgt+BrainWgt,data=sleep,robust=TRUE)
+#' 
+#' data(testdata)
+#' imp_testdata1 <- regressionImp(c1+c2~x1+x2,data=testdata$wna)
+#' imp_testdata2 <- regressionImp(x1+b1+c1+c2~x2,data=testdata$wna)
+#' imp_testdata3 <- regressionImp(x1+b1+c1+c2~x2,data=testdata$wna,robust=TRUE)
+#' 
+#' @export regressionImp
+#' @S3method regressionImp data.frame
+#' @S3method regressionImp survey.design
+#' @S3method regressionImp default
 regressionImp <- function(formula,data,family="AUTO", robust=FALSE,imp_var = TRUE,
     imp_suffix = "imp",mod_cat=FALSE) {
   UseMethod("regressionImp", data)

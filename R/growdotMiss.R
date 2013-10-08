@@ -4,6 +4,103 @@
 #         Vienna University of Technology
 # ---------------------------------------
 
+
+
+#' Growing dot map with information about missing/imputed values
+#' 
+#' Map with dots whose sizes correspond to the values in a certain variable.
+#' Observations with missing/imputed values in additional variables are
+#' highlighted.
+#' 
+#' The smallest dots correspond to the 10\% quantile and the largest dots to
+#' the 99\% quantile.  In between, the dots grow exponentially, with \code{exp}
+#' defining the shape of the exponential function.  Missings/imputed missings
+#' in the variable of interest will be drawn as rectangles.
+#' 
+#' If \code{interactive=TRUE}, detailed information for an observation can be
+#' printed on the console by clicking on the corresponding point.  Clicking in
+#' a region that does not contain any points quits the interactive session.
+#' 
+#' @aliases growdotMiss bubbleMiss
+#' @param x a vector, matrix or \code{data.frame}.
+#' @param coords a matrix or \code{data.frame} with two columns giving the
+#' spatial coordinates of the observations.
+#' @param map a background map to be passed to \code{\link{bgmap}}.
+#' @param pos a numeric value giving the index of the variable determining the
+#' dot sizes.
+#' @param delimiter a character-vector to distinguish between variables and
+#' imputation-indices for imputed variables (therefore, \code{x} needs to have
+#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-index for any imputed variable (a logical-vector indicating which
+#' values of the variable have been imputed). If such imputation-indices are
+#' found, they are used for highlighting and the colors are adjusted according
+#' to the given colors for imputed variables (see \code{col}).
+#' @param selection the selection method for highlighting missing/imputed
+#' values in multiple additional variables.  Possible values are \code{"any"}
+#' (highlighting of missing/imputed values in \emph{any} of the additional
+#' variables) and \code{"all"} (highlighting of missing/imputed values in
+#' \emph{all} of the additional variables).
+#' @param log a logical indicating whether the variable given by \code{pos}
+#' should be log-transformed.
+#' @param col a vector of length six giving the colors to be used in the plot.
+#' If only one color is supplied, it is used for the borders of non-highlighted
+#' dots and the surface area of highlighted dots.  Else if two colors are
+#' supplied, they are recycled.
+#' @param border a vector of length four giving the colors to be used for the
+#' borders of the growing dots.  Use \code{NA} to omit borders.
+#' @param alpha a numeric value between 0 and 1 giving the level of
+#' transparency of the colors, or \code{NULL}.  This can be used to prevent
+#' overplotting.
+#' @param scale scaling factor of the map.
+#' @param size a vector of length two giving the sizes for the smallest and
+#' largest dots.
+#' @param exp a vector of length three giving the factors that define the shape
+#' of the exponential function (see \sQuote{Details}).
+#' @param col.map the color to be used for the background map.
+#' @param legend a logical indicating whether a legend should be plotted.
+#' @param legtitle the title for the legend.
+#' @param cex.legtitle the character expansion factor to be used for the title
+#' of the legend.
+#' @param cex.legtext the character expansion factor to be used in the legend.
+#' @param ncircles the number of circles displayed in the legend.
+#' @param ndigits the number of digits displayed in the legend.  Note that \
+#' this is just a suggestion (see \code{\link{format}}).
+#' @param interactive a logical indicating whether information about certain
+#' observations can be displayed interactively (see \sQuote{Details}).
+#' @param \dots for \code{growdotMiss}, further arguments and graphical
+#' parameters to be passed to \code{\link{bgmap}}.  For \code{bubbleMiss}, the
+#' arguments to be passed to \code{growdotMiss}.
+#' @note The function was renamed to \code{growdotMiss} in version 1.3.
+#' \code{bubbleMiss} is a (deprecated) wrapper for \code{growdotMiss} for back
+#' compatibility with older versions. However, due to extended functionality,
+#' some of the argument positions have changed.
+#' 
+#' The code is based on \code{\link[StatDA]{bubbleFIN}} from package
+#' \code{StatDA}.
+#' @author Andreas Alfons, Matthias Templ, Peter Filzmoser, Bernd Prantner
+#' @seealso \code{\link{bgmap}}, \code{\link{mapMiss}},
+#' \code{\link{colormapMiss}}
+#' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
+#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
+#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' @keywords hplot
+#' @examples
+#' 
+#' data(chorizonDL, package = "VIM")
+#' data(kola.background, package = "VIM")
+#' coo <- chorizonDL[, c("XCOO", "YCOO")]
+#' ## for missing values
+#' x <- chorizonDL[, c("Ca","As", "Bi")]
+#' growdotMiss(x, coo, kola.background, border = "white")
+#' 
+#' ## for imputed values
+#' x_imp <- kNN(chorizonDL[,c("Ca","As","Bi" )])
+#' growdotMiss(x_imp, coo, kola.background, delimiter = "_imp", border = "white")
+#' 
+#' @export growdotMiss
+#' @S3method growdotMiss data.frame
+#' @S3method growdotMiss survey.design
+#' @S3method growdotMiss default
 growdotMiss <- function(x, coords, map, pos=1, delimiter = NULL, selection = c("any","all"), 
                         log = FALSE, col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"), 
                         border = par("bg"), alpha = NULL, scale = NULL, 

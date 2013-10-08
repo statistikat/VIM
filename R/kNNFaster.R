@@ -15,6 +15,59 @@
 #donorcond - list of conditions for a donor e.g. "<=10000"
 #TODO: Donors from cold deck
 
+
+
+#' k-Nearest Neighbour Imputation
+#' 
+#' k-Nearest Neighbour Imputation based on a variation of the Gower Distance
+#' for numerical, categorical, ordered and semi-continous variables.
+#' 
+#' The function sampleCat samples with probabilites corresponding to the
+#' occurrence of the level in the NNs. The function maxCat chooses the level
+#' with the most occurrences and random if the maximum is not unique. The
+#' function gowerD is used by kNN to compute the distances for numerical,
+#' factor ordered and semi-continous variables. The function which.minN is used
+#' by kNN.
+#' 
+#' @aliases kNN sampleCat maxCat gowerD which.minN
+#' @param data data.frame or matrix
+#' @param variable variables where missing values should be imputed
+#' @param metric metric to be used for calculating the distances between
+#' @param k number of Nearest Neighbours used
+#' @param dist_var names or variables to be used for distance calculation
+#' @param weights weights for the variables for distance calculation
+#' @param numFun function for aggregating the k Nearest Neighbours in the case
+#' of a numerical variable
+#' @param catFun function for aggregating the k Nearest Neighbours in the case
+#' of a categorical variable
+#' @param makeNA vector of values, that should be converted to NA
+#' @param NAcond a condition for imputing a NA
+#' @param impNA TRUE/FALSE whether NA should be imputed
+#' @param donorcond condition for the donors e.g. ">5"
+#' @param trace TRUE/FALSE if additional information about the imputation
+#' process should be printed
+#' @param imp_var TRUE/FALSE if a TRUE/FALSE variables for each imputed
+#' variable should be created show the imputation status
+#' @param imp_suffix suffix for the TRUE/FALSE variables showing the imputation
+#' status
+#' @param addRandom TRUE/FALSE if an additional random variable should be added
+#' for distance calculation
+#' @param mixed names of mixed variables
+#' @param mixed.constant vector with length equal to the number of
+#' semi-continuous variables specifying the point of the semi-continuous
+#' distribution with non-zero probability
+#' @return the imputed data set.
+#' @author Alexander Kowarik
+#' @keywords manip
+#' @examples
+#' 
+#' data(sleep)
+#' kNN(sleep)
+#' 
+#' @export kNN
+#' @S3method kNN data.frame
+#' @S3method kNN survey.design
+#' @S3method kNN default
 kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                 numFun = median, catFun=maxCat,
                 makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,

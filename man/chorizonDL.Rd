@@ -1,145 +1,92 @@
+\docType{data}
 \name{chorizonDL}
 \alias{chorizonDL}
-\docType{data}
 \title{C-horizon of the Kola data with missing values}
+\format{A data frame with 606 observations on the following 110 variables.
+\describe{ \item{*ID}{a numeric vector} \item{XCOO}{a
+numeric vector} \item{YCOO}{a numeric vector} \item{Ag}{a
+numeric vector} \item{Ag_INAA}{a numeric vector} \item{Al}{a
+numeric vector} \item{Al2O3}{a numeric vector} \item{As}{a
+numeric vector} \item{As_INAA}{a numeric vector}
+\item{Au_INAA}{a numeric vector} \item{B}{a numeric vector}
+\item{Ba}{a numeric vector} \item{Ba_INAA}{a numeric vector}
+\item{Be}{a numeric vector} \item{Bi}{a numeric vector}
+\item{Br_IC}{a numeric vector} \item{Br_INAA}{a numeric
+vector} \item{Ca}{a numeric vector} \item{Ca_INAA}{a numeric
+vector} \item{CaO}{a numeric vector} \item{Cd}{a numeric
+vector} \item{Ce_INAA}{a numeric vector} \item{Cl_IC}{a
+numeric vector} \item{Co}{a numeric vector} \item{Co_INAA}{a
+numeric vector} \item{EC}{a numeric vector} \item{Cr}{a
+numeric vector} \item{Cr_INAA}{a numeric vector}
+\item{Cs_INAA}{a numeric vector} \item{Cu}{a numeric vector}
+\item{Eu_INAA}{a numeric vector} \item{F_IC}{a numeric
+vector} \item{Fe}{a numeric vector} \item{Fe_INAA}{a numeric
+vector} \item{Fe2O3}{a numeric vector} \item{Hf_INAA}{a
+numeric vector} \item{Hg}{a numeric vector} \item{Hg_INAA}{a
+numeric vector} \item{Ir_INAA}{a numeric vector} \item{K}{a
+numeric vector} \item{K2O}{a numeric vector} \item{La}{a
+numeric vector} \item{La_INAA}{a numeric vector} \item{Li}{a
+numeric vector} \item{LOI}{a numeric vector}
+\item{Lu_INAA}{a numeric vector} \item{wt_INAA}{a numeric
+vector} \item{Mg}{a numeric vector} \item{MgO}{a numeric
+vector} \item{Mn}{a numeric vector} \item{MnO}{a numeric
+vector} \item{Mo}{a numeric vector} \item{Mo_INAA}{a numeric
+vector} \item{Na}{a numeric vector} \item{Na_INAA}{a numeric
+vector} \item{Na2O}{a numeric vector} \item{Nd_INAA}{a
+numeric vector} \item{Ni}{a numeric vector} \item{Ni_INAA}{a
+numeric vector} \item{NO3_IC}{a numeric vector} \item{P}{a
+numeric vector} \item{P2O5}{a numeric vector} \item{Pb}{a
+numeric vector} \item{pH}{a numeric vector} \item{PO4_IC}{a
+numeric vector} \item{Rb}{a numeric vector} \item{S}{a
+numeric vector} \item{Sb}{a numeric vector} \item{Sb_INAA}{a
+numeric vector} \item{Sc}{a numeric vector} \item{Sc_INAA}{a
+numeric vector} \item{Se}{a numeric vector} \item{Se_INAA}{a
+numeric vector} \item{Si}{a numeric vector} \item{SiO2}{a
+numeric vector} \item{Sm_INAA}{a numeric vector}
+\item{Sn_INAA}{a numeric vector} \item{SO4_IC}{a numeric
+vector} \item{Sr}{a numeric vector} \item{Sr_INAA}{a numeric
+vector} \item{SUM_XRF}{a numeric vector} \item{Ta_INAA}{a
+numeric vector} \item{Tb_INAA}{a numeric vector} \item{Te}{a
+numeric vector} \item{Th}{a numeric vector} \item{Th_INAA}{a
+numeric vector} \item{Ti}{a numeric vector} \item{TiO2}{a
+numeric vector} \item{U_INAA}{a numeric vector} \item{V}{a
+numeric vector} \item{W_INAA}{a numeric vector} \item{Y}{a
+numeric vector} \item{Yb_INAA}{a numeric vector} \item{Zn}{a
+numeric vector} \item{Zn_INAA}{a numeric vector}
+\item{ELEV}{a numeric vector} \item{*COUN}{a numeric vector}
+\item{*ASP}{a numeric vector} \item{TOPC}{a numeric vector}
+\item{LITO}{a numeric vector} \item{Al_XRF}{a numeric
+vector} \item{Ca_XRF}{a numeric vector} \item{Fe_XRF}{a
+numeric vector} \item{K_XRF}{a numeric vector}
+\item{Mg_XRF}{a numeric vector} \item{Mn_XRF}{a numeric
+vector} \item{Na_XRF}{a numeric vector} \item{P_XRF}{a
+numeric vector} \item{Si_XRF}{a numeric vector}
+\item{Ti_XRF}{a numeric vector} }}
+\source{
+  Kola Project (1993-1998)
+}
 \description{
-  This data set is the same as the \code{\link[mvoutlier]{chorizon}} 
-  data set in package \code{mvoutlier}, except that values below the 
-  detection limit are coded as \code{NA}.
-}
-\usage{
-data(chorizonDL)
-}
-\format{
-  A data frame with 606 observations on the following 110 variables.
-  \describe{
-    \item{\code{*ID}}{a numeric vector}
-    \item{\code{XCOO}}{a numeric vector}
-    \item{\code{YCOO}}{a numeric vector}
-    \item{\code{Ag}}{a numeric vector}
-    \item{\code{Ag_INAA}}{a numeric vector}
-    \item{\code{Al}}{a numeric vector}
-    \item{\code{Al2O3}}{a numeric vector}
-    \item{\code{As}}{a numeric vector}
-    \item{\code{As_INAA}}{a numeric vector}
-    \item{\code{Au_INAA}}{a numeric vector}
-    \item{\code{B}}{a numeric vector}
-    \item{\code{Ba}}{a numeric vector}
-    \item{\code{Ba_INAA}}{a numeric vector}
-    \item{\code{Be}}{a numeric vector}
-    \item{\code{Bi}}{a numeric vector}
-    \item{\code{Br_IC}}{a numeric vector}
-    \item{\code{Br_INAA}}{a numeric vector}
-    \item{\code{Ca}}{a numeric vector}
-    \item{\code{Ca_INAA}}{a numeric vector}
-    \item{\code{CaO}}{a numeric vector}
-    \item{\code{Cd}}{a numeric vector}
-    \item{\code{Ce_INAA}}{a numeric vector}
-    \item{\code{Cl_IC}}{a numeric vector}
-    \item{\code{Co}}{a numeric vector}
-    \item{\code{Co_INAA}}{a numeric vector}
-    \item{\code{EC}}{a numeric vector}
-    \item{\code{Cr}}{a numeric vector}
-    \item{\code{Cr_INAA}}{a numeric vector}
-    \item{\code{Cs_INAA}}{a numeric vector}
-    \item{\code{Cu}}{a numeric vector}
-    \item{\code{Eu_INAA}}{a numeric vector}
-    \item{\code{F_IC}}{a numeric vector}
-    \item{\code{Fe}}{a numeric vector}
-    \item{\code{Fe_INAA}}{a numeric vector}
-    \item{\code{Fe2O3}}{a numeric vector}
-    \item{\code{Hf_INAA}}{a numeric vector}
-    \item{\code{Hg}}{a numeric vector}
-    \item{\code{Hg_INAA}}{a numeric vector}
-    \item{\code{Ir_INAA}}{a numeric vector}
-    \item{\code{K}}{a numeric vector}
-    \item{\code{K2O}}{a numeric vector}
-    \item{\code{La}}{a numeric vector}
-    \item{\code{La_INAA}}{a numeric vector}
-    \item{\code{Li}}{a numeric vector}
-    \item{\code{LOI}}{a numeric vector}
-    \item{\code{Lu_INAA}}{a numeric vector}
-    \item{\code{wt_INAA}}{a numeric vector}
-    \item{\code{Mg}}{a numeric vector}
-    \item{\code{MgO}}{a numeric vector}
-    \item{\code{Mn}}{a numeric vector}
-    \item{\code{MnO}}{a numeric vector}
-    \item{\code{Mo}}{a numeric vector}
-    \item{\code{Mo_INAA}}{a numeric vector}
-    \item{\code{Na}}{a numeric vector}
-    \item{\code{Na_INAA}}{a numeric vector}
-    \item{\code{Na2O}}{a numeric vector}
-    \item{\code{Nd_INAA}}{a numeric vector}
-    \item{\code{Ni}}{a numeric vector}
-    \item{\code{Ni_INAA}}{a numeric vector}
-    \item{\code{NO3_IC}}{a numeric vector}
-    \item{\code{P}}{a numeric vector}
-    \item{\code{P2O5}}{a numeric vector}
-    \item{\code{Pb}}{a numeric vector}
-    \item{\code{pH}}{a numeric vector}
-    \item{\code{PO4_IC}}{a numeric vector}
-    \item{\code{Rb}}{a numeric vector}
-    \item{\code{S}}{a numeric vector}
-    \item{\code{Sb}}{a numeric vector}
-    \item{\code{Sb_INAA}}{a numeric vector}
-    \item{\code{Sc}}{a numeric vector}
-    \item{\code{Sc_INAA}}{a numeric vector}
-    \item{\code{Se}}{a numeric vector}
-    \item{\code{Se_INAA}}{a numeric vector}
-    \item{\code{Si}}{a numeric vector}
-    \item{\code{SiO2}}{a numeric vector}
-    \item{\code{Sm_INAA}}{a numeric vector}
-    \item{\code{Sn_INAA}}{a numeric vector}
-    \item{\code{SO4_IC}}{a numeric vector}
-    \item{\code{Sr}}{a numeric vector}
-    \item{\code{Sr_INAA}}{a numeric vector}
-    \item{\code{SUM_XRF}}{a numeric vector}
-    \item{\code{Ta_INAA}}{a numeric vector}
-    \item{\code{Tb_INAA}}{a numeric vector}
-    \item{\code{Te}}{a numeric vector}
-    \item{\code{Th}}{a numeric vector}
-    \item{\code{Th_INAA}}{a numeric vector}
-    \item{\code{Ti}}{a numeric vector}
-    \item{\code{TiO2}}{a numeric vector}
-    \item{\code{U_INAA}}{a numeric vector}
-    \item{\code{V}}{a numeric vector}
-    \item{\code{W_INAA}}{a numeric vector}
-    \item{\code{Y}}{a numeric vector}
-    \item{\code{Yb_INAA}}{a numeric vector}
-    \item{\code{Zn}}{a numeric vector}
-    \item{\code{Zn_INAA}}{a numeric vector}
-    \item{\code{ELEV}}{a numeric vector}
-    \item{\code{*COUN}}{a numeric vector}
-    \item{\code{*ASP}}{a numeric vector}
-    \item{\code{TOPC}}{a numeric vector}
-    \item{\code{LITO}}{a numeric vector}
-    \item{\code{Al_XRF}}{a numeric vector}
-    \item{\code{Ca_XRF}}{a numeric vector}
-    \item{\code{Fe_XRF}}{a numeric vector}
-    \item{\code{K_XRF}}{a numeric vector}
-    \item{\code{Mg_XRF}}{a numeric vector}
-    \item{\code{Mn_XRF}}{a numeric vector}
-    \item{\code{Na_XRF}}{a numeric vector}
-    \item{\code{P_XRF}}{a numeric vector}
-    \item{\code{Si_XRF}}{a numeric vector}
-    \item{\code{Ti_XRF}}{a numeric vector}
-  }
+  This data set is the same as the
+  \code{\link[mvoutlier]{chorizon}} data set in package
+  \code{mvoutlier}, except that values below the detection
+  limit are coded as \code{NA}.
 }
 \note{
-    For a more detailed description of this data set, see 
-    \code{\link[mvoutlier]{chorizon}} in package \code{mvoutlier}.
+  For a more detailed description of this data set, see
+  \code{\link[mvoutlier]{chorizon}} in package
+  \code{mvoutlier}.
 }
-\source{
-Kola Project (1993-1998)
-}
-\references{
-Reimann, C., Filzmoser, P., Garrett, R.G. and Dutter, R. (2008) 
-\emph{Statistical Data Analysis Explained: Applied Environmental
-Statistics with R}. Wiley.
-}
-\seealso{\code{\link[mvoutlier]{chorizon}}}
 \examples{
 data(chorizonDL, package = "VIM")
 summary(chorizonDL)
 }
+\references{
+  Reimann, C., Filzmoser, P., Garrett, R.G. and Dutter, R.
+  (2008) \emph{Statistical Data Analysis Explained: Applied
+  Environmental Statistics with R}. Wiley.
+}
+\seealso{
+  \code{\link[mvoutlier]{chorizon}}
+}
 \keyword{datasets}
+

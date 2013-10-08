@@ -1,9 +1,96 @@
-# ------------------------------------------
-# Authors: Andreas Alfons, Bernd Prantner, Matthias Templ
-#          and Daniel Schopfhauser
-#          Vienna University of Technology
-# ------------------------------------------
+###########################################################
+##Authors: Andreas Alfons, Bernd Prantner, Matthias Templ
+##          and Daniel Schopfhauser
+##          Vienna University of Technology
+###########################################################
 
+
+
+#' Aggregations for missing/imputed values
+#' 
+#' Calculate or plot the amount of missing/imputed values in each variable and
+#' the amount of missing/imputed values in certain combinations of variables.
+#' 
+#' Often it is of interest how many missing/imputed values are contained in
+#' each variable.  Even more interesting, there may be certain combinations of
+#' variables with a high number of missing/imputed values.
+#' 
+#' If \code{combined} is \code{FALSE}, two separate plots are drawn for the
+#' missing/imputed values in each variable and the combinations of
+#' missing/imputed and non-missing values. The barplot on the left hand side
+#' shows the amount of missing/imputed values in each variable.  In the
+#' \emph{aggregation plot} on the right hand side, all existing combinations of
+#' missing/imputed and non-missing values in the observations are visualized.
+#' Available, missing and imputed data are color coded as given by \code{col}.
+#' Additionally, there are two possibilities to represent the frequencies of
+#' occurrence of the different combinations.  The first option is to visualize
+#' the proportions or frequencies by a small bar plot and/or numbers.  The
+#' second option is to let the cell heights be given by the frequencies of the
+#' corresponding combinations. Furthermore, variables may be sorted by the
+#' number of missing/imputed values and combinations by the frequency of
+#' occurrence to give more power to finding the structure of missing/imputed
+#' values.
+#' 
+#' If \code{combined} is \code{TRUE}, a small version of the barplot showing
+#' the amount of missing/imputed values in each variable is drawn on top of the
+#' aggregation plot.
+#' 
+#' The graphical parameter \code{oma} will be set unless supplied as an
+#' argument.
+#' 
+#' @aliases aggr plot.aggr print.aggr summary.aggr
+#' @param x a vector, matrix or \code{data.frame}.
+#' @param delimiter a character-vector to distinguish between variables and
+#' imputation-indices for imputed variables (therefore, \code{x} needs to have
+#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-index for any imputed variable (a logical-vector indicating which
+#' values of the variable have been imputed). If such imputation-indices are
+#' found, they are used for highlighting and the colors are adjusted according
+#' to the given colors for imputed variables (see \code{col}).
+#' 
+#' @return for \code{aggr}, a list of class \code{"aggr"} containing the
+#' following components:
+#' - x the data used.
+#' - combinations a character vector representing the combinations of
+#' variables.
+#' -  count the frequencies of these combinations.
+#' -  percent the percentage of these combinations.
+#' -  missings a \code{data.frame} containing the amount of
+#' missing/imputed values in each variable.
+#' -  tabcomb the indicator matrix for the combinations of variables.
+#' @note Some of the argument names and positions have changed with version 1.3
+#' due to extended functionality and for more consistency with other plot
+#' functions in \code{VIM}.  For back compatibility, the arguments \code{labs}
+#' and \code{names.arg} can still be supplied to \code{\dots{}} and are handled
+#' correctly.  Nevertheless, they are deprecated and no longer documented.  Use
+#' \code{ylabs} and \code{labels} instead.
+#' @author Andreas Alfons, Matthias Templ, modifications for displaying imputed
+#' values by Bernd Prantner
+#' @seealso \code{\link{print.aggr}}, \code{\link{summary.aggr}}
+#' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
+#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
+#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' @keywords hplot
+#' @examples
+#' 
+#' data(sleep, package="VIM")
+#' ## for missing values
+#' a <- aggr(sleep)
+#' a
+#' summary(a)
+#' 
+#' ## for imputed values
+#' sleep_IMPUTED <- kNN(sleep)
+#' a <- aggr(sleep_IMPUTED, delimiter="_imp")
+#' a
+#' summary(a)
+#' 
+#' @export aggr
+#' @S3method aggr data.frame
+#' @S3method aggr survey.design
+#' @S3method aggr default
+
+#' @S3method print summary.aggr
 aggr <- function(x, delimiter = NULL, plot = TRUE, ...) {
   UseMethod("aggr", x)
 }
@@ -76,6 +163,26 @@ aggr_work <- function(x, delimiter = NULL, plot = TRUE, ...) {
 		tabcomb <- if(is.null(dim(tabcomb))) as.matrix(tabcomb) else t(tabcomb)
 	}
 	miss <- data.frame(Variable=cn, Count=nNA, stringsAsFactors=FALSE)
+
+
+#' Count number of infinite or missing values
+#' 
+#' Count the number of infinite or missing values in a vector.
+#' 
+#' 
+#' @aliases countInf countNA
+#' @param x a vector.
+#' @return \code{countInf} returns the number of infinite values in \code{x}.
+#' 
+#' \code{countNA} returns the number of missing values in \code{x}.
+#' @author Andreas Alfons
+#' @keywords utilities
+#' @examples
+#' 
+#' data(sleep, package="VIM")
+#' countInf(log(sleep$Dream))
+#' countNA(sleep$Dream)
+#' 
 	count <- as.integer(tab)  # frequency of combinations
 	res <- list(x=x, combinations=names(tab), count=count, 
 		percent=count*100/n, missings=miss, tabcomb=tabcomb, imputed = imp)
@@ -89,6 +196,63 @@ aggr_work <- function(x, delimiter = NULL, plot = TRUE, ...) {
 # plot method
 # TODO: interactive sorting of variables or combinations
 # FIXME: sortVars = TRUE bei nur missings
+#' @rdname aggr
+#' @S3method plot aggr
+#' @method plot aggr
+#' @param plot a logical indicating whether the results should be plotted (the
+#' default is \code{TRUE}).
+#' @param col a vector of length three giving the colors to be used for
+#' observed, missing and imputed data. If only one color is supplied, it is
+#' used for missing and imputed data and observed data is transparent. If only
+#' two colors are supplied, the first one is used for observed data and the
+#' second color is used for missing and imputed data.
+#' @param bars a logical indicating whether a small barplot for the frequencies
+#' of the different combinations should be drawn.
+#' @param numbers a logical indicating whether the proportion or frequencies of
+#' the different combinations should be represented by numbers.
+#' @param prop a logical indicating whether the proportion of missing/imputed
+#' values and combinations should be used rather than the total amount.
+#' @param combined a logical indicating whether the two plots should be
+#' combined.  If \code{FALSE}, a separate barplot on the left hand side shows
+#' the amount of missing/imputed values in each variable.  If \code{TRUE}, a
+#' small version of this barplot is drawn on top of the plot for the
+#' combinations of missing/imputed and non-missing values.  See
+#' \dQuote{Details} for more information.
+#' @param varheight a logical indicating whether the cell heights are given by
+#' the frequencies of occurrence of the corresponding combinations.
+#' @param only.miss a logical indicating whether the small barplot for the
+#' frequencies of the combinations should only be drawn for combinations
+#' including missing/imputed values (if \code{bars} is \code{TRUE}).  This is
+#' useful if most observations are complete, in which case the corresponding
+#' bar would dominate the barplot such that the remaining bars are too
+#' compressed.  The proportion or frequency of complete observations (as
+#' determined by \code{prop}) is then represented by a number instead of a bar.
+#' @param border the color to be used for the border of the bars and
+#' rectangles.  Use \code{border=NA} to omit borders.
+#' @param sortVars a logical indicating whether the variables should be sorted
+#' by the number of missing/imputed values.
+#' @param sortCombs a logical indicating whether the combinations should be
+#' sorted by the frequency of occurrence.
+#' @param ylabs if \code{combined} is \code{TRUE}, a character string giving
+#' the y-axis label of the combined plot, otherwise a character vector of
+#' length two giving the y-axis labels for the two plots.
+#' @param axes a logical indicating whether axes should be drawn.
+#' @param labels either a logical indicating whether labels should be plotted
+#' on the x-axis, or a character vector giving the labels.
+#' @param cex.lab the character expansion factor to be used for the axis
+#' labels.
+#' @param cex.axis the character expansion factor to be used for the axis
+#' annotation.
+#' @param cex.numbers the character expansion factor to be used for the
+#' proportion or frequencies of the different combinations
+#' @param gap if \code{combined} is \code{FALSE}, a numeric value giving the
+#' distance between the two plots in margin lines.
+#' @param \dots for \code{aggr} and \code{TKRaggr}, further arguments and
+#' graphical parameters to be passed to \code{\link{plot.aggr}}.  For
+#' \code{plot.aggr}, further graphical parameters to be passed down.
+#' \code{par("oma")} will be set appropriately unless supplied (see
+#' \code{\link[graphics]{par}}).
+#' @export plot.aggr
 plot.aggr <- function(x, col = c("skyblue","red","orange"), bars = TRUE, 
 		numbers = FALSE, prop = TRUE, combined = FALSE, varheight = FALSE, 
 		only.miss = FALSE, border = par("fg"), sortVars = FALSE,
@@ -393,6 +557,27 @@ plot.aggr <- function(x, col = c("skyblue","red","orange"), bars = TRUE,
 }
 
 # print method
+
+
+#' Print method for objects of class aggr
+#' 
+#' Print method for objects of class \code{"aggr"}.
+#' 
+#' 
+#' @param digits the minimum number of significant digits to be used (see
+#' \code{\link{print.default}}).
+#' @author Matthias Templ, modifications by Andreas Alfons and Bernd Prantner
+#' @seealso \code{\link{aggr}}
+#' @keywords print
+#' @examples
+#' 
+#' data(sleep, package = "VIM")
+#' a <- aggr(sleep, plot=FALSE)
+#' a
+#' 
+#' @rdname aggr
+#' @S3method print aggr
+#' @method print aggr
 print.aggr <- function(x, digits = NULL, ...) {
 	i <- x$missings[,2] > 0
 	imputed <- x$imputed
@@ -406,7 +591,30 @@ print.aggr <- function(x, digits = NULL, ...) {
 }
 
 
-# summary method
+#' Summary method for objects of class aggr
+#' 
+#' Summary method for objects of class \code{"aggr"}.
+#' 
+#' 
+#' @param object an object of class \code{"aggr"}.
+#' @return a list of class \code{"summary.aggr"} containing the following
+#' components:
+#' -  missings a \code{data.frame} containing the amount of missing or
+#' imputed values in each variable.
+#' -  combinations a \code{data.frame} containing a character vector
+#' representing the combinations of variables along with their frequencies and
+#' percentages.
+#' @author Matthias Templ, modifications by Andreas Alfons
+#' @seealso \code{\link{print.summary.aggr}}, \code{\link{aggr}}
+#' @keywords print
+#' @examples
+#' 
+#' data(sleep, package = "VIM")
+#' summary(aggr(sleep, plot=FALSE))
+#' 
+#' @rdname aggr
+#' @S3method summary aggr
+#' @method summary aggr
 summary.aggr <- function(object, ...) {
 	res <- list(missings=object$missings, 
 		combinations=data.frame(Combinations=object$combinations, 
@@ -415,6 +623,26 @@ summary.aggr <- function(object, ...) {
 	res
 }
 
+
+
+#' Print method for objects of class summary.aggr
+#' 
+#' Print method for objects of class \code{"summary.aggr"}.
+#' 
+#' 
+#' @param x an object of class \code{"summary.aggr"}.
+#' @param \dots Further arguments, currently ignored.
+#' @author Andreas Alfons, modifications by Bernd Prantner
+#' @seealso \code{\link{summary.aggr}}, \code{\link{aggr}}
+#' @keywords print
+#' @examples
+#' 
+#' data(sleep, package = "VIM")
+#' s <- summary(aggr(sleep, plot=FALSE))
+#' s
+#' 
+#' @S3method print summary.aggr
+#' @method print summary.aggr
 print.summary.aggr <- function(x, ...) {
 	i <- x$missings[,2] > 0
 	imputed <- x$imputed
