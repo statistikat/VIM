@@ -62,33 +62,38 @@
 #' @S3method prepare data.frame
 #' @S3method prepare survey.design
 #' @S3method prepare default
+#' @usage
+#' prepare (x, scaling = c("none","classical","MCD","robust","onestep"),
+#'     transformation = c("none","minus","reciprocal","logarithm",
+#' 	  "exponential","boxcox","clr","ilr","alr"),
+#'      alpha = NULL, powers = NULL, start = 0, alrVar) 
 prepare <- function(x, scaling = c("none","classical","MCD","robust","onestep"),
-                    transformation = c("none","minus","reciprocal","logarithm",
-                                       "exponential","boxcox","clr","ilr","alr"),
-                    alpha = NULL, powers = NULL, start = 0, alrVar) {
+  transformation = c("none","minus","reciprocal","logarithm",
+  "exponential","boxcox","clr","ilr","alr"),
+  alpha = NULL, powers = NULL, start = 0, alrVar) {
   UseMethod("prepare", x)
 }
 
 prepare.data.frame <- function(x, scaling = c("none","classical","MCD","robust","onestep"),
-                               transformation = c("none","minus","reciprocal","logarithm",
-                                                  "exponential","boxcox","clr","ilr","alr"),
-                               alpha = NULL, powers = NULL, start = 0, alrVar) {
+    transformation = c("none","minus","reciprocal","logarithm",
+    "exponential","boxcox","clr","ilr","alr"),
+    alpha = NULL, powers = NULL, start = 0, alrVar) {
   as.data.frame(prepare_work(x, scaling, transformation, alpha, powers, start, alrVar)) 
 }
 
 prepare.survey.design <- function(x, scaling = c("none","classical","MCD","robust","onestep"),
-                                  transformation = c("none","minus","reciprocal","logarithm",
-                                                     "exponential","boxcox","clr","ilr","alr"),
-                                  alpha = NULL, powers = NULL, start = 0, alrVar) {
+    transformation = c("none","minus","reciprocal","logarithm",
+    "exponential","boxcox","clr","ilr","alr"),
+    alpha = NULL, powers = NULL, start = 0, alrVar) {
   x$variables <- as.data.frame(prepare_work(x$variables, scaling, transformation, alpha, powers, start, alrVar)) 
   x$call <- sys.call(-1)
   x
 }
 
 prepare.default <- function(x, scaling = c("none","classical","MCD","robust","onestep"),
-                            transformation = c("none","minus","reciprocal","logarithm",
-                                               "exponential","boxcox","clr","ilr","alr"),
-                            alpha = NULL, powers = NULL, start = 0, alrVar) {
+    transformation = c("none","minus","reciprocal","logarithm",
+    "exponential","boxcox","clr","ilr","alr"),
+    alpha = NULL, powers = NULL, start = 0, alrVar) {
   prepare_work(as.data.frame(x), scaling, transformation, alpha, powers, start, alrVar) 
 }
 
