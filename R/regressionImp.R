@@ -31,12 +31,10 @@
 #' data(sleep)
 #' sleepImp1 <- regressionImp(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
 #' sleepImp2 <- regressionImp(Sleep+Gest+Span+Dream+NonD~BodyWgt+BrainWgt,data=sleep)
-#' sleepImp3 <- regressionImp(Sleep+Gest+Span+Dream+NonD~BodyWgt+BrainWgt,data=sleep,robust=TRUE)
 #' 
 #' data(testdata)
-#' imp_testdata1 <- regressionImp(c1+c2~x1+x2,data=testdata$wna)
-#' imp_testdata2 <- regressionImp(x1+b1+c1+c2~x2,data=testdata$wna)
-#' imp_testdata3 <- regressionImp(x1+b1+c1+c2~x2,data=testdata$wna,robust=TRUE)
+#' imp_testdata1 <- regressionImp(b1+b2~x1+x2,data=testdata$wna)
+#' imp_testdata3 <- regressionImp(x1~x2,data=testdata$wna,robust=TRUE)
 #' 
 #' @export regressionImp
 #' @S3method regressionImp data.frame
