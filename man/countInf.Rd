@@ -1,0 +1,29 @@
+\name{countInf}
+\alias{countInf}
+\alias{countNA}
+\title{Count number of infinite or missing values}
+\usage{
+  countInf(x)
+}
+\arguments{
+  \item{x}{a vector.}
+}
+\value{
+  \code{countInf} returns the number of infinite values in
+  \code{x}. \code{countNA} returns the number of missing
+  values in \code{x}.
+}
+\description{
+  Count the number of infinite or missing values in a
+  vector.
+}
+\examples{
+data(sleep, package="VIM")
+countInf(log(sleep$Dream))
+countNA(sleep$Dream)
+}
+\author{
+  Andreas Alfons
+}
+\keyword{utilities}
+
