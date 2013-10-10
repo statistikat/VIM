@@ -74,7 +74,7 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
   TFna2 <- apply(data[,c(rhs2),drop=FALSE],1,function(x)!any(is.na(x)))
   for(lhsV in lhs){
     form <- as.formula(paste(lhsV,"~",rhs))
-    if(!any(is.na(data[,lhsV]))) warning(paste("No missings in","lhsV",". Nothing to impute\n"))
+    if(!any(is.na(data[,lhsV]))) cat(paste("No missings in","lhsV",". Nothing to impute\n"))
     if(class(family)!="function"){
       if(family=="AUTO"){
         if("numeric"%in%class(data[,lhsV])){
@@ -126,7 +126,7 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
           pre <- predict(mod,newdata=tmp)
         }
         if(sum(TFna1)>sum(TFna3))
-          warning(paste("There still missing values in variable",lhsV,". Probably due to missing values in the regressors."))
+          cat(paste("There still missing values in variable",lhsV,". Probably due to missing values in the regressors.\n"))
         data[TFna3,lhsV] <- pre
         
       }
