@@ -2,10 +2,12 @@
 \alias{prepare}
 \title{Transformation and standardization}
 \usage{
-  prepare(x,
-    scaling = c("none", "classical", "MCD", "robust", "onestep"),
-    transformation = c("none", "minus", "reciprocal", "logarithm", "exponential", "boxcox", "clr", "ilr", "alr"),
-    alpha = NULL, powers = NULL, start = 0, alrVar)
+  prepare (x, scaling =
+    c("none","classical","MCD","robust","onestep"),
+    transformation =
+    c("none","minus","reciprocal","logarithm",
+    "exponential","boxcox","clr","ilr","alr"), alpha =
+    NULL, powers = NULL, start = 0, alrVar)
 }
 \arguments{
   \item{x}{a vector, matrix or \code{data.frame}.}

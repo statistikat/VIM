@@ -2,7 +2,6 @@
 #' @import Rcpp
 #' @import sp
 #' @import stats
-#' @import utils
 #' @import methods
 #' @import MASS
 #' @import nnet
