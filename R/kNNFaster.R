@@ -65,6 +65,10 @@
 #' kNN(sleep)
 #' 
 #' @export kNN
+#' @export sampleCat
+#' @export maxCat
+#' @export gowerD
+#' @export which.minN
 #' @S3method kNN data.frame
 #' @S3method kNN survey.design
 #' @S3method kNN default
@@ -235,8 +239,10 @@ kNN_work <-
       weights <- c(weights,min(weights)/(sum(weights)+1))
     }
   }
+  
   for(j in 1:nvar){
-    if(any(is.na(data[,variable[j]]))){
+    
+    if(any(indexNA2s[,variable[j]])){
       if(is.list(dist_var)){
         if(!is.list(weights))
           stop("if dist_var is a list weights must be a list")
@@ -259,6 +265,7 @@ kNN_work <-
       TF_imp <- indexNA2s[,variable[j]]
       imp_dist_var <- data[TF_imp,dist_varx,drop=FALSE]#TODO:for list of dist_var
       imp_index <- INDEX[TF_imp]
+      
       dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,don_index,imp_index,weightsx,k,mixed.constant){
         #gd <- distance(don_dist_var,imp_dist_var,weights=weightsx)
         if(is.null(mixed.constant))
@@ -296,7 +303,11 @@ kNN_work <-
         data[indexNA2s[,variable[j]],variable[j]] <- round(apply(kNNs,2,numFun))
       }else
         data[indexNA2s[,variable[j]],variable[j]] <- apply(kNNs,2,numFun)
+    }else{
+      if(trace)
+        cat("0 items of","variable:",variable[j]," imputed\n")
     }
+    
   }
   print(difftime(startTime,Sys.time()))  
   if(addRandom)

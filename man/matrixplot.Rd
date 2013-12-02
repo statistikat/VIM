@@ -1,7 +1,7 @@
 \name{matrixplot}
+\alias{TKRmatrixplot}
 \alias{iimagMiss}
 \alias{matrixplot}
-\alias{TKRmatrixplot}
 \title{Matrix plot}
 \usage{
   matrixplot(x, delimiter = NULL, sortby = NULL,
