@@ -171,15 +171,27 @@ kNN_work <-
   }else{
     indexNA2s <- is.na(data)
   }
-  if(sum(indexNA2s)<=0)
-    stop("Nothing to impute, because no NA are present (also after using makeNA)")
+  if(sum(indexNA2s)<=0){
+    warning("Nothing to impute, because no NA are present (also after using makeNA)")
+    invisible(data)
+  }
   if(imp_var){
     imp_vars <- paste(variable,"_",imp_suffix,sep="")
-    data[,imp_vars] <- FALSE
-    for(i in 1:length(variable)){
-      data[indexNA2s[,variable[i]],imp_vars[i]] <- TRUE
-        if(!any(indexNA2s[,variable[i]]))
-          data<-data[,-which(names(data)==paste(variable[i],"_",imp_suffix,sep=""))]
+    index_imp_vars <- which(!imp_vars%in%colnames(data))
+    index_imp_vars2 <- which(imp_vars%in%colnames(data))
+    if(length(index_imp_vars)>0){
+      data[,imp_vars[index_imp_vars]] <- FALSE
+      for(i in index_imp_vars){
+        data[indexNA2s[,variable[i]],imp_vars[i]] <- TRUE
+          #if(!any(indexNA2s[,variable[i]]))
+            #data<-data[,-which(names(data)==paste(variable[i],"_",imp_suffix,sep=""))]
+      }
+    }
+    if(length(index_imp_vars2)>0){
+      warning(paste("The following TRUE/FALSE imputation status variables will be updated:",
+              paste(imp_vars[index_imp_vars2],collapse=" , ")))
+      for(i in index_imp_vars2)
+        data[,imp_vars[i]] <- as.logical(data[,imp_vars[i]])
     }
   }
   orders <- vector()

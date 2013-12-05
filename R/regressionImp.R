@@ -98,8 +98,14 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
           }
         }
         if(imp_var){
-          data$NEWIMPTFVARIABLE <- is.na(data[,lhsV])
-          colnames(data)[ncol(data)] <- paste(lhsV,"_",imp_suffix,sep="")
+          if(imp_var%in%colnames(data)){
+            data[,paste(lhsV,"_",imp_suffix,sep="")] <- as.logical(data[,paste(lhsV,"_",imp_suffix,sep="")])
+            warning(paste("The following TRUE/FALSE imputation status variables will be updated:",
+                    paste(lhsV,"_",imp_suffix,sep="")))
+          }else{
+            data$NEWIMPTFVARIABLE <- is.na(data[,lhsV])
+            colnames(data)[ncol(data)] <- paste(lhsV,"_",imp_suffix,sep="")
+          }
         }
         TFna1 <- is.na(data[,lhsV])
         TFna3 <- TFna1&TFna2

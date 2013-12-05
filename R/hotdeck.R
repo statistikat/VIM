@@ -90,8 +90,10 @@ hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
   data$UNIQUEIDx <- 1:ndat
   if(!is.data.frame(data)&&!is.matrix(data))
     stop("supplied data should be a dataframe or matrix")
-  if(!impNA&&is.null(NAcond))
-    stop("Nothing to impute, because NA were not imputed and no NA condition is given")
+  if(!impNA&&is.null(NAcond)){
+    warning("Nothing to impute, because NA were not imputed and no NA condition is given")
+    invisible(data)
+  }
   if(!is.null(domain_var))
     if(any(is.na(data[,domain_var])))
       stop("Domain variables should not include missings, otherwise you have to impute them first")
@@ -111,15 +113,27 @@ hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
       }
     }
   }
-  if(!any(is.na(data)))
-    stop("Nothing to impute, because no NA are present (also after using makeNA)")
+  if(!any(is.na(data))){
+    warning("Nothing to impute, because no NA are present (also after using makeNA)")
+    invisible(data)
+  }
   if(imp_var){
     imp_vars <- paste(variable,"_",imp_suffix,sep="")
-    data[,imp_vars] <- FALSE
-    for(i in 1:length(variable)){
-      data[is.na(data[,variable[i]]),imp_vars[i]] <- TRUE
-      if(!any(is.na(data[,variable[i]])))
-        data<-data[,-which(names(data)==paste(variable[i],"_",imp_suffix,sep=""))]
+    index_imp_vars <- which(!imp_vars%in%colnames(data))
+    index_imp_vars2 <- which(imp_vars%in%colnames(data))
+    if(length(index_imp_vars)>0){
+      data[,imp_vars[index_imp_vars]] <- FALSE
+      for(i in index_imp_vars){
+        data[indexNA2s[,variable[i]],imp_vars[i]] <- TRUE
+        #if(!any(indexNA2s[,variable[i]]))
+        #  data<-data[,-which(names(data)==paste(variable[i],"_",imp_suffix,sep=""))]
+      }
+    }
+    if(length(index_imp_vars2)>0){
+      warning(paste("The following TRUE/FALSE imputation status variables will be updated:",
+              paste(imp_vars[index_imp_vars2],collapse=" , ")))
+      for(i in index_imp_vars2)
+        data[,imp_vars[i]] <- as.logical(data[,imp_vars[i]])
     }
   }
   ##Split the data into domains

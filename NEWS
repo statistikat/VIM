@@ -1,5 +1,8 @@
 #4.0.1
  -- small bugfix for using makeNA in kNN
+ -- "Nothing to impute"-Error is now a warning
+ -- imp_var now updates existing TF imp_vars (with warning)
+ 
 #4.0.0
  -- new pacakge VIMGUI contains all GUI functions
  -- vignettes moved to VIMGUI
