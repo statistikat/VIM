@@ -57,7 +57,7 @@
 #' semi-continuous variables specifying the point of the semi-continuous
 #' distribution with non-zero probability
 #' @return the imputed data set.
-#' @author Alexander Kowarik
+#' @author Alexander Kowarik, Statistics Austria
 #' @keywords manip
 #' @examples
 #' 
