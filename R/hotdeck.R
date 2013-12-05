@@ -2,6 +2,7 @@
 #Author: Alexander Kowarik, Statistics Austria
 ## Sequential hot(cold)deck
 ## Random (within domain) hot(cold)deck
+## Cold deck is not implemented yet
 #data - data.frame of the data with missing
 #variable - vector of variablesnames to be imputed
 #ord_var - list of vectors of variablesnames to be used to order the dataset
