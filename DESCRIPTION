@@ -1,61 +1,61 @@
-Package: VIM
-Version: 4.0.1
-Date: 2014-01-31
-Title: Visualization and Imputation of Missing Values
-Author: Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
-Maintainer: Matthias Templ <matthias.templ@gmail.com>
-Depends:
-    R (>= 2.13),colorspace,grid
-Imports:
-    car,
-    grDevices,
-    robustbase,
-    stats,
-    sp,
-    vcd,MASS,nnet,e1071,methods,Rcpp,glmnet
-Description: This package introduces new tools for the visualization of missing
-    and/or imputed values, which can be used for exploring the data and the
-    structure of the missing and/or imputed values. Depending on this structure
-    of the missing values, the corresponding methods may help to identify the
-    mechanism generating the missing values and allows to explore the data
-    including missing values. In addition, the quality of imputation can be
-    visually explored using various univariate, bivariate, multiple and
-    multivariate plot methods. A graphical user interface available in the
-    separate package VIMGUI allows an easy handling of the implemented plot
-    methods.
-LazyData: TRUE
-License: GPL (>= 2)
-URL: https://github.com/alexkowa/VIM
-Repository: CRAN
-LinkingTo: Rcpp
-Collate:
-    'VIM-package.R'
-    'aggr.R'
-    'alphablend.R'
-    'barMiss.R'
-    'bgmap.R'
-    'colSequence.R'
-    'colormapMiss.R'
-    'gower.dist.R'
-    'growdotMiss.R'
-    'histMiss.R'
-    'hotdeck.R'
-    'irmi.R'
-    'kNNFaster.R'
-    'mapMiss.R'
-    'marginmatrix.R'
-    'marginplot.R'
-    'matrixplot.R'
-    'mosaicMiss.R'
-    'pairsVIM.R'
-    'parcoordMiss.R'
-    'pbox.R'
-    'prepare.R'
-    'regressionImp.R'
-    'rugNA.R'
-    'scattJitt.R'
-    'scattMiss.R'
-    'scattmatrixMiss.R'
-    'spineMiss.R'
-    'utils.R'
-    'zzz.R'
+Package: VIM 
+Version: 4.0.2 
+Date: 2013-12-09 
+Title: Visualization and Imputation of Missing Values 
+Author: Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner 
+Maintainer: Matthias Templ <matthias.templ@gmail.com> 
+Depends: 
+    R (>= 2.13),colorspace,grid 
+Imports: 
+    car, 
+    grDevices, 
+    robustbase, 
+    stats, 
+    sp, 
+    vcd,MASS,nnet,e1071,methods,Rcpp,glmnet 
+Description: This package introduces new tools for the visualization of missing 
+    and/or imputed values, which can be used for exploring the data and the 
+    structure of the missing and/or imputed values. Depending on this structure 
+    of the missing values, the corresponding methods may help to identify the 
+    mechanism generating the missing values and allows to explore the data 
+    including missing values. In addition, the quality of imputation can be 
+    visually explored using various univariate, bivariate, multiple and 
+    multivariate plot methods. A graphical user interface available in the 
+    separate package VIMGUI allows an easy handling of the implemented plot 
+    methods. 
+LazyData: TRUE 
+License: GPL (>= 2) 
+URL: https://github.com/alexkowa/VIM 
+Repository: CRAN 
+LinkingTo: Rcpp 
+Collate: 
+    'VIM-package.R' 
+    'aggr.R' 
+    'alphablend.R' 
+    'barMiss.R' 
+    'bgmap.R' 
+    'colSequence.R' 
+    'colormapMiss.R' 
+    'gower.dist.R' 
+    'growdotMiss.R' 
+    'histMiss.R' 
+    'hotdeck.R' 
+    'irmi.R' 
+    'kNNFaster.R' 
+    'mapMiss.R' 
+    'marginmatrix.R' 
+    'marginplot.R' 
+    'matrixplot.R' 
+    'mosaicMiss.R' 
+    'pairsVIM.R' 
+    'parcoordMiss.R' 
+    'pbox.R' 
+    'prepare.R' 
+    'regressionImp.R' 
+    'rugNA.R' 
+    'scattJitt.R' 
+    'scattMiss.R' 
+    'scattmatrixMiss.R' 
+    'spineMiss.R' 
+    'utils.R' 
+    'zzz.R' 
