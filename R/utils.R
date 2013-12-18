@@ -104,10 +104,10 @@ isImp <- function(x, pos, delimiter, imp_var, selection = c("none","any","all"))
 #' countNA(sleep$Dream)
 #' @export countInf
 # count infinite values
-countInf <- function(x) length(which(is.infinite(x)))
+countInf <- function(x) sum(is.infinite(x))#length(which(is.infinite(x)))
 #' @export countNA
 # count missings
-countNA <- function(x) length(which(is.na(x)))
+countNA <- function(x) sum(is.na(x))#length(which(is.na(x)))
 
 # count imputed missings
 countImp <- function(x, delimiter, imp_var) {
