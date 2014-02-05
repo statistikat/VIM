@@ -337,7 +337,7 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
       #print(attributes(dataForReg$y)$cn)
       
       
-      if( types[i]=="numeric" || types[i] =="mixed"){ ## todo: ausserhalb der Schleife!!
+      if( types[i]=="integer"||types[i]=="numeric" || types[i] =="mixed"){ ## todo: ausserhalb der Schleife!!
         meth = "numeric" 
       } else if( types[i]=="binary" ){ 
         meth = "bin" 
