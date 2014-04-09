@@ -149,6 +149,12 @@ kNN_work <-
   startTime <- Sys.time()
   nvar <- length(variable)
   ndat <- nrow(data)
+  for(v in variable){
+    if(all(is.na(data[,v]))){
+      warning(paste("All observations of",v,"are missing, therefore the variable will not be imputed!\n"))
+      variable <- variable[variable!=v]  
+    }
+  }
   if(!is.data.frame(data)&&!is.matrix(data))
     stop("supplied data should be a dataframe or matrix")
   
