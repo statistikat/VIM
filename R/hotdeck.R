@@ -124,11 +124,11 @@ hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
     index_imp_vars2 <- which(imp_vars%in%colnames(data))
     if(length(index_imp_vars)>0){
       data[,imp_vars[index_imp_vars]] <- FALSE
-      for(i in index_imp_vars){
-        data[indexNA2s[,variable[i]],imp_vars[i]] <- TRUE
+      #for(i in index_imp_vars){
+        #data[indexNA2s[,variable[i]],imp_vars[i]] <- TRUE
         #if(!any(indexNA2s[,variable[i]]))
         #  data<-data[,-which(names(data)==paste(variable[i],"_",imp_suffix,sep=""))]
-      }
+      #}
     }
     if(length(index_imp_vars2)>0){
       warning(paste("The following TRUE/FALSE imputation status variables will be updated:",
@@ -217,20 +217,69 @@ hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
 
 ###TEST
 #set.seed(132)
-#x<-data.frame(x=rnorm(100),y=rnorm(100),z=sample(1:100,100,rep=T),
-#    d1=sample(1:3,100,rep=T),d2=sample(1:2,100,rep=T),o1=rnorm(100),o2=rnorm(100),o3=rnorm(100))
+#nRows <- 1e2
+#x<-data.frame(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,rep=T),
+#    d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,rep=T),o1=rnorm(nRows),o2=rnorm(nRows),o3=rnorm(100))
 #origX <- x
-#x[sample(1:100,10),1] <- NA
-#x[sample(1:100,10),2] <- NA
-#x[sample(1:100,10),3] <- NA
-#x <- x[order(x$o1),]
-#res <- hotdeck(x,variable=names(x)[1:3],ord_var="o1")
-#res1 <- hotdeck(x,variable=names(x)[1:3],ord_var=list("o1",c("o1","o2"),c("o1","o2","o3")),domain_var=c("d1","d2"))
+#x[sample(1:nRows,nRows/10),1] <- NA
+#x[sample(1:nRows,nRows/10),2] <- NA
+#x[sample(1:nRows,nRows/10),3] <- NA
+#x[sample(1:nRows,nRows/10),4] <- NA
 #
-#d1 <- (origX[,1:3]-res[,1:3])[is.na(x[,1:3])]/(origX[,1:3])[is.na(x[,1:3])]
-#d2 <- (origX[,1:3]-res1[,1:3])[is.na(x[,1:3])]/(origX[,1:3])[is.na(x[,1:3])]
-
-
-
+#hd <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL){
+#  VariableSorting <- colnames(x)
+#  x$OriginalSortingVariable <- 1:nrow(x)
+#  x <- data.table(x)
+#  if(is.null(variable)){
+#    variable  <- colnames(x)[apply(is.na(x),2,any)]
+#  }
+#  ## xx should be a data.table and ord_var the name of variables to sort
+#  imputeHD <- function(xx,ord_var){ 
+#    setkeyv(xx,ord_var)
+#    xx$UniqueIdForImputation <- 1:nrow(xx)
+#    varType <- sapply(xx,class)[variable]
+#    for(v in variable){
+#      setkeyv(xx,v)
+#      if(varType[v]%in%c("numeric","integer")){
+#        impPart <- xx[J(NA_real_),UniqueIdForImputation]$UniqueIdForImputation
+#      }else{
+#        impPart <- xx[J(NA_character_),UniqueIdForImputation]$UniqueIdForImputation
+#      }
+#      pool <- 1:nrow(xx)
+#      pool <- pool[-impPart]
+#      if(length(pool)<0){
+#        break
+#      }
+#      impDon <- impPart-1
+#      impDon[impDon<1] <- impPart+1
+#      Don <- xx[impDon,v,with=FALSE]
+#      print(Don)
+#      TFindex <- is.na(Don)
+#      if(TF <- any(TFindex)){
+#        Don[TFindex] <- 1
+#      }
+#      setkey(xx,UniqueIdForImputation)
+#      xx[impPart,v] <- Don
+#    }
+#    xx[,UniqueIdForImputation:=NULL]
+#    setkey(xx,OriginalSortingVariable)
+#    xx
+#  }
+#  x <- x[,imputeHD(.SD,ord_var=ord_var), by = domain_var]
+#  setkey(x,OriginalSortingVariable)
+#  x[,OriginalSortingVariable:=NULL]
+#  data.frame(x)[,VariableSorting]
+#}
+#require(data.table)
+#setwd("/Users/alex")
+#Rprof("profile1.out")
+#xImp <- hd(x,ord_var = c("o1","o2","o3"),domain_var="d2")
+#Rprof(NULL)
+#summaryRprof("profile1.out")
+#xImp1 <- hotdeck(x,ord_var = c("o1","o2","o3"),domain_var="d2")
+#
+#
+#require(microbenchmark)
+#res <- microbenchmark(xImp <- hd(x,ord_var = c("o1","o2","o3"),domain_var="d2"),xImp1 <- hotdeck(x,ord_var = c("o1","o2","o3"),domain_var="d2"),times=100L)
 
 

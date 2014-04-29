@@ -2,12 +2,11 @@
 \alias{irmi}
 \title{Iterative robust model-based imputation (IRMI)}
 \usage{
-  irmi(x, eps = 5, maxit = 100, mixed = NULL,
-    mixed.constant = NULL, count = NULL, step = FALSE,
-    robust = FALSE, takeAll = TRUE, noise = TRUE,
-    noise.factor = 1, force = FALSE, robMethod = "MM",
-    force.mixed = TRUE, mi = 1, addMixedFactors = FALSE,
-    trace = FALSE, init.method = "kNN")
+irmi(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
+  count = NULL, step = FALSE, robust = FALSE, takeAll = TRUE,
+  noise = TRUE, noise.factor = 1, force = FALSE, robMethod = "MM",
+  force.mixed = TRUE, mi = 1, addMixedFactors = FALSE, trace = FALSE,
+  init.method = "kNN", modelFormulas = NULL)
 }
 \arguments{
   \item{x}{data.frame or matrix}
@@ -55,8 +54,17 @@
   solution in any case, possible by using different robust
   methods automatically.}
 
-  \item{addMixedFactors}{if factor variables for the mixed
-  variables should be created for the regression models}
+  \item{addMixedFactors}{if TRUE add additional factor
+  variable for each mixed variable as X variable in the
+  regression}
+
+  \item{modelFormulas}{a named list with the name of
+  variables for the rhs of the formulas, which must contain
+  a rhs formula for each variable with missing values, it
+  should look like list(y1=c("x1","x2"),y2=c("x1","x3"))
+
+  if factor variables for the mixed variables should be
+  created for the regression models}
 
   \item{mi}{number of multiple imputations.}
 
@@ -67,20 +75,20 @@
   values (kNN or median)}
 }
 \value{
-  the imputed data set.
+the imputed data set.
 }
 \description{
-  In each step of the iteration, one variable is used as a
-  response variable and the remaining variables serve as
-  the regressors.
+In each step of the iteration, one variable is used as a
+response variable and the remaining variables serve as the
+regressors.
 }
 \details{
-  The method works sequentially and iterative. The method
-  can deal with a mixture of continuous, semi-continuous,
-  ordinal and nominal variables including outliers.
+The method works sequentially and iterative. The method can
+deal with a mixture of continuous, semi-continuous, ordinal
+and nominal variables including outliers.
 
-  A full description of the method will be uploaded soon in
-  form of a package vignette.
+A full description of the method will be uploaded soon in
+form of a package vignette.
 }
 \examples{
 data(sleep)
@@ -94,18 +102,28 @@ testdata$wna$m1[testdata$wna$m1==0] <- -10
 testdata$wna$m2 <- log(testdata$wna$m2+0.001)
 imp_testdata2 <- irmi(testdata$wna,mixed=testdata$mixed,mixed.constant=c(-10,log(0.001)))
 imp_testdata2$m2 <- exp(imp_testdata2$m2)-0.001
+
+#example with fixed formulas for the variables with missing
+form=list(
+NonD=c("BodyWgt","BrainWgt"),
+Dream=c("BodyWgt","BrainWgt"),
+Sleep=c("BrainWgt"),
+Span=c("BodyWgt"),
+Gest=c("BodyWgt","BrainWgt")
+)
+irmi(sleep,modelFormulas=form,trace=TRUE)
 }
 \author{
-  Matthias Templ, Alexander Kowarik
+Matthias Templ, Alexander Kowarik
 }
 \references{
-  M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative
-  stepwise regression imputation using standard and robust
-  methods.  \emph{Journal of Computational Statistics and
-  Data Analysis}, Vol. 55, pp. 2793-2806.
+M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative
+stepwise regression imputation using standard and robust
+methods.  \emph{Journal of Computational Statistics and
+Data Analysis}, Vol. 55, pp. 2793-2806.
 }
 \seealso{
-  \code{\link[mi]{mi}}
+\code{\link[mi]{mi}}
 }
 \keyword{manip}
 
