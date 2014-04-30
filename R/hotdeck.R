@@ -217,7 +217,7 @@ hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
 
 ###TEST
 #set.seed(132)
-#nRows <- 1e2
+#nRows <- 1e6
 #x<-data.frame(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,rep=T),
 #    d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,rep=T),o1=rnorm(nRows),o2=rnorm(nRows),o3=rnorm(100))
 #origX <- x
@@ -234,38 +234,55 @@ hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
 #    variable  <- colnames(x)[apply(is.na(x),2,any)]
 #  }
 #  ## xx should be a data.table and ord_var the name of variables to sort
-#  imputeHD <- function(xx,ord_var){ 
+#  imputeHD <- function(xx,ord_var,varType){
 #    setkeyv(xx,ord_var)
 #    xx$UniqueIdForImputation <- 1:nrow(xx)
-#    varType <- sapply(xx,class)[variable]
+#    
 #    for(v in variable){
 #      setkeyv(xx,v)
 #      if(varType[v]%in%c("numeric","integer")){
-#        impPart <- xx[J(NA_real_),UniqueIdForImputation]$UniqueIdForImputation
+#        impPart <- xx[J(NA_real_),UniqueIdForImputation,nomatch=FALSE]$UniqueIdForImputation
 #      }else{
-#        impPart <- xx[J(NA_character_),UniqueIdForImputation]$UniqueIdForImputation
+#        impPart <- xx[J(NA_character_),UniqueIdForImputation,nomatch=FALSE]$UniqueIdForImputation
 #      }
-#      pool <- 1:nrow(xx)
-#      pool <- pool[-impPart]
-#      if(length(pool)<0){
-#        break
+#      if(length(impPart)>0){
+#        #pool <- 1:nrow(xx)
+#        #pool <- pool[-impPart]
+#        #if(length(pool)<0){
+#        #  break
+#        #}
+#        impDon <- impPart-1
+#        impDon[impDon<1] <- impPart[impDon<1]+1
+#        setkey(xx,UniqueIdForImputation)
+#        Don <- data.frame(xx[impDon,v,with=FALSE])[,1]
+#        TFindex <- is.na(Don)
+#        TF <- any(TFindex)
+#        if(TF){
+#          add <- 2
+#          while(TF){
+#            impDon[TFindex] <- impPart[TFindex]-add
+#            impDon[TFindex][impDon[TFindex]<1] <- impPart[TFindex][impDon[TFindex]<1]+add
+#            impDon2 <- impDon[TFindex]
+#            Don[TFindex] <- data.frame(xx[impDon2,v,with=FALSE])[,1]
+#            TFindex[TFindex] <- is.na(Don[TFindex])
+#            TF <- any(TFindex)
+#            if(add>50){
+#              TF <- FALSE
+#              don[TFindex]<-1
+#            }
+#            add <- add +1
+#          }
+#        }
+#        #setkey(xx,UniqueIdForImputation)
+#        xx[impPart,v] <- Don
 #      }
-#      impDon <- impPart-1
-#      impDon[impDon<1] <- impPart+1
-#      Don <- xx[impDon,v,with=FALSE]
-#      print(Don)
-#      TFindex <- is.na(Don)
-#      if(TF <- any(TFindex)){
-#        Don[TFindex] <- 1
-#      }
-#      setkey(xx,UniqueIdForImputation)
-#      xx[impPart,v] <- Don
 #    }
 #    xx[,UniqueIdForImputation:=NULL]
 #    setkey(xx,OriginalSortingVariable)
 #    xx
 #  }
-#  x <- x[,imputeHD(.SD,ord_var=ord_var), by = domain_var]
+#  varType <- sapply(x,class)[variable]
+#  x <- x[,imputeHD(.SD,ord_var=ord_var,varType=varType), by = domain_var]
 #  setkey(x,OriginalSortingVariable)
 #  x[,OriginalSortingVariable:=NULL]
 #  data.frame(x)[,VariableSorting]
@@ -277,9 +294,17 @@ hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
 #Rprof(NULL)
 #summaryRprof("profile1.out")
 #xImp1 <- hotdeck(x,ord_var = c("o1","o2","o3"),domain_var="d2")
+#identical(xImp,xImp1)
 #
 #
+#for(v in colnames(xImp)){
+#  print(v)
+#  print(identical(xImp[,v],xImp1[,v]))
+#}
+#  
+#  
+#  
 #require(microbenchmark)
-#res <- microbenchmark(xImp <- hd(x,ord_var = c("o1","o2","o3"),domain_var="d2"),xImp1 <- hotdeck(x,ord_var = c("o1","o2","o3"),domain_var="d2"),times=100L)
+#res <- microbenchmark(xImp <- hd(x,ord_var = c("o1","o2","o3"),domain_var="d2"),times=10)
 
 
