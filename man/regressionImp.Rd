@@ -2,9 +2,8 @@
 \alias{regressionImp}
 \title{Regression Imputation}
 \usage{
-  regressionImp(formula, data, family = "AUTO",
-    robust = FALSE, imp_var = TRUE, imp_suffix = "imp",
-    mod_cat = FALSE)
+regressionImp(formula, data, family = "AUTO", robust = FALSE,
+  imp_var = TRUE, imp_suffix = "imp", mod_cat = FALSE)
 }
 \arguments{
   \item{formula}{model formula to impute one variable}
@@ -31,14 +30,14 @@
   variables}
 }
 \value{
-  the imputed data set.
+the imputed data set.
 }
 \description{
-  Impute missing values based on a regression model.
+Impute missing values based on a regression model.
 }
 \details{
-  "lm" is used for family "normal" and glm for all other
-  families. (Robust=TRUE: lmrob, glmrob)
+"lm" is used for family "normal" and glm for all other
+families. (Robust=TRUE: lmrob, glmrob)
 }
 \examples{
 data(sleep)
@@ -50,7 +49,7 @@ imp_testdata1 <- regressionImp(b1+b2~x1+x2,data=testdata$wna)
 imp_testdata3 <- regressionImp(x1~x2,data=testdata$wna,robust=TRUE)
 }
 \author{
-  Alexander Kowarik
+Alexander Kowarik
 }
 \keyword{manip}
 

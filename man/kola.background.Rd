@@ -3,19 +3,19 @@
 \alias{kola.background}
 \title{Background map for the Kola project data}
 \source{
-  Kola Project (1993-1998)
+Kola Project (1993-1998)
 }
 \description{
-  Coordinates of the Kola background map.
+Coordinates of the Kola background map.
 }
 \examples{
 data(kola.background, package = "VIM")
 bgmap(kola.background)
 }
 \references{
-  Reimann, C., Filzmoser, P., Garrett, R.G. and Dutter, R.
-  (2008) \emph{Statistical Data Analysis Explained: Applied
-  Environmental Statistics with R}. Wiley, 2008.
+Reimann, C., Filzmoser, P., Garrett, R.G. and Dutter, R.
+(2008) \emph{Statistical Data Analysis Explained: Applied
+Environmental Statistics with R}. Wiley, 2008.
 }
 \keyword{datasets}
 

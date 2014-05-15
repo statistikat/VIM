@@ -4,13 +4,11 @@
 \alias{colSequenceRGB}
 \title{HCL and RGB color sequences}
 \usage{
-  colSequence(p, start, end, space = c("hcl", "rgb"), ...)
+colSequence(p, start, end, space = c("hcl", "rgb"), ...)
 
-  colSequenceRGB(p, start, end, gamma = 2.2, fixup = TRUE,
-    ...)
+colSequenceRGB(p, start, end, gamma = 2.2, fixup = TRUE, ...)
 
-  colSequenceHCL(p, start, end, gamma = 2.2, fixup = TRUE,
-    ...)
+colSequenceHCL(p, start, end, gamma = 2.2, fixup = TRUE, ...)
 }
 \arguments{
   \item{p}{a numeric vector in \eqn{$[0,1]$}{[0,1]} giving
@@ -46,14 +44,14 @@
   to \code{\link[colorspace]{hex}}.}
 }
 \value{
-  A character vector containing hexadecimal strings of the
-  form \code{"#RRGGBB"}.
+A character vector containing hexadecimal strings of the
+form \code{"#RRGGBB"}.
 }
 \description{
-  Compute color sequences by linear interpolation based on
-  a continuous color scheme between certain start and end
-  colors.  Color sequences may thereby be computed in the
-  \emph{HCL} or \emph{RGB} color space.
+Compute color sequences by linear interpolation based on a
+continuous color scheme between certain start and end
+colors.  Color sequences may thereby be computed in the
+\emph{HCL} or \emph{RGB} color space.
 }
 \examples{
 p <- c(0, 0.3, 0.55, 0.8, 1)
@@ -67,17 +65,17 @@ colSequence(p, c(1, 1, 1), c(1, 0, 0), space="rgb")
 colSequence(p, RGB(1, 1, 0), "red")
 }
 \author{
-  Andreas Alfons
+Andreas Alfons
 }
 \references{
-  Zeileis, A., Hornik, K., Murrell, P. (2009) Escaping
-  RGBland: Selecting colors for statistical graphics.
-  \emph{Computational Statistics & Data Analysis}, \bold{53
-  (9)}, 1259--1270.
+Zeileis, A., Hornik, K., Murrell, P. (2009) Escaping
+RGBland: Selecting colors for statistical graphics.
+\emph{Computational Statistics & Data Analysis}, \bold{53
+(9)}, 1259--1270.
 }
 \seealso{
-  \code{\link[colorspace]{hex}},
-  \code{\link[colorspace]{sequential_hcl}}
+\code{\link[colorspace]{hex}},
+\code{\link[colorspace]{sequential_hcl}}
 }
 \keyword{color}
 

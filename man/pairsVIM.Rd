@@ -2,12 +2,10 @@
 \alias{pairsVIM}
 \title{Scatterplot Matrices}
 \usage{
-  pairsVIM(x, ..., delimiter = NULL, main = NULL,
-    sub = NULL, panel = points, lower = panel,
-    upper = panel, diagonal = NULL, labels = TRUE,
-    pos.labels = NULL, cex.labels = NULL,
-    font.labels = par("font"),
-    layout = c("matrix", "graph"), gap = 1)
+pairsVIM(x, ..., delimiter = NULL, main = NULL, sub = NULL,
+  panel = points, lower = panel, upper = panel, diagonal = NULL,
+  labels = TRUE, pos.labels = NULL, cex.labels = NULL,
+  font.labels = par("font"), layout = c("matrix", "graph"), gap = 1)
 }
 \arguments{
   \item{x}{a matrix or \code{data.frame}.}
@@ -62,25 +60,25 @@
   the panels in margin lines.}
 }
 \description{
-  Create a scatterplot matrix.
+Create a scatterplot matrix.
 }
 \details{
-  This function is the workhorse for
-  \code{\link{marginmatrix}} and
-  \code{\link{scattmatrixMiss}}.
+This function is the workhorse for
+\code{\link{marginmatrix}} and
+\code{\link{scattmatrixMiss}}.
 
-  The graphical parameter \code{oma} will be set unless
-  supplied as an argument.
+The graphical parameter \code{oma} will be set unless
+supplied as an argument.
 
-  A panel function should not attempt to start a new plot,
-  since the coordinate system for each panel is set up by
-  \code{pairsVIM}.
+A panel function should not attempt to start a new plot,
+since the coordinate system for each panel is set up by
+\code{pairsVIM}.
 }
 \note{
-  The code is based on \code{\link[graphics]{pairs}}.
-  Starting with version 1.4, infinite values are no longer
-  removed before passing the \code{x} and \code{y} vectors
-  to the panel functions.
+The code is based on \code{\link[graphics]{pairs}}.
+Starting with version 1.4, infinite values are no longer
+removed before passing the \code{x} and \code{y} vectors to
+the panel functions.
 }
 \examples{
 data(sleep, package = "VIM")
@@ -89,16 +87,16 @@ x[,c(1,2,4,6,7)] <- log10(x[,c(1,2,4,6,7)])
 pairsVIM(x)
 }
 \author{
-  Andreas Alfons, modifications by Bernd Prantner
+Andreas Alfons, modifications by Bernd Prantner
 }
 \references{
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{marginmatrix}}, \code{\link{scattmatrixMiss}}
+\code{\link{marginmatrix}}, \code{\link{scattmatrixMiss}}
 }
 \keyword{hplot}
 

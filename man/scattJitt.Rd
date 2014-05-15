@@ -2,14 +2,12 @@
 \alias{scattJitt}
 \title{Bivariate jitter plot}
 \usage{
-  scattJitt(x, delimiter = NULL,
-    col = c("skyblue", "red", "red4", "orange", "orange4"),
-    alpha = NULL, cex = par("cex"), col.line = "lightgrey",
-    lty = "dashed", lwd = par("lwd"), numbers = TRUE,
-    cex.numbers = par("cex"), main = NULL, sub = NULL,
-    xlab = NULL, ylab = NULL, axes = TRUE,
-    frame.plot = axes,
-    labels = c("observed", "missing", "imputed"), ...)
+scattJitt(x, delimiter = NULL, col = c("skyblue", "red", "red4", "orange",
+  "orange4"), alpha = NULL, cex = par("cex"), col.line = "lightgrey",
+  lty = "dashed", lwd = par("lwd"), numbers = TRUE,
+  cex.numbers = par("cex"), main = NULL, sub = NULL, xlab = NULL,
+  ylab = NULL, axes = TRUE, frame.plot = axes, labels = c("observed",
+  "missing", "imputed"), ...)
 }
 \arguments{
   \item{x}{a \code{data.frame} or \code{matrix} with two
@@ -79,24 +77,24 @@
   down (see \code{\link[graphics]{par}}).}
 }
 \description{
-  Create a bivariate jitter plot.
+Create a bivariate jitter plot.
 }
 \details{
-  The amount of observed and missing/imputed values is
-  visualized by jittered points.  Thereby the plot region
-  is divided into up to four regions according to the
-  existence of missing/imputed values in one or both
-  variables.  In addition, the amount of observed and
-  missing/imputed values can be represented by a number.
+The amount of observed and missing/imputed values is
+visualized by jittered points.  Thereby the plot region is
+divided into up to four regions according to the existence
+of missing/imputed values in one or both variables.  In
+addition, the amount of observed and missing/imputed values
+can be represented by a number.
 }
 \note{
-  Some of the argument names and positions have changed
-  with version 1.3 due to extended functionality and for
-  more consistency with other plot functions in \code{VIM}.
-  For back compatibility, the argument \code{cex.text} can
-  still be supplied to \code{\dots{}} and is handled
-  correctly.  Nevertheless, it is deprecated and no longer
-  documented.  Use \code{cex.numbers} instead.
+Some of the argument names and positions have changed with
+version 1.3 due to extended functionality and for more
+consistency with other plot functions in \code{VIM}.  For
+back compatibility, the argument \code{cex.text} can still
+be supplied to \code{\dots{}} and is handled correctly.
+Nevertheless, it is deprecated and no longer documented.
+Use \code{cex.numbers} instead.
 }
 \examples{
 data(tao, package = "VIM")
@@ -107,14 +105,14 @@ scattJitt(tao[, c("Air.Temp", "Humidity")])
 scattJitt(kNN(tao[, c("Air.Temp", "Humidity")]), delimiter = "_imp")
 }
 \author{
-  Matthias Templ, modifications by Andreas Alfons and Bernd
-  Prantner
+Matthias Templ, modifications by Andreas Alfons and Bernd
+Prantner
 }
 \references{
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \keyword{hplot}
 

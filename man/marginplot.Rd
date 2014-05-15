@@ -2,13 +2,11 @@
 \alias{marginplot}
 \title{Scatterplot with additional information in the margins}
 \usage{
-  marginplot(x, delimiter = NULL,
-    col = c("skyblue", "red", "red4", "orange", "orange4"),
-    alpha = NULL, pch = c(1, 16), cex = par("cex"),
-    numbers = TRUE, cex.numbers = par("cex"),
-    zeros = FALSE, xlim = NULL, ylim = NULL, main = NULL,
-    sub = NULL, xlab = NULL, ylab = NULL, ann = par("ann"),
-    axes = TRUE, frame.plot = axes, ...)
+marginplot(x, delimiter = NULL, col = c("skyblue", "red", "red4", "orange",
+  "orange4"), alpha = NULL, pch = c(1, 16), cex = par("cex"),
+  numbers = TRUE, cex.numbers = par("cex"), zeros = FALSE, xlim = NULL,
+  ylim = NULL, main = NULL, sub = NULL, xlab = NULL, ylab = NULL,
+  ann = par("ann"), axes = TRUE, frame.plot = axes, ...)
 }
 \arguments{
   \item{x}{a \code{matrix} or \code{data.frame} with two
@@ -95,34 +93,32 @@
   down (see \code{\link[graphics]{par}}).}
 }
 \description{
-  In addition to a standard scatterplot, information about
-  missing/imputed values is shown in the plot margins.
-  Furthermore, imputed values are highlighted in the
-  scatterplot.
+In addition to a standard scatterplot, information about
+missing/imputed values is shown in the plot margins.
+Furthermore, imputed values are highlighted in the
+scatterplot.
 }
 \details{
-  Boxplots for available and missing/imputed data, as well
-  as univariate scatterplots for missing/imputed values in
-  one variable are shown in the plot margins.
+Boxplots for available and missing/imputed data, as well as
+univariate scatterplots for missing/imputed values in one
+variable are shown in the plot margins.
 
-  Imputed values in either of the variables are highlighted
-  in the scatterplot.
+Imputed values in either of the variables are highlighted
+in the scatterplot.
 
-  Furthermore, the frequencies of the missing/imputed
-  values can be displayed by a number (lower left of the
-  plot). The number in the lower left corner is the number
-  of observations that are missing/imputed in both
-  variables.
+Furthermore, the frequencies of the missing/imputed values
+can be displayed by a number (lower left of the plot). The
+number in the lower left corner is the number of
+observations that are missing/imputed in both variables.
 }
 \note{
-  Some of the argument names and positions have changed
-  with versions 1.3 and 1.4 due to extended functionality
-  and for more consistency with other plot functions in
-  \code{VIM}.  For back compatibility, the argument
-  \code{cex.text} can still be supplied to \code{\dots{}}
-  and is handled correctly.  Nevertheless, it is deprecated
-  and no longer documented.  Use \code{cex.numbers}
-  instead.
+Some of the argument names and positions have changed with
+versions 1.3 and 1.4 due to extended functionality and for
+more consistency with other plot functions in \code{VIM}.
+For back compatibility, the argument \code{cex.text} can
+still be supplied to \code{\dots{}} and is handled
+correctly.  Nevertheless, it is deprecated and no longer
+documented.  Use \code{cex.numbers} instead.
 }
 \examples{
 data(tao, package = "VIM")
@@ -136,17 +132,17 @@ marginplot(kNN(tao[,c("Air.Temp", "Humidity")]), delimiter = "_imp")
 marginplot(kNN(log10(chorizonDL[,c("CaO", "Bi")])), delimiter = "_imp")
 }
 \author{
-  Andreas Alfons, Matthias Templ, modifications by Bernd
-  Prantner
+Andreas Alfons, Matthias Templ, modifications by Bernd
+Prantner
 }
 \references{
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{scattMiss}}
+\code{\link{scattMiss}}
 }
 \keyword{hplot}
 

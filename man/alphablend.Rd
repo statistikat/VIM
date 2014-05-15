@@ -2,7 +2,7 @@
 \alias{alphablend}
 \title{Alphablending for colors}
 \usage{
-  alphablend(col, alpha = NULL, bg = NULL)
+alphablend(col, alpha = NULL, bg = NULL)
 }
 \arguments{
   \item{col}{a vector specifying colors.}
@@ -16,16 +16,16 @@
   colors.}
 }
 \value{
-  a vector containing the semitransparent colors.
+a vector containing the semitransparent colors.
 }
 \description{
-  Convert colors to semitransparent colors.
+Convert colors to semitransparent colors.
 }
 \examples{
 alphablend("red", 0.6)
 }
 \author{
-  Andreas Alfons
+Andreas Alfons
 }
 \keyword{color}
 

@@ -10,15 +10,14 @@ numeric vector} \item{Humidity}{a numeric vector}
 \item{UWind}{a numeric vector} \item{VWind}{a numeric
 vector} }}
 \source{
-  \url{http://www.pmel.noaa.gov/tao/}
+\url{http://www.pmel.noaa.gov/tao/}
 }
 \description{
-  A small subsample of the Tropical Atmosphere Ocean (TAO)
-  project data, derived from the \code{GGOBI} project.
+A small subsample of the Tropical Atmosphere Ocean (TAO)
+project data, derived from the \code{GGOBI} project.
 }
 \details{
-  All cases recorded for five locations and two time
-  periods.
+All cases recorded for five locations and two time periods.
 }
 \examples{
 data(tao, package = "VIM")

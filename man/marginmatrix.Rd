@@ -2,9 +2,8 @@
 \alias{marginmatrix}
 \title{Marginplot Matrix}
 \usage{
-  marginmatrix(x, delimiter = NULL,
-    col = c("skyblue", "red", "red4", "orange", "orange4"),
-    alpha = NULL, ...)
+marginmatrix(x, delimiter = NULL, col = c("skyblue", "red", "red4",
+  "orange", "orange4"), alpha = NULL, ...)
 }
 \arguments{
   \item{x}{a matrix or \code{data.frame}.}
@@ -45,15 +44,15 @@
   \code{\link[graphics]{par}}).}
 }
 \description{
-  Create a scatterplot matrix with information about
-  missing/imputed values in the plot margins of each panel.
+Create a scatterplot matrix with information about
+missing/imputed values in the plot margins of each panel.
 }
 \details{
-  \code{marginmatrix} uses \code{\link{pairsVIM}} with a
-  panel function based on \code{\link{marginplot}}.
+\code{marginmatrix} uses \code{\link{pairsVIM}} with a
+panel function based on \code{\link{marginplot}}.
 
-  The graphical parameter \code{oma} will be set unless
-  supplied as an argument.
+The graphical parameter \code{oma} will be set unless
+supplied as an argument.
 }
 \examples{
 data(sleep, package = "VIM")
@@ -68,17 +67,17 @@ x_imp[,c(1,2,4)] <- log10(x_imp[,c(1,2,4)])
 marginmatrix(x_imp, delimiter = "_imp")
 }
 \author{
-  Andreas Alfons, modifications by Bernd Prantner
+Andreas Alfons, modifications by Bernd Prantner
 }
 \references{
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{marginplot}}, \code{\link{pairsVIM}},
-  \code{\link{scattmatrixMiss}}
+\code{\link{marginplot}}, \code{\link{pairsVIM}},
+\code{\link{scattmatrixMiss}}
 }
 \keyword{hplot}
 

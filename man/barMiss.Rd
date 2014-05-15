@@ -2,13 +2,11 @@
 \alias{barMiss}
 \title{Barplot with information about missing/imputed values}
 \usage{
-  barMiss(x, delimiter = NULL, pos = 1,
-    selection = c("any", "all"),
-    col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
-    border = NULL, main = NULL, sub = NULL, xlab = NULL,
-    ylab = NULL, axes = TRUE, labels = axes,
-    only.miss = TRUE, miss.labels = axes,
-    interactive = TRUE, ...)
+barMiss(x, delimiter = NULL, pos = 1, selection = c("any", "all"),
+  col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
+  border = NULL, main = NULL, sub = NULL, xlab = NULL, ylab = NULL,
+  axes = TRUE, labels = axes, only.miss = TRUE, miss.labels = axes,
+  interactive = TRUE, ...)
 }
 \arguments{
   \item{x}{a vector, matrix or \code{data.frame}.}
@@ -74,59 +72,57 @@
   \code{\link[graphics]{axis}}.}
 }
 \value{
-  a numeric vector giving the coordinates of the midpoints
-  of the bars.
+a numeric vector giving the coordinates of the midpoints of
+the bars.
 }
 \description{
-  Barplot with highlighting of missing/imputed values in
-  other variables by splitting each bar into two parts.
-  Additionally, information about missing/imputed values in
-  the variable of interest is shown on the right hand side.
+Barplot with highlighting of missing/imputed values in
+other variables by splitting each bar into two parts.
+Additionally, information about missing/imputed values in
+the variable of interest is shown on the right hand side.
 }
 \details{
-  If more than one variable is supplied, the bars for the
-  variable of interest are split according to
-  missingness/number of imputed missings in the additional
-  variables.
+If more than one variable is supplied, the bars for the
+variable of interest are split according to
+missingness/number of imputed missings in the additional
+variables.
 
-  If \code{only.miss=TRUE}, the missing/imputed values in
-  the variable of interest are visualized by one bar on the
-  right hand side.  If additional variables are supplied,
-  this bar is again split into two parts according to
-  missingness/number of imputed missings in the additional
-  variables.
+If \code{only.miss=TRUE}, the missing/imputed values in the
+variable of interest are visualized by one bar on the right
+hand side.  If additional variables are supplied, this bar
+is again split into two parts according to
+missingness/number of imputed missings in the additional
+variables.
 
-  Otherwise, a small barplot consisting of two bars is
-  drawn on the right hand side.  The first bar corresponds
-  to observed values in the variable of interest and the
-  second bar to missing/imputed values.  Since these two
-  bars are not on the same scale as the main barplot, a
-  second y-axis is plotted on the right (if
-  \code{axes=TRUE}).  Each of the two bars are again split
-  into two parts according to missingness/number of imputed
-  missings in the additional variables.  Note that this
-  display does not make sense if only one variable is
-  supplied, therefore \code{only.miss} is ignored in that
-  case.
+Otherwise, a small barplot consisting of two bars is drawn
+on the right hand side.  The first bar corresponds to
+observed values in the variable of interest and the second
+bar to missing/imputed values.  Since these two bars are
+not on the same scale as the main barplot, a second y-axis
+is plotted on the right (if \code{axes=TRUE}).  Each of the
+two bars are again split into two parts according to
+missingness/number of imputed missings in the additional
+variables.  Note that this display does not make sense if
+only one variable is supplied, therefore \code{only.miss}
+is ignored in that case.
 
-  If \code{interactive=TRUE}, clicking in the left margin
-  of the plot results in switching to the previous variable
-  and clicking in the right margin results in switching to
-  the next variable.  Clicking anywhere else on the
-  graphics device quits the interactive session.  When
-  switching to a continuous variable, a histogram is
-  plotted rather than a barplot.
+If \code{interactive=TRUE}, clicking in the left margin of
+the plot results in switching to the previous variable and
+clicking in the right margin results in switching to the
+next variable.  Clicking anywhere else on the graphics
+device quits the interactive session.  When switching to a
+continuous variable, a histogram is plotted rather than a
+barplot.
 }
 \note{
-  Some of the argument names and positions have changed
-  with version 1.3 due to extended functionality and for
-  more consistency with other plot functions in \code{VIM}.
-  For back compatibility, the arguments \code{axisnames},
-  \code{names.arg} and \code{names.miss} can still be
-  supplied to \code{\dots{}} and are handled correctly.
-  Nevertheless, they are deprecated and no longer
-  documented.  Use \code{labels} and \code{miss.labels}
-  instead.
+Some of the argument names and positions have changed with
+version 1.3 due to extended functionality and for more
+consistency with other plot functions in \code{VIM}.  For
+back compatibility, the arguments \code{axisnames},
+\code{names.arg} and \code{names.miss} can still be
+supplied to \code{\dots{}} and are handled correctly.
+Nevertheless, they are deprecated and no longer documented.
+Use \code{labels} and \code{miss.labels} instead.
 }
 \examples{
 data(sleep, package = "VIM")
@@ -141,17 +137,17 @@ barMiss(x_IMPUTED, delimiter = "_imp")
 barMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
 }
 \author{
-  Andreas Alfons, modifications to show imputed values by
-  Bernd Prantner
+Andreas Alfons, modifications to show imputed values by
+Bernd Prantner
 }
 \references{
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{spineMiss}}, \code{\link{histMiss}}
+\code{\link{spineMiss}}, \code{\link{histMiss}}
 }
 \keyword{hplot}
 

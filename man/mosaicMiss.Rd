@@ -2,10 +2,9 @@
 \alias{mosaicMiss}
 \title{Mosaic plot with information about missing/imputed values}
 \usage{
-  mosaicMiss(x, delimiter = NULL, highlight = NULL,
-    selection = c("any", "all"), plotvars = NULL,
-    col = c("skyblue", "red", "orange"), labels = NULL,
-    miss.labels = TRUE, ...)
+mosaicMiss(x, delimiter = NULL, highlight = NULL, selection = c("any",
+  "all"), plotvars = NULL, col = c("skyblue", "red", "orange"),
+  labels = NULL, miss.labels = TRUE, ...)
 }
 \arguments{
   \item{x}{a matrix or \code{data.frame}.}
@@ -55,26 +54,25 @@
   \code{\link[vcd]{mosaic}}.}
 }
 \value{
-  An object of class \code{"structable"} is returned
-  invisibly.
+An object of class \code{"structable"} is returned
+invisibly.
 }
 \description{
-  Create a mosaic plot with information about
-  missing/imputed values.
+Create a mosaic plot with information about missing/imputed
+values.
 }
 \details{
-  Mosaic plots are graphical representations of multi-way
-  contingency tables. The frequencies of the different
-  cells are visualized by area-proportional rectangles
-  (tiles).  Additional tiles are be used to display the
-  frequencies of missing/imputed values.  Furthermore,
-  missing/imputed values in a certain variable or
-  combination of variables can be highlighted in order to
-  explore their structure.
+Mosaic plots are graphical representations of multi-way
+contingency tables. The frequencies of the different cells
+are visualized by area-proportional rectangles (tiles).
+Additional tiles are be used to display the frequencies of
+missing/imputed values.  Furthermore, missing/imputed
+values in a certain variable or combination of variables
+can be highlighted in order to explore their structure.
 }
 \note{
-  This function uses the highly flexible \code{strucplot}
-  framework of package \code{vcd}.
+This function uses the highly flexible \code{strucplot}
+framework of package \code{vcd}.
 }
 \examples{
 data(sleep, package = "VIM")
@@ -87,21 +85,21 @@ mosaicMiss(kNN(sleep), highlight = 4,
     plotvars = 8:10, delimiter = "_imp", miss.labels = FALSE)
 }
 \author{
-  Andreas Alfons, modifications by Bernd Prantner
+Andreas Alfons, modifications by Bernd Prantner
 }
 \references{
-  Meyer, D., Zeileis, A. and Hornik, K. (2006) The
-  \code{strucplot} framework: Visualizing multi-way
-  contingency tables with \pkg{vcd}. \emph{Journal of
-  Statistical Software}, \bold{17 (3)}, 1--48.
+Meyer, D., Zeileis, A. and Hornik, K. (2006) The
+\code{strucplot} framework: Visualizing multi-way
+contingency tables with \pkg{vcd}. \emph{Journal of
+Statistical Software}, \bold{17 (3)}, 1--48.
 
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{spineMiss}}, \code{\link[vcd]{mosaic}}
+\code{\link{spineMiss}}, \code{\link[vcd]{mosaic}}
 }
 \keyword{hplot}
 

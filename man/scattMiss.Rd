@@ -2,13 +2,11 @@
 \alias{scattMiss}
 \title{Scatterplot with information about missing/imputed values}
 \usage{
-  scattMiss(x, delimiter = NULL, side = 1,
-    col = c("skyblue", "red", "orange", "lightgrey"),
-    alpha = NULL, lty = c("dashed", "dotted"),
-    lwd = par("lwd"), quantiles = c(0.5, 0.975),
-    inEllipse = FALSE, zeros = FALSE, xlim = NULL,
-    ylim = NULL, main = NULL, sub = NULL, xlab = NULL,
-    ylab = NULL, interactive = TRUE, ...)
+scattMiss(x, delimiter = NULL, side = 1, col = c("skyblue", "red",
+  "orange", "lightgrey"), alpha = NULL, lty = c("dashed", "dotted"),
+  lwd = par("lwd"), quantiles = c(0.5, 0.975), inEllipse = FALSE,
+  zeros = FALSE, xlim = NULL, ylim = NULL, main = NULL, sub = NULL,
+  xlab = NULL, ylab = NULL, interactive = TRUE, ...)
 }
 \arguments{
   \item{x}{a \code{matrix} or \code{data.frame} with two
@@ -86,32 +84,31 @@
   down (see \code{\link[graphics]{par}}).}
 }
 \description{
-  In addition to a standard scatterplot, lines are plotted
-  for the missing values in one variable. If there are
-  imputed values, they will be highlighted.
+In addition to a standard scatterplot, lines are plotted
+for the missing values in one variable. If there are
+imputed values, they will be highlighted.
 }
 \details{
-  Information about missing values in one variable is
-  included as vertical or horizontal lines, as determined
-  by the \code{side} argument.  The lines are thereby drawn
-  at the observed x- or y-value. In case of imputed values,
-  they will additionally be highlighted in the scatterplot.
-  Supplementary, percentage coverage ellipses can be drawn
-  to give a clue about the shape of the bivariate data
-  distribution.
+Information about missing values in one variable is
+included as vertical or horizontal lines, as determined by
+the \code{side} argument.  The lines are thereby drawn at
+the observed x- or y-value. In case of imputed values, they
+will additionally be highlighted in the scatterplot.
+Supplementary, percentage coverage ellipses can be drawn to
+give a clue about the shape of the bivariate data
+distribution.
 
-  If \code{interactive}is \code{TRUE}, clicking in the
-  bottom margin redraws the plot with information about
-  missing/imputed values in the first variable and clicking
-  in the left margin redraws the plot with information
-  about missing/imputed values in the second variable.
-  Clicking anywhere else in the plot quits the interactive
-  session.
+If \code{interactive}is \code{TRUE}, clicking in the bottom
+margin redraws the plot with information about
+missing/imputed values in the first variable and clicking
+in the left margin redraws the plot with information about
+missing/imputed values in the second variable.  Clicking
+anywhere else in the plot quits the interactive session.
 }
 \note{
-  The argument \code{zeros} has been introduced in version
-  1.4. As a result, some of the argument positions have
-  changed.
+The argument \code{zeros} has been introduced in version
+1.4. As a result, some of the argument positions have
+changed.
 }
 \examples{
 data(tao, package = "VIM")
@@ -122,16 +119,16 @@ scattMiss(tao[,c("Air.Temp", "Humidity")])
 scattMiss(kNN(tao[,c("Air.Temp", "Humidity")]), delimiter = "_imp")
 }
 \author{
-  Andreas Alfons, modifications by Bernd Prantner
+Andreas Alfons, modifications by Bernd Prantner
 }
 \references{
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{marginplot}}
+\code{\link{marginplot}}
 }
 \keyword{hplot}
 

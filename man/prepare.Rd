@@ -2,12 +2,10 @@
 \alias{prepare}
 \title{Transformation and standardization}
 \usage{
-  prepare (x, scaling =
-    c("none","classical","MCD","robust","onestep"),
-    transformation =
-    c("none","minus","reciprocal","logarithm",
-    "exponential","boxcox","clr","ilr","alr"), alpha =
-    NULL, powers = NULL, start = 0, alrVar)
+prepare (x, scaling = c("none","classical","MCD","robust","onestep"),
+    transformation = c("none","minus","reciprocal","logarithm",
+	  "exponential","boxcox","clr","ilr","alr"),
+     alpha = NULL, powers = NULL, start = 0, alrVar)
 }
 \arguments{
   \item{x}{a vector, matrix or \code{data.frame}.}
@@ -40,33 +38,33 @@
   \code{transformation="alr"}).}
 }
 \value{
-  Transformed and standardized data.
+Transformed and standardized data.
 }
 \description{
-  This function is used by the \code{VIM} GUI for
-  transformation and standardization of the data.
+This function is used by the \code{VIM} GUI for
+transformation and standardization of the data.
 }
 \details{
-  \bold{Transformation}:
+\bold{Transformation}:
 
-  \code{"none"}: no transformation is used.
+\code{"none"}: no transformation is used.
 
-  \code{"logarithm"}: compute the the logarithm (to the
-  base 10).
+\code{"logarithm"}: compute the the logarithm (to the base
+10).
 
-  \code{"boxcox"}: apply a Box-Cox transformation. Powers
-  may be specified or calculated with the function
-  \code{\link[car]{powerTransform}}.
+\code{"boxcox"}: apply a Box-Cox transformation. Powers may
+be specified or calculated with the function
+\code{\link[car]{powerTransform}}.
 
-  \bold{Standardization}:
+\bold{Standardization}:
 
-  \code{"none"}: no standardization is used.
+\code{"none"}: no standardization is used.
 
-  \code{"classical"}: apply a \emph{z}-Transformation on
-  each variable by using function \code{\link{scale}}.
+\code{"classical"}: apply a \emph{z}-Transformation on each
+variable by using function \code{\link{scale}}.
 
-  \code{"robust"}: apply a robustified
-  \emph{z}-Transformation by using median and MAD.
+\code{"robust"}: apply a robustified
+\emph{z}-Transformation by using median and MAD.
 }
 \examples{
 data(sleep, package = "VIM")
@@ -74,10 +72,10 @@ x <- sleep[, c("BodyWgt", "BrainWgt")]
 prepare(x, scaling = "robust", transformation = "logarithm")
 }
 \author{
-  Matthias Templ, modifications by Andreas Alfons
+Matthias Templ, modifications by Andreas Alfons
 }
 \seealso{
-  \code{\link{scale}}, \code{\link[car]{powerTransform}}
+\code{\link{scale}}, \code{\link[car]{powerTransform}}
 }
 \keyword{manip}
 

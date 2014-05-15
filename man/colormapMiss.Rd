@@ -3,16 +3,15 @@
 \alias{colormapMissLegend}
 \title{Colored map with information about missing/imputed values}
 \usage{
-  colormapMiss(x, region, map, imp_index = NULL,
-    prop = TRUE, polysRegion = 1:length(x), range = NULL,
-    n = NULL, col = c("red", "orange"), gamma = 2.2,
-    fixup = TRUE, coords = NULL, numbers = TRUE,
-    digits = 2, cex.numbers = 0.8, col.numbers = par("fg"),
-    legend = TRUE, interactive = TRUE, ...)
+colormapMiss(x, region, map, imp_index = NULL, prop = TRUE,
+  polysRegion = 1:length(x), range = NULL, n = NULL, col = c("red",
+  "orange"), gamma = 2.2, fixup = TRUE, coords = NULL, numbers = TRUE,
+  digits = 2, cex.numbers = 0.8, col.numbers = par("fg"), legend = TRUE,
+  interactive = TRUE, ...)
 
-  colormapMissLegend(xleft, ybottom, xright, ytop, cmap,
-    n = 1000, horizontal = TRUE, digits = 2,
-    cex.numbers = 0.8, col.numbers = par("fg"), ...)
+colormapMissLegend(xleft, ybottom, xright, ytop, cmap, n = 1000,
+  horizontal = TRUE, digits = 2, cex.numbers = 0.8,
+  col.numbers = par("fg"), ...)
 }
 \arguments{
   \item{x}{a numeric vector.}
@@ -105,71 +104,69 @@
   \code{plot}.}
 }
 \value{
-  \code{colormapMiss} returns a list with the following
-  components: - nmiss a numeric vector containing the
-  number of missing/imputed values in each region. - nobs a
-  numeric vector containing the number of observations in
-  each region. - pmiss a numeric vector containing the
-  proportion of missing values in each region. - prop a
-  logical indicating whether the proportion of
-  missing/imputed values have been used rather than the
-  total amount. - range the range of the proportion or
-  amount of missing/imputed values corresponding to the
-  color range. - n either a positive integer giving the
-  number of equally spaced cut-off points for a discretized
-  color scheme, or \code{NULL} for a continuous color
-  scheme. - start the start color of the color scheme. -
-  end the end color of the color scheme. - space a
-  character string giving the color space (either
-  \code{"rgb"} for RGB colors or \code{"hcl"} for HCL
-  colors). - gamma numeric; the display \emph{gamma} value
-  (see \code{\link[colorspace]{hex}}). - fixup a logical
-  indicating whether the colors have been corrected to
-  valid RGB values (see \code{\link[colorspace]{hex}}).
+\code{colormapMiss} returns a list with the following
+components: - nmiss a numeric vector containing the number
+of missing/imputed values in each region. - nobs a numeric
+vector containing the number of observations in each
+region. - pmiss a numeric vector containing the proportion
+of missing values in each region. - prop a logical
+indicating whether the proportion of missing/imputed values
+have been used rather than the total amount. - range the
+range of the proportion or amount of missing/imputed values
+corresponding to the color range. - n either a positive
+integer giving the number of equally spaced cut-off points
+for a discretized color scheme, or \code{NULL} for a
+continuous color scheme. - start the start color of the
+color scheme. - end the end color of the color scheme. -
+space a character string giving the color space (either
+\code{"rgb"} for RGB colors or \code{"hcl"} for HCL
+colors). - gamma numeric; the display \emph{gamma} value
+(see \code{\link[colorspace]{hex}}). - fixup a logical
+indicating whether the colors have been corrected to valid
+RGB values (see \code{\link[colorspace]{hex}}).
 }
 \description{
-  Colored map in which the proportion or amount of
-  missing/imputed values in each region is coded according
-  to a continuous or discrete color scheme. The sequential
-  color palette may thereby be computed in the \emph{HCL}
-  or the \emph{RGB} color space.
+Colored map in which the proportion or amount of
+missing/imputed values in each region is coded according to
+a continuous or discrete color scheme. The sequential color
+palette may thereby be computed in the \emph{HCL} or the
+\emph{RGB} color space.
 }
 \details{
-  The proportion or amount of missing/imputed values in
-  \code{x} of each region is coded according to a
-  continuous or discrete color scheme in the color range
-  defined by \code{col}.  In addition, the proportions or
-  numbers can be shown as labels in the regions.
+The proportion or amount of missing/imputed values in
+\code{x} of each region is coded according to a continuous
+or discrete color scheme in the color range defined by
+\code{col}.  In addition, the proportions or numbers can be
+shown as labels in the regions.
 
-  If \code{interactive} is \code{TRUE}, clicking in a
-  region displays more detailed information about
-  missing/imputed values on the console.  Clicking outside
-  the borders quits the interactive session.
+If \code{interactive} is \code{TRUE}, clicking in a region
+displays more detailed information about missing/imputed
+values on the console.  Clicking outside the borders quits
+the interactive session.
 }
 \note{
-  Some of the argument names and positions have changed
-  with versions 1.3 and 1.4 due to extended functionality
-  and for more consistency with other plot functions in
-  \code{VIM}.  For back compatibility, the arguments
-  \code{cex.text} and \code{col.text} can still be supplied
-  to \code{\dots{}} and are handled correctly.
-  Nevertheless, they are deprecated and no longer
-  documented.  Use \code{cex.numbers} and
-  \code{col.numbers} instead.
+Some of the argument names and positions have changed with
+versions 1.3 and 1.4 due to extended functionality and for
+more consistency with other plot functions in \code{VIM}.
+For back compatibility, the arguments \code{cex.text} and
+\code{col.text} can still be supplied to \code{\dots{}} and
+are handled correctly.  Nevertheless, they are deprecated
+and no longer documented.  Use \code{cex.numbers} and
+\code{col.numbers} instead.
 }
 \author{
-  Andreas Alfons, modifications to show imputed values by
-  Bernd Prantner
+Andreas Alfons, modifications to show imputed values by
+Bernd Prantner
 }
 \references{
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{colSequence}}, \code{\link{growdotMiss}},
-  \code{\link{mapMiss}}
+\code{\link{colSequence}}, \code{\link{growdotMiss}},
+\code{\link{mapMiss}}
 }
 \keyword{hplot}
 

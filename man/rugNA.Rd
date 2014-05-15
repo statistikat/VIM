@@ -2,8 +2,8 @@
 \alias{rugNA}
 \title{Rug representation of missing/imputed values}
 \usage{
-  rugNA(x, y, ticksize = NULL, side = 1, col = "red",
-    alpha = NULL, miss = NULL, lwd = 0.5, ...)
+rugNA(x, y, ticksize = NULL, side = 1, col = "red", alpha = NULL,
+  miss = NULL, lwd = 0.5, ...)
 }
 \arguments{
   \item{x,y}{numeric vectors.}
@@ -31,15 +31,15 @@
   \code{\link[graphics]{Axis}}.}
 }
 \description{
-  Add a rug representation of missing/imputed values in
-  only one of the variables to scatterplots.
+Add a rug representation of missing/imputed values in only
+one of the variables to scatterplots.
 }
 \details{
-  If \code{side} is 1 or 3, the rug representation consists
-  of values available in \code{x} but missing/imputed in
-  \code{y}.  Else if \code{side} is 2 or 4, it consists of
-  values available in \code{y} but missing/imputed in
-  \code{x}.
+If \code{side} is 1 or 3, the rug representation consists
+of values available in \code{x} but missing/imputed in
+\code{y}.  Else if \code{side} is 2 or 4, it consists of
+values available in \code{y} but missing/imputed in
+\code{x}.
 }
 \examples{
 data(tao, package = "VIM")
@@ -60,7 +60,7 @@ rugNA(x, y, side = 1, col = "orange", miss = miss)
 rugNA(x, y, side = 2, col = "orange", miss = miss)
 }
 \author{
-  Andreas Alfons, modifications by Bernd Prantner
+Andreas Alfons, modifications by Bernd Prantner
 }
 \keyword{color}
 

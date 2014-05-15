@@ -6,12 +6,11 @@
 \alias{which.minN}
 \title{k-Nearest Neighbour Imputation}
 \usage{
-  kNN(data, variable = colnames(data), metric = NULL,
-    k = 5, dist_var = colnames(data), weights = NULL,
-    numFun = median, catFun = maxCat, makeNA = NULL,
-    NAcond = NULL, impNA = TRUE, donorcond = NULL,
-    mixed = vector(), mixed.constant = NULL, trace = FALSE,
-    imp_var = TRUE, imp_suffix = "imp", addRandom = FALSE)
+kNN(data, variable = colnames(data), metric = NULL, k = 5,
+  dist_var = colnames(data), weights = NULL, numFun = median,
+  catFun = maxCat, makeNA = NULL, NAcond = NULL, impNA = TRUE,
+  donorcond = NULL, mixed = vector(), mixed.constant = NULL,
+  trace = FALSE, imp_var = TRUE, imp_suffix = "imp", addRandom = FALSE)
 }
 \arguments{
   \item{data}{data.frame or matrix}
@@ -66,28 +65,28 @@
   probability}
 }
 \value{
-  the imputed data set.
+the imputed data set.
 }
 \description{
-  k-Nearest Neighbour Imputation based on a variation of
-  the Gower Distance for numerical, categorical, ordered
-  and semi-continous variables.
+k-Nearest Neighbour Imputation based on a variation of the
+Gower Distance for numerical, categorical, ordered and
+semi-continous variables.
 }
 \details{
-  The function sampleCat samples with probabilites
-  corresponding to the occurrence of the level in the NNs.
-  The function maxCat chooses the level with the most
-  occurrences and random if the maximum is not unique. The
-  function gowerD is used by kNN to compute the distances
-  for numerical, factor ordered and semi-continous
-  variables. The function which.minN is used by kNN.
+The function sampleCat samples with probabilites
+corresponding to the occurrence of the level in the NNs.
+The function maxCat chooses the level with the most
+occurrences and random if the maximum is not unique. The
+function gowerD is used by kNN to compute the distances for
+numerical, factor ordered and semi-continous variables. The
+function which.minN is used by kNN.
 }
 \examples{
 data(sleep)
 kNN(sleep)
 }
 \author{
-  Alexander Kowarik
+Alexander Kowarik, Statistik Austria
 }
 \keyword{manip}
 

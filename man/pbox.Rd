@@ -2,13 +2,11 @@
 \alias{pbox}
 \title{Parallel boxplots with information about missing/imputed values}
 \usage{
-  pbox(x, delimiter = NULL, pos = 1,
-    selection = c("none", "any", "all"),
-    col = c("skyblue", "red", "red4", "orange", "orange4"),
-    numbers = TRUE, cex.numbers = par("cex"), xlim = NULL,
-    ylim = NULL, main = NULL, sub = NULL, xlab = NULL,
-    ylab = NULL, axes = TRUE, frame.plot = axes,
-    labels = axes, interactive = TRUE, ...)
+pbox(x, delimiter = NULL, pos = 1, selection = c("none", "any", "all"),
+  col = c("skyblue", "red", "red4", "orange", "orange4"), numbers = TRUE,
+  cex.numbers = par("cex"), xlim = NULL, ylim = NULL, main = NULL,
+  sub = NULL, xlab = NULL, ylab = NULL, axes = TRUE,
+  frame.plot = axes, labels = axes, interactive = TRUE, ...)
 }
 \arguments{
   \item{x}{a vector, matrix or \code{data.frame}.}
@@ -84,40 +82,40 @@
   \code{pbox}.}
 }
 \value{
-  a list as returned by \code{\link[graphics]{boxplot}}.
+a list as returned by \code{\link[graphics]{boxplot}}.
 }
 \description{
-  Boxplot of one variable of interest plus information
-  about missing/imputed values in other variables.
+Boxplot of one variable of interest plus information about
+missing/imputed values in other variables.
 }
 \details{
-  This plot consists of several boxplots. First, a standard
-  boxplot of the variable of interest is produced. Second,
-  boxplots grouped by observed and missing/imputed values
-  according to \code{selection} are produced for the
-  variable of interest.
+This plot consists of several boxplots. First, a standard
+boxplot of the variable of interest is produced. Second,
+boxplots grouped by observed and missing/imputed values
+according to \code{selection} are produced for the variable
+of interest.
 
-  Additionally, the frequencies of the missing/imputed
-  values can be represented by numbers.  If so, the first
-  line corresponds to the observed values of the variable
-  of interest and their distribution in the different
-  groups, the second line to the missing/imputed values.
+Additionally, the frequencies of the missing/imputed values
+can be represented by numbers.  If so, the first line
+corresponds to the observed values of the variable of
+interest and their distribution in the different groups,
+the second line to the missing/imputed values.
 
-  If \code{interactive=TRUE}, clicking in the left margin
-  of the plot results in switching to the previous variable
-  and clicking in the right margin results in switching to
-  the next variable.  Clicking anywhere else on the
-  graphics device quits the interactive session.
+If \code{interactive=TRUE}, clicking in the left margin of
+the plot results in switching to the previous variable and
+clicking in the right margin results in switching to the
+next variable.  Clicking anywhere else on the graphics
+device quits the interactive session.
 }
 \note{
-  Some of the argument names and positions have changed
-  with version 1.3 due to extended functionality and for
-  more consistency with other plot functions in \code{VIM}.
-  For back compatibility, the arguments \code{names} and
-  \code{cex.text} can still be supplied to \code{\dots{}}
-  and are handled correctly.  Nevertheless, they are
-  deprecated and no longer documented.  Use \code{labels}
-  and \code{cex.numbers} instead.
+Some of the argument names and positions have changed with
+version 1.3 due to extended functionality and for more
+consistency with other plot functions in \code{VIM}.  For
+back compatibility, the arguments \code{names} and
+\code{cex.text} can still be supplied to \code{\dots{}} and
+are handled correctly.  Nevertheless, they are deprecated
+and no longer documented.  Use \code{labels} and
+\code{cex.numbers} instead.
 }
 \examples{
 data(chorizonDL, package = "VIM")
@@ -129,17 +127,17 @@ pbox(kNN(log(chorizonDL[, c(4,8,10,11,17,19,25,29,37,38,40)])),
      delimiter = "_imp")
 }
 \author{
-  Andreas Alfons, Matthias Templ, modifications by Bernd
-  Prantner
+Andreas Alfons, Matthias Templ, modifications by Bernd
+Prantner
 }
 \references{
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{parcoordMiss}}
+\code{\link{parcoordMiss}}
 }
 \keyword{hplot}
 

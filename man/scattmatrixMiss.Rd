@@ -2,12 +2,10 @@
 \alias{scattmatrixMiss}
 \title{Scatterplot matrix with information about missing/imputed values}
 \usage{
-  scattmatrixMiss(x, delimiter = NULL, highlight = NULL,
-    selection = c("any", "all"), plotvars = NULL,
-    col = c("skyblue", "red", "orange"), alpha = NULL,
-    pch = c(1, 3), lty = par("lty"),
-    diagonal = c("density", "none"), interactive = TRUE,
-    ...)
+scattmatrixMiss(x, delimiter = NULL, highlight = NULL,
+  selection = c("any", "all"), plotvars = NULL, col = c("skyblue", "red",
+  "orange"), alpha = NULL, pch = c(1, 3), lty = par("lty"),
+  diagonal = c("density", "none"), interactive = TRUE, ...)
 }
 \arguments{
   \item{x}{a matrix or \code{data.frame}.}
@@ -76,45 +74,45 @@
   to \code{scattmatrixMiss}.}
 }
 \description{
-  Scatterplot matrix in which observations with
-  missing/imputed values in certain variables are
-  highlighted.
+Scatterplot matrix in which observations with
+missing/imputed values in certain variables are
+highlighted.
 }
 \details{
-  \code{scattmatrixMiss} uses \code{\link{pairsVIM}} with a
-  panel function that allows highlighting of
-  missing/imputed values.
+\code{scattmatrixMiss} uses \code{\link{pairsVIM}} with a
+panel function that allows highlighting of missing/imputed
+values.
 
-  If \code{interactive=TRUE}, the variables to be used for
-  highlighting can be selected interactively.  Observations
-  with missing/imputed values in any or in all of the
-  selected variables are highlighted (as determined by
-  \code{selection}).  A variable can be added to the
-  selection by clicking in a diagonal panel.  If a variable
-  is already selected, clicking on the corresponding
-  diagonal panel removes it from the selection.  Clicking
-  anywhere else quits the interactive session.
+If \code{interactive=TRUE}, the variables to be used for
+highlighting can be selected interactively.  Observations
+with missing/imputed values in any or in all of the
+selected variables are highlighted (as determined by
+\code{selection}).  A variable can be added to the
+selection by clicking in a diagonal panel.  If a variable
+is already selected, clicking on the corresponding diagonal
+panel removes it from the selection.  Clicking anywhere
+else quits the interactive session.
 
-  The graphical parameter \code{oma} will be set unless
-  supplied as an argument.
+The graphical parameter \code{oma} will be set unless
+supplied as an argument.
 
-  \code{TKRscattmatrixMiss} behaves like
-  \code{scattmatrixMiss}, but uses
-  \code{\link[tkrplot]{tkrplot}} to embed the plot in a
-  \emph{Tcl/Tk} window. This is useful if the number of
-  variables is large, because scrollbars allow to move from
-  one part of the plot to another.
+\code{TKRscattmatrixMiss} behaves like
+\code{scattmatrixMiss}, but uses
+\code{\link[tkrplot]{tkrplot}} to embed the plot in a
+\emph{Tcl/Tk} window. This is useful if the number of
+variables is large, because scrollbars allow to move from
+one part of the plot to another.
 }
 \note{
-  Some of the argument names and positions have changed
-  with version 1.3 due to a re-implementation and for more
-  consistency with other plot functions in \code{VIM}.  For
-  back compatibility, the argument \code{colcomb} can still
-  be supplied to \code{\dots{}} and is handled correctly.
-  Nevertheless, it is deprecated and no longer documented.
-  Use \code{highlight} instead.  The arguments
-  \code{smooth}, \code{reg.line} and \code{legend.plot} are
-  no longer used and ignored if supplied.
+Some of the argument names and positions have changed with
+version 1.3 due to a re-implementation and for more
+consistency with other plot functions in \code{VIM}.  For
+back compatibility, the argument \code{colcomb} can still
+be supplied to \code{\dots{}} and is handled correctly.
+Nevertheless, it is deprecated and no longer documented.
+Use \code{highlight} instead.  The arguments \code{smooth},
+\code{reg.line} and \code{legend.plot} are no longer used
+and ignored if supplied.
 }
 \examples{
 data(sleep, package = "VIM")
@@ -129,17 +127,17 @@ x_imp[,c(1,2,4)] <- log10(x_imp[,c(1,2,4)])
 scattmatrixMiss(x_imp, delimiter = "_imp", highlight = "Dream")
 }
 \author{
-  Andreas Alfons, Matthias Templ, modifications by Bernd
-  Prantner
+Andreas Alfons, Matthias Templ, modifications by Bernd
+Prantner
 }
 \references{
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{pairsVIM}}, \code{\link{marginmatrix}}
+\code{\link{pairsVIM}}, \code{\link{marginmatrix}}
 }
 \keyword{hplot}
 

@@ -19,8 +19,8 @@ variables: ..$ x1: num [1:500] 10.87 9.53 7.83 8.53 8.67 ...  ..$ x2: num
 [1:500] 10.66 9.39 7.8 8.11 7.33 ...  $ mixed : chr [1:2] "m1" "m2" $
 outlierInd: NULL}
 \description{
-  2 numeric, 2 binary, 2 nominal and 2 mixed
-  (semi-continous) variables
+2 numeric, 2 binary, 2 nominal and 2 mixed (semi-continous)
+variables
 }
 \examples{
 data(testdata)

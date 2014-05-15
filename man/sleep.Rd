@@ -10,14 +10,14 @@ numeric vector} \item{Span}{a numeric vector} \item{Gest}{a
 numeric vector} \item{Pred}{a numeric vector} \item{Exp}{a
 numeric vector} \item{Danger}{a numeric vector} }}
 \source{
-  Allison, T. and Chichetti, D. (1976) Sleep in mammals:
-  ecological and constitutional correlates. \emph{Science}
-  \bold{194 (4266)}, 732--734.
+Allison, T. and Chichetti, D. (1976) Sleep in mammals:
+ecological and constitutional correlates. \emph{Science}
+\bold{194 (4266)}, 732--734.
 
-  The data set was imported from \code{GGobi}.
+The data set was imported from \code{GGobi}.
 }
 \description{
-  Sleep data with missing values.
+Sleep data with missing values.
 }
 \examples{
 data(sleep, package = "VIM")

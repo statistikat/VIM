@@ -5,20 +5,18 @@
 \alias{summary.aggr}
 \title{Aggregations for missing/imputed values}
 \usage{
-  aggr(x, delimiter = NULL, plot = TRUE, ...)
+aggr(x, delimiter = NULL, plot = TRUE, ...)
 
-  \method{plot}{aggr} (x,
-    col = c("skyblue", "red", "orange"), bars = TRUE,
-    numbers = FALSE, prop = TRUE, combined = FALSE,
-    varheight = FALSE, only.miss = FALSE,
-    border = par("fg"), sortVars = FALSE, sortCombs = TRUE,
-    ylabs = NULL, axes = TRUE, labels = axes,
-    cex.lab = 1.2, cex.axis = par("cex"),
-    cex.numbers = par("cex"), gap = 4, ...)
+\method{plot}{aggr}(x, col = c("skyblue", "red", "orange"), bars = TRUE,
+  numbers = FALSE, prop = TRUE, combined = FALSE, varheight = FALSE,
+  only.miss = FALSE, border = par("fg"), sortVars = FALSE,
+  sortCombs = TRUE, ylabs = NULL, axes = TRUE, labels = axes,
+  cex.lab = 1.2, cex.axis = par("cex"), cex.numbers = par("cex"),
+  gap = 4, ...)
 
-  \method{print}{aggr} (x, digits = NULL, ...)
+\method{print}{aggr}(x, digits = NULL, ...)
 
-  \method{summary}{aggr} (object, ...)
+\method{summary}{aggr}(object, ...)
 }
 \arguments{
   \item{x}{a vector, matrix or \code{data.frame}.}
@@ -131,75 +129,73 @@
   \item{object}{an object of class \code{"aggr"}.}
 }
 \value{
-  for \code{aggr}, a list of class \code{"aggr"} containing
-  the following components: - x the data used. -
-  combinations a character vector representing the
-  combinations of variables. - count the frequencies of
-  these combinations. - percent the percentage of these
-  combinations. - missings a \code{data.frame} containing
-  the amount of missing/imputed values in each variable. -
-  tabcomb the indicator matrix for the combinations of
-  variables.
+for \code{aggr}, a list of class \code{"aggr"} containing
+the following components: - x the data used. - combinations
+a character vector representing the combinations of
+variables. - count the frequencies of these combinations. -
+percent the percentage of these combinations. - missings a
+\code{data.frame} containing the amount of missing/imputed
+values in each variable. - tabcomb the indicator matrix for
+the combinations of variables.
 
-  a list of class \code{"summary.aggr"} containing the
-  following components: - missings a \code{data.frame}
-  containing the amount of missing or imputed values in
-  each variable. - combinations a \code{data.frame}
-  containing a character vector representing the
-  combinations of variables along with their frequencies
-  and percentages.
+a list of class \code{"summary.aggr"} containing the
+following components: - missings a \code{data.frame}
+containing the amount of missing or imputed values in each
+variable. - combinations a \code{data.frame} containing a
+character vector representing the combinations of variables
+along with their frequencies and percentages.
 }
 \description{
-  Calculate or plot the amount of missing/imputed values in
-  each variable and the amount of missing/imputed values in
-  certain combinations of variables.
+Calculate or plot the amount of missing/imputed values in
+each variable and the amount of missing/imputed values in
+certain combinations of variables.
 
-  Print method for objects of class \code{"aggr"}.
+Print method for objects of class \code{"aggr"}.
 
-  Summary method for objects of class \code{"aggr"}.
+Summary method for objects of class \code{"aggr"}.
 }
 \details{
-  Often it is of interest how many missing/imputed values
-  are contained in each variable.  Even more interesting,
-  there may be certain combinations of variables with a
-  high number of missing/imputed values.
+Often it is of interest how many missing/imputed values are
+contained in each variable.  Even more interesting, there
+may be certain combinations of variables with a high number
+of missing/imputed values.
 
-  If \code{combined} is \code{FALSE}, two separate plots
-  are drawn for the missing/imputed values in each variable
-  and the combinations of missing/imputed and non-missing
-  values. The barplot on the left hand side shows the
-  amount of missing/imputed values in each variable.  In
-  the \emph{aggregation plot} on the right hand side, all
-  existing combinations of missing/imputed and non-missing
-  values in the observations are visualized. Available,
-  missing and imputed data are color coded as given by
-  \code{col}. Additionally, there are two possibilities to
-  represent the frequencies of occurrence of the different
-  combinations.  The first option is to visualize the
-  proportions or frequencies by a small bar plot and/or
-  numbers.  The second option is to let the cell heights be
-  given by the frequencies of the corresponding
-  combinations. Furthermore, variables may be sorted by the
-  number of missing/imputed values and combinations by the
-  frequency of occurrence to give more power to finding the
-  structure of missing/imputed values.
+If \code{combined} is \code{FALSE}, two separate plots are
+drawn for the missing/imputed values in each variable and
+the combinations of missing/imputed and non-missing values.
+The barplot on the left hand side shows the amount of
+missing/imputed values in each variable.  In the
+\emph{aggregation plot} on the right hand side, all
+existing combinations of missing/imputed and non-missing
+values in the observations are visualized. Available,
+missing and imputed data are color coded as given by
+\code{col}. Additionally, there are two possibilities to
+represent the frequencies of occurrence of the different
+combinations.  The first option is to visualize the
+proportions or frequencies by a small bar plot and/or
+numbers.  The second option is to let the cell heights be
+given by the frequencies of the corresponding combinations.
+Furthermore, variables may be sorted by the number of
+missing/imputed values and combinations by the frequency of
+occurrence to give more power to finding the structure of
+missing/imputed values.
 
-  If \code{combined} is \code{TRUE}, a small version of the
-  barplot showing the amount of missing/imputed values in
-  each variable is drawn on top of the aggregation plot.
+If \code{combined} is \code{TRUE}, a small version of the
+barplot showing the amount of missing/imputed values in
+each variable is drawn on top of the aggregation plot.
 
-  The graphical parameter \code{oma} will be set unless
-  supplied as an argument.
+The graphical parameter \code{oma} will be set unless
+supplied as an argument.
 }
 \note{
-  Some of the argument names and positions have changed
-  with version 1.3 due to extended functionality and for
-  more consistency with other plot functions in \code{VIM}.
-  For back compatibility, the arguments \code{labs} and
-  \code{names.arg} can still be supplied to \code{\dots{}}
-  and are handled correctly.  Nevertheless, they are
-  deprecated and no longer documented.  Use \code{ylabs}
-  and \code{labels} instead.
+Some of the argument names and positions have changed with
+version 1.3 due to extended functionality and for more
+consistency with other plot functions in \code{VIM}.  For
+back compatibility, the arguments \code{labs} and
+\code{names.arg} can still be supplied to \code{\dots{}}
+and are handled correctly.  Nevertheless, they are
+deprecated and no longer documented.  Use \code{ylabs} and
+\code{labels} instead.
 }
 \examples{
 data(sleep, package="VIM")
@@ -220,26 +216,26 @@ data(sleep, package = "VIM")
 summary(aggr(sleep, plot=FALSE))
 }
 \author{
-  Andreas Alfons, Matthias Templ, modifications for
-  displaying imputed values by Bernd Prantner
+Andreas Alfons, Matthias Templ, modifications for
+displaying imputed values by Bernd Prantner
 
-  Matthias Templ, modifications by Andreas Alfons and Bernd
-  Prantner
+Matthias Templ, modifications by Andreas Alfons and Bernd
+Prantner
 
-  Matthias Templ, modifications by Andreas Alfons
+Matthias Templ, modifications by Andreas Alfons
 }
 \references{
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{print.aggr}}, \code{\link{summary.aggr}}
+\code{\link{print.aggr}}, \code{\link{summary.aggr}}
 
-  \code{\link{aggr}}
+\code{\link{aggr}}
 
-  \code{\link{print.summary.aggr}}, \code{\link{aggr}}
+\code{\link{print.summary.aggr}}, \code{\link{aggr}}
 }
 \keyword{hplot}
 \keyword{print}

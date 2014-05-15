@@ -2,10 +2,9 @@
 \alias{hotdeck}
 \title{Hot-Deck Imputation}
 \usage{
-  hotdeck(data, variable = NULL, ord_var = NULL,
-    domain_var = NULL, makeNA = NULL, NAcond = NULL,
-    impNA = TRUE, donorcond = NULL, imp_var = TRUE,
-    imp_suffix = "imp")
+hotdeck(data, variable = NULL, ord_var = NULL, domain_var = NULL,
+  makeNA = NULL, NAcond = NULL, impNA = TRUE, donorcond = NULL,
+  imp_var = TRUE, imp_suffix = "imp")
 }
 \arguments{
   \item{data}{data.frame or matrix}
@@ -36,11 +35,11 @@
   showing the imputation status}
 }
 \value{
-  the imputed data set.
+the imputed data set.
 }
 \description{
-  Implementation of the popular Sequential, Random (within
-  a domain) hot-deck algorithm for imputation.
+Implementation of the popular Sequential, Random (within a
+domain) hot-deck algorithm for imputation.
 }
 \examples{
 data(sleep)
@@ -48,7 +47,7 @@ sleepI <- hotdeck(sleep)
 sleepI2 <- hotdeck(sleep,ord_var="BodyWgt",domain_var="Pred")
 }
 \author{
-  Alexander Kowarik
+Alexander Kowarik
 }
 \keyword{manip}
 

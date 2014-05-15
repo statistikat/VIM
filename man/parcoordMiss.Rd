@@ -2,14 +2,11 @@
 \alias{parcoordMiss}
 \title{Parallel coordinate plot with information about missing/imputed values}
 \usage{
-  parcoordMiss(x, delimiter = NULL, highlight = NULL,
-    selection = c("any", "all"), plotvars = NULL,
-    plotNA = TRUE,
-    col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
-    alpha = NULL, lty = par("lty"), xlim = NULL,
-    ylim = NULL, main = NULL, sub = NULL, xlab = NULL,
-    ylab = NULL, labels = TRUE, xpd = NULL,
-    interactive = TRUE, ...)
+parcoordMiss(x, delimiter = NULL, highlight = NULL, selection = c("any",
+  "all"), plotvars = NULL, plotNA = TRUE, col = c("skyblue", "red",
+  "skyblue4", "red4", "orange", "orange4"), alpha = NULL, lty = par("lty"),
+  xlim = NULL, ylim = NULL, main = NULL, sub = NULL, xlab = NULL,
+  ylab = NULL, labels = TRUE, xpd = NULL, interactive = TRUE, ...)
 }
 \arguments{
   \item{x}{a matrix or \code{data.frame}.}
@@ -95,55 +92,52 @@
   \code{parcoordMiss}.}
 }
 \description{
-  Parallel coordinate plot with adjustments for
-  missing/imputed values. Missing values in the plotted
-  variables may be represented by a point above the
-  corresponding coordinate axis to prevent disconnected
-  lines. In addition, observations with missing/imputed
-  values in selected variables may be highlighted.
+Parallel coordinate plot with adjustments for
+missing/imputed values. Missing values in the plotted
+variables may be represented by a point above the
+corresponding coordinate axis to prevent disconnected
+lines. In addition, observations with missing/imputed
+values in selected variables may be highlighted.
 }
 \details{
-  In parallel coordinate plots, the variables are
-  represented by parallel axes.  Each observation of the
-  scaled data is shown as a line.  Observations with
-  missing/imputed values in selected variables may thereby
-  be highlighted.  However, plotting variables with missing
-  values results in disconnected lines, making it
-  impossible to trace the respective observations across
-  the graph.  As a remedy, missing values may be
-  represented by a point above the corresponding coordinate
-  axis, which is separated from the main plot by a small
-  gap and a horizontal line, as determined by
-  \code{plotNA}.  Connected lines can then be drawn for all
-  observations.  Nevertheless, a caveat of this display is
-  that it may draw attention away from the main
-  relationships between the variables.
+In parallel coordinate plots, the variables are represented
+by parallel axes.  Each observation of the scaled data is
+shown as a line.  Observations with missing/imputed values
+in selected variables may thereby be highlighted.  However,
+plotting variables with missing values results in
+disconnected lines, making it impossible to trace the
+respective observations across the graph.  As a remedy,
+missing values may be represented by a point above the
+corresponding coordinate axis, which is separated from the
+main plot by a small gap and a horizontal line, as
+determined by \code{plotNA}.  Connected lines can then be
+drawn for all observations.  Nevertheless, a caveat of this
+display is that it may draw attention away from the main
+relationships between the variables.
 
-  If \code{interactive} is \code{TRUE}, it is possible
-  switch between this display and the standard display
-  without the separate level for missing values by clicking
-  in the top margin of the plot. In addition, the variables
-  to be used for highlighting can be selected
-  interactively.  Observations with missing/imputed values
-  in any or in all of the selected variables are
-  highlighted (as determined by \code{selection}).  A
-  variable can be added to the selection by clicking on a
-  coordinate axis.  If a variable is already selected,
-  clicking on its coordinate axis removes it from the
-  selection. Clicking anywhere outside the plot region
-  (except the top margin, if missing/imputed values exist)
-  quits the interactive session.
+If \code{interactive} is \code{TRUE}, it is possible switch
+between this display and the standard display without the
+separate level for missing values by clicking in the top
+margin of the plot. In addition, the variables to be used
+for highlighting can be selected interactively.
+Observations with missing/imputed values in any or in all
+of the selected variables are highlighted (as determined by
+\code{selection}).  A variable can be added to the
+selection by clicking on a coordinate axis.  If a variable
+is already selected, clicking on its coordinate axis
+removes it from the selection. Clicking anywhere outside
+the plot region (except the top margin, if missing/imputed
+values exist) quits the interactive session.
 }
 \note{
-  Some of the argument names and positions have changed
-  with versions 1.3 and 1.4 due to extended functionality
-  and for more consistency with other plot functions in
-  \code{VIM}.  For back compatibility, the arguments
-  \code{colcomb} and \code{xaxlabels} can still be supplied
-  to \code{\dots{}} and are handled correctly.
-  Nevertheless, they are deprecated and no longer
-  documented.  Use \code{highlight} and \code{labels}
-  instead.
+Some of the argument names and positions have changed with
+versions 1.3 and 1.4 due to extended functionality and for
+more consistency with other plot functions in \code{VIM}.
+For back compatibility, the arguments \code{colcomb} and
+\code{xaxlabels} can still be supplied to \code{\dots{}}
+and are handled correctly.  Nevertheless, they are
+deprecated and no longer documented.  Use \code{highlight}
+and \code{labels} instead.
 }
 \examples{
 data(chorizonDL, package = "VIM")
@@ -160,21 +154,21 @@ legend("top", col = c("skyblue", "orange"), lwd = c(1,1),
     legend = c("observed in Bi", "imputed in Bi"))
 }
 \author{
-  Andreas Alfons, Matthias Templ, modifications by Bernd
-  Prantner
+Andreas Alfons, Matthias Templ, modifications by Bernd
+Prantner
 }
 \references{
-  Wegman, E. J. (1990) Hyperdimensional data analysis using
-  parallel coordinates. \emph{Journal of the American
-  Statistical Association} \bold{85 (411)}, 664--675.
+Wegman, E. J. (1990) Hyperdimensional data analysis using
+parallel coordinates. \emph{Journal of the American
+Statistical Association} \bold{85 (411)}, 664--675.
 
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{pbox}}
+\code{\link{pbox}}
 }
 \keyword{hplot}
 

@@ -3,15 +3,13 @@
 \alias{growdotMiss}
 \title{Growing dot map with information about missing/imputed values}
 \usage{
-  growdotMiss(x, coords, map, pos = 1, delimiter = NULL,
-    selection = c("any", "all"), log = FALSE,
-    col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
-    border = par("bg"), alpha = NULL, scale = NULL,
-    size = NULL, exp = c(0, 0.95, 0.05),
-    col.map = grey(0.5), legend = TRUE,
-    legtitle = "Legend", cex.legtitle = par("cex"),
-    cex.legtext = par("cex"), ncircles = 6, ndigits = 1,
-    interactive = TRUE, ...)
+growdotMiss(x, coords, map, pos = 1, delimiter = NULL,
+  selection = c("any", "all"), log = FALSE, col = c("skyblue", "red",
+  "skyblue4", "red4", "orange", "orange4"), border = par("bg"),
+  alpha = NULL, scale = NULL, size = NULL, exp = c(0, 0.95, 0.05),
+  col.map = grey(0.5), legend = TRUE, legtitle = "Legend",
+  cex.legtitle = par("cex"), cex.legtext = par("cex"), ncircles = 6,
+  ndigits = 1, interactive = TRUE, ...)
 }
 \arguments{
   \item{x}{a vector, matrix or \code{data.frame}.}
@@ -102,31 +100,31 @@
   arguments to be passed to \code{growdotMiss}.}
 }
 \description{
-  Map with dots whose sizes correspond to the values in a
-  certain variable. Observations with missing/imputed
-  values in additional variables are highlighted.
+Map with dots whose sizes correspond to the values in a
+certain variable. Observations with missing/imputed values
+in additional variables are highlighted.
 }
 \details{
-  The smallest dots correspond to the 10\% quantile and the
-  largest dots to the 99\% quantile.  In between, the dots
-  grow exponentially, with \code{exp} defining the shape of
-  the exponential function.  Missings/imputed missings in
-  the variable of interest will be drawn as rectangles.
+The smallest dots correspond to the 10\% quantile and the
+largest dots to the 99\% quantile.  In between, the dots
+grow exponentially, with \code{exp} defining the shape of
+the exponential function.  Missings/imputed missings in the
+variable of interest will be drawn as rectangles.
 
-  If \code{interactive=TRUE}, detailed information for an
-  observation can be printed on the console by clicking on
-  the corresponding point.  Clicking in a region that does
-  not contain any points quits the interactive session.
+If \code{interactive=TRUE}, detailed information for an
+observation can be printed on the console by clicking on
+the corresponding point.  Clicking in a region that does
+not contain any points quits the interactive session.
 }
 \note{
-  The function was renamed to \code{growdotMiss} in version
-  1.3. \code{bubbleMiss} is a (deprecated) wrapper for
-  \code{growdotMiss} for back compatibility with older
-  versions. However, due to extended functionality, some of
-  the argument positions have changed.
+The function was renamed to \code{growdotMiss} in version
+1.3. \code{bubbleMiss} is a (deprecated) wrapper for
+\code{growdotMiss} for back compatibility with older
+versions. However, due to extended functionality, some of
+the argument positions have changed.
 
-  The code is based on \code{\link[StatDA]{bubbleFIN}} from
-  package \code{StatDA}.
+The code is based on \code{\link[StatDA]{bubbleFIN}} from
+package \code{StatDA}.
 }
 \examples{
 data(chorizonDL, package = "VIM")
@@ -141,18 +139,18 @@ x_imp <- kNN(chorizonDL[,c("Ca","As","Bi" )])
 growdotMiss(x_imp, coo, kola.background, delimiter = "_imp", border = "white")
 }
 \author{
-  Andreas Alfons, Matthias Templ, Peter Filzmoser, Bernd
-  Prantner
+Andreas Alfons, Matthias Templ, Peter Filzmoser, Bernd
+Prantner
 }
 \references{
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{bgmap}}, \code{\link{mapMiss}},
-  \code{\link{colormapMiss}}
+\code{\link{bgmap}}, \code{\link{mapMiss}},
+\code{\link{colormapMiss}}
 }
 \keyword{hplot}
 

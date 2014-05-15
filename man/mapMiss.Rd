@@ -2,11 +2,9 @@
 \alias{mapMiss}
 \title{Map with information about missing/imputed values}
 \usage{
-  mapMiss(x, coords, map, delimiter = NULL,
-    selection = c("any", "all"),
-    col = c("skyblue", "red", "orange"), alpha = NULL,
-    pch = c(19, 15), col.map = grey(0.5), legend = TRUE,
-    interactive = TRUE, ...)
+mapMiss(x, coords, map, delimiter = NULL, selection = c("any", "all"),
+  col = c("skyblue", "red", "orange"), alpha = NULL, pch = c(19, 15),
+  col.map = grey(0.5), legend = TRUE, interactive = TRUE, ...)
 }
 \arguments{
   \item{x}{a vector, matrix or \code{data.frame}.}
@@ -62,13 +60,13 @@
   \code{\link{bgmap}} and \code{\link[graphics]{points}}.}
 }
 \description{
-  Map of observed and missing/imputed values.
+Map of observed and missing/imputed values.
 }
 \details{
-  If \code{interactive=TRUE}, detailed information for an
-  observation can be printed on the console by clicking on
-  the corresponding point.  Clicking in a region that does
-  not contain any points quits the interactive session.
+If \code{interactive=TRUE}, detailed information for an
+observation can be printed on the console by clicking on
+the corresponding point.  Clicking in a region that does
+not contain any points quits the interactive session.
 }
 \examples{
 data(chorizonDL, package = "VIM")
@@ -83,18 +81,18 @@ x_imp <- kNN(chorizonDL[, c("As", "Bi")])
 mapMiss(x_imp, coo, kola.background, delimiter = "_imp")
 }
 \author{
-  Matthias Templ, Andreas Alfons, modifications by Bernd
-  Prantner
+Matthias Templ, Andreas Alfons, modifications by Bernd
+Prantner
 }
 \references{
-  M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
-  incomplete data using visualization tools.  \emph{Journal
-  of Advances in Data Analysis and Classification}, Online
-  first. DOI: 10.1007/s11634-011-0102-y.
+M. Templ, A. Alfons, P. Filzmoser (2012) Exploring
+incomplete data using visualization tools.  \emph{Journal
+of Advances in Data Analysis and Classification}, Online
+first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-  \code{\link{bgmap}}, \code{\link{bubbleMiss}},
-  \code{\link{colormapMiss}}
+\code{\link{bgmap}}, \code{\link{bubbleMiss}},
+\code{\link{colormapMiss}}
 }
 \keyword{hplot}
 
