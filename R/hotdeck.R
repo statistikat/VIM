@@ -47,32 +47,32 @@
 #' @S3method hotdeck survey.design
 #' @S3method hotdeck default
 hotdeck <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
-                    makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
-                    imp_var=TRUE,imp_suffix="imp") {
+    makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
+    imp_var=TRUE,imp_suffix="imp") {
   UseMethod("hotdeck", data)
 }
 
 hotdeck.data.frame <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
-                               makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
-                               imp_var=TRUE,imp_suffix="imp") {
+    makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
+    imp_var=TRUE,imp_suffix="imp") {
   hotdeck_work(data, variable, ord_var, domain_var, makeNA, NAcond, impNA, donorcond,
-               imp_var, imp_suffix)
+      imp_var, imp_suffix)
 }
 
 hotdeck.survey.design <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
-                                  makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
-                                  imp_var=TRUE,imp_suffix="imp") {
+    makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
+    imp_var=TRUE,imp_suffix="imp") {
   data$variables <- hotdeck_work(data$variables, variable, ord_var, domain_var, makeNA, NAcond, impNA, donorcond,
-               imp_var, imp_suffix)
+      imp_var, imp_suffix)
   data$call <- sys.call(-1)
   data
 }
 
 hotdeck.default <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
-                            makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
-                            imp_var=TRUE,imp_suffix="imp") {
+    makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
+    imp_var=TRUE,imp_suffix="imp") {
   hotdeck_work(as.data.frame(data), variable, ord_var, domain_var, makeNA, NAcond, impNA, donorcond,
-               imp_var, imp_suffix)
+      imp_var, imp_suffix)
 }
 
 hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
@@ -125,9 +125,9 @@ hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
     if(length(index_imp_vars)>0){
       data[,imp_vars[index_imp_vars]] <- FALSE
       #for(i in index_imp_vars){
-        #data[indexNA2s[,variable[i]],imp_vars[i]] <- TRUE
-        #if(!any(indexNA2s[,variable[i]]))
-        #  data<-data[,-which(names(data)==paste(variable[i],"_",imp_suffix,sep=""))]
+      #data[indexNA2s[,variable[i]],imp_vars[i]] <- TRUE
+      #if(!any(indexNA2s[,variable[i]]))
+      #  data<-data[,-which(names(data)==paste(variable[i],"_",imp_suffix,sep=""))]
       #}
     }
     if(length(index_imp_vars2)>0){
@@ -227,6 +227,7 @@ hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
 #x[sample(1:nRows,nRows/10),4] <- NA
 #
 #hd <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL){
+#  classx <- class(x)
 #  VariableSorting <- colnames(x)
 #  x$OriginalSortingVariable <- 1:nrow(x)
 #  x <- data.table(x)
@@ -234,7 +235,7 @@ hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
 #    variable  <- colnames(x)[apply(is.na(x),2,any)]
 #  }
 #  ## xx should be a data.table and ord_var the name of variables to sort
-#  imputeHD <- function(xx,ord_var,varType){
+#  imputeHD <- function(xx,ord_var=ord_var,varType=varType){
 #    setkeyv(xx,ord_var)
 #    xx$UniqueIdForImputation <- 1:nrow(xx)
 #    
@@ -268,7 +269,7 @@ hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
 #            TF <- any(TFindex)
 #            if(add>50){
 #              TF <- FALSE
-#              don[TFindex]<-1
+#              Don[TFindex]<-1
 #            }
 #            add <- add +1
 #          }
@@ -285,7 +286,9 @@ hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
 #  x <- x[,imputeHD(.SD,ord_var=ord_var,varType=varType), by = domain_var]
 #  setkey(x,OriginalSortingVariable)
 #  x[,OriginalSortingVariable:=NULL]
-#  data.frame(x)[,VariableSorting]
+#  if(all(classx!="data.table"))
+#    return(data.frame(x)[,VariableSorting])
+#  return(x[,VariableSorting,with=F])
 #}
 #require(data.table)
 #setwd("/Users/alex")
