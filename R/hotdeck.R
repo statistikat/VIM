@@ -75,147 +75,147 @@ hotdeck.default <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
       imp_var, imp_suffix)
 }
 
-hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
-    makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
-    imp_var=TRUE,imp_suffix="imp"){
-  #basic checks
-  if(is.null(variable)){
-    variable <- colnames(data)
-    if(!is.null(ord_var))
-      variable <- variable[-match(ord_var,variable)]
-    if(!is.null(domain_var))
-      variable <- variable[-match(domain_var,variable)]    
-  }
-  nvar <- length(variable)
-  ndat <- nrow(data)
-  data$UNIQUEIDx <- 1:ndat
-  if(!is.data.frame(data)&&!is.matrix(data))
-    stop("supplied data should be a dataframe or matrix")
-  if(!impNA&&is.null(NAcond)){
-    warning("Nothing to impute, because NA were not imputed and no NA condition is given")
-    invisible(data)
-  }
-  if(!is.null(domain_var))
-    if(any(is.na(data[,domain_var])))
-      stop("Domain variables should not include missings, otherwise you have to impute them first")
-  if(is.matrix(data))
-    data <- as.data.frame(data)
-  
-  #impNA==FALSE -> NAs should remain NAs (Routing NAs!?)
-  if(!impNA)
-    data[is.na(data)] <- "THISISanNASTRINGthatshouldnotbeimputedbytheroutine"
-  
-  if(!is.null(makeNA)){
-    if(length(makeNA)!=nvar)
-      stop("The list 'variable' must have the same length as the 'makeNA' list")
-    else{
-      for(i in 1:nvar){
-        data[data[,variable[i]]%in%makeNA[[i]],variable[i]] <- NA 
-      }
-    }
-  }
-  if(!any(is.na(data))){
-    warning("Nothing to impute, because no NA are present (also after using makeNA)")
-    invisible(data)
-  }
-  if(imp_var){
-    imp_vars <- paste(variable,"_",imp_suffix,sep="")
-    index_imp_vars <- which(!imp_vars%in%colnames(data))
-    index_imp_vars2 <- which(imp_vars%in%colnames(data))
-    if(length(index_imp_vars)>0){
-      data[,imp_vars[index_imp_vars]] <- FALSE
-      #for(i in index_imp_vars){
-      #data[indexNA2s[,variable[i]],imp_vars[i]] <- TRUE
-      #if(!any(indexNA2s[,variable[i]]))
-      #  data<-data[,-which(names(data)==paste(variable[i],"_",imp_suffix,sep=""))]
-      #}
-    }
-    if(length(index_imp_vars2)>0){
-      warning(paste("The following TRUE/FALSE imputation status variables will be updated:",
-              paste(imp_vars[index_imp_vars2],collapse=" , ")))
-      for(i in index_imp_vars2)
-        data[,imp_vars[i]] <- as.logical(data[,imp_vars[i]])
-    }
-  }
-  ##Split the data into domains
-  if(!is.null(domain_var)){
-    newindex <- apply(data[,domain_var,drop=FALSE], 1, paste, collapse=":")
-    datas <- split(data,newindex)      
-  }else
-    datas <- list(data)
-  for(j in 1:nvar){#impute each variable
-    for(d in 1:length(datas)){#impute in each domain
-      datax <- datas[[d]]
-      ndat <- nrow(datax)
-      ##Order the data set
-      if(!is.null(ord_var)){
-        if(is.list(ord_var))
-          ord_var1 <- ord_var[[j]]
-        else
-          ord_var1 <- ord_var
-        cmd <- "ord <- order("
-        for(i in 1:length(ord_var1)){
-          cmd <- paste(cmd,"datax[,ord_var1[",i,"]],",sep="")
-        }
-        cmd <- paste(cmd,"na.last=TRUE)",sep="")
-        eval(parse(text=cmd))
-      }else{
-        ord <- sample(1:ndat,ndat)
-      }
-      datax <- datax[ord,]
-      donorISgood <- FALSE
-      if(nrow(datax)>1){
-        while(!donorISgood){
-          donor <- sample(na.omit(datax[,variable[[j]]]),1)
-          if(!is.null(donorcond)){
-            if(is.list(donorcond))
-              donorcondX <- donorcond[[j]]
-            else
-              donorcondX <- donorcond
-            TFdon <- vector()
-            cmd <- paste("TFdon <- donor",donorcondX,sep="")
-            eval(parse(text=cmd))
-            if(TFdon)
-              donorISgood <- TRUE
-          }else
-            donorISgood <- TRUE
-        }
-      }
-      for(i in 1:ndat){
-        if(is.na(datax[i,variable[j]])){
-          datax[i,variable[j]] <- donor
-        }else{
-          donorX <- datax[i,variable[j]] 
-          if(!is.null(donorcond)){
-            if(is.list(donorcond))
-              donorcondX <- donorcond[[j]]
-            else
-              donorcondX <- donorcond
-            cmd <- paste("TFdon <- donor",donorcondX,sep="")
-          }else
-            cmd <- paste("TFdon <- TRUE",sep="")
-          eval(parse(text=cmd))
-          if(TFdon)
-            donor <- donorX
-        }
-      }        
-      datax -> datas[[d]] 
-    }
-  }
-  
-  datax <- data.frame()
-  for(d in 1:length(datas)){
-    datax <- rbind(datax,datas[[d]])
-  }
-  datax <- datax[order(datax$UNIQUEIDx),-which(names(datax)=="UNIQUEIDx")] 
-  if(any(is.na(datax)))
-    warning("Some NAs remained, maybe due to a too restrictive domain building!?")
-  if(!impNA)
-    datax[datax=="THISISanNASTRINGthatshouldnotbeimputedbytheroutine"] <- NA
-  datax
-}
+#hotdeck_work <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
+#    makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
+#    imp_var=TRUE,imp_suffix="imp"){
+#  #basic checks
+#  if(is.null(variable)){
+#    variable <- colnames(data)
+#    if(!is.null(ord_var))
+#      variable <- variable[-match(ord_var,variable)]
+#    if(!is.null(domain_var))
+#      variable <- variable[-match(domain_var,variable)]    
+#  }
+#  nvar <- length(variable)
+#  ndat <- nrow(data)
+#  data$UNIQUEIDx <- 1:ndat
+#  if(!is.data.frame(data)&&!is.matrix(data))
+#    stop("supplied data should be a dataframe or matrix")
+#  if(!impNA&&is.null(NAcond)){
+#    warning("Nothing to impute, because NA were not imputed and no NA condition is given")
+#    invisible(data)
+#  }
+#  if(!is.null(domain_var))
+#    if(any(is.na(data[,domain_var])))
+#      stop("Domain variables should not include missings, otherwise you have to impute them first")
+#  if(is.matrix(data))
+#    data <- as.data.frame(data)
+#  
+#  #impNA==FALSE -> NAs should remain NAs (Routing NAs!?)
+#  if(!impNA)
+#    data[is.na(data)] <- "THISISanNASTRINGthatshouldnotbeimputedbytheroutine"
+#  
+#  if(!is.null(makeNA)){
+#    if(length(makeNA)!=nvar)
+#      stop("The list 'variable' must have the same length as the 'makeNA' list")
+#    else{
+#      for(i in 1:nvar){
+#        data[data[,variable[i]]%in%makeNA[[i]],variable[i]] <- NA 
+#      }
+#    }
+#  }
+#  if(!any(is.na(data))){
+#    warning("Nothing to impute, because no NA are present (also after using makeNA)")
+#    invisible(data)
+#  }
+#  if(imp_var){
+#    imp_vars <- paste(variable,"_",imp_suffix,sep="")
+#    index_imp_vars <- which(!imp_vars%in%colnames(data))
+#    index_imp_vars2 <- which(imp_vars%in%colnames(data))
+#    if(length(index_imp_vars)>0){
+#      data[,imp_vars[index_imp_vars]] <- FALSE
+#      #for(i in index_imp_vars){
+#      #data[indexNA2s[,variable[i]],imp_vars[i]] <- TRUE
+#      #if(!any(indexNA2s[,variable[i]]))
+#      #  data<-data[,-which(names(data)==paste(variable[i],"_",imp_suffix,sep=""))]
+#      #}
+#    }
+#    if(length(index_imp_vars2)>0){
+#      warning(paste("The following TRUE/FALSE imputation status variables will be updated:",
+#              paste(imp_vars[index_imp_vars2],collapse=" , ")))
+#      for(i in index_imp_vars2)
+#        data[,imp_vars[i]] <- as.logical(data[,imp_vars[i]])
+#    }
+#  }
+#  ##Split the data into domains
+#  if(!is.null(domain_var)){
+#    newindex <- apply(data[,domain_var,drop=FALSE], 1, paste, collapse=":")
+#    datas <- split(data,newindex)      
+#  }else
+#    datas <- list(data)
+#  for(j in 1:nvar){#impute each variable
+#    for(d in 1:length(datas)){#impute in each domain
+#      datax <- datas[[d]]
+#      ndat <- nrow(datax)
+#      ##Order the data set
+#      if(!is.null(ord_var)){
+#        if(is.list(ord_var))
+#          ord_var1 <- ord_var[[j]]
+#        else
+#          ord_var1 <- ord_var
+#        cmd <- "ord <- order("
+#        for(i in 1:length(ord_var1)){
+#          cmd <- paste(cmd,"datax[,ord_var1[",i,"]],",sep="")
+#        }
+#        cmd <- paste(cmd,"na.last=TRUE)",sep="")
+#        eval(parse(text=cmd))
+#      }else{
+#        ord <- sample(1:ndat,ndat)
+#      }
+#      datax <- datax[ord,]
+#      donorISgood <- FALSE
+#      if(nrow(datax)>1){
+#        while(!donorISgood){
+#          donor <- sample(na.omit(datax[,variable[[j]]]),1)
+#          if(!is.null(donorcond)){
+#            if(is.list(donorcond))
+#              donorcondX <- donorcond[[j]]
+#            else
+#              donorcondX <- donorcond
+#            TFdon <- vector()
+#            cmd <- paste("TFdon <- donor",donorcondX,sep="")
+#            eval(parse(text=cmd))
+#            if(TFdon)
+#              donorISgood <- TRUE
+#          }else
+#            donorISgood <- TRUE
+#        }
+#      }
+#      for(i in 1:ndat){
+#        if(is.na(datax[i,variable[j]])){
+#          datax[i,variable[j]] <- donor
+#        }else{
+#          donorX <- datax[i,variable[j]] 
+#          if(!is.null(donorcond)){
+#            if(is.list(donorcond))
+#              donorcondX <- donorcond[[j]]
+#            else
+#              donorcondX <- donorcond
+#            cmd <- paste("TFdon <- donor",donorcondX,sep="")
+#          }else
+#            cmd <- paste("TFdon <- TRUE",sep="")
+#          eval(parse(text=cmd))
+#          if(TFdon)
+#            donor <- donorX
+#        }
+#      }        
+#      datax -> datas[[d]] 
+#    }
+#  }
+#  
+#  datax <- data.frame()
+#  for(d in 1:length(datas)){
+#    datax <- rbind(datax,datas[[d]])
+#  }
+#  datax <- datax[order(datax$UNIQUEIDx),-which(names(datax)=="UNIQUEIDx")] 
+#  if(any(is.na(datax)))
+#    warning("Some NAs remained, maybe due to a too restrictive domain building!?")
+#  if(!impNA)
+#    datax[datax=="THISISanNASTRINGthatshouldnotbeimputedbytheroutine"] <- NA
+#  datax
+#}
 
-hotdeck_work2 <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
+hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
     makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
     imp_var=TRUE,imp_suffix="imp"
     ){
@@ -331,16 +331,16 @@ hotdeck_work2 <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
 #Rprof("profile1.out")
 ###TEST
 #set.seed(132)
-nRows <- 1e6
-x<-data.frame(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,rep=T),
-    d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,rep=T),o1=rnorm(nRows),o2=rnorm(nRows),o3=rnorm(100))
-origX <- x
-x[sample(1:nRows,nRows/10),1] <- NA
-x[sample(1:nRows,nRows/10),2] <- NA
-x[sample(1:nRows,nRows/10),3] <- NA
-x[sample(1:nRows,nRows/10),4] <- NA
-#
-xImp <- hotdeck_work2(x,ord_var = c("o1","o2","o3"),domain_var="d2")
+#nRows <- 1e6
+#x<-data.frame(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,rep=T),
+#    d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,rep=T),o1=rnorm(nRows),o2=rnorm(nRows),o3=rnorm(100))
+#origX <- x
+#x[sample(1:nRows,nRows/10),1] <- NA
+#x[sample(1:nRows,nRows/10),2] <- NA
+#x[sample(1:nRows,nRows/10),3] <- NA
+#x[sample(1:nRows,nRows/10),4] <- NA
+##
+#xImp <- hotdeck_work2(x,ord_var = c("o1","o2","o3"),domain_var="d2")
 #Rprof(NULL)
 #summaryRprof("profile1.out")
 #xImp1 <- hotdeck(x,ord_var = c("o1","o2","o3"),domain_var="d2")
