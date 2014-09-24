@@ -239,14 +239,11 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
   ## xx should be a data.table and ord_var the name of variables to sort
   imputeHD <- function(xx,variableX,ord_varX,varTypeX,imp_varX,imp_suffixX,
       impNAX,makeNAX){
-    setkeyv(xx,ord_varX)
+    suppressWarnings(setkeyv(xx,ord_varX))
     xx$UniqueIdForImputation <- 1:nrow(xx)
-    
+    #cat("str:  ");print(str(xx));cat("\n")
     for(v in variableX){
       setkeyv(xx,v)
-      if(imp_varX){
-        xx[,impvar:=FALSE]
-      }
       if(!impNAX){
         if(is.null(makeNAX))
           stop("If impNA=FALSE a list of values to be imputed must be provided.")
@@ -267,18 +264,13 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
       }
       if(varTypeX[v]%in%c("numeric","integer")){
         impPart <- xx[J(NA_real_),UniqueIdForImputation,nomatch=FALSE]$UniqueIdForImputation
-        if(imp_varX){
-          impvar <- list(TRUE)
-          names(impvar) <- paste()
-        }
       }else{
         impPart <- xx[J(NA_character_),UniqueIdForImputation,nomatch=FALSE]$UniqueIdForImputation
       }
       if(length(impPart)>0){
         if(imp_varX){
           impvarname <- paste(v,"_",imp_suffixX,sep="")
-          xx[impPart,impvar:=TRUE]
-          setnames(xx,"impvar",impvarname)
+          xx[impPart,impvarname:=TRUE,with=FALSE]
         }
         #pool <- 1:nrow(xx)
         #pool <- pool[-impPart]
@@ -315,9 +307,18 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
     }
     xx[,UniqueIdForImputation:=NULL]
     setkey(xx,OriginalSortingVariable)
-    xx
+    #cat("str2:  ");print(str(xx));cat("\n")
+    return(xx)
   }
   varType <- sapply(x,class)[variable]
+  if(imp_var){
+    for(v in variable){
+      x[,impvar:=FALSE]
+      impvarname <- paste(v,"_",imp_suffix,sep="")
+      setnames(x,"impvar",impvarname)
+      VariableSorting <- c(VariableSorting,impvarname)
+    }
+  }
   x <- x[,imputeHD(.SD,variableX=variable,ord_varX=ord_var,varTypeX=varType,
           imp_varX=imp_var,imp_suffixX=imp_suffix,impNAX=impNA,makeNAX=makeNA), by = domain_var]
   setkey(x,OriginalSortingVariable)
