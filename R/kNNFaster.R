@@ -40,8 +40,8 @@
 #' of a numerical variable
 #' @param catFun function for aggregating the k Nearest Neighbours in the case
 #' of a categorical variable
-#' @param makeNA vector of values, that should be converted to NA
-#' @param NAcond a condition for imputing a NA
+#' @param makeNA list of length equal to the number of variables, with values, that should be converted to NA for each variable
+#' @param NAcond list of length equal to the number of variables, with a condition for imputing a NA
 #' @param impNA TRUE/FALSE whether NA should be imputed
 #' @param donorcond condition for the donors e.g. ">5"
 #' @param trace TRUE/FALSE if additional information about the imputation
