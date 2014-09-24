@@ -5,7 +5,7 @@ Title: Visualization and Imputation of Missing Values
 Author: Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner       
 Maintainer: Matthias Templ <matthias.templ@gmail.com>       
 Depends:       
-    R (>= 2.13),colorspace,grid       
+    R (>= 2.13),colorspace,grid,data.table    
 Imports:       
     car,       
     grDevices,       

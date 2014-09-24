@@ -1,3 +1,4 @@
+#' @import data.table
 #' @import grDevices
 #' @import Rcpp
 #' @import sp
