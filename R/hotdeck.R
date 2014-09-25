@@ -42,6 +42,19 @@
 #' sleepI <- hotdeck(sleep)
 #' sleepI2 <- hotdeck(sleep,ord_var="BodyWgt",domain_var="Pred")
 #' 
+#' set.seed(132)
+#' nRows <- 1e3
+#' # Generate a data set with nRows rows and several variables
+#' x<-data.frame(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,rep=T),
+#'     d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,rep=T),o1=rnorm(nRows),o2=rnorm(nRows),o3=rnorm(100))
+#' origX <- x
+#' x[sample(1:nRows,nRows/10),1] <- NA
+#' x[sample(1:nRows,nRows/10),2] <- NA
+#' x[sample(1:nRows,nRows/10),3] <- NA
+#' x[sample(1:nRows,nRows/10),4] <- NA
+#' xImp <- hotdeck(x,ord_var = c("o1","o2","o3"),domain_var="d2")
+#' 
+#' 
 #' @export hotdeck
 #' @S3method hotdeck data.frame
 #' @S3method hotdeck survey.design
@@ -237,11 +250,9 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
   if(!is.null(NAcond))
     warning("NAcond is not implemented yet and will be ignored.")
   ## xx should be a data.table and ord_var the name of variables to sort
-  imputeHD <- function(xx,variableX,ord_varX,varTypeX,imp_varX,imp_suffixX,
+  imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
       impNAX,makeNAX){
-    suppressWarnings(setkeyv(xx,ord_varX))
     xx$UniqueIdForImputation <- 1:nrow(xx)
-    #cat("str:  ");print(str(xx));cat("\n")
     for(v in variableX){
       setkeyv(xx,v)
       if(!impNAX){
@@ -299,15 +310,13 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
             add <- add +1
           }
         }
-        #setkey(xx,UniqueIdForImputation)
         xx[impPart,v] <- Don
       }
       if(!impNAX)
-        xx <- rbind(xx,xxna)
+        xx <- rbindlist(list(xx,xxna))
     }
     xx[,UniqueIdForImputation:=NULL]
     setkey(xx,OriginalSortingVariable)
-    #cat("str2:  ");print(str(xx));cat("\n")
     return(xx)
   }
   varType <- sapply(x,class)[variable]
@@ -319,7 +328,8 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
       VariableSorting <- c(VariableSorting,impvarname)
     }
   }
-  x <- x[,imputeHD(.SD,variableX=variable,ord_varX=ord_var,varTypeX=varType,
+  setkeyv(x,ord_var)
+  x <- x[,imputeHD(.SD,variableX=variable,varTypeX=varType,
           imp_varX=imp_var,imp_suffixX=imp_suffix,impNAX=impNA,makeNAX=makeNA), by = domain_var]
   setkey(x,OriginalSortingVariable)
   x[,OriginalSortingVariable:=NULL]
