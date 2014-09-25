@@ -47,7 +47,8 @@ set.seed(132)
 nRows <- 1e3
 # Generate a data set with nRows rows and several variables
 x<-data.frame(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,rep=T),
-    d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,rep=T),o1=rnorm(nRows),o2=rnorm(nRows),o3=rnorm(100))
+    d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,rep=T),
+    o1=rnorm(nRows),o2=rnorm(nRows),o3=rnorm(100))
 origX <- x
 x[sample(1:nRows,nRows/10),1] <- NA
 x[sample(1:nRows,nRows/10),2] <- NA
