@@ -43,9 +43,9 @@ data(sleep)
 sleepI <- hotdeck(sleep)
 sleepI2 <- hotdeck(sleep,ord_var="BodyWgt",domain_var="Pred")
 
-###Speed Test
 set.seed(132)
-nRows <- 1e2
+nRows <- 1e3
+# Generate a data set with nRows rows and several variables
 x<-data.frame(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,rep=T),
     d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,rep=T),o1=rnorm(nRows),o2=rnorm(nRows),o3=rnorm(100))
 origX <- x
@@ -53,22 +53,7 @@ x[sample(1:nRows,nRows/10),1] <- NA
 x[sample(1:nRows,nRows/10),2] <- NA
 x[sample(1:nRows,nRows/10),3] <- NA
 x[sample(1:nRows,nRows/10),4] <- NA
-##
-system.time(xImp <- hotdeck(x,ord_var = c("o1","o2","o3"),domain_var="d2",imp_var=FALSE))
-
-nRows <- 1e3a
-x<-data.frame(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,rep=T),
-    d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,rep=T),o1=rnorm(nRows),o2=rnorm(nRows),o3=rnorm(100))
-origX <- x
-x[sample(1:nRows,nRows/10),1] <- NA
-x[sample(1:nRows,nRows/10),2] <- NA
-x[sample(1:nRows,nRows/10),3] <- NA
-x[sample(1:nRows,nRows/10),4] <- NA
-##
-system.time(xImp <- hotdeck(x,ord_var = c("o1","o2","o3"),domain_var="d2",imp_var=FALSE))
-
-
-
+xImp <- hotdeck(x,ord_var = c("o1","o2","o3"),domain_var="d2")
 }
 \author{
 Alexander Kowarik
