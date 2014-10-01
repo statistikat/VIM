@@ -213,7 +213,7 @@ kNN_work <-
   }
   factors <- vector()
   for(i in 1:ncol(data)){
-    factors <- c(factors,is.factor(data[,i]))
+    factors <- c(factors,is.factor(data[,i])|is.character(data[,i]))
   }
   factors <- colnames(data)[factors]
   factors <- factors[!factors%in%orders]
