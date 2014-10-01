@@ -17,6 +17,7 @@ gowerD <- function(data.x, data.y = data.x, weights=NULL,numerical,factors,order
     rmin <- apply(rbind(apply(data.x[,numerical,drop=FALSE],2,min,na.rm=TRUE),apply(data.y[,numerical,drop=FALSE],2,min,na.rm=TRUE)),2,min,na.rm=TRUE)
     rmax <- apply(rbind(apply(data.x[,numerical,drop=FALSE],2,max,na.rm=TRUE),apply(data.y[,numerical,drop=FALSE],2,max,na.rm=TRUE)),2,max,na.rm=TRUE)
     r <- rmax-rmin
+    r[r==0] <- 1
     for(i in seq_along(numerical)){
       data.x[,numerical[i]] <- data.x[,numerical[i]]/r[i]
       data.y[,numerical[i]] <- data.y[,numerical[i]]/r[i]
