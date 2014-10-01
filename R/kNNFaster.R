@@ -257,7 +257,23 @@ kNN_work <-
       weights <- c(weights,min(weights)/(sum(weights)+1))
     }
   }
-  
+  dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,don_index,imp_index,weightsx,k,mixed.constant){
+    #gd <- distance(don_dist_var,imp_dist_var,weights=weightsx)
+    if(is.null(mixed.constant))
+      mixed.constant <- rep(0,length(mixedX))
+    gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant);
+    rownames(gd) <- don_index
+    colnames(gd) <- imp_index
+    which.minNk <- function(x)1
+    cmd <- paste("which.minNk <- function(x)which.minN(x,",k,")",sep="")
+    eval(parse(text=cmd))
+    mindi <- apply(gd,2,which.minNk)
+    erg <- as.matrix(mindi)
+    if(k==1){
+      erg <- t(erg)
+    }
+    erg
+  }
   for(j in 1:nvar){
     
     if(any(indexNA2s[,variable[j]])){
@@ -283,24 +299,6 @@ kNN_work <-
       TF_imp <- indexNA2s[,variable[j]]
       imp_dist_var <- data[TF_imp,dist_varx,drop=FALSE]#TODO:for list of dist_var
       imp_index <- INDEX[TF_imp]
-      
-      dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,don_index,imp_index,weightsx,k,mixed.constant){
-        #gd <- distance(don_dist_var,imp_dist_var,weights=weightsx)
-        if(is.null(mixed.constant))
-          mixed.constant <- rep(0,length(mixedX))
-        gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant);
-        rownames(gd) <- don_index
-        colnames(gd) <- imp_index
-        which.minNk <- function(x)1
-        cmd <- paste("which.minNk <- function(x)which.minN(x,",k,")",sep="")
-        eval(parse(text=cmd))
-        mindi <- apply(gd,2,which.minNk)
-        erg <- as.matrix(mindi)
-        if(k==1){
-          erg <- t(erg)
-        }
-        erg
-      }
       numericalX <-numerical[numerical%in%dist_varx]
       factorsX <-factors[factors%in%dist_varx]
       ordersX <-orders[orders%in%dist_varx]
