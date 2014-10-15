@@ -255,19 +255,21 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
       impNAX,makeNAX){
     xx$UniqueIdForImputation <- 1:nrow(xx)
     for(v in variableX){
+      
       setkeyv(xx,v)
       if(!impNAX){
         if(is.null(makeNAX))
           stop("If impNA=FALSE a list of values to be imputed must be provided.")
         ## NAs should not be imputed
         if(varTypeX[v]%in%c("numeric","integer")){
-          NAs <- xx[J(NA_real_),UniqueIdForImputation,nomatch=FALSE]$UniqueIdForImputation
+          NAs <- xx[J(NA_real_),UniqueIdForImputation,nomatch=FALSE]#$UniqueIdForImputation
         }else{
-          NAs <- xx[J(NA_character_),UniqueIdForImputation,nomatch=FALSE]$UniqueIdForImputation
+          NAs <- xx[J(NA_character_),UniqueIdForImputation,nomatch=FALSE]#$UniqueIdForImputation
         }
         xxna <- xx[NAs]
         xx <- xx[-NAs]
       }
+      
       if(!is.null(makeNAX)){
         eval(parse(text="xx[x>1]"))
         setnames(xx,v,"weirdandlongname")
@@ -275,20 +277,16 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
         setnames(xx,"weirdandlongname",v)
       }
       if(varTypeX[v]%in%c("numeric","integer")){
-        impPart <- xx[J(NA_real_),UniqueIdForImputation,nomatch=FALSE]$UniqueIdForImputation
+        impPart <- xx[J(NA_real_),UniqueIdForImputation,nomatch=FALSE]#$UniqueIdForImputation
       }else{
-        impPart <- xx[J(NA_character_),UniqueIdForImputation,nomatch=FALSE]$UniqueIdForImputation
+        impPart <- xx[J(NA_character_),UniqueIdForImputation,nomatch=FALSE]#$UniqueIdForImputation
       }
+      
       if(length(impPart)>0){
         if(imp_varX){
           impvarname <- paste(v,"_",imp_suffixX,sep="")
           xx[impPart,impvarname:=TRUE,with=FALSE]
         }
-        #pool <- 1:nrow(xx)
-        #pool <- pool[-impPart]
-        #if(length(pool)<0){
-        #  break
-        #}
         impDon <- impPart-1
         impDon[impDon<1] <- impPart[impDon<1]+1
         setkey(xx,UniqueIdForImputation)
