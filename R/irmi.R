@@ -643,7 +643,7 @@ useLM <- function(xReg,  ndata, wy, mixedTF,mixedConstant, factors, step, robust
     xReg1$y[xReg$y==mixedConstant] <- 0
     xReg1$y[xReg$y!=mixedConstant] <- 1
     form <- form[form%in%names(xReg1)]
-    if(length(form)>0)
+    if(class(form)!="formula")
       form <- as.formula(paste("y ~",paste(form,collapse="+")))
     else
       form <- y~.
@@ -694,6 +694,12 @@ useLM <- function(xReg,  ndata, wy, mixedTF,mixedConstant, factors, step, robust
       form <- as.formula(paste("y ~",paste(form,collapse="+")))
     else
       form <- y~.
+  }else{
+    formVars <- all.vars(form)[-1]
+    if(any(!formVars%in%colnames(xReg))){
+      formVars <- formVars[formVars%in%colnames(xReg)]
+      form <- as.formula(paste("y ~",paste(formVars,collapse="+")))
+    }
   }
   if(!robust){
     glm.num <- glm(form, data=xReg, family="gaussian")
