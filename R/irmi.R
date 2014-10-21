@@ -688,11 +688,13 @@ useLM <- function(xReg,  ndata, wy, mixedTF,mixedConstant, factors, step, robust
     imp <- rep(1,nrow(ndata))
   }
   ##Two-Step
-  form <- form[form%in%names(xReg)]
-  if(length(form)>0)
-    form <- as.formula(paste("y ~",paste(form,collapse="+")))
-  else
-    form <- y~.
+  if(class(form)!="formula"){
+    form <- form[form%in%names(xReg)]
+    if(length(form)>0)
+      form <- as.formula(paste("y ~",paste(form,collapse="+")))
+    else
+      form <- y~.
+  }
   if(!robust){
     glm.num <- glm(form, data=xReg, family="gaussian")
     #cat("not ROBUST!!!!!!!!\n")
@@ -802,10 +804,10 @@ useMN <- function(xReg, ndata,  wy, factors, step, robust,form){
   # multinom statt VGAM, wenn wieder zurueck auf VGAM, mssen alle 
   #library(VGAM, warn.conflicts = FALSE, verbose=FALSE)
   #vglm.fac <- vglm(y ~ . , data=xReg, family="multinomial")
-  sink(tmpfilemulti <- tempfile())
-  vglm.fac <- multinom(form, data=xReg)
-  sink()
-  unlink(tmpfilemulti)
+  #sink(tmpfilemulti <- tempfile())
+  co <- capture.output(vglm.fac <- multinom(form, data=xReg,summ=2,maxit=50,trace=FALSE))
+  #sink()
+  #unlink(tmpfilemulti)
   if(step){
     #vglm.fac <- step.vglm(vglm.fac,xReg)
     vglm.fac <- stepAIC(vglm.fac,xReg)
