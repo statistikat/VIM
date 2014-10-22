@@ -43,6 +43,8 @@
 #' TRUE.
 #' @param init.method Method for initialization of missing values (kNN or
 #' median)
+#' @param multinom.method Method for estimating the multinomial models
+#' (current default is multinom, mnlogit is also available)
 #' @return the imputed data set.
 #' @author Matthias Templ, Alexander Kowarik
 #' @seealso \code{\link[mi]{mi}}
@@ -82,7 +84,7 @@ irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL
     robust=FALSE, takeAll=TRUE,
     noise=TRUE, noise.factor=1, force=FALSE,
     robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL) {
+    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom") {
   UseMethod("irmi", x)
 }
 
@@ -90,22 +92,22 @@ irmi.data.frame <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL,
     robust=FALSE, takeAll=TRUE,
     noise=TRUE, noise.factor=1, force=FALSE,
     robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL) {
+    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom") {
   irmi_work(x, eps, maxit, mixed, mixed.constant, count, step, 
       robust, takeAll, noise, noise.factor, force,
       robMethod, force.mixed, mi, addMixedFactors, 
-      trace,init.method,modelFormulas=modelFormulas)
+      trace,init.method,modelFormulas=modelFormulas,multinom.method=multinom.method)
 }
 
 irmi.survey.design <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
     robust=FALSE, takeAll=TRUE,
     noise=TRUE, noise.factor=1, force=FALSE,
     robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL) {
+    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom") {
   x$variables <- irmi_work(x$variables, eps, maxit, mixed, mixed.constant, count, step, 
       robust, takeAll, noise, noise.factor, force,
       robMethod, force.mixed, mi, addMixedFactors, 
-      trace,init.method,modelFormulas=modelFormulas)
+      trace,init.method,modelFormulas=modelFormulas,multinom.method=multinom.method)
   x$call <- sys.call(-1)
   x
 }
@@ -114,21 +116,24 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
     robust=FALSE, takeAll=TRUE,
     noise=TRUE, noise.factor=1, force=FALSE,
     robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL) {
+    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom") {
   irmi_work(as.data.frame(x), eps, maxit, mixed, mixed.constant, count, step, 
       robust, takeAll, noise, noise.factor, force,
       robMethod, force.mixed, mi, addMixedFactors, 
-      trace,init.method,modelFormulas=modelFormulas)
+      trace,init.method,modelFormulas=modelFormulas,multinom.method=multinom.method)
 }
 
 `irmi_work` <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
     robust=FALSE, takeAll=TRUE,
     noise=TRUE, noise.factor=1, force=FALSE,
     robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL){
+    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom"){
 #Authors: Alexander Kowarik and Matthias Templ, Statistics Austria, GPL 2 or newer, version: 15. Nov. 2012
   #object mixed conversion into the right format (vector of variable names of type mixed)
 #TODO: Data sets with variables "y" might fail
+  if(trace){
+    cat("Method for multinomial models:",multinom.method,"\n")
+  }
   if(!is.data.frame(x)){
     if(is.matrix(x))
       x <- as.data.frame(x)
@@ -390,7 +395,7 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
         }
         x[wy,i] <- getM(xReg=dataForReg, ndata=new.dat[,-1,drop=FALSE], type=meth, 
             index=wy, mixedTF=mixedTF,mixedConstant=mixedConstant, factors=factors, step=step, 
-            robust=robust, noise=FALSE, force=force, robMethod,form=activeFormula)
+            robust=robust, noise=FALSE, force=force, robMethod,form=activeFormula,multinom.method=multinom.method)
         #if(!testdigits(x$x5)) stop()
       }	
     }  ## end inner loop
@@ -468,7 +473,7 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
         activeFormula <- names(dataForReg)[names(dataForReg)!="y"]
       if(length(wy) > 0) x[wy,i] <- getM(xReg=dataForReg, ndata=new.dat[,-1,drop=FALSE], 
             type=meth, index=wy,mixedTF=mixedTF,mixedConstant=mixedConstant,factors=factors,
-            step=step,robust=robust,noise=TRUE,noise.factor=noise.factor,force=force,robMethod,form=activeFormula)
+            step=step,robust=robust,noise=TRUE,noise.factor=noise.factor,force=force,robMethod,form=activeFormula,multinom.method=multinom.method)
     }
   }
   ## End NOISE
@@ -515,7 +520,9 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
             activeFormula <- names(dataForReg)[names(dataForReg)!="y"]
         }else
           activeFormula <- names(dataForReg)[names(dataForReg)!="y"]
-        if(length(wy) > 0) x[wy,i] <- getM(xReg=dataForReg, ndata=new.dat[,-1,drop=FALSE], type=meth, index=wy,mixedTF=mixedTF,mixedConstant=mixedConstant,factors=factors,step=step,robust=robust,noise=TRUE,noise.factor=noise.factor,force=force,robMethod,form=activeFormula)
+        if(length(wy) > 0) x[wy,i] <- getM(xReg=dataForReg, ndata=new.dat[,-1,drop=FALSE], type=meth, index=wy,mixedTF=mixedTF,mixedConstant=mixedConstant,
+              factors=factors,step=step,robust=robust,noise=TRUE,
+              noise.factor=noise.factor,force=force,robMethod,form=activeFormula,multinom.method=multinom.method)
       }
       mimp[[m]] <- x
       x <- xSave1
@@ -614,10 +621,10 @@ Inter.list <- function(A){ # common entries from a list of vectors
 }
 
 ## switch function to automatically select methods
-getM <- function(xReg, ndata, type, index,mixedTF,mixedConstant,factors,step,robust,noise,noise.factor=1,force=FALSE, robMethod="MM",form=NULL) {
+getM <- function(xReg, ndata, type, index,mixedTF,mixedConstant,factors,step,robust,noise,noise.factor=1,force=FALSE, robMethod="MM",form=NULL,multinom.method="mnlogit") {
   switch(type,
       numeric = useLM(xReg, ndata, index,mixedTF,mixedConstant,factors,step,robust,noise,noise.factor,force,robMethod,form=form),
-      factor  = useMN(xReg, ndata, index,factors,step,robust,form=form),
+      factor  = useMN(xReg, ndata, index,factors,step,robust,form=form,multinom.method=multinom.method),
       bin     = useB(xReg, ndata, index,factors,step,robust,form=form),
       count   = useGLMcount(xReg, ndata, index, factors, step, robust,form=form)
   )
@@ -792,7 +799,7 @@ useGLMcount <- function(xReg,  ndata, wy, factors, step, robust,form){
 }
 
 # categorical response
-useMN <- function(xReg, ndata,  wy, factors, step, robust,form){
+useMN <- function(xReg, ndata,  wy, factors, step, robust,form,multinom.method){
   factors <- Inter(list(colnames(xReg),factors))
   if(length(factors)>0){
     for(f in 1:length(factors)){
@@ -807,19 +814,23 @@ useMN <- function(xReg, ndata,  wy, factors, step, robust,form){
     form <- as.formula(paste("y ~",paste(form,collapse="+")))
   else
     form <- y~.
-  # multinom statt VGAM, wenn wieder zurueck auf VGAM, mssen alle 
-  #library(VGAM, warn.conflicts = FALSE, verbose=FALSE)
-  #vglm.fac <- vglm(y ~ . , data=xReg, family="multinomial")
-  #sink(tmpfilemulti <- tempfile())
-  co <- capture.output(vglm.fac <- multinom(form, data=xReg,summ=2,maxit=50,trace=FALSE))
-  #sink()
-  #unlink(tmpfilemulti)
-  if(step){
-    #vglm.fac <- step.vglm(vglm.fac,xReg)
-    vglm.fac <- stepAIC(vglm.fac,xReg)
+  if(multinom.method=="multinom"){
+    co <- capture.output(multimod <- multinom(form, data=xReg,summ=2,maxit=50,trace=FALSE))
+    if(step){
+      multimod <- stepAIC(multimod,xReg)
+    }
+    imp <- predict(multimod, newdata=ndata)
+  }else if(multinom.method=="mnlogit"){
+    mldat <- mlogit.data(xReg,"y",shape="wide")
+    fm <- formula(paste("y ~ 1|", paste(all.vars(form)[-1],collapse="+"), " | 1"))
+    mlmod <- mnlogit(fm,mldat)
+    nmldat <- mlogit.data(cbind(y=rep_len(levels(xReg$y),nrow(ndata)),ndata),"y",shape="wide")
+    nmldat <- nmldat[,-(ncol(nmldat)-1)]
+    names(nmldat)[ncol(nmldat)] <- "_Alt_Indx_"
+    Categories <- unique(mldat$alt)
+    imp <- predict.mnlogitX(mlmod, newdata=nmldat,probability=FALSE)
   }
-  imp <- predict(vglm.fac, newdata=ndata)
-  return(imp)#return(factor(imp, labels=levels(xReg$y)[sort(unique(imp))]))
+  return(imp)
 }
 
 # binary response
@@ -864,4 +875,139 @@ useB <- function(xReg,  ndata, wy,factors,step,robust,form){
   imp[imp >= 0.5] <- 1
 #    library(VGAM, warn.conflicts = FALSE, verbose=FALSE)
   return(imp)
+}
+##########################################################################
+## predict method for mnlogit objects                                    #
+## Contributed by: Florian Oswald, University College London             #
+## Homepage: http://floswald.github.io					 #
+##########################################################################
+# Taken from the mnlogit package and one bug fixed (written to author of the package#
+# Can be deleted if bug is fixed #
+
+predict.mnlogitX <- function(object, newdata=NULL, probability=TRUE,
+    returnData = FALSE, choiceVar=NULL, ...) 
+{
+  size     <- object$model.size
+  # get choice set for colnames
+  indobj <- index(object)
+  if(!is.null(ncol(indobj)))
+    indobj <- indobj[,ncol(indobj)]
+  choiceSet <- unique(indobj)
+  
+  if (is.null(newdata)) {
+    # if no new data, use probabilities computed during training model
+    if (probability)
+      return(object$probabilities)
+    else { 
+      return(apply(object$probabilities, 1, function(x)
+                object$choices[which(x == max(x, na.rm = TRUE))]))
+    }
+  } else {
+    # check that all columns from data are present
+    # this is important when you build Y below.
+    newn <- names(newdata)
+    oldn <- names(object$model)
+    
+    if (!all(oldn %in% newn))
+      stop("newdata must have same columns as training data. ")
+    
+    # make sure newdata is ordered by choice
+#    if (is.null(choiceVar)) {
+      choiceVar <- "_Alt_Indx_"
+#      newdata[[choiceVar]] <- index(object)$alt
+#    }
+    newdata <- newdata[order(newdata[,choiceVar]), ]
+    
+    # different model size: N # newdata must have N*K rows
+    if (nrow(newdata) %% size$K)
+      stop("Mismatch between nrows in newdata and number of choices.")
+  }
+  
+  data <- newdata
+  size$N <- nrow(data)/size$K       # number of individuals
+  
+  # Initialize utility matrix: dim(U) = N x K-1
+  probMat <- matrix(rep(0, size$N * (size$K-1)), nrow=size$N, ncol=size$K-1)
+  
+  formDesignMat <- function(varVec = NULL, includeIntercept = TRUE)
+  {
+    if (is.null(varVec) && !includeIntercept) return(NULL) 
+    fm <- paste(attr(formula, "response"), "~")
+    if (!is.null(varVec))
+      fm <- paste(fm, paste(varVec, collapse = "+"))
+    if (!includeIntercept) fm <- paste(fm, "-1 ")
+    else fm <- paste(fm, "+1 ")
+    modMat <- model.matrix(as.formula(fm), data)
+  }
+  # Grab the parsed formula from the fitted mnlogit object 
+  formula  <- parseFormula(object$formula)
+  X <- formDesignMat(varVec = attr(formula, "indSpVar"), 
+      includeIntercept = attr(formula, "Intercept"))
+  X <- if (!is.null(X)) X[1:size$N, , drop=FALSE]   # Matrix of ind sp vars
+  Y <- formDesignMat(varVec = attr(formula, "csvChCoeff"), 
+      includeIntercept = FALSE)
+  Z <- formDesignMat(varVec = attr(formula, "csvGenCoeff"), 
+      includeIntercept = FALSE)
+  
+  # Do the subtraction: Z_ik - Zi0 (for Generic coefficients data)
+  ### NOTE: Base choice (with respect to normalization) is fixed here
+  ###       Base choice is the FIRST alternative
+  if(!is.null(Z)) { 
+    for (ch_k in 2:size$K) {
+      Z[((ch_k - 1)*size$N + 1):(ch_k*size$N), ] <-
+          Z[((ch_k-1)*size$N+1):(ch_k*size$N), , drop=FALSE] 
+      - Z[1:size$N, , drop=FALSE]
+    }
+  }
+  # Drop rows for base alternative
+  Z <- Z[(size$N + 1):(size$K*size$N), , drop=FALSE]
+  
+  # Grab trained model coeffs from fitted mnlogit object
+  coeffVec <- object$coeff
+  # First compute the utility matrix (stored in probMat)
+  if (size$p) {
+    probMat <- probMat + X %*% matrix(coeffVec[1:((size$K-1) *size$p)],
+        nrow = size$p, ncol = (size$K-1), byrow=FALSE)
+  }
+  if (size$f) {
+    findYutil<- function(ch_k)
+    {
+      offset <- (size$K - 1)*size$p
+      init <- (ch_k - 1)*size$N + 1
+      fin <- ch_k * size$N
+      Y[init:fin, , drop=FALSE] %*%
+          coeffVec[((ch_k-1)*size$f + 1 + offset):(ch_k*size$f+offset)]
+    }
+    vec <- as.vector(sapply(c(1:size$K), findYutil))
+    # normalize w.r.t. to k0 here - see vignette on utility normalization
+    vec <- vec - vec[1:size$N]
+    probMat <- probMat + matrix(vec[(size$N+1):(size$N*size$K)], 
+        nrow = size$N, ncol = (size$K-1), byrow=FALSE)
+  }
+  if (size$d) {
+    probMat <- probMat +
+        matrix(Z %*% coeffVec[(size$nparams - size$d + 1):size$nparams],
+            nrow = size$N, ncol=(size$K-1), byrow=FALSE)
+  }
+  
+  # Convert utility to probabilities - use logit formula
+  probMat <- exp(probMat)                           # exp(utility)
+  baseProbVec <- 1/(1 + rowSums(probMat))           # P_i0
+  probMat <- probMat * matrix(rep(baseProbVec, size$K-1),
+      nrow = size$N, ncol = size$K-1) # P_ik
+  probMat <- cbind(baseProbVec,probMat)
+  
+  if (nrow(probMat) == 1)
+    probMat <- as.matrix(probMat)
+  colnames(probMat) <- choiceSet
+  
+  if (probability) {
+    if (returnData) attr(probMat, "data") <- newdata
+    return(probMat)
+  } else {
+    choice <- apply(probMat, 1, function(x)
+          object$choices[which(x == max(x, na.rm = TRUE))])
+    if (returnData) attr(choice, "data") <- newdata
+    return(choice)
+  }
 }
