@@ -7,7 +7,7 @@ irmi(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
   count = NULL, step = FALSE, robust = FALSE, takeAll = TRUE,
   noise = TRUE, noise.factor = 1, force = FALSE, robMethod = "MM",
   force.mixed = TRUE, mi = 1, addMixedFactors = FALSE, trace = FALSE,
-  init.method = "kNN", modelFormulas = NULL, multinom.method = "mnlogit")
+  init.method = "kNN", modelFormulas = NULL, multinom.method = "multinom")
 }
 \arguments{
 \item{x}{data.frame or matrix}
@@ -63,7 +63,7 @@ if factor variables for the mixed variables should be created for the
 regression models}
 
 \item{multinom.method}{Method for estimating the multinomial models
-(current default is mnlogit, previous defaults were multinom and vgam)}
+(current default and only available method is multinom)}
 }
 \value{
 the imputed data set.

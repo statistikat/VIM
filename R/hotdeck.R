@@ -45,8 +45,8 @@
 #' set.seed(132)
 #' nRows <- 1e3
 #' # Generate a data set with nRows rows and several variables
-#' x<-data.frame(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,rep=T),
-#'     d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,rep=T),
+#' x<-data.frame(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,replace=TRUE),
+#'     d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,replace=TRUE),
 #'     o1=rnorm(nRows),o2=rnorm(nRows),o3=rnorm(100))
 #' origX <- x
 #' x[sample(1:nRows,nRows/10),1] <- NA
@@ -233,6 +233,7 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
     makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
     imp_var=TRUE,imp_suffix="imp"
     ){
+  OriginalSortingVariable <- impvar <- NULL #empty init
   if(is.null(variable)){
     variable <- colnames(x)
     variable<-variable[!variable%in%c(ord_var,domain_var)]
@@ -253,6 +254,8 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
   ## xx should be a data.table and ord_var the name of variables to sort
   imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
       impNAX,makeNAX){
+    OriginalSortingVariable <- weirdandlongname <- UniqueIdForImputation <- NULL#empty init
+    J <- function()NULL#empty init
     xx$UniqueIdForImputation <- 1:nrow(xx)
     for(v in variableX){
       
