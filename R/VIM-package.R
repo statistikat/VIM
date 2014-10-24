@@ -10,7 +10,6 @@
 #' @import grid
 #' @import robustbase
 #' @import colorspace
-#' @import glmnet
 #' @importFrom car bcPower
 #' @importFrom car powerTransform
 #' @importFrom vcd mosaic
