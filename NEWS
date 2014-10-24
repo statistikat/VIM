@@ -1,3 +1,9 @@
+#4.1.0
+ -- new parameter modelFormula in irmi
+ -- bug fixes in irim
+ -- updated hotdeck based on data.table -> faster and quite stable
+ -- bug fix if range of a variable is 0 in gower.dist
+ -- small fixed kNN
 #4.0.1
  -- small bugfix for using makeNA in kNN
  -- "Nothing to impute"-Error is now a warning
