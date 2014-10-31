@@ -28,7 +28,7 @@
 #' @param makeNA list of length equal to the number of variables, with values, that should be converted to NA for each variable
 #' @param NAcond list of length equal to the number of variables, with a condition for imputing a NA
 #' @param impNA TRUE/FALSE whether NA should be imputed
-#' @param list of length equal to the number of variables, with a donorcond condition for the donors e.g. ">5"
+#' @param donorcond list of length equal to the number of variables, with a donorcond condition for the donors e.g. ">5"
 #' @param imp_var TRUE/FALSE if a TRUE/FALSE variables for each imputed
 #' variable should be created show the imputation status
 #' @param imp_suffix suffix for the TRUE/FALSE variables showing the imputation
@@ -46,7 +46,7 @@
 #' nRows <- 1e3
 #' # Generate a data set with nRows rows and several variables
 #' x<-data.frame(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,replace=TRUE),
-#'     d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,replace=TRUE),
+#'     d1=sample(LETTERS[1:3],nRows,replace=TRUE),d2=sample(LETTERS[1:2],nRows,replace=TRUE),
 #'     o1=rnorm(nRows),o2=rnorm(nRows),o3=rnorm(100))
 #' origX <- x
 #' x[sample(1:nRows,nRows/10),1] <- NA
