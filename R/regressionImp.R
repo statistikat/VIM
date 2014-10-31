@@ -111,11 +111,10 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
         tmp <- data[TFna3,]
         tmp[,lhsV] <- 1
         if(nLev>2){
-          
           if(mod_cat){
-            pre <- predict(mod,new.data=tmp)
+            pre <- predict(mod,newdata=tmp)
           }else{
-            pre <- predict(mod,new.data=tmp,type="probs")
+            pre <- predict(mod,newdata=tmp,type="probs")
             pre <- levels(data[,lhsV])[apply(pre,1,function(x)sample(1:length(x),1,prob=x))]
           }
         }else if(nLev==2){
