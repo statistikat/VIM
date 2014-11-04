@@ -548,8 +548,10 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
 #	  cat("nachher\n")
     }
   }
-  cat("Imputation performed on the following data set:\n")
-  print(missingSummary)
+  if(trace){
+    cat("Imputation performed on the following data set:\n")
+    print(missingSummary)
+  }
   invisible(x)
   
 }
