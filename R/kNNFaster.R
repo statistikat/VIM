@@ -325,7 +325,7 @@ kNN_work <-
     }
     
   }
-  print(difftime(startTime,Sys.time()))  
+  print(difftime(Sys.time(),startTime))  
   if(addRandom)
     data <- data[,-which(names(data)=="RandomVariableForImputation")]
   data
