@@ -93,7 +93,7 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
               mod <- glm(form,data=data,family=fam)
           }else{
             TFna <- TFna2&!is.na(data[,lhsV])
-            mod <- multinom(form,data[TFna,])
+            co <- capture.output(mod <- multinom(form,data[TFna,]))
           }
         }
         if(imp_var){
