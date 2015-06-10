@@ -1,6 +1,11 @@
+#4.2.1
+ -- new option for kNN 'useImputedDist' if the imputed values of a variable should be used in subsequent imputation of another variable.
+#4.2.0
+ -- bug fixed in irmi with newer version of nnet (multinom) and if residual scale can not be computed (noise)
+ -- Improvement Gower dist with only missing values in data.x or data.y
 #4.1.0
  -- new parameter modelFormula in irmi
- -- bug fixes in irim
+ -- bug fixes in irmi
  -- updated hotdeck based on data.table -> faster and quite stable
  -- bug fix if range of a variable is 0 in gower.dist
  -- small fixed kNN

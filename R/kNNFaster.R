@@ -56,6 +56,8 @@
 #' @param mixed.constant vector with length equal to the number of
 #' semi-continuous variables specifying the point of the semi-continuous
 #' distribution with non-zero probability
+#' @param useImputedDist TRUE/FALSE if an imputed value should be used for distance calculation for imputing another variable.
+#' Be aware that this results in a dependency on the ordering of the variables.
 #' @return the imputed data set.
 #' @author Alexander Kowarik, Statistik Austria
 #' @keywords manip
@@ -75,26 +77,26 @@
 kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                 numFun = median, catFun=maxCat,
                 makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-                imp_var=TRUE,imp_suffix="imp",addRandom=FALSE) {
+                imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE) {
   UseMethod("kNN", data)
 }
 
 kNN.data.frame <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                            numFun = median, catFun=maxCat,
                            makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-                           imp_var=TRUE,imp_suffix="imp",addRandom=FALSE) {
+                           imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE) {
   kNN_work(data, variable, metric, k, dist_var,weights, numFun, catFun,
            makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
-           imp_var, imp_suffix, addRandom)
+           imp_var, imp_suffix, addRandom,useImputedDist)
 }
 
 kNN.survey.design <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                               numFun = median, catFun=maxCat,
                               makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-                              imp_var=TRUE,imp_suffix="imp",addRandom=FALSE) {
+                              imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE) {
   data$variables <- kNN_work(data$variables, variable, metric, k, dist_var,weights, numFun, catFun,
            makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
-           imp_var, imp_suffix, addRandom)
+           imp_var, imp_suffix, addRandom,useImputedDist)
   data$call <- sys.call(-1)
   data
 }
@@ -102,10 +104,10 @@ kNN.survey.design <- function(data, variable=colnames(data), metric=NULL, k=5, d
 kNN.default <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                         numFun = median, catFun=maxCat,
                         makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-                        imp_var=TRUE,imp_suffix="imp",addRandom=FALSE) {
+                        imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE) {
   kNN_work(as.data.frame(data), variable, metric, k, dist_var,weights, numFun, catFun,
            makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
-           imp_var, imp_suffix, addRandom)
+           imp_var, imp_suffix, addRandom,useImputedDist)
 }
 
 sampleCat <- function(x){
@@ -140,7 +142,7 @@ kNN_work <-
     function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
         numFun = median, catFun=maxCat,
         makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-        imp_var=TRUE,imp_suffix="imp",addRandom=FALSE){
+        imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE){
   #basic checks
   if(!is.null(mixed.constant)){
     if(length(mixed.constant)!=length(mixed))
@@ -289,16 +291,26 @@ kNN_work <-
       if(!is.null(donorcond)){
         cmd <- paste("TF <- !is.na(data[,variable[j]])&data[,variable[j]]",donorcond[[j]],sep="")
         eval(parse(text=cmd))
-        don_dist_var <- data[TF,dist_varx,drop=FALSE]#TODO:for list of dist_var
+        don_dist_var <- data[TF,dist_varx,drop=FALSE]
         don_index <- INDEX[TF]
       }else{
         TF <- !is.na(data[,variable[j]])
-        don_dist_var <- data[TF,dist_varx,drop=FALSE]#TODO:for list of dist_var
+        don_dist_var <- data[TF,dist_varx,drop=FALSE]
         don_index <- INDEX[TF]
       }
       TF_imp <- indexNA2s[,variable[j]]
-      imp_dist_var <- data[TF_imp,dist_varx,drop=FALSE]#TODO:for list of dist_var
+      imp_dist_var <- data[TF_imp,dist_varx,drop=FALSE]
       imp_index <- INDEX[TF_imp]
+      
+      #
+      if(!useImputedDist&&any(dist_varx%in%variable)){
+        for(dvar in dist_varx[dist_varx%in%variable]){
+          ## setting the value for original missing variables to NA
+          don_dist_var[indexNA2s[TF,dvar],dvar] <- NA
+          imp_dist_var[indexNA2s[TF_imp,dvar],dvar] <- NA
+        }
+      }
+      
       numericalX <-numerical[numerical%in%dist_varx]
       factorsX <-factors[factors%in%dist_varx]
       ordersX <-orders[orders%in%dist_varx]
