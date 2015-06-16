@@ -867,7 +867,7 @@ useB <- function(xReg,  ndata, wy,factors,step,robust,form){
 #        glm.bin <- glm(y ~ . , data=xReg, family="binomial")
     
   }
-#	op <- options() # Alles auskommentiert, weil VGAM drau��en!!!
+#	op <- options() # Alles auskommentiert, weil VGAM draussen
 #	options(show.error.messages=FALSE)
 #	try(detach(package:VGAM))
 #	options(op)
