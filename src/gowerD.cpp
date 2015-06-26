@@ -33,7 +33,10 @@ RcppExport SEXP gowerD(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SEXP 
           }
         }
         if(k<ncolVAR(2)){  //Ordered
-          double a=(xMat(i,k+ncolVAR(0)+ncolVAR(1))-yMat(j,k+ncolVAR(0)+ncolVAR(1)))/(levOrder(k)-1);
+          double a=abs(xMat(i,k+ncolVAR(0)+ncolVAR(1))-yMat(j,k+ncolVAR(0)+ncolVAR(1)))/(levOrder(k)-1);
+//          if(i<50){
+//            Rprintf("k %d levorder %f x %f y %f DIST %f \n",k,levOrder(k),xMat(i,k+ncolVAR(0)+ncolVAR(1)),yMat(j,k+ncolVAR(0)+ncolVAR(1)),a);
+//          }
           delta(i,j)=delta(i,j)+a*weight(k+ncolVAR(0)+ncolVAR(1))/weightsum;
         }
         if(k<ncolVAR(3)){  //Semi-Continous
