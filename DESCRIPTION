@@ -13,8 +13,8 @@ Imports:
     stats,    
     sp,    
     vcd,MASS,nnet,e1071,methods,Rcpp    
-Description: This package introduces new tools for the visualization of missing    
-    and/or imputed values, which can be used for exploring the data and the    
+Description: New tools for the visualization of missing    
+    and/or imputed values are introduced, which can be used for exploring the data and the    
     structure of the missing and/or imputed values. Depending on this structure    
     of the missing values, the corresponding methods may help to identify the    
     mechanism generating the missing values and allows to explore the data    
