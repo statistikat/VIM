@@ -12,7 +12,7 @@ Imports:
     robustbase,    
     stats,    
     sp,    
-    vcd,MASS,nnet,e1071,methods,Rcpp    
+    vcd,MASS,nnet,e1071,methods,Rcpp,utils,graphics   
 Description: This package introduces new tools for the visualization of missing    
     and/or imputed values, which can be used for exploring the data and the    
     structure of the missing and/or imputed values. Depending on this structure    
