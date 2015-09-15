@@ -295,7 +295,7 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
       if(length(impPart)>0){
         if(imp_varX){
           impvarname <- paste(v,"_",imp_suffixX,sep="")
-          xx[impPart,impvarname:=TRUE,with=FALSE]
+          xx[UniqueIdForImputation%in%impPart,impvarname:=TRUE,with=FALSE]
         }
         impDon <- impPart-1
         impDon[impDon<1] <- impPart[impDon<1]+1
@@ -339,7 +339,7 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
   }
   setkeyv(x,ord_var)
   x <- x[,imputeHD(.SD,variableX=variable,varTypeX=varType,
-          imp_varX=imp_var,imp_suffixX=imp_suffix,impNAX=impNA,makeNAX=makeNA), by = domain_var]
+    imp_varX=imp_var,imp_suffixX=imp_suffix,impNAX=impNA,makeNAX=makeNA), by = domain_var]  
   setkey(x,OriginalSortingVariable)
   x[,OriginalSortingVariable:=NULL]
   if(all(classx!="data.table"))
