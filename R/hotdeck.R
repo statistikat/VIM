@@ -339,6 +339,7 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
   }
   # If no ord_var is defined, a random ordered will be used
   if(is.null(ord_var)){
+    RandomVariableForImputationWithHotdeck <- NULL # Init for CRAN check
     x[,RandomVariableForImputationWithHotdeck:=runif(nrow(x))]
     ord_var <- "RandomVariableForImputationWithHotdeck"
   }
