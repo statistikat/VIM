@@ -298,7 +298,7 @@ colormapMiss_work <- function(x, region, map, imp_index = NULL,
         p <- locatorVIM()
         while(!is.null(p)) {
             p <- SpatialPoints(matrix(unlist(p), ncol=2))
-            poly <- overlay(p, map)
+            poly <- over(p, map)
             ind <- polysRegion[poly]
 			if(!is.na(ind)) {
 				if(!imputed) label <- "missings"
