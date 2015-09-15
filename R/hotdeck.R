@@ -348,7 +348,7 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
   # whole data set
   x <- x[,imputeHD(.SD,variableX=variable,varTypeX=varType,
     imp_varX=imp_var,imp_suffixX=imp_suffix,impNAX=impNA,makeNAX=makeNA), by = domain_var]
-  if(ord_var=="RandomVariableForImputationWithHotdeck"){
+  if(any(ord_var=="RandomVariableForImputationWithHotdeck")){
     x[,RandomVariableForImputationWithHotdeck:=NULL]
     ord_var <- NULL
   }
