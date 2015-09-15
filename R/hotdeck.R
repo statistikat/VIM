@@ -254,13 +254,18 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
   ## xx should be a data.table and ord_var the name of variables to sort
   imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
       impNAX,makeNAX){
+    #xxx <<- copy(xx)
+    #variableX <<- variableX
+    #varTypeX <<- varTypeX
+    #imp_varX <<- imp_varX
+    #imp_suffixX <<- imp_suffixX
     OriginalSortingVariable <- weirdandlongname <- UniqueIdForImputation <- NULL#empty init
     J <- function()NULL#empty init
-    xx$UniqueIdForImputation <- 1:nrow(xx)
+    xx$UniqueIdForImputation <- 1:nrow(xx) 
     for(v in variableX){
       
-      setkeyv(xx,v)
       if(!impNAX){
+        setkeyv(xx,v)
         if(is.null(makeNAX))
           stop("If impNA=FALSE a list of values to be imputed must be provided.")
         ## NAs should not be imputed
@@ -271,14 +276,16 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
         }
         xxna <- xx[NAs]
         xx <- xx[-NAs]
+        xx$UniqueIdForImputation <- 1:nrow(xx)
       }
       
       if(!is.null(makeNAX)){
-        eval(parse(text="xx[x>1]"))
+       # eval(parse(text="xx[xx>1]"))
         setnames(xx,v,"weirdandlongname")
         xx[weirdandlongname%in%makeNAX[[match(v,variableX)]],weirdandlongname:=NA]
         setnames(xx,"weirdandlongname",v)
       }
+      setkeyv(xx,v)
       if(varTypeX[v]%in%c("numeric","integer")){
         impPart <- xx[J(NA_real_),UniqueIdForImputation,nomatch=FALSE]#$UniqueIdForImputation
       }else{

@@ -1,4 +1,4 @@
-#4.2.2
+#4.2.3
  -- bugfix for the computation of distances for ordered variables
 #4.2.1
  -- new option for kNN 'useImputedDist' if the imputed values of a variable should be used in subsequent imputation of another variable.
