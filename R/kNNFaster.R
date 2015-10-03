@@ -58,6 +58,8 @@
 #' distribution with non-zero probability
 #' @param useImputedDist TRUE/FALSE if an imputed value should be used for distance calculation for imputing another variable.
 #' Be aware that this results in a dependency on the ordering of the variables.
+#' @param weightDist TRUE/FALSE if the distances of the k nearest neighbours should be used as weights in the
+#' aggregation step
 #' @return the imputed data set.
 #' @author Alexander Kowarik, Statistik Austria
 #' @keywords manip
@@ -65,6 +67,7 @@
 #' 
 #' data(sleep)
 #' kNN(sleep)
+#' kNN(sleep, numFun = weightedMean, weightDist=TRUE)
 #' 
 #' @export kNN
 #' @export sampleCat
@@ -77,26 +80,26 @@
 kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                 numFun = median, catFun=maxCat,
                 makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-                imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE) {
+                imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
   UseMethod("kNN", data)
 }
 
 kNN.data.frame <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                            numFun = median, catFun=maxCat,
                            makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-                           imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE) {
+                           imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
   kNN_work(data, variable, metric, k, dist_var,weights, numFun, catFun,
            makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
-           imp_var, imp_suffix, addRandom,useImputedDist)
+           imp_var, imp_suffix, addRandom,useImputedDist,weightDist)
 }
 
 kNN.survey.design <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                               numFun = median, catFun=maxCat,
                               makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-                              imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE) {
+                              imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
   data$variables <- kNN_work(data$variables, variable, metric, k, dist_var,weights, numFun, catFun,
            makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
-           imp_var, imp_suffix, addRandom,useImputedDist)
+           imp_var, imp_suffix, addRandom,useImputedDist,weightDist)
   data$call <- sys.call(-1)
   data
 }
@@ -104,13 +107,13 @@ kNN.survey.design <- function(data, variable=colnames(data), metric=NULL, k=5, d
 kNN.default <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                         numFun = median, catFun=maxCat,
                         makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-                        imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE) {
+                        imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
   kNN_work(as.data.frame(data), variable, metric, k, dist_var,weights, numFun, catFun,
            makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
-           imp_var, imp_suffix, addRandom,useImputedDist)
+           imp_var, imp_suffix, addRandom,useImputedDist,weightDist)
 }
 
-sampleCat <- function(x){
+sampleCat <- function(x,weights = NULL){
   #sample with probabilites corresponding to there number in the NNs
   if(!is.factor(x))
     x <- as.factor(x)
@@ -118,7 +121,7 @@ sampleCat <- function(x){
   s <- s[s!=0]
   sample(names(s),1,prob=s)
 }
-maxCat <- function(x){
+maxCat <- function(x,weights = NULL){
   #choose cat with max prob, random if max is not unique
   if(!is.factor(x))
     x <- as.factor(x)
@@ -137,7 +140,15 @@ which.minN <- function(x,n){
   }
   as.numeric(out)
 }
-
+minN <- function(x,n){
+  n <- min(n,length(x))
+  out <- vector()
+  for(i in 1:n){
+    out[i] <- min(x)
+    x[which.min(x)] <- Inf
+  }
+  as.numeric(out)
+}
 kNN_work <-
     function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
         numFun = median, catFun=maxCat,
@@ -267,14 +278,20 @@ kNN_work <-
     rownames(gd) <- don_index
     colnames(gd) <- imp_index
     which.minNk <- function(x)1
+    minNk <- function(x)1
     cmd <- paste("which.minNk <- function(x)which.minN(x,",k,")",sep="")
     eval(parse(text=cmd))
+    cmd <- paste("minNk <- function(x)minN(x,",k,")",sep="")
+    eval(parse(text=cmd))
     mindi <- apply(gd,2,which.minNk)
+    mindist <- apply(gd,2,minNk)
     erg <- as.matrix(mindi)
+    erg2 <- as.matrix(mindist)
     if(k==1){
       erg <- t(erg)
+      erg2 <- t(erg2)
     }
-    erg
+    list(erg,erg2)
   }
   for(j in 1:nvar){
     
@@ -317,20 +334,36 @@ kNN_work <-
       levOrdersX <- levOrders[orders%in%dist_varx]
       #print(levOrdersX)
       mixedX <-mixed[mixed%in%dist_varx]
+      #dist_single provide the rows of the k nearest neighbours and the corresponding distances
       mindi <- dist_single(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,don_index,imp_index,weightsx,k,mixed.constant)
       getI <- function(x)data[x,variable[j]]
       if(trace)
         cat(sum(indexNA2s[,variable[j]]),"items of","variable:",variable[j]," imputed\n")
-      kNNs <- as.matrix(apply(mindi,2,getI))
+      #Fetching the actual values of the kNNs for the indices provided by dist_single
+      kNNs <- as.matrix(apply(mindi[[1]],2,getI))
       if(k==1){
         kNNs <- matrix(kNNs,nrow=1)
       }
-      if(variable[j]%in%factors)
-        data[indexNA2s[,variable[j]],variable[j]] <- apply(kNNs,2,catFun)
-      else if(is.integer(data[,variable[j]])){
-        data[indexNA2s[,variable[j]],variable[j]] <- round(apply(kNNs,2,numFun))
-      }else
-        data[indexNA2s[,variable[j]],variable[j]] <- apply(kNNs,2,numFun)
+      
+      if(weightDist){
+        #1-dist because dist is between 0 and 1
+        mindi[[2]] <- 1-mindi[[2]]
+        ### warning if there is no argument named weights
+        if(variable[j]%in%factors)
+          data[indexNA2s[,variable[j]],variable[j]] <- sapply(1:ncol(kNNs),function(x)do.call("catFun",list(kNNs[,x],mindi[[2]][,x])))
+        else if(is.integer(data[,variable[j]])){
+          data[indexNA2s[,variable[j]],variable[j]] <- round(sapply(1:ncol(kNNs),function(x)do.call("numFun",list(kNNs[,x],mindi[[2]][,x]))))
+        }else
+          data[indexNA2s[,variable[j]],variable[j]] <- sapply(1:ncol(kNNs),function(x)do.call("numFun",list(kNNs[,x],mindi[[2]][,x])))
+      }else{
+        if(variable[j]%in%factors)
+          data[indexNA2s[,variable[j]],variable[j]] <- apply(kNNs,2,catFun)
+        else if(is.integer(data[,variable[j]])){
+          data[indexNA2s[,variable[j]],variable[j]] <- round(apply(kNNs,2,numFun))
+        }else
+          data[indexNA2s[,variable[j]],variable[j]] <- apply(kNNs,2,numFun)  
+      }
+      
     }else{
       if(trace)
         cat("0 items of","variable:",variable[j]," imputed\n")

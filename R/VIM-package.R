@@ -14,6 +14,8 @@
 #' @importFrom car powerTransform
 #' @importFrom vcd mosaic
 #' @importFrom vcd labeling_border
+#' @importFrom laeken weightedMedian
+#' @importFrom laeken weightedMean
 #' @useDynLib VIM
 NULL
 #' C-horizon of the Kola data with missing values

@@ -8,7 +8,7 @@
 \alias{rmVm}
 \alias{vmGUIenvir}
 \title{Environment for the GUI for Visualization and Imputation of Missing Values}
-\format{\preformatted{<environment: 0x00000000198cc0e0> 
+\format{\preformatted{<environment: 0x7ffe4af08208> 
 }}
 \usage{
 vmGUIenvir

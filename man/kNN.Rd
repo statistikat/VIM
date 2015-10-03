@@ -13,7 +13,7 @@ kNN(data, variable = colnames(data), metric = NULL, k = 5,
   catFun = maxCat, makeNA = NULL, NAcond = NULL, impNA = TRUE,
   donorcond = NULL, mixed = vector(), mixed.constant = NULL,
   trace = FALSE, imp_var = TRUE, imp_suffix = "imp", addRandom = FALSE,
-  useImputedDist = TRUE)
+  useImputedDist = TRUE, weightDist = FALSE)
 }
 \arguments{
 \item{data}{data.frame or matrix}
@@ -62,6 +62,9 @@ for distance calculation}
 
 \item{useImputedDist}{TRUE/FALSE if an imputed value should be used for distance calculation for imputing another variable.
 Be aware that this results in a dependency on the ordering of the variables.}
+
+\item{weightDist}{TRUE/FALSE if the distances of the k nearest neighbours should be used as weights in the
+aggregation step}
 }
 \value{
 the imputed data set.
@@ -81,6 +84,7 @@ by kNN.
 \examples{
 data(sleep)
 kNN(sleep)
+kNN(sleep, numFun = weightedMean, weightDist=TRUE)
 }
 \author{
 Alexander Kowarik, Statistik Austria
