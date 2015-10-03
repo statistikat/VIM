@@ -153,7 +153,7 @@ kNN_work <-
     function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
         numFun = median, catFun=maxCat,
         makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-        imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE){
+        imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE){
   #basic checks
   if(!is.null(mixed.constant)){
     if(length(mixed.constant)!=length(mixed))
