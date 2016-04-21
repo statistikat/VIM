@@ -1,5 +1,5 @@
 #4.4.0
- -- bugfix for wrong observations marked as imputed in the hotdeck function
+ -- bugfix  wrong observations marked as imputed in the hotdeck function
  -- random sorting is now used in hotdeck if no ord_var is defined
 #4.2.3
  -- bugfix for the computation of distances for ordered variables
