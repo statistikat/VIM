@@ -1,3 +1,5 @@
+#4.5.0
+ -- new option for kNN 'weightDist' to use the distances for the k nearest neighbours as weights
 #4.4.0
  -- bugfix  wrong observations marked as imputed in the hotdeck function
  -- random sorting is now used in hotdeck if no ord_var is defined
