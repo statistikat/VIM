@@ -23,7 +23,8 @@ Description: New tools for the visualization of missing
     multivariate plot methods. A graphical user interface available in the         
     separate package VIMGUI allows an easy handling of the implemented plot         
     methods.         
-LazyData: TRUE         
+LazyData: TRUE
+ByteCompile: TRUE
 License: GPL (>= 2)         
 URL: https://github.com/alexkowa/VIM         
 Repository: CRAN         
