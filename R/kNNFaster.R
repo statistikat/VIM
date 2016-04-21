@@ -270,7 +270,8 @@ kNN_work <-
       weights <- c(weights,min(weights)/(sum(weights)+1))
     }
   }
-  dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,don_index,imp_index,weightsx,k,mixed.constant){
+  dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,
+      don_index,imp_index,weightsx,k,mixed.constant,provideMins=TRUE){
     #gd <- distance(don_dist_var,imp_dist_var,weights=weightsx)
     if(is.null(mixed.constant))
       mixed.constant <- rep(0,length(mixedX))
@@ -281,12 +282,16 @@ kNN_work <-
     minNk <- function(x)1
     cmd <- paste("which.minNk <- function(x)which.minN(x,",k,")",sep="")
     eval(parse(text=cmd))
-    cmd <- paste("minNk <- function(x)minN(x,",k,")",sep="")
-    eval(parse(text=cmd))
     mindi <- apply(gd,2,which.minNk)
-    mindist <- apply(gd,2,minNk)
     erg <- as.matrix(mindi)
-    erg2 <- as.matrix(mindist)
+    if(provideMins){
+      cmd <- paste("minNk <- function(x)minN(x,",k,")",sep="")
+      eval(parse(text=cmd))
+      mindist <- apply(gd,2,minNk)
+      erg2 <- as.matrix(mindist)      
+    }else{
+      erg2 <- NA
+    }
     if(k==1){
       erg <- t(erg)
       erg2 <- t(erg2)
@@ -335,7 +340,8 @@ kNN_work <-
       #print(levOrdersX)
       mixedX <-mixed[mixed%in%dist_varx]
       #dist_single provide the rows of the k nearest neighbours and the corresponding distances
-      mindi <- dist_single(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,don_index,imp_index,weightsx,k,mixed.constant)
+      mindi <- dist_single(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,
+          don_index,imp_index,weightsx,k,mixed.constant,provideMins=weightDist)
       getI <- function(x)data[x,variable[j]]
       if(trace)
         cat(sum(indexNA2s[,variable[j]]),"items of","variable:",variable[j]," imputed\n")
@@ -346,6 +352,12 @@ kNN_work <-
       }
       
       if(weightDist){
+        if(length(factors)<length(variable)&!"weights"%in%names(as.list(args(numFun)))){
+          warning("There is no explicit 'weights' argument in your numeric aggregation function.")
+        }
+        if(length(factors)>0&&!"weights"%in%names(as.list(args(catFun)))){
+          warning("There is no explicit 'weights' argument in your categorical aggregation function.")
+        }
         #1-dist because dist is between 0 and 1
         mindi[[2]] <- 1-mindi[[2]]
         ### warning if there is no argument named weights
