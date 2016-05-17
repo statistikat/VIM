@@ -61,7 +61,7 @@ RcppExport SEXP gowerD(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SEXP 
 
   return Rcpp::List::create(
       Rcpp::Named( "delta" ) = delta
-  ) ;
+  );
 
   END_RCPP
 }
