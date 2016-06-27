@@ -1,5 +1,6 @@
 ## Wrapper function for gowerD
-gowerD <- function(data.x, data.y = data.x, weights=NULL,numerical,factors,orders,mixed,levOrders,mixed.constant) {
+gowerD <- function(data.x, data.y = data.x, weights=NULL,numerical,factors,orders,mixed,levOrders,mixed.constant,
+    returnIndex=FALSE,nMin=1L,returnMin=FALSE) {
   maxplus1 <- function(x){
     if(all(is.na(x)))
       return(1)
@@ -50,11 +51,19 @@ gowerD <- function(data.x, data.y = data.x, weights=NULL,numerical,factors,order
     data.y[is.na(data.y[,i]),i] <- maxplus1X[i]
   }
   levOrders <- as.numeric(levOrders)
-  
-  out <- .Call( "gowerD", as.matrix(data.x), as.matrix(data.y),weights[weightind],c(length(numerical),length(factors),length(orders),length(mixed)),levOrders,mixed.constant,PACKAGE="VIM")
-  if(justone)
-    out <-  out$delta[,1,drop=FALSE]
-  else
-    out <- out$delta
-  out
+  if(returnIndex){
+    out <- .Call( "gowerDind", as.matrix(data.x), as.matrix(data.y),weights[weightind],
+        c(length(numerical),length(factors),length(orders),length(mixed)),
+        levOrders,mixed.constant,nMin,as.integer(returnMin),PACKAGE="VIM")
+    out <- list(ind=out$ind,mins=out$min)
+  }else{
+    out <- .Call( "gowerD", as.matrix(data.x), as.matrix(data.y),weights[weightind],
+        c(length(numerical),length(factors),length(orders),length(mixed)),
+        levOrders,mixed.constant,PACKAGE="VIM")
+    if(justone)
+      out <-  out$delta[,1,drop=FALSE]
+    else
+      out <- out$delta  
+  }
+  return(out)
 }

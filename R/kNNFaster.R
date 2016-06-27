@@ -149,6 +149,20 @@ minN <- function(x,n){
   }
   as.numeric(out)
 }
+whichminN <- function(x,n,values=FALSE){
+  if(!values){
+    out <- .Call( "whichminN", x,as.integer(min(c(n,length(x)))),PACKAGE="VIM")
+    if(!is.null(names(x))){
+      out <- names(x)[out]
+    }
+  }else{
+    out <- .Call( "whichminN2", x,as.integer(min(c(n,length(x)))),PACKAGE="VIM")
+    if(!is.null(names(x))){
+      out$which <- names(x)[out$which]
+    }
+  }
+  return(out)
+}
 kNN_work <-
     function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
         numFun = median, catFun=maxCat,
@@ -275,23 +289,22 @@ kNN_work <-
     #gd <- distance(don_dist_var,imp_dist_var,weights=weightsx)
     if(is.null(mixed.constant))
       mixed.constant <- rep(0,length(mixedX))
-    gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant);
-    rownames(gd) <- don_index
-    colnames(gd) <- imp_index
-    which.minNk <- function(x)1
-    minNk <- function(x)1
-    cmd <- paste("which.minNk <- function(x)which.minN(x,",k,")",sep="")
-    eval(parse(text=cmd))
-    mindi <- apply(gd,2,which.minNk)
-    erg <- as.matrix(mindi)
     if(provideMins){
-      cmd <- paste("minNk <- function(x)minN(x,",k,")",sep="")
-      eval(parse(text=cmd))
-      mindist <- apply(gd,2,minNk)
-      erg2 <- as.matrix(mindist)      
+      gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
+          factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,
+          nMin=as.integer(k),returnMin=TRUE);
+      colnames(gd$mins) <- imp_index
+      erg2 <- as.matrix(gd$mins)
     }else{
+      gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
+          factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,
+          nMin=as.integer(k));
       erg2 <- NA
     }
+    colnames(gd$ind) <- imp_index
+    gd$ind[,] <- don_index[gd$ind]
+    erg <- as.matrix(gd$ind)
+    
     if(k==1){
       erg <- t(erg)
       erg2 <- t(erg2)
