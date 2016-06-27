@@ -84,6 +84,7 @@ by kNN.
 \examples{
 data(sleep)
 kNN(sleep)
+library(laeken)
 kNN(sleep, numFun = weightedMean, weightDist=TRUE)
 }
 \author{

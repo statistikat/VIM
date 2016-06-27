@@ -67,6 +67,7 @@
 #' 
 #' data(sleep)
 #' kNN(sleep)
+#' library(laeken)
 #' kNN(sleep, numFun = weightedMean, weightDist=TRUE)
 #' 
 #' @export kNN
