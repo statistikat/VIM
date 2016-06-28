@@ -1,0 +1,6 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^.*\.project$
+^\.settings$
+^.*\.gitignore$
+^\.git$
