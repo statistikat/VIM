@@ -50,7 +50,7 @@ double distW1(NumericVector xV,NumericVector yV, NumericVector weight,
   return out;
 }
 // [[Rcpp::export]]
-RcppExport SEXP gowerD(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,
+RcppExport SEXP gowerd(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,
                        SEXP levOrders,SEXP mixedConstants) {
   BEGIN_RCPP
   NumericMatrix xMat(dataX);	// creates Rcpp matrix from SEXP
@@ -125,7 +125,7 @@ RcppExport SEXP whichminN(SEXP xR, SEXP nR, int returnValue) {
 RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SEXP levOrders,
   SEXP mixedConstants,SEXP nR,SEXP returnMinR){
   BEGIN_RCPP
-  List dist = gowerD( dataX,  dataY, weights, ncolNUMFAC, levOrders, mixedConstants);
+  List dist = gowerd( dataX,  dataY, weights, ncolNUMFAC, levOrders, mixedConstants);
   NumericMatrix delta = as<NumericMatrix>(dist["delta"]);
   int nc=delta.cols();
   int n = as<int>(nR);

@@ -1,7 +1,6 @@
 ####Hotdeck in context of kNN-k Nearest Neighbour Imputation
 #Author: Alexander Kowarik, Statistics Austria
 ## (k)NN-Imputation
-## (k)NN-Imputation, donors from cold deck
 #data - data.frame of the data with missing
 #variable - vector of variablesnames to be imputed
 #metric - method for distance computation of in function daisy(cluster), otherwise automatical selection

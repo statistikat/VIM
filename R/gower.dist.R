@@ -57,7 +57,7 @@ gowerD <- function(data.x, data.y = data.x, weights=NULL,numerical,factors,order
         levOrders,mixed.constant,nMin,as.integer(returnMin),PACKAGE="VIM")
     out <- list(ind=out$ind,mins=out$min)
   }else{
-    out <- .Call( "gowerD", as.matrix(data.x), as.matrix(data.y),weights[weightind],
+    out <- .Call( "gowerd", as.matrix(data.x), as.matrix(data.y),weights[weightind],
         c(length(numerical),length(factors),length(orders),length(mixed)),
         levOrders,mixed.constant,PACKAGE="VIM")
     if(justone)
