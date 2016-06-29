@@ -25,6 +25,7 @@ double distW(double x,double y, int type, double weight=1, double weightsum=1,do
       out=weight*abs(x-y)/weightsum;
     }
   }
+//  Rprintf("xval %f, yval %f, dist %f \n",x,y,out);
   return out;
 }
 double distW1(NumericVector xV,NumericVector yV, NumericVector weight,
@@ -38,13 +39,13 @@ double distW1(NumericVector xV,NumericVector yV, NumericVector weight,
       out+=distW(xV(k),yV(k), 0, weight(k), weightsum);
     }
     if(k<ncolVAR(1)){ //Categorical
-      out+=distW(xV(k+ncolVAR(0)),yV(k), 1, weight(k), weightsum);
+      out+=distW(xV(k),yV(k), 1, weight(k), weightsum);
     }
     if(k<ncolVAR(2)){  //Ordered
-      out+=distW(xV(k+ncolVAR(0)+ncolVAR(1)),yV(k), 1, weight(k), weightsum,levOrder(k));
+      out+=distW(xV(k),yV(k), 1, weight(k), weightsum,levOrder(k));
     }
     if(k<ncolVAR(3)){  //Semi-Continous
-      out+=distW(xV(k+ncolVAR(0)+ncolVAR(1)+ncolVAR(2)),yV(k), 1, weight(k), weightsum,1,mixedConstant(k));
+      out+=distW(xV(k),yV(k), 1, weight(k), weightsum,1,mixedConstant(k));
     }
   }
   return out;
@@ -135,7 +136,6 @@ RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SE
     for (int i=0; i<nc; i++) {
       NumericVector zz1 = delta( Rcpp::_, i);
       List resultList(whichminN(zz1,nR,returnMin));
-      //Rcpp::NumericVector tmp(Rcpp::as<Rcpp::NumericVector>(resultList["which"]));
       inds(_,i)=as<NumericVector>(resultList["which"]);
     }
     return List::create(
