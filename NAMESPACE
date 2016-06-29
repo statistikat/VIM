@@ -109,6 +109,11 @@ import(nnet)
 import(robustbase)
 import(sp)
 import(stats)
+importFrom("graphics", "Axis", "abline", "axTicks", "axis", "barplot",
+             "box", "boxplot", "hist", "layout", "lcm", "lines",
+             "locator", "par", "plot.new", "plot.window", "points",
+             "polygon", "rect", "strheight", "strwidth", "text", "title")
+  importFrom("utils", "capture.output", "flush.console", "head")
 importFrom(car,bcPower)
 importFrom(car,powerTransform)
 importFrom(laeken,weightedMean)
