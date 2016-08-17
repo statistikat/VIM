@@ -71,82 +71,95 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
   lhs <- gsub(" ","",strsplit(formchar[2],"\\+")[[1]])
   rhs <- formchar[3]
   rhs2 <- gsub(" ","",strsplit(formchar[3],"\\+")[[1]])
+  #Missings in RHS variables
   TFna2 <- apply(data[,c(rhs2),drop=FALSE],1,function(x)!any(is.na(x)))
   for(lhsV in lhs){
     form <- as.formula(paste(lhsV,"~",rhs))
-    if(!any(is.na(data[,lhsV]))) cat(paste("No missings in","lhsV",". Nothing to impute\n"))
-    if(class(family)!="function"){
-      if(family=="AUTO"){
-        if("numeric"%in%class(data[,lhsV])){
-          nLev <- 0
-          if(robust)
-            mod <- lmrob(form,data=data)
-          else
-            mod <- lm(form,data=data)
-        }else if("factor"%in%class(data[,lhsV])){
-          nLev <- length(levels(data[,lhsV]))
-          if(nLev==2){
-            fam <- binomial
-            if(robust)
-              mod <- glmrob(form,data=data,family=fam)
-            else
-              mod <- glm(form,data=data,family=fam)
+    #Check if there are missings in this LHS variable
+    if(!any(is.na(data[,lhsV]))){
+      cat(paste0("No missings in ",lhsV,".\n"))
+    }else{
+      if(class(family)!="function"){
+        if(family=="AUTO"){
+          TFna <- TFna2&!is.na(data[,lhsV])
+          if("numeric"%in%class(data[,lhsV])){
+            nLev <- 0
+            if(robust){
+              fn <- lmrob
+            }else{
+              fn <- lm
+            }
+            mod <- fn(form,data=data[TFna,])
+          }else if("factor"%in%class(data[,lhsV])){
+            nLev <- length(levels(data[,lhsV]))
+            if(nLev==2){
+              fam <- binomial
+              if(robust){
+                fn <- glmrob
+              }else{
+                fn <- glm
+              }
+              mod <- fn(form,data=data[TFna,],family=fam)
+            }else{
+              co <- capture.output(mod <- multinom(form,data[TFna,]))
+            }
+          }
+          if(imp_var){
+            if(imp_var%in%colnames(data)){
+              data[,paste(lhsV,"_",imp_suffix,sep="")] <- as.logical(data[,paste(lhsV,"_",imp_suffix,sep="")])
+              warning(paste("The following TRUE/FALSE imputation status variables will be updated:",
+                      paste(lhsV,"_",imp_suffix,sep="")))
+            }else{
+              data$NEWIMPTFVARIABLE <- is.na(data[,lhsV])
+              colnames(data)[ncol(data)] <- paste(lhsV,"_",imp_suffix,sep="")
+            }
+          }
+          TFna1 <- is.na(data[,lhsV])
+          TFna3 <- TFna1&TFna2
+          if(all(!TFna3)){
+            #Check if there are missings in this LHS variable where theR RHS variables are "not missing"
+            cat(paste0("No missings in ",lhsV," with valid values in the predictor variables.\n"))
           }else{
-            TFna <- TFna2&!is.na(data[,lhsV])
-            co <- capture.output(mod <- multinom(form,data[TFna,]))
+            tmp <- data[TFna3,]
+            tmp[,lhsV] <- 1
+            if(nLev>2){
+              if(mod_cat){
+                pre <- predict(mod,newdata=tmp)
+              }else{
+                pre <- predict(mod,newdata=tmp,type="probs")
+                pre <- levels(data[,lhsV])[apply(pre,1,function(x)sample(1:length(x),1,prob=x))]
+              }
+            }else if(nLev==2){
+              if(mod_cat){
+                pre <- predict(mod,newdata=tmp,type="response")
+                pre <- levels(data[,lhsV])[as.numeric(pre>.5)+1]
+              }else{
+                pre <- predict(mod,newdata=tmp,type="response")
+                pre <- levels(data[,lhsV])[sapply(pre,function(x)sample(1:2,1,prob=c(1-x,x)))]
+              }
+              
+            }else{
+              pre <- predict(mod,newdata=tmp)
+            }
+            if(sum(TFna1)>sum(TFna3))
+              cat(paste("There still missing values in variable",lhsV,". Probably due to missing values in the regressors.\n"))
+            data[TFna3,lhsV] <- pre
+            
           }
         }
-        if(imp_var){
-          if(imp_var%in%colnames(data)){
-            data[,paste(lhsV,"_",imp_suffix,sep="")] <- as.logical(data[,paste(lhsV,"_",imp_suffix,sep="")])
-            warning(paste("The following TRUE/FALSE imputation status variables will be updated:",
-                    paste(lhsV,"_",imp_suffix,sep="")))
-          }else{
-            data$NEWIMPTFVARIABLE <- is.na(data[,lhsV])
-            colnames(data)[ncol(data)] <- paste(lhsV,"_",imp_suffix,sep="")
-          }
-        }
+      }else{
         TFna1 <- is.na(data[,lhsV])
         TFna3 <- TFna1&TFna2
         tmp <- data[TFna3,]
         tmp[,lhsV] <- 1
-        if(nLev>2){
-          if(mod_cat){
-            pre <- predict(mod,newdata=tmp)
-          }else{
-            pre <- predict(mod,newdata=tmp,type="probs")
-            pre <- levels(data[,lhsV])[apply(pre,1,function(x)sample(1:length(x),1,prob=x))]
-          }
-        }else if(nLev==2){
-          if(mod_cat){
-            pre <- predict(mod,newdata=tmp,type="response")
-            pre <- levels(data[,lhsV])[as.numeric(pre>.5)+1]
-          }else{
-            pre <- predict(mod,newdata=tmp,type="response")
-            pre <- levels(data[,lhsV])[sapply(pre,function(x)sample(1:2,1,prob=c(1-x,x)))]
-          }
-          
-        }else{
-          pre <- predict(mod,newdata=tmp)
-        }
-        if(sum(TFna1)>sum(TFna3))
-          cat(paste("There still missing values in variable",lhsV,". Probably due to missing values in the regressors.\n"))
+        if(robust)
+          mod <- glmrob(form,data=data,family=family)
+        else
+          mod <- glm(form,data=data,family=family)
+        pre <- predict(mod,newdata=tmp,type="response")
         data[TFna3,lhsV] <- pre
-        
       }
-    }else{
-      TFna1 <- is.na(data[,lhsV])
-      TFna3 <- TFna1&TFna2
-      tmp <- data[TFna3,]
-      tmp[,lhsV] <- 1
-      if(robust)
-        mod <- glmrob(form,data=data,family=family)
-      else
-        mod <- glm(form,data=data,family=family)
-      pre <- predict(mod,newdata=tmp,type="response")
-      data[TFna3,lhsV] <- pre
     }
-    
   }
   invisible(data)
 }
