@@ -389,7 +389,9 @@ kNN_work <-
     }
     
   }
-  print(difftime(Sys.time(),startTime))  
+  if(trace){
+    print(difftime(Sys.time(),startTime))
+  }
   if(addRandom){
     data <- data[,RandomVariableForImputation:=NULL]
   }
