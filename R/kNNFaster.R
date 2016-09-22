@@ -87,7 +87,7 @@ kNN.data.table <- function(data, variable=colnames(data), metric=NULL, k=5, dist
     numFun = median, catFun=maxCat,
     makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
     imp_var=TRUE,imp_suffix="imp",addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
-  kNN_work(data, variable, metric, k, dist_var,weights, numFun, catFun,
+  kNN_work(copy(data), variable, metric, k, dist_var,weights, numFun, catFun,
       makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
       imp_var, imp_suffix, addRandom,useImputedDist,weightDist)
 }
