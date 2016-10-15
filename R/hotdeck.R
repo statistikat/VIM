@@ -328,7 +328,11 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
     setkey(xx,OriginalSortingVariable)
     return(xx)
   }
-  varType <- sapply(x,class)[variable]
+  classWithoutLabelled <- function(x){
+  cl <- class(x)
+  return(cl[cl!="labelled"])
+  }
+  varType <- sapply(x,classWithoutLabelled)[variable]
   if(imp_var){
     for(v in variable){
       x[,impvar:=FALSE]
