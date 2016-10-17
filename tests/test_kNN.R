@@ -1,4 +1,4 @@
-require(VIM)
+library(VIM)
 d <- data.frame(x=LETTERS[1:6],y=as.double(1:6),z=as.double(1:6),w=ordered(LETTERS[1:6]))
 d <- rbind(d,d)
 setna <- function(d,i,col=2){

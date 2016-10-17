@@ -2,7 +2,7 @@
 # 
 # Author: alex
 ###############################################################################
-require(VIM)
+library(VIM)
 x <- data.frame(x=rnorm(100),y=rnorm(100),z=rnorm(100))
 y <- data.frame(x=rnorm(100),y=rnorm(100),z=rnorm(100))
 d1 <- gowerD(x,y,weights=rep(1,3),numerical=c(1,2),factors = vector(),orders=vector(),
