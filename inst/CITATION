@@ -1,0 +1,22 @@
+bibentry(bibtype = "Article",
+  title        = "Imputation with the {R} Package {VIM}",
+  author       = c(person(given = "Alexander",
+                          family = "Kowarik",
+                          email = "alexander.kowarik@statistik.gv.at"),
+                   person(given = "Matthias",
+                          family = "Templ")),
+  journal      = "Journal of Statistical Software",
+  year         = "2016",
+  volume       = "74",
+  number       = "7",
+  pages        = "1--16",
+  doi          = "10.18637/jss.v074.i07",
+
+  header       = "To cite VIM in publications use:",
+  textVersion  =
+  paste("Alexander Kowarik, Matthias Templ (2016).",
+        "Imputation with the R Package VIM.",
+        "Journal of Statistical Software, 74(7), 1-16.",
+        "doi:10.18637/jss.v074.i07")
+)
+

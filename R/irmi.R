@@ -51,6 +51,9 @@
 #' @references M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
 #' regression imputation using standard and robust methods.  \emph{Journal of
 #' Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
+#' @references A. Kowarik, M. Templ (2016) Imputation with
+#' R package VIM.  \emph{Journal of
+#' Statistical Software}, 74(7), 1-16.
 #' @keywords manip
 #' @examples
 #' 
