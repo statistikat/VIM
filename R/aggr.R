@@ -163,26 +163,6 @@ aggr_work <- function(x, delimiter = NULL, plot = TRUE, ...) {
 		tabcomb <- if(is.null(dim(tabcomb))) as.matrix(tabcomb) else t(tabcomb)
 	}
 	miss <- data.frame(Variable=cn, Count=nNA, stringsAsFactors=FALSE)
-
-
-#' Count number of infinite or missing values
-#' 
-#' Count the number of infinite or missing values in a vector.
-#' 
-#' 
-#' @aliases countInf countNA
-#' @param x a vector.
-#' @return \code{countInf} returns the number of infinite values in \code{x}.
-#' 
-#' \code{countNA} returns the number of missing values in \code{x}.
-#' @author Andreas Alfons
-#' @keywords utilities
-#' @examples
-#' 
-#' data(sleep, package="VIM")
-#' countInf(log(sleep$Dream))
-#' countNA(sleep$Dream)
-#' 
 	count <- as.integer(tab)  # frequency of combinations
 	res <- list(x=x, combinations=names(tab), count=count, 
 		percent=count*100/n, missings=miss, tabcomb=tabcomb, imputed = imp)
