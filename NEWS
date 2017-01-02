@@ -1,3 +1,5 @@
+#4.6.1 
+ -- use ordered logistic regression for ordinal variables in irmi
 #4.6.0
  -- new option for kNN 'weightDist' to use the distances for the k nearest neighbours as weights
  -- Bytecompile is enabled

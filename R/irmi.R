@@ -179,15 +179,15 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
   }
   class1 <- function(x) class(x)[1] 
   types <- lapply(x,class1)
-  if(any(types=="ordered")){
-    for(i in which(types=="ordered")){
-      msg <- paste(names(x)[i]," is defined as ordered,but irmi cannot deal with ordered variables
-              at the moment, therefore the ordered attribute is set to FALSE \n",sep="")
-      cat(msg)
-      x[,i] <- factor(x[,i],ordered=FALSE)
-      types[i] <- "factor"
-    }
-  }
+#  if(any(types=="ordered")){
+#    for(i in which(types=="ordered")){
+#      msg <- paste(names(x)[i]," is defined as ordered,but irmi cannot deal with ordered variables
+#              at the moment, therefore the ordered attribute is set to FALSE \n",sep="")
+#      cat(msg)
+#      x[,i] <- factor(x[,i],ordered=FALSE)
+#      types[i] <- "factor"
+#    }
+#  }
   types[colnames(x)%in%mixed] <- "mixed"
   types[colnames(x)%in%count] <- "count"
   
@@ -355,7 +355,9 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
       
       #print(attributes(dataForReg$y)$cn)
       
-      
+      if(trace){
+        print(types[[i]])
+      }
       if( types[i]=="integer"||types[i]=="numeric" || types[i] =="mixed"){ ## todo: ausserhalb der Schleife!!
         meth = "numeric" 
       } else if( types[i]=="binary" ){ 
@@ -364,6 +366,8 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
         meth = "factor" 
       } else if( types[i]=="count"){
         meth = "count"
+      }else if( types[i]=="ordered" ){ 
+        meth = "ordered" 
       }
       
       ## replace initialised missings:
@@ -465,6 +469,8 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
         meth = "factor" 
       } else if( types[i]=="count"){
         meth = "count"
+      } else if( types[i]=="ordered"){
+        meth = "ordered"
       }
       if(!is.null(modelFormulas)){
         TFform <- names(modelFormulas)==colnames(x)[i]
@@ -631,7 +637,8 @@ getM <- function(xReg, ndata, type, index,mixedTF,mixedConstant,factors,step,rob
       numeric = useLM(xReg, ndata, index,mixedTF,mixedConstant,factors,step,robust,noise,noise.factor,force,robMethod,form=form),
       factor  = useMN(xReg, ndata, index,factors,step,robust,form=form,multinom.method=multinom.method),
       bin     = useB(xReg, ndata, index,factors,step,robust,form=form),
-      count   = useGLMcount(xReg, ndata, index, factors, step, robust,form=form)
+      count   = useGLMcount(xReg, ndata, index, factors, step, robust,form=form),
+      ordered  = useOrd(xReg, ndata, index,factors,step,robust,form=form),
   )
 }
 
@@ -836,6 +843,31 @@ useMN <- function(xReg, ndata,  wy, factors, step, robust,form,multinom.method){
   }else{
    stop("multinom is the only implemented method at the moment!\n") 
   }
+  return(imp)
+}
+
+
+# ordered response
+useOrd <- function(xReg, ndata,  wy, factors, step, robust,form){
+  factors <- Inter(list(colnames(xReg),factors))
+  if(length(factors)>0){
+    for(f in 1:length(factors)){
+      if(any(summary(xReg[,factors[f]])==0)){
+        xReg <- xReg[,-which(colnames(xReg)==factors[f])]
+        ndata <- ndata[,-which(colnames(ndata)==factors[f])]
+      }
+    }
+  }
+  form <- form[form%in%names(xReg)]
+  if(length(form)>0)
+    form <- as.formula(paste("y ~",paste(form,collapse="+")))
+  else
+    form <- y~.
+  co <- capture.output(multimod <- polr(form, data=xReg))
+  if(step){
+    multimod <- stepAIC(multimod,xReg)
+  }
+  imp <- predict(multimod, newdata=ndata)
   return(imp)
 }
 

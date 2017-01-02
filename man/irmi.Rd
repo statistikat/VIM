@@ -105,6 +105,11 @@ Gest=c("BodyWgt","BrainWgt")
 )
 irmi(sleep,modelFormulas=form,trace=TRUE)
 
+# Example with ordered variable
+td <- testdata$wna
+td$c1 <- as.ordered(td$c1)
+irmi(td)
+
 }
 \author{
 Matthias Templ, Alexander Kowarik
