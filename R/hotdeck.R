@@ -158,7 +158,7 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
       if(length(impPart)>0){
         if(imp_varX){
           impvarname <- paste(v,"_",imp_suffixX,sep="")
-          xx[UniqueIdForImputation%in%impPart,impvarname:=TRUE,with=FALSE]
+          xx[UniqueIdForImputation%in%impPart,c(impvarname):=TRUE]
         }
         impDon <- impPart-1
         impDon[impDon<1] <- impPart[impDon<1]+1
@@ -207,7 +207,8 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
   # If no ord_var is defined, a random ordered will be used
   if(is.null(ord_var)){
     RandomVariableForImputationWithHotdeck <- NULL # Init for CRAN check
-    x[,RandomVariableForImputationWithHotdeck:=runif(nrow(x))]
+    nrowXforRunif <- nrow(x)
+    x[,RandomVariableForImputationWithHotdeck:=runif(nrowXforRunif)]
     ord_var <- "RandomVariableForImputationWithHotdeck"
   }
   setkeyv(x,ord_var)
