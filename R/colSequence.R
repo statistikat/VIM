@@ -26,8 +26,6 @@
 #' numeric, this determines whether they refer to HCL or RGB values.  Possible
 #' values are \code{"hcl"} (for the HCL space) or \code{"rgb"} (for the RGB
 #' space).
-#' @param gamma numeric; the display \emph{gamma} value (see
-#' \code{\link[colorspace]{hex}}).
 #' @param fixup a logical indicating whether the colors should be corrected to
 #' valid RGB values (see \code{\link[colorspace]{hex}}).
 #' @param \dots for \code{colSequence}, additional arguments to be passed to
@@ -80,7 +78,7 @@ colSequence <- function(p, start, end, space = c("hcl", "rgb"), ...) {
 }
 #' @export colSequenceRGB
 #' @rdname colSequence
-colSequenceRGB <- function(p, start, end, gamma = 2.2, fixup = TRUE, ...) {
+colSequenceRGB <- function(p, start, end, fixup = TRUE, ...) {
     # initializations
     if(is(start, "RGB")) start <- coords(start)[1,]
     else start <- rep(start, length.out=3)
@@ -91,11 +89,11 @@ colSequenceRGB <- function(p, start, end, gamma = 2.2, fixup = TRUE, ...) {
     g <- start[2] + p * (end[2] - start[2])
     b <- start[3] + p * (end[3] - start[3])
     # return hexadecimal strings
-    hex(RGB(r, g, b), gamma=gamma, fixup=fixup, ...)
+    hex(RGB(r, g, b), fixup=fixup, ...)
 }
 #' @export colSequenceHCL
 #' @rdname colSequence
-colSequenceHCL <- function(p, start, end, gamma = 2.2, fixup = TRUE, ...) {
+colSequenceHCL <- function(p, start, end, fixup = TRUE, ...) {
     # initializations
     if(is(start, "polarLUV")) start <- rev(coords(start)[1,])
     else start <- rep(start, length.out=3)
@@ -106,5 +104,5 @@ colSequenceHCL <- function(p, start, end, gamma = 2.2, fixup = TRUE, ...) {
     c <- start[2] + p * (end[2] - start[2])
     l <- start[3] + p * (end[3] - start[3])
     # return hexadecimal strings
-    hex(polarLUV(L=l, C=c, H=h), gamma=gamma, fixup=fixup, ...)
+    hex(polarLUV(L=l, C=c, H=h), fixup=fixup, ...)
 }

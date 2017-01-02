@@ -7,7 +7,7 @@
 \title{Matrix plot}
 \usage{
 matrixplot(x, delimiter = NULL, sortby = NULL, col = c("red", "orange"),
-  gamma = 2.2, fixup = TRUE, xlim = NULL, ylim = NULL, main = NULL,
+  fixup = TRUE, xlim = NULL, ylim = NULL, main = NULL,
   sub = NULL, xlab = NULL, ylab = NULL, axes = TRUE, labels = axes,
   xpd = NULL, interactive = TRUE, ...)
 }
@@ -39,8 +39,6 @@ If four colors are supplied, the first is used as start color and the second
 as end color for the available data, while the third/fourth color is used
 for missing/imputed data.}
 
-\item{gamma}{numeric; the display \emph{gamma} value (see
-\code{\link[colorspace]{hex}}).}
 
 \item{fixup}{a logical indicating whether the colors should be corrected to
 valid RGB values (see \code{\link[colorspace]{hex}}).}
