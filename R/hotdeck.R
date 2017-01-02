@@ -224,7 +224,7 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
   setkey(x,OriginalSortingVariable)
   x[,OriginalSortingVariable:=NULL]
   if(all(classx!="data.table"))
-    return(data.frame(x)[,VariableSorting])
+    return(data.frame(x)[,VariableSorting,drop=FALSE])
   return(x[,VariableSorting,with=FALSE])
 }
 #require(data.table)
