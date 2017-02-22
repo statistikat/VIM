@@ -1,6 +1,6 @@
 Package: VIM
-Version: 4.6.4
-Date: 2017-01-04
+Version: 4.6.5
+Date: 2017-02-22
 Title: Visualization and Imputation of Missing Values
 Author: Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
 Maintainer: Matthias Templ <matthias.templ@gmail.com>
