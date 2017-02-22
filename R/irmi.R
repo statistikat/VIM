@@ -206,13 +206,18 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
       types[ind] <- "factor"
     }
   }
-  indFac <- which(types=="factor")
+  
+  #determine factor type: dichotomous or polytomous
+  #detect problematic factors
+  indFac <- which(types == "factor")
   for(ind in indFac){
-    if(length(levels(x[,ind]))==2)
+    #get number of levels
+    fac_nlevels = nlevels(x[[ind]])
+    if (fac_nlevels == 2)
       types[ind] <- "binary"
-    else if(length(levels(x[,ind]))>2)
+    else if (fac_nlevels > 2)
       types[ind] <- "nominal"
-    else stop("factor with less than 2 levels detected!")
+    else stop(sprintf("factor with less than 2 levels detected! - `%s`", names(x)[ind]))
   }
   missingSummary <- cbind(types,apply(x,2,function(x)sum(is.na(x))))
   colnames(missingSummary) <- c("type","#missing")
@@ -846,7 +851,7 @@ useMN <- function(xReg, ndata,  wy, factors, step, robust,form,multinom.method){
     }
     imp <- predict(multimod, newdata=ndata)
   }else{
-   stop("multinom is the only implemented method at the moment!\n") 
+    stop("multinom is the only implemented method at the moment!\n") 
   }
   return(imp)
 }
@@ -919,4 +924,3 @@ useB <- function(xReg,  ndata, wy,factors,step,robust,form){
 #    library(VGAM, warn.conflicts = FALSE, verbose=FALSE)
   return(imp)
 }
-
