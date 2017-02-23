@@ -200,7 +200,7 @@ kNN_work <-
       stop("The vector 'variable' must have the same length as the 'makeNA' list")
     else{
       for(i in 1:nvar){
-        data[data[,sapply(.SD,function(x)x%in%makeNA[[i]])[,1],.SDcols=variable[i]],variable[i]:=NA,with=FALSE]  
+        data[data[,sapply(.SD,function(x)x%in%makeNA[[i]])[,1],.SDcols=variable[i]],variable[i]:=NA]#,with=FALSE]  
       }
     }
     if(!impNA){
@@ -219,7 +219,7 @@ kNN_work <-
     index_imp_vars <- which(!imp_vars%in%colnames(data))
     index_imp_vars2 <- which(imp_vars%in%colnames(data))
     if(length(index_imp_vars)>0){
-      data[,imp_vars[index_imp_vars]:=FALSE,with=FALSE]
+      data[,imp_vars[index_imp_vars]:=FALSE]#,with=FALSE]
       for(i in index_imp_vars){
         data[indexNA2s[,variable[i]],imp_vars[i]:=TRUE]
           #if(!any(indexNA2s[,variable[i]]))
@@ -230,7 +230,7 @@ kNN_work <-
       warning(paste("The following TRUE/FALSE imputation status variables will be updated:",
               paste(imp_vars[index_imp_vars2],collapse=" , ")))
       for(i in index_imp_vars2)
-        data[,imp_vars[i]:=as.logical(data[,imp_vars[i]]),with=FALSE]
+        data[,imp_vars[i]:=as.logical(data[,imp_vars[i]])]#,with=FALSE]
     }
   }
   orders <- data[,sapply(.SD,is.ordered)]
@@ -269,7 +269,7 @@ kNN_work <-
   }
   if(addRandom){
     numerical <- c(numerical, "RandomVariableForImputation")
-    data[,"RandomVariableForImputation":=rnorm(ndat),with=FALSE] 
+    data[,"RandomVariableForImputation":=rnorm(ndat)]#,with=FALSE] 
     if(is.list(dist_var)){
       for(i in 1:length(dist_var)){
         dist_var[[i]] <- c(dist_var[[i]],"RandomVariableForImputation")
@@ -337,8 +337,8 @@ kNN_work <-
       if(!useImputedDist&&any(dist_varx%in%variable)){
         for(dvar in dist_varx[dist_varx%in%variable]){
           ## setting the value for original missing variables to NA
-          don_dist_var[indexNA2s[TF,dvar],dvar:=NA,with=FALSE]
-          imp_dist_var[indexNA2s[TF_imp,dvar],dvar:=NA,with=FALSE]
+          don_dist_var[indexNA2s[TF,dvar],c(dvar):=NA]#,with=FALSE]
+          imp_dist_var[indexNA2s[TF_imp,dvar],c(dvar):=NA]#,with=FALSE]
         }
       }
       
