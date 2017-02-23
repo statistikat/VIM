@@ -8,9 +8,9 @@
 \usage{
 colSequence(p, start, end, space = c("hcl", "rgb"), ...)
 
-colSequenceRGB(p, start, end, gamma = 2.2, fixup = TRUE, ...)
+colSequenceRGB(p, start, end, fixup = TRUE, ...)
 
-colSequenceHCL(p, start, end, gamma = 2.2, fixup = TRUE, ...)
+colSequenceHCL(p, start, end, fixup = TRUE, ...)
 }
 \arguments{
 \item{p}{a numeric vector in \eqn{$[0,1]$}{[0,1]} giving values to be used
@@ -27,9 +27,6 @@ green, blue) or an object of class "\code{\link[colorspace]{RGB}}".}
 numeric, this determines whether they refer to HCL or RGB values.  Possible
 values are \code{"hcl"} (for the HCL space) or \code{"rgb"} (for the RGB
 space).}
-
-\item{gamma}{numeric; the display \emph{gamma} value (see
-\code{\link[colorspace]{hex}}).}
 
 \item{fixup}{a logical indicating whether the colors should be corrected to
 valid RGB values (see \code{\link[colorspace]{hex}}).}
