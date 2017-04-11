@@ -2,6 +2,11 @@
 #include <string>
 #include <cmath>
 
+void R_init_VIM(DllInfo* info) {
+	R_registerRoutines(info, NULL, NULL, NULL, NULL);
+	R_useDynamicSymbols(info, TRUE);
+}
+
 using namespace std;
 using namespace Rcpp;
 double distW(double x,double y, int type, double weight=1, double weightsum=1,double levOrder=1,
