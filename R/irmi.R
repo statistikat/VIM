@@ -7,8 +7,7 @@
 #' mixture of continuous, semi-continuous, ordinal and nominal variables
 #' including outliers.
 #' 
-#' A full description of the method will be uploaded soon in form of a package
-#' vignette.
+#' A full description of the method can be found in the mentioned reference.
 #' 
 #' @param x data.frame or matrix
 #' @param eps threshold for convergency
