@@ -1,3 +1,5 @@
+#4.6.9
+ -- new imputation function 'matchImpute' for imputing random within groups
 #4.6.1 
  -- use ordered logistic regression for ordinal variables in irmi
 #4.6.0

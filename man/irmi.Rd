@@ -78,8 +78,7 @@ The method works sequentially and iterative. The method can deal with a
 mixture of continuous, semi-continuous, ordinal and nominal variables
 including outliers.
 
-A full description of the method will be uploaded soon in form of a package
-vignette.
+A full description of the method can be found in the mentioned reference.
 }
 \examples{
 
@@ -111,9 +110,6 @@ td$c1 <- as.ordered(td$c1)
 irmi(td)
 
 }
-\author{
-Matthias Templ, Alexander Kowarik
-}
 \references{
 M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
 regression imputation using standard and robust methods.  \emph{Journal of
@@ -126,5 +122,7 @@ Statistical Software}, 74(7), 1-16.
 \seealso{
 \code{\link[mi]{mi}}
 }
+\author{
+Matthias Templ, Alexander Kowarik
+}
 \keyword{manip}
-
