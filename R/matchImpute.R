@@ -6,6 +6,7 @@
 #' 
 #' The method works by sampling values from the suitable donors.
 #' 
+#' @aliases matchImpute
 #' @param data data.frame, data.table, survey object or matrix
 #' @param variable variables to be imputed
 #' @param match_var variables used for matching
@@ -30,30 +31,14 @@
 #' imp_testdata2 <- matchImpute(dt,match_var=c("c1","c2","b1","b2"))
 #' 
 #' 
-#' @export matchImpute
+
 #' @S3method matchImpute data.frame
 #' @S3method matchImpute survey.design
 #' @S3method matchImpute default
 #
 
 # working function
-primitive.impute <- function(x){
-  x.na <- is.na(x)
-  if(all(!x.na)|all(x.na)){
-    return(x)
-  }
-  # if(all(x.na)){
-  #   warning("no donors present in subsample")
-  #   return(x)
-  # }
-  n.imp <- sum(x.na)
-  if(length(x[!x.na])>1){
-    x[x.na] <- sample(x[!x.na],n.imp,replace=TRUE)
-  }else{
-    x[x.na] <- x[!x.na]
-  }
-  return(x)
-}
+#' @export matchImpute
 matchImpute <- function(data,variable=colnames(data)[!colnames(data)%in%match_var],match_var, imp_var=TRUE,
     imp_suffix="imp") {
   UseMethod("matchImpute", data)
@@ -76,7 +61,23 @@ matchImpute.survey.design <- function(data,variable=colnames(data$variables)[!co
   data$call <- sys.call(-1)
   data
 }
-
+primitive.impute <- function(x){
+  x.na <- is.na(x)
+  if(all(!x.na)|all(x.na)){
+    return(x)
+  }
+  # if(all(x.na)){
+  #   warning("no donors present in subsample")
+  #   return(x)
+  # }
+  n.imp <- sum(x.na)
+  if(length(x[!x.na])>1){
+    x[x.na] <- sample(x[!x.na],n.imp,replace=TRUE)
+  }else{
+    x[x.na] <- x[!x.na]
+  }
+  return(x)
+}
 # main function
 # imp_var can only be a single collumn (yet)
 matchImpute.default <- function(data,variable=colnames(data)[!colnames(data)%in%match_var],match_var, imp_var=TRUE,
