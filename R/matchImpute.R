@@ -68,6 +68,15 @@ matchImpute.data.table <- function(data,variable=colnames(data)[!colnames(data)%
     imp_suffix="imp") {
   matchImpute.default(copy(data), variable, match_var, imp_var, imp_suffix)
 }
+
+matchImpute.survey.design <- function(data,variable=colnames(data$variables)[!colnames(data$variables)%in%match_var],match_var, imp_var=TRUE,
+    imp_suffix="imp") {
+  data$variables <- matchImpute.default(data.table(data$variables), variable,
+      match_var, imp_var, imp_suffix)
+  data$call <- sys.call(-1)
+  data
+}
+
 # main function
 # imp_var can only be a single collumn (yet)
 matchImpute.default <- function(data,variable=colnames(data)[!colnames(data)%in%match_var],match_var, imp_var=TRUE,
