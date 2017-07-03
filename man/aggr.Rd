@@ -5,6 +5,9 @@
 \alias{plot.aggr}
 \alias{print.aggr}
 \alias{summary.aggr}
+\alias{plot.aggr}
+\alias{print.aggr}
+\alias{summary.aggr}
 \title{Aggregations for missing/imputed values}
 \usage{
 aggr(x, delimiter = NULL, plot = TRUE, ...)
@@ -33,6 +36,12 @@ to the given colors for imputed variables (see \code{col}).}
 
 \item{plot}{a logical indicating whether the results should be plotted (the
 default is \code{TRUE}).}
+
+\item{\dots}{for \code{aggr} and \code{TKRaggr}, further arguments and
+graphical parameters to be passed to \code{\link{plot.aggr}}.  For
+\code{plot.aggr}, further graphical parameters to be passed down.
+\code{par("oma")} will be set appropriately unless supplied (see
+\code{\link[graphics]{par}}).}
 
 \item{col}{a vector of length three giving the colors to be used for
 observed, missing and imputed data. If only one color is supplied, it is
@@ -101,12 +110,6 @@ distance between the two plots in margin lines.}
 \code{\link{print.default}}).}
 
 \item{object}{an object of class \code{"aggr"}.}
-
-\item{\dots}{for \code{aggr} and \code{TKRaggr}, further arguments and
-graphical parameters to be passed to \code{\link{plot.aggr}}.  For
-\code{plot.aggr}, further graphical parameters to be passed down.
-\code{par("oma")} will be set appropriately unless supplied (see
-\code{\link[graphics]{par}}).}
 }
 \value{
 for \code{aggr}, a list of class \code{"aggr"} containing the
@@ -196,14 +199,6 @@ data(sleep, package = "VIM")
 summary(aggr(sleep, plot=FALSE))
 
 }
-\author{
-Andreas Alfons, Matthias Templ, modifications for displaying imputed
-values by Bernd Prantner
-
-Matthias Templ, modifications by Andreas Alfons and Bernd Prantner
-
-Matthias Templ, modifications by Andreas Alfons
-}
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
@@ -216,6 +211,13 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 
 \code{\link{print.summary.aggr}}, \code{\link{aggr}}
 }
+\author{
+Andreas Alfons, Matthias Templ, modifications for displaying imputed
+values by Bernd Prantner
+
+Matthias Templ, modifications by Andreas Alfons and Bernd Prantner
+
+Matthias Templ, modifications by Andreas Alfons
+}
 \keyword{hplot}
 \keyword{print}
-

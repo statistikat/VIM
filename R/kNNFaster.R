@@ -159,20 +159,6 @@ minN <- function(x,n){
   }
   as.numeric(out)
 }
-whichminN <- function(x,n,values=FALSE){
-  if(!values){
-    out <- .Call( "whichminN", x,as.integer(min(c(n,length(x)))),PACKAGE="VIM")
-    if(!is.null(names(x))){
-      out <- names(x)[out]
-    }
-  }else{
-    out <- .Call( "whichminN2", x,as.integer(min(c(n,length(x)))),PACKAGE="VIM")
-    if(!is.null(names(x))){
-      out$which <- names(x)[out$which]
-    }
-  }
-  return(out)
-}
 kNN_work <-
     function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
         numFun = median, catFun=maxCat,

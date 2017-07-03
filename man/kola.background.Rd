@@ -22,4 +22,3 @@ Reimann, C., Filzmoser, P., Garrett, R.G. and Dutter, R. (2008)
 with R}. Wiley, 2008.
 }
 \keyword{datasets}
-

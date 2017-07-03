@@ -39,4 +39,3 @@ The function is used internally by some imputation algorithms.
 Matthias Templ, modifications by Andreas Alfons
 }
 \keyword{manip}
-

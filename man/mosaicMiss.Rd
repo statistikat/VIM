@@ -75,9 +75,6 @@ mosaicMiss(kNN(sleep), highlight = 4,
     plotvars = 8:10, delimiter = "_imp", miss.labels = FALSE)
 
 }
-\author{
-Andreas Alfons, modifications by Bernd Prantner
-}
 \references{
 Meyer, D., Zeileis, A. and Hornik, K. (2006) The
 \code{strucplot} framework: Visualizing multi-way contingency tables with
@@ -90,5 +87,7 @@ Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \seealso{
 \code{\link{spineMiss}}, \code{\link[vcd]{mosaic}}
 }
+\author{
+Andreas Alfons, modifications by Bernd Prantner
+}
 \keyword{hplot}
-

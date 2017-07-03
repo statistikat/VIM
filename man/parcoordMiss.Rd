@@ -130,9 +130,6 @@ legend("top", col = c("skyblue", "orange"), lwd = c(1,1),
     legend = c("observed in Bi", "imputed in Bi"))
 
 }
-\author{
-Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
-}
 \references{
 Wegman, E. J. (1990) Hyperdimensional data analysis using
 parallel coordinates. \emph{Journal of the American Statistical Association}
@@ -145,5 +142,7 @@ Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \seealso{
 \code{\link{pbox}}
 }
+\author{
+Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
+}
 \keyword{hplot}
-

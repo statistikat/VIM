@@ -112,9 +112,6 @@ pbox(kNN(log(chorizonDL[, c(4,8,10,11,17,19,25,29,37,38,40)])),
      delimiter = "_imp")
 
 }
-\author{
-Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
-}
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
@@ -123,5 +120,7 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \seealso{
 \code{\link{parcoordMiss}}
 }
+\author{
+Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
+}
 \keyword{hplot}
-

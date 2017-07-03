@@ -21,11 +21,10 @@ s <- summary(aggr(sleep, plot=FALSE))
 s
 
 }
-\author{
-Andreas Alfons, modifications by Bernd Prantner
-}
 \seealso{
 \code{\link{summary.aggr}}, \code{\link{aggr}}
 }
+\author{
+Andreas Alfons, modifications by Bernd Prantner
+}
 \keyword{print}
-

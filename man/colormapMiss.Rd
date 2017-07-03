@@ -3,6 +3,7 @@
 \name{colormapMiss}
 \alias{colormapMiss}
 \alias{colormapMissLegend}
+\alias{colormapMissLegend}
 \title{Colored map with information about missing/imputed values}
 \usage{
 colormapMiss(x, region, map, imp_index = NULL, prop = TRUE,
@@ -78,6 +79,8 @@ proportions).}
 about missing/imputed values should be displayed interactively (see
 \sQuote{Details}).}
 
+\item{\dots}{further arguments to be passed to \code{plot}.}
+
 \item{xleft}{left \emph{x} position of the legend.}
 
 \item{ybottom}{bottom \emph{y} position of the legend.}
@@ -91,8 +94,6 @@ required information for the legend.}
 
 \item{horizontal}{a logical indicating whether the legend should be drawn
 horizontally or vertically.}
-
-\item{\dots}{further arguments to be passed to \code{plot}.}
 }
 \value{
 \code{colormapMiss} returns a list with the following components:
@@ -142,10 +143,6 @@ other plot functions in \code{VIM}.  For back compatibility, the arguments
 and are handled correctly.  Nevertheless, they are deprecated and no longer
 documented.  Use \code{cex.numbers} and \code{col.numbers} instead.
 }
-\author{
-Andreas Alfons, modifications to show imputed values by Bernd
-Prantner
-}
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
@@ -155,5 +152,8 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \code{\link{colSequence}}, \code{\link{growdotMiss}},
 \code{\link{mapMiss}}
 }
+\author{
+Andreas Alfons, modifications to show imputed values by Bernd
+Prantner
+}
 \keyword{hplot}
-

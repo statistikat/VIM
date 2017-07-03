@@ -30,4 +30,3 @@ alphablend("red", 0.6)
 Andreas Alfons
 }
 \keyword{color}
-

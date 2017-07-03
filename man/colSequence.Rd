@@ -2,8 +2,10 @@
 % Please edit documentation in R/colSequence.R
 \name{colSequence}
 \alias{colSequence}
+\alias{colSequenceRGB}
 \alias{colSequenceHCL}
 \alias{colSequenceRGB}
+\alias{colSequenceHCL}
 \title{HCL and RGB color sequences}
 \usage{
 colSequence(p, start, end, space = c("hcl", "rgb"), ...)
@@ -28,13 +30,13 @@ numeric, this determines whether they refer to HCL or RGB values.  Possible
 values are \code{"hcl"} (for the HCL space) or \code{"rgb"} (for the RGB
 space).}
 
-\item{fixup}{a logical indicating whether the colors should be corrected to
-valid RGB values (see \code{\link[colorspace]{hex}}).}
-
 \item{\dots}{for \code{colSequence}, additional arguments to be passed to
 \code{colSequenceHCL} or \code{colSequenceRGB}.  For \code{colSequenceHCL}
 and \code{colSequenceRGB}, additional arguments to be passed to
 \code{\link[colorspace]{hex}}.}
+
+\item{fixup}{a logical indicating whether the colors should be corrected to
+valid RGB values (see \code{\link[colorspace]{hex}}).}
 }
 \value{
 A character vector containing hexadecimal strings of the form
@@ -58,9 +60,6 @@ colSequence(p, c(1, 1, 1), c(1, 0, 0), space="rgb")
 colSequence(p, RGB(1, 1, 0), "red")
 
 }
-\author{
-Andreas Alfons
-}
 \references{
 Zeileis, A., Hornik, K., Murrell, P. (2009) Escaping RGBland:
 Selecting colors for statistical graphics. \emph{Computational Statistics &
@@ -70,5 +69,7 @@ Data Analysis}, \bold{53 (9)}, 1259--1270.
 \code{\link[colorspace]{hex}},
 \code{\link[colorspace]{sequential_hcl}}
 }
+\author{
+Andreas Alfons
+}
 \keyword{color}
-

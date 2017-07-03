@@ -126,9 +126,6 @@ histMiss(x_IMPUTED, delimiter = "_imp")
 histMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
 
 }
-\author{
-Andreas Alfons, Bernd Prantner
-}
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
@@ -137,5 +134,7 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \seealso{
 \code{\link{spineMiss}}, \code{\link{barMiss}}
 }
+\author{
+Andreas Alfons, Bernd Prantner
+}
 \keyword{hplot}
-

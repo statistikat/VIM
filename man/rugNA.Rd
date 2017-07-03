@@ -64,4 +64,3 @@ rugNA(x, y, side = 2, col = "orange", miss = miss)
 Andreas Alfons, modifications by Bernd Prantner
 }
 \keyword{color}
-

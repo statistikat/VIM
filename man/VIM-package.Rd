@@ -2,8 +2,8 @@
 % Please edit documentation in R/VIM-package.R
 \docType{package}
 \name{VIM-package}
-\alias{VIM}
 \alias{VIM-package}
+\alias{VIM}
 \title{Visualization and Imputation of Missing Values}
 \description{
 This package introduces new tools for the visualization of missing or
@@ -34,11 +34,6 @@ robustbase, tcltk, tkrplot, sp, vcd, Rcpp\cr Imports: \tab car, colorspace,
 grDevices, robustbase, stats, tcltk, sp, utils, vcd\cr License: \tab GPL (>=
 2)\cr URL: \tab http://cran.r-project.org/package=VIM\cr }
 }
-\author{
-Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
-
-Maintainer: Matthias Templ <templ@tuwien.ac.at>
-}
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
@@ -48,5 +43,9 @@ M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
 imputation using standard and robust methods.  \emph{Journal of
 Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
 }
-\keyword{package}
+\author{
+Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
 
+Maintainer: Matthias Templ <templ@tuwien.ac.at>
+}
+\keyword{package}

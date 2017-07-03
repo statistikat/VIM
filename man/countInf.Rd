@@ -26,4 +26,3 @@ countNA(sleep$Dream)
 Andreas Alfons
 }
 \keyword{utilities}
-

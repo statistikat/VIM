@@ -73,9 +73,6 @@ x_imp <- kNN(chorizonDL[, c("As", "Bi")])
 mapMiss(x_imp, coo, kola.background, delimiter = "_imp")
 
 }
-\author{
-Matthias Templ, Andreas Alfons, modifications by Bernd Prantner
-}
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
@@ -85,5 +82,7 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \code{\link{bgmap}}, \code{\link{bubbleMiss}},
 \code{\link{colormapMiss}}
 }
+\author{
+Matthias Templ, Andreas Alfons, modifications by Bernd Prantner
+}
 \keyword{hplot}
-

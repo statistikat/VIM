@@ -52,9 +52,9 @@ gowerD <- function(data.x, data.y = data.x, weights=NULL,numerical,factors,order
   }
   levOrders <- as.numeric(levOrders)
   if(returnIndex){
-    out <- .Call( "gowerDind", as.matrix(data.x), as.matrix(data.y),weights[weightind],
+    out <- gowerDind( as.matrix(data.x), as.matrix(data.y),weights[weightind],
         c(length(numerical),length(factors),length(orders),length(mixed)),
-        levOrders,mixed.constant,nMin,as.integer(returnMin),PACKAGE="VIM")
+        levOrders,mixed.constant,nMin,as.integer(returnMin))
     out <- list(ind=out$ind,mins=out$min)
     if(justone){
       out$ind <-  out$ind[,1,drop=FALSE]
@@ -62,9 +62,9 @@ gowerD <- function(data.x, data.y = data.x, weights=NULL,numerical,factors,order
     }
       
   }else{
-    out <- .Call( "gowerd", as.matrix(data.x), as.matrix(data.y),weights[weightind],
+    out <- gowerd(as.matrix(data.x), as.matrix(data.y),weights[weightind],
         c(length(numerical),length(factors),length(orders),length(mixed)),
-        levOrders,mixed.constant,PACKAGE="VIM")
+        levOrders,mixed.constant)
     if(justone)
       out <-  out$delta[,1,drop=FALSE]
     else

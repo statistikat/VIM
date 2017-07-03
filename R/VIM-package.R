@@ -19,7 +19,6 @@
 #' @importFrom graphics Axis abline axTicks axis barplot box hist boxplot layout lcm lines locator par plot.new plot.window points
 #' @importFrom graphics polygon rect strheight strwidth text title
 #' @importFrom utils capture.output flush.console head
-#' @suggests dplyr
 #' @useDynLib VIM
 NULL
 #' C-horizon of the Kola data with missing values
@@ -304,3 +303,5 @@ NULL
 
 
 
+setGeneric("plot")
+setGeneric("print")

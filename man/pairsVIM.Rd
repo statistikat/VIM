@@ -12,6 +12,10 @@ pairsVIM(x, ..., delimiter = NULL, main = NULL, sub = NULL,
 \arguments{
 \item{x}{a matrix or \code{data.frame}.}
 
+\item{\dots}{further arguments and graphical parameters to be passed down.
+\code{par("oma")} will be set appropriately unless supplied (see
+\code{\link[graphics]{par}}).}
+
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
 \code{\link{colnames}}). If given, it is used to determine the corresponding
@@ -48,10 +52,6 @@ at the bottom).}
 
 \item{gap}{a numeric value giving the distance between the panels in margin
 lines.}
-
-\item{\dots}{further arguments and graphical parameters to be passed down.
-\code{par("oma")} will be set appropriately unless supplied (see
-\code{\link[graphics]{par}}).}
 }
 \description{
 Create a scatterplot matrix.
@@ -79,9 +79,6 @@ x[,c(1,2,4,6,7)] <- log10(x[,c(1,2,4,6,7)])
 pairsVIM(x)
 
 }
-\author{
-Andreas Alfons, modifications by Bernd Prantner
-}
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
@@ -90,5 +87,7 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \seealso{
 \code{\link{marginmatrix}}, \code{\link{scattmatrixMiss}}
 }
+\author{
+Andreas Alfons, modifications by Bernd Prantner
+}
 \keyword{hplot}
-

@@ -2,11 +2,15 @@
 % Please edit documentation in R/zzz.R
 \docType{data}
 \name{vmGUIenvir}
-\alias{existsVm}
-\alias{getVm}
-\alias{putVm}
-\alias{rmVm}
 \alias{vmGUIenvir}
+\alias{putVm}
+\alias{getVm}
+\alias{existsVm}
+\alias{rmVm}
+\alias{putVm}
+\alias{getVm}
+\alias{existsVm}
+\alias{rmVm}
 \title{Environment for the GUI for Visualization and Imputation of Missing Values}
 \format{An object of class \code{environment} of length 0.}
 \usage{
@@ -36,15 +40,14 @@ Location were everything from package VIM and VIMGUI is stored.
 Internal information regarding the VIM GUI is stored in the environment
 \code{vmGUIenvir}.
 }
-\author{
-Andreas Alfons, based on an initial design by Matthias Templ,
-modifications by Bernd Prantner
-}
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
+\author{
+Andreas Alfons, based on an initial design by Matthias Templ,
+modifications by Bernd Prantner
+}
 \keyword{hplot}
 \keyword{multivariate}
-

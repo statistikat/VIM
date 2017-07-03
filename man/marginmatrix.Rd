@@ -62,9 +62,6 @@ x_imp[,c(1,2,4)] <- log10(x_imp[,c(1,2,4)])
 marginmatrix(x_imp, delimiter = "_imp")
 
 }
-\author{
-Andreas Alfons, modifications by Bernd Prantner
-}
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
@@ -74,5 +71,7 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \code{\link{marginplot}}, \code{\link{pairsVIM}},
 \code{\link{scattmatrixMiss}}
 }
+\author{
+Andreas Alfons, modifications by Bernd Prantner
+}
 \keyword{hplot}
-

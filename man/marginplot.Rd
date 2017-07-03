@@ -119,9 +119,6 @@ marginplot(kNN(log10(chorizonDL[,c("CaO", "Bi")])), delimiter = "_imp")
 
 
 }
-\author{
-Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
-}
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
@@ -130,5 +127,7 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \seealso{
 \code{\link{scattMiss}}
 }
+\author{
+Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
+}
 \keyword{hplot}
-

@@ -91,4 +91,3 @@ with R}. Wiley.
 \code{\link[mvoutlier]{chorizon}}
 }
 \keyword{datasets}
-

@@ -68,11 +68,10 @@ x <- sleep[, c("BodyWgt", "BrainWgt")]
 prepare(x, scaling = "robust", transformation = "logarithm")
 
 }
-\author{
-Matthias Templ, modifications by Andreas Alfons
-}
 \seealso{
 \code{\link{scale}}, \code{\link[car]{powerTransform}}
 }
+\author{
+Matthias Templ, modifications by Andreas Alfons
+}
 \keyword{manip}
-

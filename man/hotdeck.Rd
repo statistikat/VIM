@@ -60,13 +60,12 @@ xImp <- hotdeck(x,ord_var = c("o1","o2","o3"),domain_var="d2")
 
 
 }
-\author{
-Alexander Kowarik
-}
 \references{
 A. Kowarik, M. Templ (2016) Imputation with
 R package VIM.  \emph{Journal of
 Statistical Software}, 74(7), 1-16.
 }
+\author{
+Alexander Kowarik
+}
 \keyword{manip}
-

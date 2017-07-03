@@ -108,9 +108,6 @@ x_imp[,c(1,2,4)] <- log10(x_imp[,c(1,2,4)])
 scattmatrixMiss(x_imp, delimiter = "_imp", highlight = "Dream")
 
 }
-\author{
-Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
-}
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
@@ -119,5 +116,7 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \seealso{
 \code{\link{pairsVIM}}, \code{\link{marginmatrix}}
 }
+\author{
+Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
+}
 \keyword{hplot}
-

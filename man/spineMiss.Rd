@@ -133,9 +133,6 @@ spineMiss(kNN(tao[, c("Air.Temp", "Humidity")]), delimiter = "_imp")
 spineMiss(kNN(sleep[, c("Exp", "Sleep")]), delimiter = "_imp")
 
 }
-\author{
-Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
-}
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
@@ -145,5 +142,7 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \code{\link{histMiss}}, \code{\link{barMiss}},
 \code{\link{mosaicMiss}}
 }
+\author{
+Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
+}
 \keyword{hplot}
-

@@ -29,4 +29,3 @@ data(testdata)
 
 }
 \keyword{datasets}
-

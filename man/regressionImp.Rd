@@ -47,13 +47,12 @@ imp_testdata1 <- regressionImp(b1+b2~x1+x2,data=testdata$wna)
 imp_testdata3 <- regressionImp(x1~x2,data=testdata$wna,robust=TRUE)
 
 }
-\author{
-Alexander Kowarik
-}
 \references{
 A. Kowarik, M. Templ (2016) Imputation with
 R package VIM.  \emph{Journal of
 Statistical Software}, 74(7), 1-16.
 }
+\author{
+Alexander Kowarik
+}
 \keyword{manip}
-

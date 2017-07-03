@@ -28,4 +28,3 @@ aggr(sleep)
 
 }
 \keyword{datasets}
-
