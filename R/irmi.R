@@ -218,6 +218,14 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
       types[ind] <- "nominal"
     else stop(sprintf("factor with less than 2 levels detected! - `%s`", names(x)[ind]))
   }
+  indOrd <- which(types == "ordered")
+  for(ind in indOrd){
+    #get number of levels
+    fac_nlevels = nlevels(x[[ind]])
+    if (fac_nlevels == 2)
+      types[ind] <- "binary"
+  }
+  
   missingSummary <- cbind(types,apply(x,2,function(x)sum(is.na(x))))
   colnames(missingSummary) <- c("type","#missing")
   
