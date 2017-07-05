@@ -33,3 +33,8 @@
  -- vignettes moved to VIMGUI
  -- new imputation function regressionImp
  -- roxygen style comments -> help files
+# 4.7.12
+ -- testthat package used for all tests
+ -- added travis automatically building/checking
+ -- covr for code coverage (vis functions are currently not covered by any tests)
+ -- new imputation function matchImpute for faster imputation randomly by group
