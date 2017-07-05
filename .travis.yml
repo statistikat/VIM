@@ -6,7 +6,7 @@ r:
 cache: packages
 
 after_success:
-  - Rscript -e 'library(covr);coveralls()'
+  - Rscript -e 'install.packages("covr");library(covr);coveralls()'
   
 notifications:
   email:
