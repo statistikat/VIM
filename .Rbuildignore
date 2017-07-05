@@ -4,3 +4,5 @@
 ^\.settings$
 ^.*\.gitignore$
 ^\.git$
+^\.travis.yml$
+ 
