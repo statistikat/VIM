@@ -110,17 +110,3 @@ matchImpute.default <- function(data,variable=colnames(data)[!colnames(data)%in%
   return(data)
   
 }
-
-
-
-
-#nRows <- 1e9
-#x<-data.table(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,rep=T),
-#    d1=sample(LETTERS[1:3],nRows,rep=T),d2=sample(LETTERS[1:2],nRows,rep=T),
-#    d3=sample(LETTERS[1:3],nRows,rep=T),d4=sample(LETTERS[1:2],nRows,rep=T))
-#origX <- x
-#x[sample(1:nRows,nRows/10),1] <- NA
-#x[sample(1:nRows,nRows/10),2] <- NA
-#x[sample(1:nRows,nRows/10),3] <- NA
-#x[sample(1:nRows,nRows/10),4] <- NA
-#system.time(ximp <- matchImpute(x,match_var=c("d1","d2","d3","d4")))
