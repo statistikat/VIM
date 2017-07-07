@@ -5,7 +5,6 @@
 \alias{sampleCat}
 \alias{maxCat}
 \alias{gowerD}
-\alias{which.minN}
 \title{k-Nearest Neighbour Imputation}
 \usage{
 kNN(data, variable = colnames(data), metric = NULL, k = 5,
@@ -78,8 +77,7 @@ The function sampleCat samples with probabilites corresponding to the
 occurrence of the level in the NNs. The function maxCat chooses the level
 with the most occurrences and random if the maximum is not unique. The
 function gowerD is used by kNN to compute the distances for numerical,
-factor ordered and semi-continous variables. The function which.minN is used
-by kNN.
+factor ordered and semi-continous variables.
 }
 \examples{
 

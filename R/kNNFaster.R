@@ -25,10 +25,9 @@
 #' occurrence of the level in the NNs. The function maxCat chooses the level
 #' with the most occurrences and random if the maximum is not unique. The
 #' function gowerD is used by kNN to compute the distances for numerical,
-#' factor ordered and semi-continous variables. The function which.minN is used
-#' by kNN.
+#' factor ordered and semi-continous variables. 
 #' 
-#' @aliases kNN sampleCat maxCat gowerD which.minN
+#' @aliases kNN sampleCat maxCat gowerD
 #' @param data data.frame or matrix
 #' @param variable variables where missing values should be imputed
 #' @param metric metric to be used for calculating the distances between
@@ -76,7 +75,6 @@
 #' @export sampleCat
 #' @export maxCat
 #' @export gowerD
-#' @export which.minN
 #' @S3method kNN data.frame
 #' @S3method kNN survey.design
 #' @S3method kNN default
@@ -140,24 +138,6 @@ maxCat <- function(x,weights = NULL){
   if(sum(s>0)>1)
     s <- sample(s)
   names(s)[which.max(s)]
-}
-which.minN <- function(x,n){
-  n <- min(n,length(x))
-  out <- vector()
-  for(i in 1:n){
-    out[i] <- names(x)[which.min(x)]
-    x[which.min(x)] <- Inf
-  }
-  as.numeric(out)
-}
-minN <- function(x,n){
-  n <- min(n,length(x))
-  out <- vector()
-  for(i in 1:n){
-    out[i] <- min(x)
-    x[which.min(x)] <- Inf
-  }
-  as.numeric(out)
 }
 kNN_work <-
     function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
