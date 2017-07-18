@@ -35,6 +35,8 @@
 #' status
 #' @return the imputed data set.
 #' @author Alexander Kowarik
+#' @note If the sequential hotdeck does not lead to a suitable,
+#' a random donor in the group will be used.
 #' @references A. Kowarik, M. Templ (2016) Imputation with
 #' R package VIM.  \emph{Journal of
 #' Statistical Software}, 74(7), 1-16.
@@ -168,7 +170,7 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
         setnames(xx,"VariableWhichIsCurrentlyImputed",v)
       }
       
-      if(length(impPart)>0){
+      if((length(impPart)>0)&&(length(impPart)<nrow(xx))){
         if(imp_varX){
           impvarname <- paste(v,"_",imp_suffixX,sep="")
           xx[UniqueIdForImputation%in%impPart,c(impvarname):=TRUE]
@@ -191,7 +193,11 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
             TF <- any(TFindex)
             if(add>50){
               TF <- FALSE
-              Don[TFindex]<-1
+              # remaining missing values will be set to a random value from the group
+              Don[TFindex] <- sample(Don[!TFindex],1)
+              if(!identical(ord_var, "RandomVariableForImputationWithHotdeck")){
+                warning(paste("For variable",v,"the ordering is ignored for at least one imputation."))
+              }
             }
             add <- add +1
           }

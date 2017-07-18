@@ -39,6 +39,10 @@ the imputed data set.
 Implementation of the popular Sequential, Random (within a domain) hot-deck
 algorithm for imputation.
 }
+\note{
+If the sequential hotdeck does not lead to a suitable,
+a random donor in the group will be used.
+}
 \examples{
 
 data(sleep)
