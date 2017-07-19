@@ -194,7 +194,8 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
             if(add>50){
               TF <- FALSE
               # remaining missing values will be set to a random value from the group
-              Don[TFindex] <- sample(Don[!TFindex],1)
+              
+              Don[TFindex] <- Don[!TFindex][sample(sum(!TFindex),1)]
               if(!identical(ord_var, "RandomVariableForImputationWithHotdeck")){
                 warning(paste("For variable",v,"the ordering is ignored for at least one imputation."))
               }
