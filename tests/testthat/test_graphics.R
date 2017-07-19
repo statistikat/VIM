@@ -176,3 +176,16 @@ test_that("marginplot imputed failed", {
   marginplot(kNN(tao[,c("Air.Temp", "Humidity")]), delimiter = "_imp")
   marginplot(kNN(log10(chorizonDL[,c("CaO", "Bi")])), delimiter = "_imp")
 })
+
+
+test_that("pbox missing failed", {
+  ## for missing values
+  pbox(log(chorizonDL[, c(4,5,8,10,11,16:17,19,25,29,37,38,40)]))
+})
+
+test_that("pbox imputed failed", {
+  ## for imputed values
+  pbox(hotdeck(log(chorizonDL[, c(4,8,10,11,17,19,25,29,37,38,40)])),
+       delimiter = "_imp")
+})
+
