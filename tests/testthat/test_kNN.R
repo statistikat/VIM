@@ -43,3 +43,10 @@ test_that("kNN Tests donorcond",{
   d2 <- kNN(d,k=5,donorcond = list(">3"),variable = "y")
   expect_true(all(d2[d2$y_imp,"y"]>3))
 })
+
+
+test_that("kNN All values NAs",{
+  d <- setna(d,1:nrow(d),2)
+  expect_warning(d2 <- kNN(d,k=5,donorcond = list(">3"),variable = "y"))
+  expect_identical(d,d2[1:ncol(d)])
+})

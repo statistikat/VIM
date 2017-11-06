@@ -152,13 +152,6 @@ kNN_work <-
   startTime <- Sys.time()
   nvar <- length(variable)
   ndat <- nrow(data)
-  for(v in variable){
-    if(data[,sapply(.SD,function(x)all(is.na(x))),.SDcols=v]){
-      warning(paste("All observations of",v,"are missing, therefore the variable will not be imputed!\n"))
-      variable <- variable[variable!=v]  
-    }
-  }
-  
   #impNA==FALSE -> NAs should remain NAs (Routing NAs!?)
   indexNAs <- is.na(data)
   if(!is.null(makeNA)){
@@ -198,6 +191,16 @@ kNN_work <-
       for(i in index_imp_vars2)
         data[,imp_vars[i]:=as.logical(data[,imp_vars[i]])]#,with=FALSE]
     }
+  }
+  for(v in variable){
+    if(data[,sapply(.SD,function(x)all(is.na(x))),.SDcols=v]){
+      warning(paste("All observations of",v,"are missing, therefore the variable will not be imputed!\n"))
+      variable <- variable[variable!=v]  
+    }
+  }
+  if(length(variable)==0){
+    warning(paste("Nothing is imputed, because all variables to be imputed only contains missings."))
+    return(data)
   }
   orders <- data[,sapply(.SD,is.ordered)]
   orders <- colnames(data)[orders]
