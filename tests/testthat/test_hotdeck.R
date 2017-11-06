@@ -21,3 +21,14 @@ test_that("hotdeck should fill all values but give a warning", {
   expect_warning(df.out <- hotdeck(df, variable="wages01", domain_var="state",ord_var = "r"))
   expect_identical(df.out,na.omit(df.out))
 })
+
+test_that("hotdeck with colnames starting with a number", {
+  df = data.frame(Id = 1:3, x = c(NA, 0.2, 0.3))
+  set.seed(1)
+  dfi <- hotdeck(df)
+  names(df) = c("Id", "1x")
+  set.seed(1)
+  dfi2 <- hotdeck(df)
+  colnames(dfi) <- colnames(dfi2)
+  expect_identical(dfi,dfi2)
+})
