@@ -3,7 +3,7 @@ r:
   - oldrel
   - release
   - devel
-cache: packages
+#cache: packages
 
 after_success:
   - Rscript -e 'install.packages("covr");library(covr);coveralls()'
