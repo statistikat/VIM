@@ -24,6 +24,7 @@
 #' gapMiss(v, what = var)
 gapMiss <- function(x, what = mean){
   if(!is.vector(x)) stop("x must be a vector") 
+  if(!any(is.na(x))) return(0)
   stat <- rle(ifelse(is.na(x), 1, 0))
   return(what(stat$lengths[stat$values == 1]))
 }
