@@ -2,14 +2,14 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 gowerd <- function(dataX, dataY, weights, ncolNUMFAC, levOrders, mixedConstants) {
-    .Call('VIM_gowerd', PACKAGE = 'VIM', dataX, dataY, weights, ncolNUMFAC, levOrders, mixedConstants)
+    .Call('_VIM_gowerd', PACKAGE = 'VIM', dataX, dataY, weights, ncolNUMFAC, levOrders, mixedConstants)
 }
 
 whichminN <- function(xR, nR, returnValue) {
-    .Call('VIM_whichminN', PACKAGE = 'VIM', xR, nR, returnValue)
+    .Call('_VIM_whichminN', PACKAGE = 'VIM', xR, nR, returnValue)
 }
 
 gowerDind <- function(dataX, dataY, weights, ncolNUMFAC, levOrders, mixedConstants, nR, returnMinR) {
-    .Call('VIM_gowerDind', PACKAGE = 'VIM', dataX, dataY, weights, ncolNUMFAC, levOrders, mixedConstants, nR, returnMinR)
+    .Call('_VIM_gowerDind', PACKAGE = 'VIM', dataX, dataY, weights, ncolNUMFAC, levOrders, mixedConstants, nR, returnMinR)
 }
 

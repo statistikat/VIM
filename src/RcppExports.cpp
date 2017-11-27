@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // gowerd
 RcppExport SEXP gowerd(SEXP dataX, SEXP dataY, SEXP weights, SEXP ncolNUMFAC, SEXP levOrders, SEXP mixedConstants);
-RcppExport SEXP VIM_gowerd(SEXP dataXSEXP, SEXP dataYSEXP, SEXP weightsSEXP, SEXP ncolNUMFACSEXP, SEXP levOrdersSEXP, SEXP mixedConstantsSEXP) {
+RcppExport SEXP _VIM_gowerd(SEXP dataXSEXP, SEXP dataYSEXP, SEXP weightsSEXP, SEXP ncolNUMFACSEXP, SEXP levOrdersSEXP, SEXP mixedConstantsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -23,7 +23,7 @@ END_RCPP
 }
 // whichminN
 RcppExport SEXP whichminN(SEXP xR, SEXP nR, int returnValue);
-RcppExport SEXP VIM_whichminN(SEXP xRSEXP, SEXP nRSEXP, SEXP returnValueSEXP) {
+RcppExport SEXP _VIM_whichminN(SEXP xRSEXP, SEXP nRSEXP, SEXP returnValueSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -36,7 +36,7 @@ END_RCPP
 }
 // gowerDind
 RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY, SEXP weights, SEXP ncolNUMFAC, SEXP levOrders, SEXP mixedConstants, SEXP nR, SEXP returnMinR);
-RcppExport SEXP VIM_gowerDind(SEXP dataXSEXP, SEXP dataYSEXP, SEXP weightsSEXP, SEXP ncolNUMFACSEXP, SEXP levOrdersSEXP, SEXP mixedConstantsSEXP, SEXP nRSEXP, SEXP returnMinRSEXP) {
+RcppExport SEXP _VIM_gowerDind(SEXP dataXSEXP, SEXP dataYSEXP, SEXP weightsSEXP, SEXP ncolNUMFACSEXP, SEXP levOrdersSEXP, SEXP mixedConstantsSEXP, SEXP nRSEXP, SEXP returnMinRSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
