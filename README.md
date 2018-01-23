@@ -2,6 +2,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/statistikat/VIM/badge.svg?branch=master)](https://coveralls.io/github/statistikat/VIM?branch=master)
 [![CRAN](http://www.r-pkg.org/badges/version/VIM)](https://CRAN.R-project.org/package=VIM)
 [![Downloads](http://cranlogs.r-pkg.org/badges/VIM)](https://CRAN.R-project.org/package=VIM)
+[![Mentioned in Awesome Official Statistics ](https://awesome.re/mentioned-badge.svg)](http://www.awesomeofficialstatistics.org)
 
 VIM
 ===
