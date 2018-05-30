@@ -634,12 +634,13 @@ Inter.list <- function(A){ # common entries from a list of vectors
   if(method=="median"){
     for( j in 1:ncol(x) ) {
       xx <- x[,j]
-      if(class(xx) == "numeric") {xx <- as.vector(impute(as.matrix(xx), "median"))}
-      if(class(xx) == "integer") {xx <- as.vector(impute(as.matrix(xx), "median"))}
-      if(class(xx) == "factor")  {xx <- as.character(xx)
+      if(is.numeric(xx)) {xx <- as.vector(impute(as.matrix(xx), "median"))}
+      if(is.factor(xx)||is.character(xx))  {
+        xx <- as.character(xx)
         #if(class(x)[2] == "count") {x <-as.vector(impute(as.matrix(x), "mean"))} ### hier Fehler #TODO: verbessern
         xx[which(is.na(xx))] <-  names(which.max(table(xx)))
-        xx <- as.factor(xx)}
+        xx <- as.factor(xx)
+      }
       x[,j] <- xx
     }
   }else{
