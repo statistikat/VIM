@@ -50,3 +50,20 @@ test_that("kNN All values NAs",{
   expect_warning(d2 <- kNN(d,k=5,donorcond = list(">3"),variable = "y"))
   expect_identical(d,d2[1:ncol(d)])
 })
+
+
+## Tests for random forest as distance variable
+test_that("kNN Tests - randomForest",{
+  d <- setna(d,7:12,2)
+  d <- setna(d,1:2,1)
+  d <- setna(d,3:4,5)
+  d2 <- kNN(d,addRF = TRUE)
+  
+})
+test_that("kNN Tests - randomForest onlyRF",{
+  d <- setna(d,7:12,2)
+  d <- setna(d,1:2,1)
+  d <- setna(d,3:4,5)
+  d2 <- kNN(d,addRF = TRUE,onlyRF = TRUE)
+  
+})

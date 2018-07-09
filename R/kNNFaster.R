@@ -263,10 +263,12 @@ kNN_work <-
           next;
         }
         ranger.formula <- as.formula(paste(variable[i],paste(regressors,collapse = "+"),sep="~"))
+        
         ranger.mod <- ranger(ranger.formula,data=data.mod)
         
         new_feature <- c(paste0(variable[i],"randomForestFeature"))
-        data[,c(new_feature):=predict(ranger.mod,data=data)$predictions]
+        #TODO: improve brutal workaround for missing values in prediction for RF
+        data[,c(new_feature):=predict(ranger.mod,data=suppressWarnings(kNN(data[,regressors,with=FALSE],imp_var = FALSE)))$predictions]
         features_added <- c(features_added,new_feature)
         
         if(variable[i]%in%mixed){

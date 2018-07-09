@@ -11,8 +11,9 @@ kNN(data, variable = colnames(data), metric = NULL, k = 5,
   dist_var = colnames(data), weights = NULL, numFun = median,
   catFun = maxCat, makeNA = NULL, NAcond = NULL, impNA = TRUE,
   donorcond = NULL, mixed = vector(), mixed.constant = NULL,
-  trace = FALSE, imp_var = TRUE, imp_suffix = "imp", addRandom = FALSE,
-  useImputedDist = TRUE, weightDist = FALSE)
+  trace = FALSE, imp_var = TRUE, imp_suffix = "imp", addRF = FALSE,
+  onlyRF = FALSE, addRandom = FALSE, useImputedDist = TRUE,
+  weightDist = FALSE)
 }
 \arguments{
 \item{data}{data.frame or matrix}
@@ -25,7 +26,9 @@ kNN(data, variable = colnames(data), metric = NULL, k = 5,
 
 \item{dist_var}{names or variables to be used for distance calculation}
 
-\item{weights}{weights for the variables for distance calculation}
+\item{weights}{weights for the variables for distance calculation.
+If \code{weights = "auto"} weights will be selected based on variable importance from random forest regression, using function \code{\link[ranger]{ranger}}.
+Weights are calculated for each variable seperately.}
 
 \item{numFun}{function for aggregating the k Nearest Neighbours in the case
 of a numerical variable}
@@ -55,6 +58,10 @@ variable should be created show the imputation status}
 
 \item{imp_suffix}{suffix for the TRUE/FALSE variables showing the imputation
 status}
+
+\item{addRF}{TRUE/FALSE each variable will be modelled using random forest regression (\code{\link[ranger]{ranger}}) and used as additional distance variable.}
+
+\item{onlyRF}{TRUE/FALSE if TRUE only additional distance variables created from random forest regression will be used as distance variables.}
 
 \item{addRandom}{TRUE/FALSE if an additional random variable should be added
 for distance calculation}

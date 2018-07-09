@@ -1,6 +1,6 @@
 Package: VIM
-Version: 4.7.16
-Date: 2017-11-06
+Version: 4.7.17
+Date: 2018-07-09
 Title: Visualization and Imputation of Missing Values
 Author: Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
 Maintainer: Matthias Templ <matthias.templ@gmail.com>
@@ -12,7 +12,7 @@ Imports:
     robustbase,
     stats,
     sp,
-    vcd,MASS,nnet,e1071,methods,Rcpp,utils,graphics,laeken
+    vcd,MASS,nnet,e1071,methods,Rcpp,utils,graphics,laeken, ranger
 Suggests: dplyr, testthat
 Description: New tools for the visualization of missing and/or imputed values
     are introduced, which can be used for exploring the data and the structure of
