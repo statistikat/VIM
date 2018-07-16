@@ -241,22 +241,20 @@ kNN_work <-
 
     features_added <- c()
     dist_var_new <- list()
+    
+    # create data set without missings for regressors
+    # seems to be most efficient way
+    # can still be improved...?
+    dataRF <- suppressWarnings(kNN(data[,c(dist_var),with=FALSE],imp_var = FALSE))
+    
     for(i in 1:nvar){
+      
       if(any(indexNA2s[,variable[i]])){
-        # check which variables are available for imputation
-        # missing values are not allowed in ranger()
+
         regressors <- dist_var[dist_var!=variable[i]]
         index.miss <- data[is.na(get(variable[i])),which=TRUE]
-        no.nas <- unlist(data[index.miss,lapply(.SD,function(z){any(is.na(z))}),.SDcols=regressors])
-        regressors <- regressors[!no.nas]
-        
-        if(length(regressors)==0){
-          warning("cannot use random forest for ",variable[i],"\n too many missing values in the data")
-          next;
-        }
-        
-        cmd <- paste0("data.mod <- data[!is.na(",variable[i],")",paste(paste0("&!is.na(",regressors,")"),collapse=""),"]")
-        eval(parse(text=cmd))
+
+        data.mod <- dataRF[-c(index.miss),]
         
         if(nrow(data.mod)==0){
           warning("cannot use random forest for ",variable[i],"\n too many missing values in the data")
@@ -267,8 +265,8 @@ kNN_work <-
         ranger.mod <- ranger(ranger.formula,data=data.mod)
         
         new_feature <- c(paste0(variable[i],"randomForestFeature"))
-        #TODO: improve brutal workaround for missing values in prediction for RF
-        data[,c(new_feature):=predict(ranger.mod,data=suppressWarnings(kNN(data[,regressors,with=FALSE],imp_var = FALSE)))$predictions]
+        data[,c(new_feature):=predict(ranger.mod,data=dataRF)$predictions]
+
         features_added <- c(features_added,new_feature)
         
         if(variable[i]%in%mixed){
@@ -290,6 +288,7 @@ kNN_work <-
  
       }
     }
+    rm(dataRF)
     # create sets for distance variables
     dist_var <- dist_var_new
 
