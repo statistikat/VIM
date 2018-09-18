@@ -29,3 +29,8 @@ test_that("irmi robust step",{
 test_that("irmi robust noise",{
   expect_is(irmi(test_df,robust=TRUE,mixed = "m", count="co", noise=TRUE),"data.frame")
 })
+
+test_that("irmi robust noise with no imp_var",{
+  expect_is(irmi(test_df,robust=TRUE,mixed = "m", count="co", noise=TRUE,imp_var=FALSE),"data.frame")
+})
+
