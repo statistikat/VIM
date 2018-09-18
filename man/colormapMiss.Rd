@@ -3,14 +3,13 @@
 \name{colormapMiss}
 \alias{colormapMiss}
 \alias{colormapMissLegend}
-\alias{colormapMissLegend}
 \title{Colored map with information about missing/imputed values}
 \usage{
 colormapMiss(x, region, map, imp_index = NULL, prop = TRUE,
   polysRegion = 1:length(x), range = NULL, n = NULL, col = c("red",
-  "orange"), gamma = 2.2, fixup = TRUE, coords = NULL, numbers = TRUE,
-  digits = 2, cex.numbers = 0.8, col.numbers = par("fg"), legend = TRUE,
-  interactive = TRUE, ...)
+  "orange"), gamma = 2.2, fixup = TRUE, coords = NULL,
+  numbers = TRUE, digits = 2, cex.numbers = 0.8,
+  col.numbers = par("fg"), legend = TRUE, interactive = TRUE, ...)
 
 colormapMissLegend(xleft, ybottom, xright, ytop, cmap, n = 1000,
   horizontal = TRUE, digits = 2, cex.numbers = 0.8,

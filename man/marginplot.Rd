@@ -4,11 +4,12 @@
 \alias{marginplot}
 \title{Scatterplot with additional information in the margins}
 \usage{
-marginplot(x, delimiter = NULL, col = c("skyblue", "red", "red4", "orange",
-  "orange4"), alpha = NULL, pch = c(1, 16), cex = par("cex"),
-  numbers = TRUE, cex.numbers = par("cex"), zeros = FALSE, xlim = NULL,
-  ylim = NULL, main = NULL, sub = NULL, xlab = NULL, ylab = NULL,
-  ann = par("ann"), axes = TRUE, frame.plot = axes, ...)
+marginplot(x, delimiter = NULL, col = c("skyblue", "red", "red4",
+  "orange", "orange4"), alpha = NULL, pch = c(1, 16),
+  cex = par("cex"), numbers = TRUE, cex.numbers = par("cex"),
+  zeros = FALSE, xlim = NULL, ylim = NULL, main = NULL,
+  sub = NULL, xlab = NULL, ylab = NULL, ann = par("ann"),
+  axes = TRUE, frame.plot = axes, ...)
 }
 \arguments{
 \item{x}{a \code{matrix} or \code{data.frame} with two columns.}

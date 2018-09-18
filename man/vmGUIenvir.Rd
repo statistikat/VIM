@@ -7,10 +7,6 @@
 \alias{getVm}
 \alias{existsVm}
 \alias{rmVm}
-\alias{putVm}
-\alias{getVm}
-\alias{existsVm}
-\alias{rmVm}
 \title{Environment for the GUI for Visualization and Imputation of Missing Values}
 \format{An object of class \code{environment} of length 0.}
 \usage{

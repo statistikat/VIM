@@ -5,8 +5,8 @@
 \title{Scatterplot matrix with information about missing/imputed values}
 \usage{
 scattmatrixMiss(x, delimiter = NULL, highlight = NULL,
-  selection = c("any", "all"), plotvars = NULL, col = c("skyblue", "red",
-  "orange"), alpha = NULL, pch = c(1, 3), lty = par("lty"),
+  selection = c("any", "all"), plotvars = NULL, col = c("skyblue",
+  "red", "orange"), alpha = NULL, pch = c(1, 3), lty = par("lty"),
   diagonal = c("density", "none"), interactive = TRUE, ...)
 }
 \arguments{
