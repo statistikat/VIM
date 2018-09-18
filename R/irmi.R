@@ -44,6 +44,10 @@
 #' median)
 #' @param multinom.method Method for estimating the multinomial models
 #' (current default and only available method is multinom)
+#' @param imp_var TRUE/FALSE if a TRUE/FALSE variables for each imputed
+#' variable should be created show the imputation status
+#' @param imp_suffix suffix for the TRUE/FALSE variables showing the imputation
+#' status
 #' @return the imputed data set.
 #' @author Matthias Templ, Alexander Kowarik
 #' @seealso \code{\link[mi]{mi}}
@@ -91,7 +95,8 @@ irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL
     robust=FALSE, takeAll=TRUE,
     noise=TRUE, noise.factor=1, force=FALSE,
     robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom") {
+    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom",
+    imp_var=TRUE,imp_suffix="imp") {
   UseMethod("irmi", x)
 }
 
@@ -99,22 +104,26 @@ irmi.data.frame <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL,
     robust=FALSE, takeAll=TRUE,
     noise=TRUE, noise.factor=1, force=FALSE,
     robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom") {
+    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,
+    multinom.method="multinom",imp_var=TRUE,imp_suffix="imp") {
   irmi_work(x, eps, maxit, mixed, mixed.constant, count, step, 
       robust, takeAll, noise, noise.factor, force,
       robMethod, force.mixed, mi, addMixedFactors, 
-      trace,init.method,modelFormulas=modelFormulas,multinom.method=multinom.method)
+      trace,init.method,modelFormulas=modelFormulas,multinom.method=multinom.method,
+      imp_var=imp_var,imp_suffix=imp_suffix)
 }
 
 irmi.survey.design <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
     robust=FALSE, takeAll=TRUE,
     noise=TRUE, noise.factor=1, force=FALSE,
     robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom") {
+    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,
+    multinom.method="multinom",imp_var=TRUE,imp_suffix="imp") {
   x$variables <- irmi_work(x$variables, eps, maxit, mixed, mixed.constant, count, step, 
       robust, takeAll, noise, noise.factor, force,
       robMethod, force.mixed, mi, addMixedFactors, 
-      trace,init.method,modelFormulas=modelFormulas,multinom.method=multinom.method)
+      trace,init.method,modelFormulas=modelFormulas,
+      multinom.method=multinom.method,imp_var=imp_var,imp_suffix=imp_suffix)
   x$call <- sys.call(-1)
   x
 }
@@ -123,23 +132,26 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
     robust=FALSE, takeAll=TRUE,
     noise=TRUE, noise.factor=1, force=FALSE,
     robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom") {
+    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,
+    multinom.method="multinom",imp_var=TRUE,imp_suffix="imp") {
   irmi_work(as.data.frame(x), eps, maxit, mixed, mixed.constant, count, step, 
       robust, takeAll, noise, noise.factor, force,
       robMethod, force.mixed, mi, addMixedFactors, 
-      trace,init.method,modelFormulas=modelFormulas,multinom.method=multinom.method)
+      trace,init.method,modelFormulas=modelFormulas,
+      multinom.method=multinom.method,imp_var=imp_var,imp_suffix=imp_suffix)
 }
 
 `irmi_work` <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
     robust=FALSE, takeAll=TRUE,
     noise=TRUE, noise.factor=1, force=FALSE,
     robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom"){
+    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,
+    multinom.method="multinom",imp_var=TRUE,imp_suffix="imp"){
 #Authors: Alexander Kowarik and Matthias Templ, Statistics Austria, GPL 2 or newer, version: 15. Nov. 2012
   #object mixed conversion into the right format (vector of variable names of type mixed)
 #TODO: Data sets with variables "y" might fail
   if(trace){
-    cat("Method for multinomial models:",multinom.method,"\n")
+    message("Method for multinomial models:",multinom.method,"\n")
   }
   if(!is.data.frame(x)){
     if(is.matrix(x))
@@ -228,8 +240,12 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
   
   missingSummary <- cbind(types,apply(x,2,function(x)sum(is.na(x))))
   colnames(missingSummary) <- c("type","#missing")
-  
-  
+  if(imp_var){
+    imp_vars <- paste(rownames(missingSummary),"_",imp_suffix,sep="")
+    imp_vardf <- as.data.frame(apply(x,2,function(x)is.na(x)))
+    colnames(imp_vardf) <- imp_vars
+    imp_vardf <- imp_vardf[,missingSummary[,2]!="0",drop=FALSE]
+  }
 #				 save(x, file="xtest.RData")				 
   N <- n <- dim(x)[1]
   P <- dim(x)[2]
@@ -237,7 +253,7 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
   if(dim(x)[2] < 2) stop("Less than 2 variables included in x.") 
   if(step&&robust)
     stop("robust stepwise is not yet implemented")
-  if(!any(is.na(x))) cat("No missings in x. Nothing to impute")
+  if(!any(is.na(x))) message("No missings in x. Nothing to impute")
   if(any(apply(x, 1, function(x) all(is.na(x))))) stop("Unit non-responses included in x.")
   ## mixed into logical vector:
   if(!is.logical(mixed) & !is.null(mixed)){
@@ -325,7 +341,7 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
   while(d > eps && it < maxit){
     it = it + 1
     if(trace)
-      cat("Iteration",it,"\n")
+      message("Iteration",it,"\n")
     xSave <- x
     ## inner loop
     for(i in VarswithNA){
@@ -506,7 +522,7 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
   #if(!testdigits(x$x5)) stop("s121212121212asasa\n")
   ## Begin multiple imputation
   if(mi>1&&!noise){
-    cat("Noise option is set automatically to TRUE")
+    message("Noise option is set automatically to TRUE")
     noise <- TRUE
   }
   if(mi>1){
@@ -575,8 +591,14 @@ irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, co
     }
   }
   if(trace){
-    cat("Imputation performed on the following data set:\n")
+    message("Imputation performed on the following data set:\n")
     print(missingSummary)
+  }
+  if(imp_var){
+    if(trace){
+      message(paste("The variables",paste(colnames(imp_vardf),collapse=","), "are added to the data set."))
+    }
+    x <- cbind(x,imp_vardf)
   }
   invisible(x)
   
