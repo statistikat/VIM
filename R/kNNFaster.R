@@ -226,12 +226,12 @@ kNN_work <-
   numerical <- colnames(data)[numerical]
   numerical <- numerical[!numerical%in%mixed]
   if(trace){
-    cat("Detected as categorical variable:\n")
-    print(factors)
-    cat("Detected as ordinal variable:\n")
-    print(orders)
-    cat("Detected as numerical variable:\n")
-    print(numerical)  
+    message("Detected as categorical variable:\n")
+    message(paste(factors,collapse=","))
+    message("Detected as ordinal variable:\n")
+    message(paste(orders,collapse=","))
+    message("Detected as numerical variable:\n")
+    message(paste(numerical,collapse=","))
   }
 
   ###Make an index for selecting donors
@@ -445,7 +445,7 @@ kNN_work <-
           don_index,imp_index,weightsx,k,mixed.constant,provideMins=weightDist)
       getI <- function(x)data[x,variable[j],with=FALSE]
       if(trace)
-        cat(sum(indexNA2s[,variable[j]]),"items of","variable:",variable[j]," imputed\n")
+        message(sum(indexNA2s[,variable[j]]),"items of","variable:",variable[j]," imputed\n")
       #Fetching the actual values of the kNNs for the indices provided by dist_single
       getI <- function(x)data[x,variable[j],with=FALSE]
       kNNs <- do.call("cbind",apply(mindi[[1]],2,getI)) 
@@ -480,7 +480,7 @@ kNN_work <-
       
     }else{
       if(trace)
-        cat("0 items of","variable:",variable[j]," imputed\n")
+        message("0 items of","variable:",variable[j]," imputed\n")
     }
     
   }
