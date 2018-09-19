@@ -21,7 +21,7 @@ test_that("kNN Tests for k==1",{
 d <- rbind(d,d[1:6,])
 d[13:18,2] <- d[13:18,2]*2
 test_that("kNN Tests for k==2",{
-  d2 <- kNN(setna(d,7:12,2)[,1:2],k=2,numFun = mean, useImputedDist = FALSE)
+  d2 <- kNN(setna(d,7:12,2)[,1:2],k=2,numFun = mean, useImputedDist = FALSE,trace=TRUE)
   expect_false(!all(d2[7:12,2]==(d2[1:6,2]+d2[13:18,2])/2),info=
                  "kNN does not work as supposed.")
 })
@@ -67,3 +67,27 @@ test_that("kNN Tests - randomForest onlyRF",{
   d2 <- kNN(d,addRF = TRUE,onlyRF = TRUE)
   
 })
+
+### Additional tests for randomForest methods
+test_that("kNN Tests - randomForest dist_var vector",{
+  d <- setna(d,7:12,2)
+  d <- setna(d,1:2,1)
+  
+  dd <- kNN(d,variable=c("x","y"),
+            dist_var=c("z","w"),
+            addRF=TRUE,weights=c(1,2))
+  
+})
+
+#with list of dist_var and weights
+test_that("kNN Tests - randomForest list",{
+  d <- setna(d,7:12,2)
+  d <- setna(d,1:2,1)
+  dd <- kNN(d,variable=c("x","y"),
+            dist_var=list(c("z","w"),c("z","w")),
+            addRF=TRUE,weights=list(c(1,2),c(1,2)))
+  
+})
+
+
+
