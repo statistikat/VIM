@@ -1,17 +1,12 @@
 language: r
 r:
-#  - oldrel
   - release
   - devel
 cache: packages
 
-r_github_packages:
-  - r-lib/covr
-
 after_success:
-  - Rscript -e 'covr::coveralls()'
+  - Rscript -e 'install.packages("covr");library(covr);coveralls()'
 
-  
 notifications:
   email:
     on_success: change
