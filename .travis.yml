@@ -4,9 +4,13 @@ r:
   - devel
 cache: packages
 
-after_success:
-  - Rscript -e 'install.packages("covr");library(covr);coveralls()'
+r_github_packages:
+  - r-lib/covr
 
+after_success:
+  - Rscript -e 'covr::coveralls(function_exclusions="irmi*")'
+
+  
 notifications:
   email:
     on_success: change
