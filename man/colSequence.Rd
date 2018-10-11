@@ -4,6 +4,8 @@
 \alias{colSequence}
 \alias{colSequenceRGB}
 \alias{colSequenceHCL}
+\alias{colSequenceRGB}
+\alias{colSequenceHCL}
 \title{HCL and RGB color sequences}
 \usage{
 colSequence(p, start, end, space = c("hcl", "rgb"), ...)

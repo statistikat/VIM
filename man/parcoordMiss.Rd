@@ -4,12 +4,11 @@
 \alias{parcoordMiss}
 \title{Parallel coordinate plot with information about missing/imputed values}
 \usage{
-parcoordMiss(x, delimiter = NULL, highlight = NULL,
-  selection = c("any", "all"), plotvars = NULL, plotNA = TRUE,
-  col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
-  alpha = NULL, lty = par("lty"), xlim = NULL, ylim = NULL,
-  main = NULL, sub = NULL, xlab = NULL, ylab = NULL,
-  labels = TRUE, xpd = NULL, interactive = TRUE, ...)
+parcoordMiss(x, delimiter = NULL, highlight = NULL, selection = c("any",
+  "all"), plotvars = NULL, plotNA = TRUE, col = c("skyblue", "red",
+  "skyblue4", "red4", "orange", "orange4"), alpha = NULL, lty = par("lty"),
+  xlim = NULL, ylim = NULL, main = NULL, sub = NULL, xlab = NULL,
+  ylab = NULL, labels = TRUE, xpd = NULL, interactive = TRUE, ...)
 }
 \arguments{
 \item{x}{a matrix or \code{data.frame}.}

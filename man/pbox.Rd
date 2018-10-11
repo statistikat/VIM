@@ -4,12 +4,11 @@
 \alias{pbox}
 \title{Parallel boxplots with information about missing/imputed values}
 \usage{
-pbox(x, delimiter = NULL, pos = 1, selection = c("none", "any",
-  "all"), col = c("skyblue", "red", "red4", "orange", "orange4"),
-  numbers = TRUE, cex.numbers = par("cex"), xlim = NULL,
-  ylim = NULL, main = NULL, sub = NULL, xlab = NULL, ylab = NULL,
-  axes = TRUE, frame.plot = axes, labels = axes,
-  interactive = TRUE, ...)
+pbox(x, delimiter = NULL, pos = 1, selection = c("none", "any", "all"),
+  col = c("skyblue", "red", "red4", "orange", "orange4"), numbers = TRUE,
+  cex.numbers = par("cex"), xlim = NULL, ylim = NULL, main = NULL,
+  sub = NULL, xlab = NULL, ylab = NULL, axes = TRUE,
+  frame.plot = axes, labels = axes, interactive = TRUE, ...)
 }
 \arguments{
 \item{x}{a vector, matrix or \code{data.frame}.}

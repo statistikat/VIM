@@ -5,16 +5,19 @@
 \alias{plot.aggr}
 \alias{print.aggr}
 \alias{summary.aggr}
+\alias{plot.aggr}
+\alias{print.aggr}
+\alias{summary.aggr}
 \title{Aggregations for missing/imputed values}
 \usage{
 aggr(x, delimiter = NULL, plot = TRUE, ...)
 
-\method{plot}{aggr}(x, col = c("skyblue", "red", "orange"),
-  bars = TRUE, numbers = FALSE, prop = TRUE, combined = FALSE,
-  varheight = FALSE, only.miss = FALSE, border = par("fg"),
-  sortVars = FALSE, sortCombs = TRUE, ylabs = NULL, axes = TRUE,
-  labels = axes, cex.lab = 1.2, cex.axis = par("cex"),
-  cex.numbers = par("cex"), gap = 4, ...)
+\method{plot}{aggr}(x, col = c("skyblue", "red", "orange"), bars = TRUE,
+  numbers = FALSE, prop = TRUE, combined = FALSE, varheight = FALSE,
+  only.miss = FALSE, border = par("fg"), sortVars = FALSE,
+  sortCombs = TRUE, ylabs = NULL, axes = TRUE, labels = axes,
+  cex.lab = 1.2, cex.axis = par("cex"), cex.numbers = par("cex"),
+  gap = 4, ...)
 
 \method{print}{aggr}(x, digits = NULL, ...)
 

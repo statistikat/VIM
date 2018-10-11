@@ -5,11 +5,10 @@
 \title{Spineplot with information about missing/imputed values}
 \usage{
 spineMiss(x, delimiter = NULL, pos = 1, selection = c("any", "all"),
-  breaks = "Sturges", right = TRUE, col = c("skyblue", "red",
-  "skyblue4", "red4", "orange", "orange4"), border = NULL, main = NULL,
-  sub = NULL, xlab = NULL, ylab = NULL, axes = TRUE,
-  labels = axes, only.miss = TRUE, miss.labels = axes,
-  interactive = TRUE, ...)
+  breaks = "Sturges", right = TRUE, col = c("skyblue", "red", "skyblue4",
+  "red4", "orange", "orange4"), border = NULL, main = NULL, sub = NULL,
+  xlab = NULL, ylab = NULL, axes = TRUE, labels = axes,
+  only.miss = TRUE, miss.labels = axes, interactive = TRUE, ...)
 }
 \arguments{
 \item{x}{a vector, matrix or \code{data.frame}.}

@@ -42,7 +42,7 @@ of a categorical variable}
 
 \item{impNA}{TRUE/FALSE whether NA should be imputed}
 
-\item{donorcond}{condition for the donors e.g. ">5"}
+\item{donorcond}{condition for the donors e.g. list(">5"), must be NULL or a list of same length as variable}
 
 \item{mixed}{names of mixed variables}
 

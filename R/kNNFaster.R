@@ -43,7 +43,7 @@
 #' @param makeNA list of length equal to the number of variables, with values, that should be converted to NA for each variable
 #' @param NAcond list of length equal to the number of variables, with a condition for imputing a NA
 #' @param impNA TRUE/FALSE whether NA should be imputed
-#' @param donorcond condition for the donors e.g. ">5"
+#' @param donorcond condition for the donors e.g. list(">5"), must be NULL or a list of same length as variable
 #' @param trace TRUE/FALSE if additional information about the imputation
 #' process should be printed
 #' @param imp_var TRUE/FALSE if a TRUE/FALSE variables for each imputed
@@ -164,6 +164,11 @@ kNN_work <-
   ndat <- nrow(data)
   #impNA==FALSE -> NAs should remain NAs (Routing NAs!?)
   indexNAs <- is.na(data)
+  if(!is.null(donorcond)){
+    if(length(donorcond)!=nvar){
+      stop("The list 'donorcond' must have the same length as the 'variable' vector")
+    }
+  }
   if(!is.null(makeNA)){
     if(length(makeNA)!=nvar)
       stop("The vector 'variable' must have the same length as the 'makeNA' list")

@@ -6,9 +6,9 @@
 \usage{
 barMiss(x, delimiter = NULL, pos = 1, selection = c("any", "all"),
   col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
-  border = NULL, main = NULL, sub = NULL, xlab = NULL,
-  ylab = NULL, axes = TRUE, labels = axes, only.miss = TRUE,
-  miss.labels = axes, interactive = TRUE, ...)
+  border = NULL, main = NULL, sub = NULL, xlab = NULL, ylab = NULL,
+  axes = TRUE, labels = axes, only.miss = TRUE, miss.labels = axes,
+  interactive = TRUE, ...)
 }
 \arguments{
 \item{x}{a vector, matrix or \code{data.frame}.}
