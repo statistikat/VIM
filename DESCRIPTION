@@ -2,8 +2,11 @@ Package: VIM
 Version: 4.7.19
 Date: 2018-10-11
 Title: Visualization and Imputation of Missing Values
-Author: Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
-Maintainer: Matthias Templ <matthias.templ@gmail.com>
+Authors@R: c(
+  person("Matthias", "Templ", email = "matthias.templ@gmail.com", role = c("aut","cre")),
+  person("Alexander", "Kowarik", email = "alexander.kowarik@statistik.gv.at", role = c("aut"), comment=c(ORCID="0000-0001-8598-4130")),
+  person("Andreas", "Alfons", role = c("aut")),
+  person("Bernd", "Prantner", role = c("aut")))
 Depends:
     R (>= 3.1.0),colorspace,grid,data.table(>= 1.9.4)
 Imports:
@@ -29,4 +32,4 @@ License: GPL (>= 2)
 URL: https://github.com/statistikat/VIM
 Repository: CRAN
 LinkingTo: Rcpp
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
