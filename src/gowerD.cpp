@@ -47,10 +47,10 @@ double distW1(NumericVector xV,NumericVector yV, NumericVector weight,
       out+=distW(xV(k),yV(k), 1, weight(k), weightsum);
     }
     if(k<ncolVAR(2)){  //Ordered
-      out+=distW(xV(k),yV(k), 1, weight(k), weightsum,levOrder(k));
+      out+=distW(xV(k),yV(k), 2, weight(k), weightsum,levOrder(k));
     }
     if(k<ncolVAR(3)){  //Semi-Continous
-      out+=distW(xV(k),yV(k), 1, weight(k), weightsum,1,mixedConstant(k));
+      out+=distW(xV(k),yV(k), 3, weight(k), weightsum,1,mixedConstant(k));
     }
   }
   return out;
