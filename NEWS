@@ -1,3 +1,12 @@
+# 4.7.18
+ -- added imp_var and imp_suffix to irmi, so it is more consistent with the other functions
+# 4.7.17
+ -- added parameter addRF, only RF to kNN, to use random forest in combination with kNN
+# 4.7.12
+ -- testthat package used for all tests
+ -- added travis automatically building/checking
+ -- covr for code coverage (vis functions are currently not covered by any tests)
+ -- new imputation function matchImpute for faster imputation randomly by group
 #4.7.1
  -- new imputation function 'matchImpute' for imputing random within groups
 #4.6.1 
@@ -33,14 +42,3 @@
  -- vignettes moved to VIMGUI
  -- new imputation function regressionImp
  -- roxygen style comments -> help files
-# 4.7.12
- -- testthat package used for all tests
- -- added travis automatically building/checking
- -- covr for code coverage (vis functions are currently not covered by any tests)
- -- new imputation function matchImpute for faster imputation randomly by group
-
-# 4.7.17
- -- added parameter addRF, only RF to kNN, to use random forest in combination with kNN
-
-# 4.7.18
- -- added imp_var and imp_suffix to irmi, so it is more consistent with the other functions
