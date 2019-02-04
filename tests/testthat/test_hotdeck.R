@@ -4,6 +4,7 @@
 ###############################################################################
 set.seed(104)
 df <- data.frame(unit_id=101:104, state=rep("NSW",4), wages01=c(NA,NA,NA,229305),r=runif(4))
+df2 <- data.frame(unit_id=c(NA,101:104), state=rep("NSW",5), wages01=c(NA,NA,NA,2434,229305),r=runif(5))
 
 test_that("hotdeck should fill all values", {
   df.out <- hotdeck(df, variable="wages01", domain_var="state")
@@ -32,3 +33,20 @@ test_that("hotdeck with colnames starting with a number", {
   colnames(dfi) <- colnames(dfi2)
   expect_identical(dfi,dfi2)
 })
+
+## Test for missings at the beginning of the data set
+test_that("hotdeck should fill all values including the first one", {
+  df.out <- hotdeck(df2, variable=c("unit_id","wages01"))
+  expect_identical(df.out,na.omit(df.out))
+})
+
+test_that("hotdeck should fill all values including the first one - domain_var", {
+  df.out <- hotdeck(df2, variable=c("unit_id","wages01"), domain_var="state")
+  expect_identical(df.out,na.omit(df.out))
+})
+
+test_that("hotdeck should fill all values including the first one - ord_var", {
+  df.out <- hotdeck(df2, variable=c("unit_id","wages01"), ord_var="r")
+  expect_identical(df.out,na.omit(df.out))
+})
+
