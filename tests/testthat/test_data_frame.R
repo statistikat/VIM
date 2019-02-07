@@ -3,7 +3,7 @@
 # Author: Alexander Kowarik
 ###############################################################################
 library(dplyr)
-test_data = data_frame(a = c(1, 2, 3, NA, 5), b = c(2, 1, NA, 5, 5), c = c(NA, 2, 1, 4, 3))
+test_data = tibble(a = c(1, 2, 3, NA, 5), b = c(2, 1, NA, 5, 5), c = c(NA, 2, 1, 4, 3))
 
 test_that("irmi for data_frame should give the same result as data.frame", {
   x1 <- as.data.frame(irmi(test_data,noise=FALSE))
