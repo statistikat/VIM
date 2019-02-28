@@ -20,50 +20,53 @@ test_that("aggr imputed failed", {
 })
 
 test_that("barMiss missing failed", {
-  barMiss(sleep[, c("Exp", "Sleep")])
-  barMiss(sleep[, c("Exp", "Sleep")], only.miss = FALSE)
+  barMiss(sleep[, c("Exp", "Sleep")], interactive = FALSE)
+  barMiss(sleep[, c("Exp", "Sleep")], only.miss = FALSE, interactive = FALSE)
 })
 
 test_that("barMiss imputed failed", {
   x_IMPUTED  <- kNN(sleep[, c("Exp", "Sleep")])
-  barMiss(x_IMPUTED, delimiter = "_imp")
-  barMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
+  barMiss(x_IMPUTED, delimiter = "_imp", interactive = FALSE)
+  barMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE, interactive = FALSE)
 })
 
 
 test_that("growdotMiss missing failed", {
   x <- chorizonDL[, c("Ca","As", "Bi")]
-  growdotMiss(x, chorizonDL[, c("XCOO", "YCOO")], kola.background, border = "white")
+  growdotMiss(x, chorizonDL[, c("XCOO", "YCOO")], kola.background, border = "white",
+              interactive = FALSE)
 })
 
 test_that("growdotMiss imputed failed", {
   x_imp <- kNN(chorizonDL[,c("Ca","As","Bi" )])
-  growdotMiss(x_imp, chorizonDL[, c("XCOO", "YCOO")], kola.background, delimiter = "_imp", border = "white")
+  growdotMiss(x_imp, chorizonDL[, c("XCOO", "YCOO")], kola.background, delimiter = "_imp",
+              border = "white", interactive = FALSE)
 })
 
 test_that("histMiss missing failed", {
   x <- tao[, c("Air.Temp", "Humidity")]
-  histMiss(x)
-  histMiss(x, only.miss = FALSE)
+  histMiss(x, interactive = FALSE)
+  histMiss(x, only.miss = FALSE, interactive = FALSE)
 })
 
 test_that("histMiss imputed failed", {
   ## for imputed values
   x_IMPUTED <- kNN(tao[, c("Air.Temp", "Humidity")])
-  histMiss(x_IMPUTED, delimiter = "_imp")
-  histMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
+  histMiss(x_IMPUTED, delimiter = "_imp", interactive = FALSE)
+  histMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE, interactive = FALSE)
 })
 
 
 test_that("mapMiss missing failed", {
   x <- chorizonDL[, c("As", "Bi")]
-  mapMiss(x, chorizonDL[, c("XCOO", "YCOO")], kola.background)
+  mapMiss(x, chorizonDL[, c("XCOO", "YCOO")], kola.background, interactive = FALSE)
 })
 
 test_that("mapMiss imputed failed", {
   ## for imputed values
   x_imp <- kNN(chorizonDL[, c("As", "Bi")])
-  mapMiss(x_imp, chorizonDL[, c("XCOO", "YCOO")], kola.background, delimiter = "_imp")
+  mapMiss(x_imp, chorizonDL[, c("XCOO", "YCOO")], kola.background,
+          delimiter = "_imp", interactive = FALSE)
 })
 
 
@@ -85,14 +88,15 @@ test_that("matrixplot missing failed", {
   ## for missing values
   x <- sleep[, -(8:10)]
   x[,c(1,2,4,6,7)] <- log10(x[,c(1,2,4,6,7)])
-  expect_warning(matrixplot(x, sortby = "BrainWgt"))
+  expect_warning(matrixplot(x, sortby = "BrainWgt", interactive = FALSE))
 })
 
 test_that("matrixplot imputed failed", {
   ## for imputed values
   x_imp <- kNN(sleep[, -(8:10)])
   x_imp[,c(1,2,4,6,7)] <- log10(x_imp[,c(1,2,4,6,7)])
-  expect_warning(matrixplot(x_imp, delimiter = "_imp", sortby = "BrainWgt"))
+  expect_warning(matrixplot(x_imp, delimiter = "_imp", sortby = "BrainWgt",
+                            interactive = FALSE))
 })
 
 test_that("mosaicMiss missing failed", {
@@ -131,38 +135,39 @@ test_that("scattJitt imputed failed", {
 
 test_that("scattMiss missing failed", {
   ## for missing values
-  scattMiss(tao[,c("Air.Temp", "Humidity")])
+  scattMiss(tao[,c("Air.Temp", "Humidity")], interactive = FALSE)
 })
 
 test_that("scattMiss imputed failed", {
   ## for imputed values
-  scattMiss(kNN(tao[,c("Air.Temp", "Humidity")]), delimiter = "_imp")
+  scattMiss(kNN(tao[,c("Air.Temp", "Humidity")]), delimiter = "_imp", interactive = FALSE)
 })
 
 test_that("scattmatrixMiss missing failed", {
   ## for missing values
   x <- sleep[, 1:5]
   x[,c(1,2,4)] <- log10(x[,c(1,2,4)])
-  expect_warning(scattmatrixMiss(x, highlight = "Dream"))
+  expect_warning(scattmatrixMiss(x, highlight = "Dream", interactive = FALSE))
 })
 
 test_that("scattmatrixMiss imputed failed", {
   ## for imputed values
   x_imp <- kNN(sleep[, 1:5])
   x_imp[,c(1,2,4)] <- log10(x_imp[,c(1,2,4)])
-  expect_warning(scattmatrixMiss(x_imp, delimiter = "_imp", highlight = "Dream"))
+  expect_warning(scattmatrixMiss(x_imp, delimiter = "_imp", highlight = "Dream",
+                                 interactive = FALSE))
 })
 
 test_that("spineMiss missing failed", {
   ## for missing values
-  spineMiss(tao[, c("Air.Temp", "Humidity")])
-  spineMiss(sleep[, c("Exp", "Sleep")])
+  spineMiss(tao[, c("Air.Temp", "Humidity")], interactive = FALSE)
+  spineMiss(sleep[, c("Exp", "Sleep")], interactive = FALSE)
 })
 
 test_that("spineMiss imputed failed", {
   ## for imputed values
-  spineMiss(kNN(tao[, c("Air.Temp", "Humidity")]), delimiter = "_imp")
-  spineMiss(kNN(sleep[, c("Exp", "Sleep")]), delimiter = "_imp")
+  spineMiss(kNN(tao[, c("Air.Temp", "Humidity")]), delimiter = "_imp", interactive = FALSE)
+  spineMiss(kNN(sleep[, c("Exp", "Sleep")]), delimiter = "_imp", interactive = FALSE)
 })
 
 test_that("marginplot missing failed", {
@@ -180,12 +185,12 @@ test_that("marginplot imputed failed", {
 
 test_that("pbox missing failed", {
   ## for missing values
-  pbox(log(chorizonDL[, c(4,5,8,10,11,16:17,19,25,29,37,38,40)]))
+  pbox(log(chorizonDL[, c(4,5,8,10,11,16:17,19,25,29,37,38,40)]), interactive = FALSE)
 })
 
 test_that("pbox imputed failed", {
   ## for imputed values
   pbox(hotdeck(log(chorizonDL[, c(4,8,10,11,17,19,25,29,37,38,40)])),
-       delimiter = "_imp")
+       delimiter = "_imp", interactive = FALSE)
 })
 
