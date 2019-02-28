@@ -6,10 +6,10 @@
 \alias{iimagMiss}
 \title{Matrix plot}
 \usage{
-matrixplot(x, delimiter = NULL, sortby = NULL, col = c("red", "orange"),
-  fixup = TRUE, xlim = NULL, ylim = NULL, main = NULL, sub = NULL,
-  xlab = NULL, ylab = NULL, axes = TRUE, labels = axes, xpd = NULL,
-  interactive = TRUE, ...)
+matrixplot(x, delimiter = NULL, sortby = NULL, col = c("red",
+  "orange"), fixup = TRUE, xlim = NULL, ylim = NULL, main = NULL,
+  sub = NULL, xlab = NULL, ylab = NULL, axes = TRUE,
+  labels = axes, xpd = NULL, interactive = TRUE, ...)
 }
 \arguments{
 \item{x}{a matrix or \code{data.frame}.}

@@ -4,8 +4,8 @@
 \alias{matchImpute}
 \title{Fast matching/imputation based on categorical variable}
 \usage{
-matchImpute(data, variable = colnames(data)[!colnames(data) \%in\% match_var],
-  match_var, imp_var = TRUE, imp_suffix = "imp")
+matchImpute(data, variable = colnames(data)[!colnames(data) \%in\%
+  match_var], match_var, imp_var = TRUE, imp_suffix = "imp")
 }
 \arguments{
 \item{data}{data.frame, data.table, survey object or matrix}

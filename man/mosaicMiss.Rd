@@ -4,9 +4,9 @@
 \alias{mosaicMiss}
 \title{Mosaic plot with information about missing/imputed values}
 \usage{
-mosaicMiss(x, delimiter = NULL, highlight = NULL, selection = c("any",
-  "all"), plotvars = NULL, col = c("skyblue", "red", "orange"),
-  labels = NULL, miss.labels = TRUE, ...)
+mosaicMiss(x, delimiter = NULL, highlight = NULL,
+  selection = c("any", "all"), plotvars = NULL, col = c("skyblue",
+  "red", "orange"), labels = NULL, miss.labels = TRUE, ...)
 }
 \arguments{
 \item{x}{a matrix or \code{data.frame}.}

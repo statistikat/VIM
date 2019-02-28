@@ -7,9 +7,9 @@
 irmi(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
   count = NULL, step = FALSE, robust = FALSE, takeAll = TRUE,
   noise = TRUE, noise.factor = 1, force = FALSE, robMethod = "MM",
-  force.mixed = TRUE, mi = 1, addMixedFactors = FALSE, trace = FALSE,
-  init.method = "kNN", modelFormulas = NULL, multinom.method = "multinom",
-  imp_var = TRUE, imp_suffix = "imp")
+  force.mixed = TRUE, mi = 1, addMixedFactors = FALSE,
+  trace = FALSE, init.method = "kNN", modelFormulas = NULL,
+  multinom.method = "multinom", imp_var = TRUE, imp_suffix = "imp")
 }
 \arguments{
 \item{x}{data.frame or matrix}
