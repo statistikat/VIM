@@ -38,6 +38,19 @@ test_that("kNN Tests for k==5 with mixed variable",{
   
 })
 
+
+test_that("kNN Tests for k==5 with mixed variable",{
+  d <- setna(d,7:12,2)
+  d <- setna(d,1:2,1)
+  d <- setna(d,3:4,5)
+  d <- cbind(d,d,d)
+  colnames(d)[6:10] <- paste0(colnames(d)[6:10],2)
+  colnames(d)[11:15] <- paste0(colnames(d)[6:10],3)
+  d2 <- kNN(d,k=5,numFun = wm,weightDist = TRUE, catFun = sampleCat, mixed = "m",
+            addRandom = TRUE)
+  
+})
+
 test_that("kNN Tests donorcond",{
   d <- setna(d,7:12,2)
   d2 <- kNN(d,k=5,donorcond = list(">3"),variable = "y")
@@ -89,5 +102,31 @@ test_that("kNN Tests - randomForest list",{
   
 })
 
-
+test_that("kNN correct distances in different scenarios",{
+  df <- structure(list(Class = structure(c(1L, 1L, 1L, 1L, 1L, 2L, 2L, 
+    2L, 2L, 2L), .Label = c("A", "B"), class = "factor"), X1 = c(1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L), X2 = c(2, 2, NA, 2, 2, 3, 
+    3, NA, 3, 3), ClassNum = c(1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 2L, 
+    2L), Row = c(1L, 2L, NA, 4L, 5L, 6L, 7L, NA, 9L, 10L)), row.names = c(NA, 
+    -10L), class = "data.frame")
+  dfImp <- kNN(df 
+               ,variable = c("X2","Row")
+               ,k = 1
+               ,dist_var = c("X1", "Class") 
+  )             
+  expect_true(dfImp$X2[3]==2)
+  expect_true(dfImp$X2[8]==3)
+  dfImp2 <- kNN(df 
+               ,variable = c("X2","Row")
+               ,k = 1
+               ,dist_var = c("Class")) 
+  expect_true(dfImp2$X2[3]==2)
+  expect_true(dfImp2$X2[8]==3)
+  dfImp3 <- kNN(df 
+                ,variable = c("X2","Row")
+                ,k = 1
+                ,dist_var = c("X1", "ClassNum")) 
+  expect_true(dfImp3$X2[3]==2)
+  expect_true(dfImp3$X2[8]==3)
+})
 
