@@ -1,3 +1,5 @@
+# 4.8.0
+ -- fixed a bug in the distance computation when different variable types are used
 # 4.7.18
  -- added imp_var and imp_suffix to irmi, so it is more consistent with the other functions
 # 4.7.17

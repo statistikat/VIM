@@ -40,18 +40,17 @@ double distW1(NumericVector xV,NumericVector yV, NumericVector weight,
   double weightsum = accumulate( weight.begin(), weight.end(), 0.0 );
   // compute the distance contribution of each variable
   for (int k=0; k<ncolMAX; k++) {
+    
     if(k<ncolVAR(0)){ //NUMERIC
       out+=distW(xV(k),yV(k), 0, weight(k), weightsum);
-    }
-    if(k<ncolVAR(1)){ //Categorical
+    }else if(k<(ncolVAR(0)+ncolVAR(1))){ //Categorical
       out+=distW(xV(k),yV(k), 1, weight(k), weightsum);
+    }else if(k<(ncolVAR(0)+ncolVAR(1)+ncolVAR(2))){  //Ordered
+      out+=distW(xV(k),yV(k), 2, weight(k), weightsum,levOrder(k-(ncolVAR(0)+ncolVAR(1))));
+    }else if(k<(ncolVAR(0)+ncolVAR(1)+ncolVAR(2)+ncolVAR(3))){  //Semi-Continous
+      out+=distW(xV(k),yV(k), 3, weight(k), weightsum,1,mixedConstant(k-(ncolVAR(0)+ncolVAR(1)+ncolVAR(2))));
     }
-    if(k<ncolVAR(2)){  //Ordered
-      out+=distW(xV(k),yV(k), 2, weight(k), weightsum,levOrder(k));
-    }
-    if(k<ncolVAR(3)){  //Semi-Continous
-      out+=distW(xV(k),yV(k), 3, weight(k), weightsum,1,mixedConstant(k));
-    }
+    
   }
   return out;
 }
@@ -68,18 +67,11 @@ RcppExport SEXP gowerd(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,
   int nx = xMat.nrow();
   int ny = yMat.nrow();
   NumericMatrix delta(nx,ny);
-  double ncolMAX = max(ncolVAR(0),ncolVAR(1)); //should be rewritten with std::max_element!?!?
-  ncolMAX=max(ncolMAX,ncolVAR(2));
-  ncolMAX=max(ncolMAX,ncolVAR(3));
+  double ncolMAX = ncolVAR(0)+ncolVAR(1)+ncolVAR(2)+ncolVAR(3);
   for (int i=0; i<nx; i++) {
     for (int j=0; j<ny; j++) {
-      // if(i==j){
-      //   // set the diagonal to Inf
-      //   delta(i,j)=R_PosInf;
-      // }else{
         delta(i,j)=distW1(xMat(i,_),yMat(j,_),weight,levOrder,
               ncolMAX,ncolVAR,mixedConstant);
-      // }
     }
   }
 
