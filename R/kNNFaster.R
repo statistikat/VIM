@@ -149,6 +149,33 @@ maxCat <- function(x,weights = NULL){
     s <- sample(s)
   names(s)[which.max(s)]
 }
+dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,
+                        don_index,imp_index,weightsx,k,mixed.constant,provideMins=TRUE){
+  #gd <- distance(don_dist_var,imp_dist_var,weights=weightsx)
+  if(is.null(mixed.constant))
+    mixed.constant <- rep(0,length(mixedX))
+  if(provideMins){
+    gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
+                 factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,
+                 nMin=as.integer(k),returnMin=TRUE);
+    colnames(gd$mins) <- imp_index
+    erg2 <- as.matrix(gd$mins)
+  }else{
+    gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
+                 factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,
+                 nMin=as.integer(k));
+    erg2 <- NA
+  }
+  colnames(gd$ind) <- imp_index
+  gd$ind[,] <- don_index[gd$ind]
+  erg <- as.matrix(gd$ind)
+  
+  if(k==1){
+    erg <- t(erg)
+    erg2 <- t(erg2)
+  }
+  list(erg,erg2)
+}
 kNN_work <-
     function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
         numFun = median, catFun=maxCat,
@@ -375,34 +402,6 @@ kNN_work <-
       dist_var <- c(dist_var,"RandomVariableForImputation")
       weights <- c(weights,min(weights)/(sum(weights)+1))
     }
-  }
-
-  dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,
-      don_index,imp_index,weightsx,k,mixed.constant,provideMins=TRUE){
-    #gd <- distance(don_dist_var,imp_dist_var,weights=weightsx)
-    if(is.null(mixed.constant))
-      mixed.constant <- rep(0,length(mixedX))
-    if(provideMins){
-      gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
-          factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,
-          nMin=as.integer(k),returnMin=TRUE);
-      colnames(gd$mins) <- imp_index
-      erg2 <- as.matrix(gd$mins)
-    }else{
-      gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
-          factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,
-          nMin=as.integer(k));
-      erg2 <- NA
-    }
-    colnames(gd$ind) <- imp_index
-    gd$ind[,] <- don_index[gd$ind]
-    erg <- as.matrix(gd$ind)
-    
-    if(k==1){
-      erg <- t(erg)
-      erg2 <- t(erg2)
-    }
-    list(erg,erg2)
   }
   for(j in 1:nvar){
     
