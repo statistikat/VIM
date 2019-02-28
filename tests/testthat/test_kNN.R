@@ -1,4 +1,5 @@
 library(VIM)
+context("kNN general")
 d <- data.frame(x=LETTERS[1:6],y=as.double(1:6),z=as.double(1:6),w=ordered(LETTERS[1:6]))
 d <- rbind(d,d)
 setna <- function(d,i,col=2){
@@ -101,32 +102,3 @@ test_that("kNN Tests - randomForest list",{
             addRF=TRUE,weights=list(c(1,2),c(1,2)))
   
 })
-
-test_that("kNN correct distances in different scenarios",{
-  df <- structure(list(Class = structure(c(1L, 1L, 1L, 1L, 1L, 2L, 2L, 
-    2L, 2L, 2L), .Label = c("A", "B"), class = "factor"), X1 = c(1L, 
-    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L), X2 = c(2, 2, NA, 2, 2, 3, 
-    3, NA, 3, 3), ClassNum = c(1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 2L, 
-    2L), Row = c(1L, 2L, NA, 4L, 5L, 6L, 7L, NA, 9L, 10L)), row.names = c(NA, 
-    -10L), class = "data.frame")
-  dfImp <- kNN(df 
-               ,variable = c("X2","Row")
-               ,k = 1
-               ,dist_var = c("X1", "Class") 
-  )             
-  expect_true(dfImp$X2[3]==2)
-  expect_true(dfImp$X2[8]==3)
-  dfImp2 <- kNN(df 
-               ,variable = c("X2","Row")
-               ,k = 1
-               ,dist_var = c("Class")) 
-  expect_true(dfImp2$X2[3]==2)
-  expect_true(dfImp2$X2[8]==3)
-  dfImp3 <- kNN(df 
-                ,variable = c("X2","Row")
-                ,k = 1
-                ,dist_var = c("X1", "ClassNum")) 
-  expect_true(dfImp3$X2[3]==2)
-  expect_true(dfImp3$X2[8]==3)
-})
-
