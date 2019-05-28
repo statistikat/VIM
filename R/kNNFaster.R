@@ -137,6 +137,12 @@ sampleCat <- function(x,weights = NULL){
     x <- as.factor(x)
   s <- summary(x)
   s <- s[s!=0]
+  if(!is.null(weights)){
+    tmpTab <- merge(aggregate(weights,list(x),sum), data.frame("Group.1"=names(s),prob=s))
+    s <- tmpTab$prob*tmpTab$x
+    names(s) <- tmpTab$Group.1
+  }
+  
   sample(names(s),1,prob=s)
 }
 maxCat <- function(x,weights = NULL){
@@ -145,6 +151,11 @@ maxCat <- function(x,weights = NULL){
     x <- as.factor(x)
   s <- summary(x)
   s <- s[s!=0]
+  if(!is.null(weights)){
+    tmpTab <- merge(aggregate(weights,list(x),sum), data.frame("Group.1"=names(s),prob=s))
+    s <- tmpTab$prob*tmpTab$x
+    names(s) <- tmpTab$Group.1
+  }
   if(sum(s>0)>1)
     s <- sample(s)
   names(s)[which.max(s)]
