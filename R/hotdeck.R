@@ -47,6 +47,11 @@
 #' sleepI <- hotdeck(sleep)
 #' sleepI2 <- hotdeck(sleep,ord_var="BodyWgt",domain_var="Pred")
 #' 
+#' # Usage of donorcond in a simple example
+#' sleepI3 <- hotdeck(sleep,variable=c("NonD","Dream","Sleep","Span","Gest"),
+#' ord_var="BodyWgt",domain_var="Pred",
+#' donorcond = list(">4","<17",">1.5","%between%c(8,13)",">5"))
+#' 
 #' set.seed(132)
 #' nRows <- 1e3
 #' # Generate a data set with nRows rows and several variables
