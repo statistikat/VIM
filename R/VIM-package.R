@@ -106,7 +106,23 @@ NULL
 #' 
 NULL
 
-
+#' Subset of the collision data 
+#' 
+#' Subset of the collision data from December 20. to December 31. 2018 from NYCD.
+#' 
+#' Each record represents a collision in NYC by city, borough, precinct and cross street. 
+#' 
+#' 
+#' @name collision
+#' @docType data
+#' @source \url{https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95}
+#' @keywords datasets
+#' @examples
+#' 
+#' data(collision)
+#' aggr(collision)
+#' 
+NULL
 
 
 

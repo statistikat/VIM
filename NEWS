@@ -1,3 +1,5 @@
+# 4.9.1
+ -- data set collision added
 # 4.8.0
  -- fixed a bug in the distance computation when different variable types are used
 # 4.7.18

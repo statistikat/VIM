@@ -1,8 +1,9 @@
-^.*\.Rproj$
+.*\.Rproj$
+\.Rproj\.user$
+.*\.project$
+\.settings$
+.*\.gitignore$
+\.git$
+\.travis.yml$
+README.md$
 ^\.Rproj\.user$
-^.*\.project$
-^\.settings$
-^.*\.gitignore$
-^\.git$
-^\.travis.yml$
-^README.md$
