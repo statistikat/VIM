@@ -85,7 +85,7 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
       if(class(family)!="function"){
         if(family=="AUTO"){
           TFna <- TFna2&!is.na(data[,lhsV])
-          if("numeric"%in%class(data[,lhsV])){
+          if("numeric"%in%class(unlist(data[,lhsV]))){
             nLev <- 0
             if(robust){
               fn <- lmrob
@@ -93,7 +93,7 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
               fn <- lm
             }
             mod <- fn(form,data=data[TFna,])
-          }else if("factor"%in%class(data[,lhsV])){
+          }else if("factor"%in%class(unlist(data[,lhsV]))){
             nLev <- length(levels(data[,lhsV]))
             if(nLev==2){
               fam <- binomial
