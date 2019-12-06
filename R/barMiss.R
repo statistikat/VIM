@@ -105,9 +105,6 @@
 #' 
 #' 
 #' @export barMiss
-#' @S3method barMiss data.frame
-#' @S3method barMiss survey.design
-#' @S3method barMiss default
 barMiss <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
                     col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
                     border = NULL, main = NULL, sub = NULL, 
@@ -117,6 +114,8 @@ barMiss <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"),
   UseMethod("barMiss", x)
 }
 
+#' @rdname barMiss
+#' @export
 barMiss.data.frame <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
                                col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
                                border = NULL, main = NULL, sub = NULL, 
@@ -127,6 +126,9 @@ barMiss.data.frame <- function(x, delimiter = NULL, pos = 1, selection = c("any"
                miss.labels, interactive, ...)
 }
 
+#' @rdname barMiss
+#' @export
+
 barMiss.survey.design <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
                                   col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
                                   border = NULL, main = NULL, sub = NULL, 
@@ -136,6 +138,9 @@ barMiss.survey.design <- function(x, delimiter = NULL, pos = 1, selection = c("a
   barMiss_work(x$variables, delimiter, pos, selection, col, border, main, sub, xlab, ylab, axes, labels, only.miss,
                miss.labels, interactive, ...)
 }
+
+#' @rdname barMiss
+#' @export
 
 barMiss.default <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
                             col = c("skyblue","red","skyblue4","red4","orange","orange4"), 

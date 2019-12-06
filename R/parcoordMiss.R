@@ -117,9 +117,6 @@
 #'     legend = c("observed in Bi", "imputed in Bi"))
 #' 
 #' @export parcoordMiss
-#' @S3method parcoordMiss data.frame
-#' @S3method parcoordMiss survey.design
-#' @S3method parcoordMiss default
 parcoordMiss <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
                          plotvars = NULL, plotNA = TRUE, 
                          col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
@@ -129,6 +126,9 @@ parcoordMiss <- function(x, delimiter = NULL, highlight = NULL, selection = c("a
                          xpd = NULL, interactive = TRUE, ...) {
   UseMethod("parcoordMiss", x)
 }
+
+#' @rdname parcoordMiss
+#' @export
 
 parcoordMiss.data.frame <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
                                     plotvars = NULL, plotNA = TRUE, 
@@ -142,6 +142,9 @@ parcoordMiss.data.frame <- function(x, delimiter = NULL, highlight = NULL, selec
                     xpd, interactive, ...)
 }
 
+#' @rdname parcoordMiss
+#' @export
+
 parcoordMiss.survey.design <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
                                        plotvars = NULL, plotNA = TRUE, 
                                        col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
@@ -153,6 +156,9 @@ parcoordMiss.survey.design <- function(x, delimiter = NULL, highlight = NULL, se
                     alpha, lty, xlim, ylim, main, sub, xlab, ylab, labels,
                     xpd, interactive, ...)
 }
+
+#' @rdname parcoordMiss
+#' @export
 
 parcoordMiss.default <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
                                  plotvars = NULL, plotNA = TRUE, 

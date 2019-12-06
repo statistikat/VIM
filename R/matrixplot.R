@@ -94,9 +94,6 @@
 #' matrixplot(x_imp, delimiter = "_imp", sortby = "BrainWgt")
 #' 
 #' @export matrixplot
-#' @S3method matrixplot data.frame
-#' @S3method matrixplot survey.design
-#' @S3method matrixplot default
 matrixplot <- function(x, delimiter = NULL, sortby = NULL,
                        col = c("red","orange"),
                        fixup = TRUE, xlim = NULL, ylim = NULL, 
@@ -105,6 +102,9 @@ matrixplot <- function(x, delimiter = NULL, sortby = NULL,
                        xpd = NULL, interactive = TRUE, ...) {
   UseMethod("matrixplot", x)
 }
+
+#' @rdname matrixplot
+#' @export
 
 matrixplot.data.frame <- function(x, delimiter = NULL, sortby = NULL,
                                   col = c("red","orange"),
@@ -116,6 +116,9 @@ matrixplot.data.frame <- function(x, delimiter = NULL, sortby = NULL,
                   main, sub, xlab, ylab, axes, labels, xpd, interactive, ...)
 }
 
+#' @rdname matrixplot
+#' @export
+
 matrixplot.survey.design <- function(x, delimiter = NULL, sortby = NULL,
                                      col = c("red","orange"),
                                      fixup = TRUE, xlim = NULL, ylim = NULL, 
@@ -125,6 +128,9 @@ matrixplot.survey.design <- function(x, delimiter = NULL, sortby = NULL,
   matrixplot_work(x$variables, delimiter, sortby, col, fixup, xlim, ylim,
                   main, sub, xlab, ylab, axes, labels, xpd, interactive, ...)
 }
+
+#' @rdname matrixplot
+#' @export
 
 matrixplot.default <- function(x, delimiter = NULL, sortby = NULL,
                                col = c("red","orange"),

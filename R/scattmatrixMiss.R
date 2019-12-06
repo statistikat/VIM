@@ -96,9 +96,6 @@
 #' scattmatrixMiss(x_imp, delimiter = "_imp", highlight = "Dream")
 #' 
 #' @export scattmatrixMiss
-#' @S3method scattmatrixMiss data.frame
-#' @S3method scattmatrixMiss survey.design
-#' @S3method scattmatrixMiss default
 scattmatrixMiss <- function(x, delimiter = NULL, highlight = NULL, 
                             selection = c("any","all"), plotvars = NULL, 
                             col = c("skyblue","red","orange"), alpha = NULL, 
@@ -107,6 +104,9 @@ scattmatrixMiss <- function(x, delimiter = NULL, highlight = NULL,
                             interactive = TRUE, ...)  {
   UseMethod("scattmatrixMiss", x)
 }
+
+#' @rdname scattmatrixMiss
+#' @export
 
 scattmatrixMiss.data.frame <- function(x, delimiter = NULL, highlight = NULL, 
                                        selection = c("any","all"), plotvars = NULL, 
@@ -118,6 +118,9 @@ scattmatrixMiss.data.frame <- function(x, delimiter = NULL, highlight = NULL,
                        col, alpha, pch, lty, diagonal, interactive, ...)
 }
 
+#' @rdname scattmatrixMiss
+#' @export
+
 scattmatrixMiss.survey.design <- function(x, delimiter = NULL, highlight = NULL, 
                                           selection = c("any","all"), plotvars = NULL, 
                                           col = c("skyblue","red","orange"), alpha = NULL, 
@@ -127,6 +130,9 @@ scattmatrixMiss.survey.design <- function(x, delimiter = NULL, highlight = NULL,
   scattmatrixMiss_work(x$variables, delimiter, highlight, selection, plotvars, 
                        col, alpha, pch, lty, diagonal, interactive, ...)
 }
+
+#' @rdname scattmatrixMiss
+#' @export
 
 scattmatrixMiss.default <- function(x, delimiter = NULL, highlight = NULL, 
                                     selection = c("any","all"), plotvars = NULL, 

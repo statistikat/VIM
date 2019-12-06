@@ -112,9 +112,6 @@
 #' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @export colormapMiss
-#' @S3method colormapMiss data.frame
-#' @S3method colormapMiss survey.design
-#' @S3method colormapMiss default
 colormapMiss <- function(x, region, map, imp_index = NULL,
                          prop = TRUE, polysRegion = 1:length(x), range = NULL,
                          n = NULL, col = c("red","orange"),
@@ -124,6 +121,9 @@ colormapMiss <- function(x, region, map, imp_index = NULL,
                          interactive = TRUE, ...) {
   UseMethod("colormapMiss", x)
 }
+
+#' @rdname colormapMiss
+#' @export
 
 colormapMiss.data.frame <- function(x, region, map, imp_index = NULL,
                                     prop = TRUE, polysRegion = 1:length(x), range = NULL,
@@ -137,6 +137,9 @@ colormapMiss.data.frame <- function(x, region, map, imp_index = NULL,
                     legend, interactive, ...)
 }
 
+#' @rdname colormapMiss
+#' @export
+
 colormapMiss.survey.design <- function(x, region, map, imp_index = NULL,
                                        prop = TRUE, polysRegion = 1:length(x), range = NULL,
                                        n = NULL, col = c("red","orange"),
@@ -148,6 +151,9 @@ colormapMiss.survey.design <- function(x, region, map, imp_index = NULL,
                     gamma, fixup, coords, numbers, digits, cex.numbers, col.numbers,
                     legend, interactive, ...)
 }
+
+#' @rdname colormapMiss
+#' @export
 
 colormapMiss.default <- function(x, region, map, imp_index = NULL,
                                  prop = TRUE, polysRegion = 1:length(x), range = NULL,

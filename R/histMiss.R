@@ -108,9 +108,6 @@
 #' histMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
 #' 
 #' @export histMiss
-#' @S3method histMiss data.frame
-#' @S3method histMiss survey.design
-#' @S3method histMiss default
 histMiss <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
                      breaks = "Sturges", right = TRUE, 
                      col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
@@ -120,6 +117,9 @@ histMiss <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"),
                      interactive = TRUE, ...) {
   UseMethod("histMiss", x)
 }
+
+#' @rdname histMiss
+#' @export
 
 histMiss.data.frame <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
                                 breaks = "Sturges", right = TRUE, 
@@ -132,6 +132,9 @@ histMiss.data.frame <- function(x, delimiter = NULL, pos = 1, selection = c("any
             xlab, ylab, axes, only.miss, miss.labels, interactive, ...)
 }
 
+#' @rdname histMiss
+#' @export
+
 histMiss.survey.design <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
                                    breaks = "Sturges", right = TRUE, 
                                    col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
@@ -142,6 +145,9 @@ histMiss.survey.design <- function(x, delimiter = NULL, pos = 1, selection = c("
   histMiss_work(x$variables, delimiter, pos, selection, breaks, right, col, border, main, sub,
                 xlab, ylab, axes, only.miss, miss.labels, interactive, ...)
 }
+
+#' @rdname histMiss
+#' @export
 
 histMiss.default <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
                              breaks = "Sturges", right = TRUE, 

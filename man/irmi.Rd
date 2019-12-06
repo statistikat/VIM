@@ -2,14 +2,110 @@
 % Please edit documentation in R/irmi.R
 \name{irmi}
 \alias{irmi}
+\alias{irmi.data.frame}
+\alias{irmi.survey.design}
+\alias{irmi.default}
 \title{Iterative robust model-based imputation (IRMI)}
 \usage{
-irmi(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
-  count = NULL, step = FALSE, robust = FALSE, takeAll = TRUE,
-  noise = TRUE, noise.factor = 1, force = FALSE, robMethod = "MM",
-  force.mixed = TRUE, mi = 1, addMixedFactors = FALSE,
-  trace = FALSE, init.method = "kNN", modelFormulas = NULL,
-  multinom.method = "multinom", imp_var = TRUE, imp_suffix = "imp")
+irmi(
+  x,
+  eps = 5,
+  maxit = 100,
+  mixed = NULL,
+  mixed.constant = NULL,
+  count = NULL,
+  step = FALSE,
+  robust = FALSE,
+  takeAll = TRUE,
+  noise = TRUE,
+  noise.factor = 1,
+  force = FALSE,
+  robMethod = "MM",
+  force.mixed = TRUE,
+  mi = 1,
+  addMixedFactors = FALSE,
+  trace = FALSE,
+  init.method = "kNN",
+  modelFormulas = NULL,
+  multinom.method = "multinom",
+  imp_var = TRUE,
+  imp_suffix = "imp"
+)
+
+\method{irmi}{data.frame}(
+  x,
+  eps = 5,
+  maxit = 100,
+  mixed = NULL,
+  mixed.constant = NULL,
+  count = NULL,
+  step = FALSE,
+  robust = FALSE,
+  takeAll = TRUE,
+  noise = TRUE,
+  noise.factor = 1,
+  force = FALSE,
+  robMethod = "MM",
+  force.mixed = TRUE,
+  mi = 1,
+  addMixedFactors = FALSE,
+  trace = FALSE,
+  init.method = "kNN",
+  modelFormulas = NULL,
+  multinom.method = "multinom",
+  imp_var = TRUE,
+  imp_suffix = "imp"
+)
+
+\method{irmi}{survey.design}(
+  x,
+  eps = 5,
+  maxit = 100,
+  mixed = NULL,
+  mixed.constant = NULL,
+  count = NULL,
+  step = FALSE,
+  robust = FALSE,
+  takeAll = TRUE,
+  noise = TRUE,
+  noise.factor = 1,
+  force = FALSE,
+  robMethod = "MM",
+  force.mixed = TRUE,
+  mi = 1,
+  addMixedFactors = FALSE,
+  trace = FALSE,
+  init.method = "kNN",
+  modelFormulas = NULL,
+  multinom.method = "multinom",
+  imp_var = TRUE,
+  imp_suffix = "imp"
+)
+
+\method{irmi}{default}(
+  x,
+  eps = 5,
+  maxit = 100,
+  mixed = NULL,
+  mixed.constant = NULL,
+  count = NULL,
+  step = FALSE,
+  robust = FALSE,
+  takeAll = TRUE,
+  noise = TRUE,
+  noise.factor = 1,
+  force = FALSE,
+  robMethod = "MM",
+  force.mixed = TRUE,
+  mi = 1,
+  addMixedFactors = FALSE,
+  trace = FALSE,
+  init.method = "kNN",
+  modelFormulas = NULL,
+  multinom.method = "multinom",
+  imp_var = TRUE,
+  imp_suffix = "imp"
+)
 }
 \arguments{
 \item{x}{data.frame or matrix}

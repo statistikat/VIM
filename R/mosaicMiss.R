@@ -69,14 +69,14 @@
 #'     plotvars = 8:10, delimiter = "_imp", miss.labels = FALSE)
 #' 
 #' @export mosaicMiss
-#' @S3method mosaicMiss data.frame
-#' @S3method mosaicMiss survey.design
-#' @S3method mosaicMiss default
 mosaicMiss <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
                        plotvars = NULL, col = c("skyblue","red","orange"), 
                        labels = NULL, miss.labels = TRUE, ...) {
   UseMethod("mosaicMiss", x)
 }
+
+#' @rdname mosaicMiss
+#' @export
 
 mosaicMiss.data.frame <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
                                   plotvars = NULL, col = c("skyblue","red","orange"), 
@@ -84,11 +84,17 @@ mosaicMiss.data.frame <- function(x, delimiter = NULL, highlight = NULL, selecti
   mosaicMiss_work(x, delimiter, highlight, selection, plotvars, col, labels, miss.labels, ...)
 }
 
+#' @rdname mosaicMiss
+#' @export
+
 mosaicMiss.survey.design <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
                                      plotvars = NULL, col = c("skyblue","red","orange"), 
                                      labels = NULL, miss.labels = TRUE, ...) {
   mosaicMiss_work(x$variables, delimiter, highlight, selection, plotvars, col, labels, miss.labels, ...)
 }
+
+#' @rdname mosaicMiss
+#' @export
 
 mosaicMiss.default <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
                                plotvars = NULL, col = c("skyblue","red","orange"), 

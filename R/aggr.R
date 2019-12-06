@@ -38,7 +38,7 @@
 #' The graphical parameter \code{oma} will be set unless supplied as an
 #' argument.
 #' 
-#' @aliases aggr plot.aggr print.aggr summary.aggr
+#' @aliases aggr plot.aggr print.aggr summary.aggr print.summary.aggr
 #' @param x a vector, matrix or \code{data.frame}.
 #' @param delimiter a character-vector to distinguish between variables and
 #' imputation-indices for imputed variables (therefore, \code{x} needs to have
@@ -85,28 +85,31 @@
 #' a
 #' summary(a)
 #' 
-#' @export aggr
-#' @S3method aggr data.frame
-#' @S3method aggr survey.design
-#' @S3method aggr default
-
-#' @S3method print summary.aggr
+#' @export 
 aggr <- function(x, delimiter = NULL, plot = TRUE, ...) {
   UseMethod("aggr", x)
 }
 
+#' @rdname aggr
+#' @export 
 aggr.data.frame <- function(x, delimiter = NULL, plot = TRUE, ...) {
   aggr_work(x, delimiter, plot, ...)
 }
 
+#' @rdname aggr
+#' @export 
 aggr.survey.design <- function(x, delimiter = NULL, plot = TRUE, ...) {
   aggr_work(x$variables, delimiter, plot, ...)
 }
 
+#' @rdname aggr
+#' @export 
 aggr.default <- function(x, delimiter = NULL, plot = TRUE, ...) {
   aggr_work(as.data.frame(x), delimiter, plot, ...)
 }
 
+#' @rdname aggr
+#' @export 
 aggr_work <- function(x, delimiter = NULL, plot = TRUE, ...) {
 	
 	imputed <- FALSE # indicates if there are Variables with missing-index
@@ -177,7 +180,6 @@ aggr_work <- function(x, delimiter = NULL, plot = TRUE, ...) {
 # TODO: interactive sorting of variables or combinations
 # FIXME: sortVars = TRUE bei nur missings
 #' @rdname aggr
-#' @S3method plot aggr
 #' @method plot aggr
 #' @param plot a logical indicating whether the results should be plotted (the
 #' default is \code{TRUE}).
@@ -232,7 +234,7 @@ aggr_work <- function(x, delimiter = NULL, plot = TRUE, ...) {
 #' \code{plot.aggr}, further graphical parameters to be passed down.
 #' \code{par("oma")} will be set appropriately unless supplied (see
 #' \code{\link[graphics]{par}}).
-#' @export plot.aggr
+#' @export 
 plot.aggr <- function(x, col = c("skyblue","red","orange"), bars = TRUE, 
 		numbers = FALSE, prop = TRUE, combined = FALSE, varheight = FALSE, 
 		only.miss = FALSE, border = par("fg"), sortVars = FALSE,
@@ -556,9 +558,9 @@ plot.aggr <- function(x, col = c("skyblue","red","orange"), bars = TRUE,
 #' a
 #' 
 #' @rdname aggr
-#' @S3method print aggr
 #' @method print aggr
-print.aggr <- function(x, digits = NULL, ...) {
+#' @export
+print.aggr <- function(x, ..., digits = NULL) {
 	i <- x$missings[,2] > 0
 	imputed <- x$imputed
 	
@@ -593,7 +595,7 @@ print.aggr <- function(x, digits = NULL, ...) {
 #' summary(aggr(sleep, plot=FALSE))
 #' 
 #' @rdname aggr
-#' @S3method summary aggr
+#' @export
 #' @method summary aggr
 summary.aggr <- function(object, ...) {
 	res <- list(missings=object$missings, 
@@ -621,7 +623,8 @@ summary.aggr <- function(object, ...) {
 #' s <- summary(aggr(sleep, plot=FALSE))
 #' s
 #' 
-#' @S3method print summary.aggr
+#' @rdname aggr
+#' @export
 #' @method print summary.aggr
 print.summary.aggr <- function(x, ...) {
 	i <- x$missings[,2] > 0

@@ -5,23 +5,53 @@
 \alias{plot.aggr}
 \alias{print.aggr}
 \alias{summary.aggr}
+\alias{print.summary.aggr}
+\alias{aggr.data.frame}
+\alias{aggr.survey.design}
+\alias{aggr.default}
+\alias{aggr_work}
 \title{Aggregations for missing/imputed values}
 \usage{
 aggr(x, delimiter = NULL, plot = TRUE, ...)
 
-\method{plot}{aggr}(x, col = c("skyblue", "red", "orange"),
-  bars = TRUE, numbers = FALSE, prop = TRUE, combined = FALSE,
-  varheight = FALSE, only.miss = FALSE, border = par("fg"),
-  sortVars = FALSE, sortCombs = TRUE, ylabs = NULL, axes = TRUE,
-  labels = axes, cex.lab = 1.2, cex.axis = par("cex"),
-  cex.numbers = par("cex"), gap = 4, ...)
+\method{aggr}{data.frame}(x, delimiter = NULL, plot = TRUE, ...)
 
-\method{print}{aggr}(x, digits = NULL, ...)
+\method{aggr}{survey.design}(x, delimiter = NULL, plot = TRUE, ...)
+
+\method{aggr}{default}(x, delimiter = NULL, plot = TRUE, ...)
+
+aggr_work(x, delimiter = NULL, plot = TRUE, ...)
+
+\method{plot}{aggr}(
+  x,
+  col = c("skyblue", "red", "orange"),
+  bars = TRUE,
+  numbers = FALSE,
+  prop = TRUE,
+  combined = FALSE,
+  varheight = FALSE,
+  only.miss = FALSE,
+  border = par("fg"),
+  sortVars = FALSE,
+  sortCombs = TRUE,
+  ylabs = NULL,
+  axes = TRUE,
+  labels = axes,
+  cex.lab = 1.2,
+  cex.axis = par("cex"),
+  cex.numbers = par("cex"),
+  gap = 4,
+  ...
+)
+
+\method{print}{aggr}(x, ..., digits = NULL)
 
 \method{summary}{aggr}(object, ...)
+
+\method{print}{summary.aggr}(x, ...)
 }
 \arguments{
-\item{x}{a vector, matrix or \code{data.frame}.}
+\item{x}{an object of class \code{"summary.aggr"}.}
 
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
@@ -34,11 +64,7 @@ to the given colors for imputed variables (see \code{col}).}
 \item{plot}{a logical indicating whether the results should be plotted (the
 default is \code{TRUE}).}
 
-\item{\dots}{for \code{aggr} and \code{TKRaggr}, further arguments and
-graphical parameters to be passed to \code{\link{plot.aggr}}.  For
-\code{plot.aggr}, further graphical parameters to be passed down.
-\code{par("oma")} will be set appropriately unless supplied (see
-\code{\link[graphics]{par}}).}
+\item{\dots}{Further arguments, currently ignored.}
 
 \item{col}{a vector of length three giving the colors to be used for
 observed, missing and imputed data. If only one color is supplied, it is
@@ -135,6 +161,8 @@ the amount of missing/imputed values in certain combinations of variables.
 Print method for objects of class \code{"aggr"}.
 
 Summary method for objects of class \code{"aggr"}.
+
+Print method for objects of class \code{"summary.aggr"}.
 }
 \details{
 Often it is of interest how many missing/imputed values are contained in
@@ -195,6 +223,11 @@ a
 data(sleep, package = "VIM")
 summary(aggr(sleep, plot=FALSE))
 
+
+data(sleep, package = "VIM")
+s <- summary(aggr(sleep, plot=FALSE))
+s
+
 }
 \references{
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
@@ -207,6 +240,8 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \code{\link{aggr}}
 
 \code{\link{print.summary.aggr}}, \code{\link{aggr}}
+
+\code{\link{summary.aggr}}, \code{\link{aggr}}
 }
 \author{
 Andreas Alfons, Matthias Templ, modifications for displaying imputed
@@ -215,6 +250,8 @@ values by Bernd Prantner
 Matthias Templ, modifications by Andreas Alfons and Bernd Prantner
 
 Matthias Templ, modifications by Andreas Alfons
+
+Andreas Alfons, modifications by Bernd Prantner
 }
 \keyword{hplot}
 \keyword{print}

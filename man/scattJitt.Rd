@@ -4,12 +4,26 @@
 \alias{scattJitt}
 \title{Bivariate jitter plot}
 \usage{
-scattJitt(x, delimiter = NULL, col = c("skyblue", "red", "red4",
-  "orange", "orange4"), alpha = NULL, cex = par("cex"),
-  col.line = "lightgrey", lty = "dashed", lwd = par("lwd"),
-  numbers = TRUE, cex.numbers = par("cex"), main = NULL,
-  sub = NULL, xlab = NULL, ylab = NULL, axes = TRUE,
-  frame.plot = axes, labels = c("observed", "missing", "imputed"), ...)
+scattJitt(
+  x,
+  delimiter = NULL,
+  col = c("skyblue", "red", "red4", "orange", "orange4"),
+  alpha = NULL,
+  cex = par("cex"),
+  col.line = "lightgrey",
+  lty = "dashed",
+  lwd = par("lwd"),
+  numbers = TRUE,
+  cex.numbers = par("cex"),
+  main = NULL,
+  sub = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  axes = TRUE,
+  frame.plot = axes,
+  labels = c("observed", "missing", "imputed"),
+  ...
+)
 }
 \arguments{
 \item{x}{a \code{data.frame} or \code{matrix} with two columns.}

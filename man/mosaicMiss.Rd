@@ -2,11 +2,58 @@
 % Please edit documentation in R/mosaicMiss.R
 \name{mosaicMiss}
 \alias{mosaicMiss}
+\alias{mosaicMiss.data.frame}
+\alias{mosaicMiss.survey.design}
+\alias{mosaicMiss.default}
 \title{Mosaic plot with information about missing/imputed values}
 \usage{
-mosaicMiss(x, delimiter = NULL, highlight = NULL,
-  selection = c("any", "all"), plotvars = NULL, col = c("skyblue",
-  "red", "orange"), labels = NULL, miss.labels = TRUE, ...)
+mosaicMiss(
+  x,
+  delimiter = NULL,
+  highlight = NULL,
+  selection = c("any", "all"),
+  plotvars = NULL,
+  col = c("skyblue", "red", "orange"),
+  labels = NULL,
+  miss.labels = TRUE,
+  ...
+)
+
+\method{mosaicMiss}{data.frame}(
+  x,
+  delimiter = NULL,
+  highlight = NULL,
+  selection = c("any", "all"),
+  plotvars = NULL,
+  col = c("skyblue", "red", "orange"),
+  labels = NULL,
+  miss.labels = TRUE,
+  ...
+)
+
+\method{mosaicMiss}{survey.design}(
+  x,
+  delimiter = NULL,
+  highlight = NULL,
+  selection = c("any", "all"),
+  plotvars = NULL,
+  col = c("skyblue", "red", "orange"),
+  labels = NULL,
+  miss.labels = TRUE,
+  ...
+)
+
+\method{mosaicMiss}{default}(
+  x,
+  delimiter = NULL,
+  highlight = NULL,
+  selection = c("any", "all"),
+  plotvars = NULL,
+  col = c("skyblue", "red", "orange"),
+  labels = NULL,
+  miss.labels = TRUE,
+  ...
+)
 }
 \arguments{
 \item{x}{a matrix or \code{data.frame}.}

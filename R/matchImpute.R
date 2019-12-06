@@ -29,13 +29,6 @@
 #'
 #' dt <- data.table(testdata$wna)
 #' imp_testdata2 <- matchImpute(dt,match_var=c("c1","c2","b1","b2"))
-#' 
-#' 
-
-#' @S3method matchImpute data.frame
-#' @S3method matchImpute survey.design
-#' @S3method matchImpute default
-#
 
 # working function
 #' @export matchImpute
@@ -44,15 +37,24 @@ matchImpute <- function(data,variable=colnames(data)[!colnames(data)%in%match_va
   UseMethod("matchImpute", data)
 }
 
+#' @rdname matchImpute
+#' @export
+
 matchImpute.data.frame <- function(data,variable=colnames(data)[!colnames(data)%in%match_var],match_var, imp_var=TRUE,
     imp_suffix="imp") {
   as.data.frame(matchImpute.default(data.table(data), variable, match_var, imp_var, imp_suffix))
 }
 
+#' @rdname matchImpute
+#' @export
+
 matchImpute.data.table <- function(data,variable=colnames(data)[!colnames(data)%in%match_var],match_var, imp_var=TRUE,
     imp_suffix="imp") {
   matchImpute.default(copy(data), variable, match_var, imp_var, imp_suffix)
 }
+
+#' @rdname matchImpute
+#' @export
 
 matchImpute.survey.design <- function(data,variable=colnames(data$variables)[!colnames(data$variables)%in%match_var],match_var, imp_var=TRUE,
     imp_suffix="imp") {
@@ -80,6 +82,10 @@ primitive.impute <- function(x){
 }
 # main function
 # imp_var can only be a single collumn (yet)
+
+#' @rdname matchImpute
+#' @export
+
 matchImpute.default <- function(data,variable=colnames(data)[!colnames(data)%in%match_var],match_var, imp_var=TRUE,
     imp_suffix="imp"){
   na_present <- data[,sum(sapply(lapply(.SD,is.na),sum)),.SDcols=variable]

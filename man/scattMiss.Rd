@@ -4,11 +4,26 @@
 \alias{scattMiss}
 \title{Scatterplot with information about missing/imputed values}
 \usage{
-scattMiss(x, delimiter = NULL, side = 1, col = c("skyblue", "red",
-  "orange", "lightgrey"), alpha = NULL, lty = c("dashed", "dotted"),
-  lwd = par("lwd"), quantiles = c(0.5, 0.975), inEllipse = FALSE,
-  zeros = FALSE, xlim = NULL, ylim = NULL, main = NULL,
-  sub = NULL, xlab = NULL, ylab = NULL, interactive = TRUE, ...)
+scattMiss(
+  x,
+  delimiter = NULL,
+  side = 1,
+  col = c("skyblue", "red", "orange", "lightgrey"),
+  alpha = NULL,
+  lty = c("dashed", "dotted"),
+  lwd = par("lwd"),
+  quantiles = c(0.5, 0.975),
+  inEllipse = FALSE,
+  zeros = FALSE,
+  xlim = NULL,
+  ylim = NULL,
+  main = NULL,
+  sub = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  interactive = TRUE,
+  ...
+)
 }
 \arguments{
 \item{x}{a \code{matrix} or \code{data.frame} with two columns.}

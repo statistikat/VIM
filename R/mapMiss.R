@@ -65,15 +65,15 @@
 #' mapMiss(x_imp, coo, kola.background, delimiter = "_imp")
 #' 
 #' @export mapMiss
-#' @S3method mapMiss data.frame
-#' @S3method mapMiss survey.design
-#' @S3method mapMiss default
 mapMiss <- function(x, coords, map, delimiter = NULL, selection = c("any","all"), 
                     col = c("skyblue","red","orange"), alpha = NULL, 
                     pch = c(19,15), col.map = grey(0.5), 
                     legend = TRUE, interactive = TRUE, ...) {
   UseMethod("mapMiss", x)
 }
+
+#' @rdname mapMiss
+#' @export
 
 mapMiss.data.frame <- function(x, coords, map, delimiter = NULL, selection = c("any","all"), 
                                col = c("skyblue","red","orange"), alpha = NULL, 
@@ -83,6 +83,9 @@ mapMiss.data.frame <- function(x, coords, map, delimiter = NULL, selection = c("
                legend, interactive,...)
 }
 
+#' @rdname mapMiss
+#' @export
+
 mapMiss.survey.design <- function(x, coords, map, delimiter = NULL, selection = c("any","all"), 
     col = c("skyblue","red","orange"), alpha = NULL, 
     pch = c(19,15), col.map = grey(0.5), 
@@ -90,6 +93,9 @@ mapMiss.survey.design <- function(x, coords, map, delimiter = NULL, selection = 
   mapMiss_work(x$variables, coords, map, delimiter, selection, col, alpha, pch, col.map,
                legend, interactive,...)
 }
+
+#' @rdname mapMiss
+#' @export
 
 mapMiss.default <- function(x, coords, map, delimiter = NULL, selection = c("any","all"), 
                             col = c("skyblue","red","orange"), alpha = NULL, 

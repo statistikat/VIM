@@ -62,14 +62,14 @@
 #' marginmatrix(x_imp, delimiter = "_imp")
 #' 
 #' @export marginmatrix
-#' @S3method marginmatrix data.frame
-#' @S3method marginmatrix survey.design
-#' @S3method marginmatrix default
 marginmatrix <- function(x, delimiter = NULL, 
                          col = c("skyblue","red","red4","orange","orange4"), 
                          alpha = NULL, ...) {
   UseMethod("marginmatrix", x)
 }
+
+#' @rdname marginmatrix
+#' @export
 
 marginmatrix.data.frame <- function(x, delimiter = NULL, 
                                     col = c("skyblue","red","red4","orange","orange4"), 
@@ -77,11 +77,17 @@ marginmatrix.data.frame <- function(x, delimiter = NULL,
   marginmatrix_work(x, delimiter, col,alpha, ...)
 }
 
+#' @rdname marginmatrix
+#' @export
+
 marginmatrix.survey.design <- function(x, delimiter = NULL, 
                                        col = c("skyblue","red","red4","orange","orange4"), 
                                        alpha = NULL, ...) {
   marginmatrix_work(x$variables, delimiter, col,alpha, ...)
 }
+
+#' @rdname marginmatrix
+#' @export
 
 marginmatrix.default <- function(x, delimiter = NULL, 
                                  col = c("skyblue","red","red4","orange","orange4"), 

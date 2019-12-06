@@ -1,4 +1,5 @@
 ## Wrapper function for gowerD
+
 gowerD <- function(data.x, data.y = data.x, weights=NULL,numerical,factors,orders,mixed,levOrders,mixed.constant,
     returnIndex=FALSE,nMin=1L,returnMin=FALSE) {
   maxplus1 <- function(x){

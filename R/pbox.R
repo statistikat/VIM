@@ -94,9 +94,6 @@
 #'      delimiter = "_imp")
 #' 
 #' @export pbox
-#' @S3method pbox data.frame
-#' @S3method pbox survey.design
-#' @S3method pbox default
 pbox <- function(x, delimiter = NULL, pos = 1, selection = c("none","any","all"), 
                  col = c("skyblue","red","red4","orange","orange4"), numbers = TRUE, 
                  cex.numbers = par("cex"), xlim = NULL, ylim = NULL, 
@@ -105,6 +102,9 @@ pbox <- function(x, delimiter = NULL, pos = 1, selection = c("none","any","all")
                  interactive = TRUE, ...) {
   UseMethod("pbox", x)
 }
+
+#' @rdname pbox
+#' @export
 
 pbox.data.frame <- function(x, delimiter = NULL, pos = 1, selection = c("none","any","all"), 
                             col = c("skyblue","red","red4","orange","orange4"), numbers = TRUE, 
@@ -116,6 +116,9 @@ pbox.data.frame <- function(x, delimiter = NULL, pos = 1, selection = c("none","
             xlab, ylab, axes, frame.plot, labels, interactive, ...)
 }
 
+#' @rdname pbox
+#' @export
+
 pbox.survey.design <- function(x, delimiter = NULL, pos = 1, selection = c("none","any","all"), 
                                col = c("skyblue","red","red4","orange","orange4"), numbers = TRUE, 
                                cex.numbers = par("cex"), xlim = NULL, ylim = NULL, 
@@ -125,6 +128,9 @@ pbox.survey.design <- function(x, delimiter = NULL, pos = 1, selection = c("none
   pbox_work(x$variables, delimiter, pos, selection, col, numbers, cex.numbers, xlim, ylim, main, sub,
             xlab, ylab, axes, frame.plot, labels, interactive, ...)
 }
+
+#' @rdname pbox
+#' @export
 
 pbox.default <- function(x, delimiter = NULL, pos = 1, selection = c("none","any","all"), 
                          col = c("skyblue","red","red4","orange","orange4"), numbers = TRUE, 

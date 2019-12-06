@@ -4,12 +4,86 @@
 \alias{matrixplot}
 \alias{TKRmatrixplot}
 \alias{iimagMiss}
+\alias{matrixplot.data.frame}
+\alias{matrixplot.survey.design}
+\alias{matrixplot.default}
 \title{Matrix plot}
 \usage{
-matrixplot(x, delimiter = NULL, sortby = NULL, col = c("red",
-  "orange"), fixup = TRUE, xlim = NULL, ylim = NULL, main = NULL,
-  sub = NULL, xlab = NULL, ylab = NULL, axes = TRUE,
-  labels = axes, xpd = NULL, interactive = TRUE, ...)
+matrixplot(
+  x,
+  delimiter = NULL,
+  sortby = NULL,
+  col = c("red", "orange"),
+  fixup = TRUE,
+  xlim = NULL,
+  ylim = NULL,
+  main = NULL,
+  sub = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  axes = TRUE,
+  labels = axes,
+  xpd = NULL,
+  interactive = TRUE,
+  ...
+)
+
+\method{matrixplot}{data.frame}(
+  x,
+  delimiter = NULL,
+  sortby = NULL,
+  col = c("red", "orange"),
+  fixup = TRUE,
+  xlim = NULL,
+  ylim = NULL,
+  main = NULL,
+  sub = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  axes = TRUE,
+  labels = axes,
+  xpd = NULL,
+  interactive = TRUE,
+  ...
+)
+
+\method{matrixplot}{survey.design}(
+  x,
+  delimiter = NULL,
+  sortby = NULL,
+  col = c("red", "orange"),
+  fixup = TRUE,
+  xlim = NULL,
+  ylim = NULL,
+  main = NULL,
+  sub = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  axes = TRUE,
+  labels = axes,
+  xpd = NULL,
+  interactive = TRUE,
+  ...
+)
+
+\method{matrixplot}{default}(
+  x,
+  delimiter = NULL,
+  sortby = NULL,
+  col = c("red", "orange"),
+  fixup = TRUE,
+  xlim = NULL,
+  ylim = NULL,
+  main = NULL,
+  sub = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  axes = TRUE,
+  labels = axes,
+  xpd = NULL,
+  interactive = TRUE,
+  ...
+)
 }
 \arguments{
 \item{x}{a matrix or \code{data.frame}.}

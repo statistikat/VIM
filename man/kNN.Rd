@@ -5,15 +5,140 @@
 \alias{sampleCat}
 \alias{maxCat}
 \alias{gowerD}
+\alias{kNN.data.table}
+\alias{kNN.data.frame}
+\alias{kNN.survey.design}
+\alias{kNN.default}
 \title{k-Nearest Neighbour Imputation}
 \usage{
-kNN(data, variable = colnames(data), metric = NULL, k = 5,
-  dist_var = colnames(data), weights = NULL, numFun = median,
-  catFun = maxCat, makeNA = NULL, NAcond = NULL, impNA = TRUE,
-  donorcond = NULL, mixed = vector(), mixed.constant = NULL,
-  trace = FALSE, imp_var = TRUE, imp_suffix = "imp", addRF = FALSE,
-  onlyRF = FALSE, addRandom = FALSE, useImputedDist = TRUE,
-  weightDist = FALSE)
+kNN(
+  data,
+  variable = colnames(data),
+  metric = NULL,
+  k = 5,
+  dist_var = colnames(data),
+  weights = NULL,
+  numFun = median,
+  catFun = maxCat,
+  makeNA = NULL,
+  NAcond = NULL,
+  impNA = TRUE,
+  donorcond = NULL,
+  mixed = vector(),
+  mixed.constant = NULL,
+  trace = FALSE,
+  imp_var = TRUE,
+  imp_suffix = "imp",
+  addRF = FALSE,
+  onlyRF = FALSE,
+  addRandom = FALSE,
+  useImputedDist = TRUE,
+  weightDist = FALSE
+)
+
+\method{kNN}{data.table}(
+  data,
+  variable = colnames(data),
+  metric = NULL,
+  k = 5,
+  dist_var = colnames(data),
+  weights = NULL,
+  numFun = median,
+  catFun = maxCat,
+  makeNA = NULL,
+  NAcond = NULL,
+  impNA = TRUE,
+  donorcond = NULL,
+  mixed = vector(),
+  mixed.constant = NULL,
+  trace = FALSE,
+  imp_var = TRUE,
+  imp_suffix = "imp",
+  addRF = FALSE,
+  onlyRF = FALSE,
+  addRandom = FALSE,
+  useImputedDist = TRUE,
+  weightDist = FALSE
+)
+
+\method{kNN}{data.frame}(
+  data,
+  variable = colnames(data),
+  metric = NULL,
+  k = 5,
+  dist_var = colnames(data),
+  weights = NULL,
+  numFun = median,
+  catFun = maxCat,
+  makeNA = NULL,
+  NAcond = NULL,
+  impNA = TRUE,
+  donorcond = NULL,
+  mixed = vector(),
+  mixed.constant = NULL,
+  trace = FALSE,
+  imp_var = TRUE,
+  imp_suffix = "imp",
+  addRF = FALSE,
+  onlyRF = FALSE,
+  addRandom = FALSE,
+  useImputedDist = TRUE,
+  weightDist = FALSE
+)
+
+\method{kNN}{survey.design}(
+  data,
+  variable = colnames(data),
+  metric = NULL,
+  k = 5,
+  dist_var = colnames(data),
+  weights = NULL,
+  numFun = median,
+  catFun = maxCat,
+  makeNA = NULL,
+  NAcond = NULL,
+  impNA = TRUE,
+  donorcond = NULL,
+  mixed = vector(),
+  mixed.constant = NULL,
+  trace = FALSE,
+  imp_var = TRUE,
+  imp_suffix = "imp",
+  addRF = FALSE,
+  onlyRF = FALSE,
+  addRandom = FALSE,
+  useImputedDist = TRUE,
+  weightDist = FALSE
+)
+
+\method{kNN}{default}(
+  data,
+  variable = colnames(data),
+  metric = NULL,
+  k = 5,
+  dist_var = colnames(data),
+  weights = NULL,
+  numFun = median,
+  catFun = maxCat,
+  makeNA = NULL,
+  NAcond = NULL,
+  impNA = TRUE,
+  donorcond = NULL,
+  mixed = vector(),
+  mixed.constant = NULL,
+  trace = FALSE,
+  imp_var = TRUE,
+  imp_suffix = "imp",
+  addRF = FALSE,
+  onlyRF = FALSE,
+  addRandom = FALSE,
+  useImputedDist = TRUE,
+  weightDist = FALSE
+)
+
+sampleCat(x, weights = NULL)
+
+maxCat(x, weights = NULL)
 }
 \arguments{
 \item{data}{data.frame or matrix}
@@ -71,6 +196,8 @@ Be aware that this results in a dependency on the ordering of the variables.}
 
 \item{weightDist}{TRUE/FALSE if the distances of the k nearest neighbours should be used as weights in the
 aggregation step}
+
+\item{x}{factor vector related to function sampleCat}
 }
 \value{
 the imputed data set.

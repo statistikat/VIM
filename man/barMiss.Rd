@@ -2,13 +2,86 @@
 % Please edit documentation in R/barMiss.R
 \name{barMiss}
 \alias{barMiss}
+\alias{barMiss.data.frame}
+\alias{barMiss.survey.design}
+\alias{barMiss.default}
 \title{Barplot with information about missing/imputed values}
 \usage{
-barMiss(x, delimiter = NULL, pos = 1, selection = c("any", "all"),
+barMiss(
+  x,
+  delimiter = NULL,
+  pos = 1,
+  selection = c("any", "all"),
   col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
-  border = NULL, main = NULL, sub = NULL, xlab = NULL,
-  ylab = NULL, axes = TRUE, labels = axes, only.miss = TRUE,
-  miss.labels = axes, interactive = TRUE, ...)
+  border = NULL,
+  main = NULL,
+  sub = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  axes = TRUE,
+  labels = axes,
+  only.miss = TRUE,
+  miss.labels = axes,
+  interactive = TRUE,
+  ...
+)
+
+\method{barMiss}{data.frame}(
+  x,
+  delimiter = NULL,
+  pos = 1,
+  selection = c("any", "all"),
+  col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
+  border = NULL,
+  main = NULL,
+  sub = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  axes = TRUE,
+  labels = axes,
+  only.miss = TRUE,
+  miss.labels = axes,
+  interactive = TRUE,
+  ...
+)
+
+\method{barMiss}{survey.design}(
+  x,
+  delimiter = NULL,
+  pos = 1,
+  selection = c("any", "all"),
+  col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
+  border = NULL,
+  main = NULL,
+  sub = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  axes = TRUE,
+  labels = axes,
+  only.miss = TRUE,
+  miss.labels = axes,
+  interactive = TRUE,
+  ...
+)
+
+\method{barMiss}{default}(
+  x,
+  delimiter = NULL,
+  pos = 1,
+  selection = c("any", "all"),
+  col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
+  border = NULL,
+  main = NULL,
+  sub = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  axes = TRUE,
+  labels = axes,
+  only.miss = TRUE,
+  miss.labels = axes,
+  interactive = TRUE,
+  ...
+)
 }
 \arguments{
 \item{x}{a vector, matrix or \code{data.frame}.}

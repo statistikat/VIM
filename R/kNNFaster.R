@@ -76,18 +76,16 @@
 #' kNN(sleep, numFun = weightedMean, weightDist=TRUE)
 #' 
 #' @export kNN
-#' @export sampleCat
-#' @export maxCat
-#' @export gowerD
-#' @S3method kNN data.frame
-#' @S3method kNN survey.design
-#' @S3method kNN default
 kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                 numFun = median, catFun=maxCat,
                 makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
                 imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE,addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
   UseMethod("kNN", data)
 }
+
+#' @rdname kNN
+#' @export
+
 kNN.data.table <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
     numFun = median, catFun=maxCat,
     makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
@@ -96,6 +94,10 @@ kNN.data.table <- function(data, variable=colnames(data), metric=NULL, k=5, dist
       makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
       imp_var, imp_suffix, addRF, onlyRF, addRandom,useImputedDist,weightDist)
 }
+
+#' @rdname kNN
+#' @export
+
 kNN.data.frame <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                            numFun = median, catFun=maxCat,
                            makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
@@ -104,6 +106,9 @@ kNN.data.frame <- function(data, variable=colnames(data), metric=NULL, k=5, dist
            makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
            imp_var, imp_suffix, addRF, onlyRF, addRandom,useImputedDist,weightDist))
 }
+
+#' @rdname kNN
+#' @export
 
 kNN.survey.design <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                               numFun = median, catFun=maxCat,
@@ -115,6 +120,9 @@ kNN.survey.design <- function(data, variable=colnames(data), metric=NULL, k=5, d
   data$call <- sys.call(-1)
   data
 }
+
+#' @rdname kNN
+#' @export
 
 kNN.default <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                         numFun = median, catFun=maxCat,
@@ -131,6 +139,11 @@ lengthL <- function(x){
     return(length(x))
   }
 }
+
+#' @rdname kNN
+#' @export 
+#' @param x factor vector related to function sampleCat
+ 
 sampleCat <- function(x,weights = NULL){
   #sample with probabilites corresponding to there number in the NNs
   if(!is.factor(x))
@@ -145,6 +158,10 @@ sampleCat <- function(x,weights = NULL){
   
   sample(names(s),1,prob=s)
 }
+
+#' @rdname kNN
+#' @export maxCat
+
 maxCat <- function(x,weights = NULL){
   #choose cat with max prob, random if max is not unique
   if(!is.factor(x))

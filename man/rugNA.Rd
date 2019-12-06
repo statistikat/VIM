@@ -4,8 +4,17 @@
 \alias{rugNA}
 \title{Rug representation of missing/imputed values}
 \usage{
-rugNA(x, y, ticksize = NULL, side = 1, col = "red", alpha = NULL,
-  miss = NULL, lwd = 0.5, ...)
+rugNA(
+  x,
+  y,
+  ticksize = NULL,
+  side = 1,
+  col = "red",
+  alpha = NULL,
+  miss = NULL,
+  lwd = 0.5,
+  ...
+)
 }
 \arguments{
 \item{x, y}{numeric vectors.}

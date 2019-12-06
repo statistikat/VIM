@@ -2,10 +2,42 @@
 % Please edit documentation in R/marginmatrix.R
 \name{marginmatrix}
 \alias{marginmatrix}
+\alias{marginmatrix.data.frame}
+\alias{marginmatrix.survey.design}
+\alias{marginmatrix.default}
 \title{Marginplot Matrix}
 \usage{
-marginmatrix(x, delimiter = NULL, col = c("skyblue", "red", "red4",
-  "orange", "orange4"), alpha = NULL, ...)
+marginmatrix(
+  x,
+  delimiter = NULL,
+  col = c("skyblue", "red", "red4", "orange", "orange4"),
+  alpha = NULL,
+  ...
+)
+
+\method{marginmatrix}{data.frame}(
+  x,
+  delimiter = NULL,
+  col = c("skyblue", "red", "red4", "orange", "orange4"),
+  alpha = NULL,
+  ...
+)
+
+\method{marginmatrix}{survey.design}(
+  x,
+  delimiter = NULL,
+  col = c("skyblue", "red", "red4", "orange", "orange4"),
+  alpha = NULL,
+  ...
+)
+
+\method{marginmatrix}{default}(
+  x,
+  delimiter = NULL,
+  col = c("skyblue", "red", "red4", "orange", "orange4"),
+  alpha = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{a matrix or \code{data.frame}.}

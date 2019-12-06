@@ -88,9 +88,6 @@
 #' irmi(td)
 #' 
 #' @export irmi
-#' @S3method irmi data.frame
-#' @S3method irmi survey.design
-#' @S3method irmi default
 irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
     robust=FALSE, takeAll=TRUE,
     noise=TRUE, noise.factor=1, force=FALSE,
@@ -99,6 +96,9 @@ irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL
     imp_var=TRUE,imp_suffix="imp") {
   UseMethod("irmi", x)
 }
+
+#' @rdname irmi
+#' @export
 
 irmi.data.frame <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
     robust=FALSE, takeAll=TRUE,
@@ -112,6 +112,9 @@ irmi.data.frame <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL,
       trace,init.method,modelFormulas=modelFormulas,multinom.method=multinom.method,
       imp_var=imp_var,imp_suffix=imp_suffix)
 }
+
+#' @rdname irmi
+#' @export
 
 irmi.survey.design <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
     robust=FALSE, takeAll=TRUE,
@@ -127,6 +130,9 @@ irmi.survey.design <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NU
   x$call <- sys.call(-1)
   x
 }
+
+#' @rdname irmi
+#' @export
 
 irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
     robust=FALSE, takeAll=TRUE,
@@ -875,7 +881,7 @@ useMN <- function(xReg, ndata,  wy, factors, step, robust,form,multinom.method){
   else
     form <- y~.
   if(multinom.method=="multinom"){
-    co <- capture.output(multimod <- multinom(form, data=xReg,summ=2,maxit=50,trace=FALSE))
+    co <- capture.output(multimod <- multinom(form, data=xReg,summ=2,maxit=50,trace=FALSE, MaxNWts=50000 ))
     if(step){
       multimod <- stepAIC(multimod,xReg)
     }

@@ -4,10 +4,23 @@
 \alias{pairsVIM}
 \title{Scatterplot Matrices}
 \usage{
-pairsVIM(x, ..., delimiter = NULL, main = NULL, sub = NULL,
-  panel = points, lower = panel, upper = panel, diagonal = NULL,
-  labels = TRUE, pos.labels = NULL, cex.labels = NULL,
-  font.labels = par("font"), layout = c("matrix", "graph"), gap = 1)
+pairsVIM(
+  x,
+  ...,
+  delimiter = NULL,
+  main = NULL,
+  sub = NULL,
+  panel = points,
+  lower = panel,
+  upper = panel,
+  diagonal = NULL,
+  labels = TRUE,
+  pos.labels = NULL,
+  cex.labels = NULL,
+  font.labels = par("font"),
+  layout = c("matrix", "graph"),
+  gap = 1
+)
 }
 \arguments{
 \item{x}{a matrix or \code{data.frame}.}
