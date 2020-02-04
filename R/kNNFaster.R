@@ -21,13 +21,8 @@
 #' k-Nearest Neighbour Imputation based on a variation of the Gower Distance
 #' for numerical, categorical, ordered and semi-continous variables.
 #' 
-#' The function sampleCat samples with probabilites corresponding to the
-#' occurrence of the level in the NNs. The function maxCat chooses the level
-#' with the most occurrences and random if the maximum is not unique. The
-#' function gowerD is used by kNN to compute the distances for numerical,
-#' factor ordered and semi-continous variables. 
 #' 
-#' @aliases kNN sampleCat maxCat gowerD
+#' @aliases kNN
 #' @param data data.frame or matrix
 #' @param variable variables where missing values should be imputed
 #' @param metric metric to be used for calculating the distances between
@@ -140,48 +135,14 @@ lengthL <- function(x){
   }
 }
 
-#' @rdname kNN
-#' @export 
-#' @param x factor vector related to function sampleCat
- 
-sampleCat <- function(x,weights = NULL){
-  #sample with probabilites corresponding to there number in the NNs
-  if(!is.factor(x))
-    x <- as.factor(x)
-  s <- summary(x)
-  s <- s[s!=0]
-  if(!is.null(weights)){
-    tmpTab <- merge(aggregate(weights,list(x),sum), data.frame("Group.1"=names(s),prob=s))
-    s <- tmpTab$prob*tmpTab$x
-    names(s) <- tmpTab$Group.1
-  }
-  
-  sample(names(s),1,prob=s)
-}
 
-#' @rdname kNN
-#' @export maxCat
 
-maxCat <- function(x,weights = NULL){
-  #choose cat with max prob, random if max is not unique
-  if(!is.factor(x))
-    x <- as.factor(x)
-  s <- summary(x)
-  s <- s[s!=0]
-  if(!is.null(weights)){
-    tmpTab <- merge(aggregate(weights,list(x),sum), data.frame("Group.1"=names(s),prob=s))
-    s <- tmpTab$prob*tmpTab$x
-    names(s) <- tmpTab$Group.1
-  }
-  if(sum(s>0)>1)
-    s <- sample(s)
-  names(s)[which.max(s)]
-}
 dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,
                         don_index,imp_index,weightsx,k,mixed.constant,provideMins=TRUE){
   #gd <- distance(don_dist_var,imp_dist_var,weights=weightsx)
   if(is.null(mixed.constant))
     mixed.constant <- rep(0,length(mixedX))
+  
   if(provideMins){
     gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
                  factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,

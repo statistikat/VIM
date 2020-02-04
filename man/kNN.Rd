@@ -2,9 +2,6 @@
 % Please edit documentation in R/kNNFaster.R
 \name{kNN}
 \alias{kNN}
-\alias{sampleCat}
-\alias{maxCat}
-\alias{gowerD}
 \alias{kNN.data.table}
 \alias{kNN.data.frame}
 \alias{kNN.survey.design}
@@ -135,10 +132,6 @@ kNN(
   useImputedDist = TRUE,
   weightDist = FALSE
 )
-
-sampleCat(x, weights = NULL)
-
-maxCat(x, weights = NULL)
 }
 \arguments{
 \item{data}{data.frame or matrix}
@@ -196,8 +189,6 @@ Be aware that this results in a dependency on the ordering of the variables.}
 
 \item{weightDist}{TRUE/FALSE if the distances of the k nearest neighbours should be used as weights in the
 aggregation step}
-
-\item{x}{factor vector related to function sampleCat}
 }
 \value{
 the imputed data set.
@@ -205,13 +196,6 @@ the imputed data set.
 \description{
 k-Nearest Neighbour Imputation based on a variation of the Gower Distance
 for numerical, categorical, ordered and semi-continous variables.
-}
-\details{
-The function sampleCat samples with probabilites corresponding to the
-occurrence of the level in the NNs. The function maxCat chooses the level
-with the most occurrences and random if the maximum is not unique. The
-function gowerD is used by kNN to compute the distances for numerical,
-factor ordered and semi-continous variables.
 }
 \examples{
 
