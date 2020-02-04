@@ -26,7 +26,7 @@
 #' argument.
 #' 
 #' \code{TKRscattmatrixMiss} behaves like \code{scattmatrixMiss}, but uses
-#' \code{\link[tkrplot]{tkrplot}} to embed the plot in a \emph{Tcl/Tk} window.
+#' tkrplot to embed the plot in a \emph{Tcl/Tk} window.
 #' This is useful if the number of variables is large, because scrollbars allow
 #' to move from one part of the plot to another.
 #' 
