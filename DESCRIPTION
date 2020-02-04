@@ -1,6 +1,6 @@
 Package: VIM
-Version: 5.0.0
-Date: 2019-12-12
+Version: 5.1.0
+Date: 2020-02-04
 Title: Visualization and Imputation of Missing Values
 Authors@R: c(
   person("Matthias", "Templ", email = "matthias.templ@gmail.com", role = c("aut","cre")),
@@ -33,4 +33,4 @@ License: GPL (>= 2)
 URL: https://github.com/statistikat/VIM
 Repository: CRAN
 LinkingTo: Rcpp
-RoxygenNote: 7.0.0
+RoxygenNote: 7.0.2
