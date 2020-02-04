@@ -1,6 +1,46 @@
-## Wrapper function for gowerD
+#' Computes the extended Gower distance of two data sets
+#' 
+#' The function gowerD is used by kNN to compute the distances for numerical,
+#' factor ordered and semi-continous variables.
+#' 
+#' @param data.x data frame
+#' @param data.y data frame
+#' @param weights numeric vector providing weights for the observations in x
+#' @param numerical names of numerical variables
+#' @param factors names of factor variables
+#' @param orders names of ordered variables
+#' @param mixed names of mixed variables
+#' @param levOrders vector with number of levels for each orders variable
+#' @param mixed.constant 	vector with length equal to the number of semi-continuous variables specifying the point of the semi-continuous distribution with non-zero probability
+#' @param returnIndex logical if TRUE return the index of the minimum distance
+#' @param nMin integer number of values with smallest distance to be returned
+#' @param returnMin logical if the computed distances for the indices should be returned
+#' @details returnIndex=FALSE: a numerical matrix n x m with the computed distances
+#' returnIndex=TRUE: a named list with "ind" containing the requested indices and "mins" the computed distances
+#' @examples
+#' data(sleep)
+#' # all variables used as numerical
+#' gowerD(sleep) 
+#' 
+#' # split in numerical an 
+#' gowerD(sleep, numerical = c("BodyWgt", "BrainWgt", "NonD", "Dream", "Sleep", "Span", "Gest"),
+#'   orders = c("Pred","Exp","Danger"), levOrders = c(5,5,5))
+#'   
+#' # as before but only returning the index of the closest observation
+#' gowerD(sleep, numerical = c("BodyWgt", "BrainWgt", "NonD", "Dream", "Sleep", "Span", "Gest"),
+#'   orders = c("Pred","Exp","Danger"), levOrders = c(5,5,5), returnIndex = TRUE)
+#' @export 
 
-gowerD <- function(data.x, data.y = data.x, weights=NULL,numerical,factors,orders,mixed,levOrders,mixed.constant,
+ 
+
+gowerD <- function(data.x, data.y = data.x,
+                   weights = rep(1, ncol(data.x)),
+                   numerical = colnames(data.x),
+                   factors = vector(),
+                   orders = vector(),
+                   mixed = vector(),
+                   levOrders  = vector(),
+                   mixed.constant = rep(0, length(mixed)),
     returnIndex=FALSE,nMin=1L,returnMin=FALSE) {
   maxplus1 <- function(x){
     if(all(is.na(x)))
