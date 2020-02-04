@@ -75,8 +75,8 @@
 #' compatibility with older versions. However, due to extended functionality,
 #' some of the argument positions have changed.
 #' 
-#' The code is based on \code{\link[StatDA]{bubbleFIN}} from package
-#' \code{StatDA}.
+#' The code is based on (removed from CRAN) bubbleFIN from package
+#' StatDA.
 #' @author Andreas Alfons, Matthias Templ, Peter Filzmoser, Bernd Prantner
 #' @seealso \code{\link{bgmap}}, \code{\link{mapMiss}},
 #' \code{\link{colormapMiss}}
