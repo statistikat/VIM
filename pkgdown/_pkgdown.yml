@@ -6,19 +6,50 @@ template:
     bootswatch: cosmo
 
 reference:
-- title: classes
+- title: imputation methods
   contents:
-  - persephone
-  - per_hts
-  - per_tramo
-  - per_x13
+  - kNN
+  - irmi
+  - hotdeck
+  - regressionImp
+  - matchImpute
+  - initialise
+  - maxCat
+  - sampleCat
 - title: plotting functions
-  contents: matches('plot')
+  contents:
+  - matches('plot')
+  - matches('Miss')
+  - bgmap
+  - marginmatrix
+  - colSequence
+  - pairsVIM
+  - pbox
+  - rugNA
+  - alphablend
+  - scattJitt
+- title: datasets
+  contents:
+  - wine
+  - sleep
+  - testdata
+  - tao
+  - bcancer
+  - SBS5242
+  - brittleness
+  - chorizonDL
+  - colic
+  - collisions
+  - SBS5242
+  - diabetes
+  - food
+  - pulplignin
+  - kola.background
 - title: other
   contents:
-  - generate_qr_table
-  - genTd
-  - iterate
-  - is.persephone
-- title: datasets
-  contents: matches('pi_')
+  - VIM-package
+  - countInf
+  - evaluation
+  - gowerD
+  - prepare
+  - vmGUIenvir
