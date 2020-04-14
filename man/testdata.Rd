@@ -4,22 +4,33 @@
 \name{testdata}
 \alias{testdata}
 \title{Simulated data set for testing purpose}
-\format{The format is: List of 4 $ wna :'data.frame': 500 obs. of 8
-variables: ..$ x1: num \link{1:500} 10.87 9.53 7.83 8.53 8.67 ...  ..$ x2: num
-\link{1:500} 10.9 9.32 7.68 8.2 8.41 ...  ..$ c1: Factor w/ 4 levels
-"a","b","c","d": 3 2 2 1 2 2 1 3 3 2 ...  ..$ c2: Factor w/ 4 levels
-"a","b","c","d": 2 3 2 2 2 2 2 4 2 2 ...  ..$ b1: Factor w/ 2 levels
-"0","1": 2 2 1 2 1 2 1 2 1 1 ...  ..$ b2: Factor w/ 2 levels "0","1": 2 2 1
-1 1 1 1 2 2 2 ...  ..$ m1: num \link{1:500} 0 8.29 9.08 0 0 ...  ..$ m2: num
-\link{1:500} 10.66 9.39 7.8 8.11 7.33 ...  $ wona :'data.frame': 500 obs. of 8
-variables: ..$ x1: num \link{1:500} 10.87 9.53 7.83 8.53 8.67 ...  ..$ x2: num
-\link{1:500} 10.9 9.32 7.68 8.2 8.41 ...  ..$ c1: Factor w/ 4 levels
-"a","b","c","d": 3 2 2 1 2 2 1 3 3 2 ...  ..$ c2: Factor w/ 4 levels
-"a","b","c","d": 2 3 2 2 2 2 2 4 2 2 ...  ..$ b1: Factor w/ 2 levels
-"0","1": 2 2 1 2 1 2 1 2 1 1 ...  ..$ b2: Factor w/ 2 levels "0","1": 2 2 1
-1 1 1 1 2 2 2 ...  ..$ m1: num \link{1:500} 0 8.29 9.08 0 0 ...  ..$ m2: num
-\link{1:500} 10.66 9.39 7.8 8.11 7.33 ...  $ mixed : chr \link{1:2} "m1" "m2" $
-outlierInd: NULL}
+\format{The format is: List of 4
+\itemize{
+\item \verb{$wna} : a \code{data.frame} with 500 obs. of 8 variables:
+\itemize{
+\item \code{x1}: num \link{1:500} 10.87 9.53 7.83 8.53 8.67 ...
+\item \code{x2}: num \link{1:500} 10.9 9.32 7.68 8.2 8.41 ...  ..
+\item \code{c1}: Factor w/ 4 levels "a","b","c","d": 3 2 2 1 2 2 1 3 3 2 ...
+\item \code{c2}: Factor w/ 4 levels "a","b","c","d": 2 3 2 2 2 2 2 4 2 2 ...
+\item \code{b1}: Factor w/ 2 levels "0","1": 2 2 1 2 1 2 1 2 1 1 ...
+\item \code{b2}: Factor w/ 2 levels "0","1": 2 2 1 1 1 1 1 2 2 2 ...
+\item \code{m1}: numeric 0 8.29 9.08 0 0 ...
+\item \code{m2}: numeric 10.66 9.39 7.8 8.11 7.33 ...
+}
+\item \verb{$wona} : a `data.frame`` with 500 obs. of 8 variables:
+\itemize{
+\item \code{x1}: numeric 10.87 9.53 7.83 8.53 8.67 ...
+\item \code{x2}: numeric 10.9 9.32 7.68 8.2 8.41 ...
+\item \code{c1}: Factor w/ 4 levels "a","b","c","d": 3 2 2 1 2 2 1 3 3 2 ...
+\item \code{c2}: Factor w/ 4 levels "a","b","c","d": 2 3 2 2 2 2 2 4 2 2 ...
+\item \code{b1}: Factor w/ 2 levels "0","1": 2 2 1 2 1 2 1 2 1 1 ...
+\item \code{b2}: Factor w/ 2 levels "0","1": 2 2 1 1 1 1 1 2 2 2 ...
+\item \code{m1}: numeric 0 8.29 9.08 0 0 ...
+\item \code{m2}: numeric 10.66 9.39 7.8 8.11 7.33 ...
+}
+\item \verb{$mixed}: \code{c("m1", "m2")}
+\item \verb{$outlierInd}: `NULL``
+}}
 \description{
 2 numeric, 2 binary, 2 nominal and 2 mixed (semi-continous) variables
 }
