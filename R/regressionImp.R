@@ -5,22 +5,22 @@
 
 
 #' Regression Imputation
-#' 
+#'
 #' Impute missing values based on a regression model.
-#' 
-#' 
-#' "lm" is used for family "normal" and glm for all other families.
-#' (Robust=TRUE: lmrob, glmrob)
-#' 
+#'
+#'
+#' [lm()] is used for family "normal" and [glm()] for all other families.
+#' (robust=TRUE: [lmrob()], [glmrob()])
+#'
 #' @param formula model formula to impute one variable
 #' @param data A data.frame or survey object containing the data
-#' @param family family argument for "glm" ("AUTO" tries to choose
-#' automatically, only really tested option!!!)
-#' @param robust TRUE/FALSE if robust regression should be used
-#' @param mod_cat TRUE/FALSE if TRUE for categorical variables the level with
+#' @param family family argument for [glm()]. `"AUTO"` (the default) tries to choose
+#' automatically and is the only really tested option!!!
+#' @param robust `TRUE`/`FALSE` if robust regression should be used. See details.
+#' @param mod_cat `TRUE`/`FALSE` if `TRUE` for categorical variables the level with
 #' the highest prediction probability is selected, otherwise it is sampled
 #' according to the probabilities.
-#' @param imp_var TRUE/FALSE if a TRUE/FALSE variables for each imputed
+#' @param imp_var `TRUE`/`FALSE` if a `TRUE`/`FALSE` variables for each imputed
 #' variable should be created show the imputation status
 #' @param imp_suffix suffix used for TF imputation variables
 #' @return the imputed data set.
@@ -30,15 +30,15 @@
 #' Statistical Software*, 74(7), 1-16.
 #' @keywords manip
 #' @examples
-#' 
+#'
 #' data(sleep)
 #' sleepImp1 <- regressionImp(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
 #' sleepImp2 <- regressionImp(Sleep+Gest+Span+Dream+NonD~BodyWgt+BrainWgt,data=sleep)
-#' 
+#'
 #' data(testdata)
 #' imp_testdata1 <- regressionImp(b1+b2~x1+x2,data=testdata$wna)
 #' imp_testdata3 <- regressionImp(x1~x2,data=testdata$wna,robust=TRUE)
-#' 
+#'
 #' @export regressionImp
 regressionImp <- function(formula,data,family="AUTO", robust=FALSE,imp_var = TRUE,
     imp_suffix = "imp",mod_cat=FALSE) {
@@ -75,7 +75,7 @@ regressionImp.default <- function(formula, data, family="AUTO", robust=FALSE,imp
 }
 
 regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,mod_cat){
-  
+
   formchar <- as.character(formula)
   lhs <- gsub(" ","",strsplit(formchar[2],"\\+")[[1]])
   rhs <- formchar[3]
@@ -146,14 +146,14 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
                 pre <- predict(mod,newdata=tmp,type="response")
                 pre <- levels(data[,lhsV])[sapply(pre,function(x)sample(1:2,1,prob=c(1-x,x)))]
               }
-              
+
             }else{
               pre <- predict(mod,newdata=tmp)
             }
             if(sum(TFna1)>sum(TFna3))
               cat(paste("There still missing values in variable",lhsV,". Probably due to missing values in the regressors.\n"))
             data[TFna3,lhsV] <- pre
-            
+
           }
         }
       }else{

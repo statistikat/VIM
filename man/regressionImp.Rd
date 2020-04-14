@@ -52,17 +52,17 @@ regressionImp(
 
 \item{data}{A data.frame or survey object containing the data}
 
-\item{family}{family argument for "glm" ("AUTO" tries to choose
-automatically, only really tested option!!!)}
+\item{family}{family argument for \code{\link[=glm]{glm()}}. \code{"AUTO"} (the default) tries to choose
+automatically and is the only really tested option!!!}
 
-\item{robust}{TRUE/FALSE if robust regression should be used}
+\item{robust}{\code{TRUE}/\code{FALSE} if robust regression should be used. See details.}
 
-\item{imp_var}{TRUE/FALSE if a TRUE/FALSE variables for each imputed
+\item{imp_var}{\code{TRUE}/\code{FALSE} if a \code{TRUE}/\code{FALSE} variables for each imputed
 variable should be created show the imputation status}
 
 \item{imp_suffix}{suffix used for TF imputation variables}
 
-\item{mod_cat}{TRUE/FALSE if TRUE for categorical variables the level with
+\item{mod_cat}{\code{TRUE}/\code{FALSE} if \code{TRUE} for categorical variables the level with
 the highest prediction probability is selected, otherwise it is sampled
 according to the probabilities.}
 }
@@ -73,8 +73,8 @@ the imputed data set.
 Impute missing values based on a regression model.
 }
 \details{
-"lm" is used for family "normal" and glm for all other families.
-(Robust=TRUE: lmrob, glmrob)
+\code{\link[=lm]{lm()}} is used for family "normal" and \code{\link[=glm]{glm()}} for all other families.
+(robust=TRUE: \code{\link[=lmrob]{lmrob()}}, \code{\link[=glmrob]{glmrob()}})
 }
 \examples{
 
