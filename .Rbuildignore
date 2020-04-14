@@ -7,3 +7,5 @@
 \.travis.yml$
 README.md$
 ^\.Rproj\.user$
+pkgdown
+^docs$

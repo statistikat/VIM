@@ -1,0 +1,24 @@
+development:
+  mode: unreleased
+
+template:
+  params:
+    bootswatch: cosmo
+
+reference:
+- title: classes
+  contents:
+  - persephone
+  - per_hts
+  - per_tramo
+  - per_x13
+- title: plotting functions
+  contents: matches('plot')
+- title: other
+  contents:
+  - generate_qr_table
+  - genTd
+  - iterate
+  - is.persephone
+- title: datasets
+  contents: matches('pi_')
