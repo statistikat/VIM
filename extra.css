@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css?family=Raleway|Ubuntu+Mono');
+
+h1, h2, h3, h4, h5{
+  color: #293c55;
+}
+
+p>a, a{
+  color: #ab0813;
+}
+
+body{
+  font-family: 'Raleway', sans-serif;
+}
+
+code{
+  font-family: 'Ubuntu Mono', monospace;
+}
+
+pre {
+  font-size: 13px;
+  box-shadow:
+    rgba(0, 0, 0, 0.1) 0 2px 3px 1px,
+    rgba(0, 0, 0, 0.1) 0 1px 3px 1px,
+    rgba(0, 0, 0, 0.2) 0 1px 1px -1px;
+}
+
+.navbar-default .navbar-nav>.active>a{
+  background-color: #B03A5B;
+}
+
+.nav-pills>li.active>a{
+    background-color: #1e3a54;
+}
+
+.navbar-default {
+    border-color: #B03A5B;
+    background-color: #293c55;
+}
+
+.navbar {
+    border-width: 0 1px 4px 1px;
+}
+
+.st {
+    color: #B03A5B;
+}
