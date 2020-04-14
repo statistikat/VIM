@@ -6,7 +6,7 @@ template:
     bootswatch: cosmo
 
 reference:
-- title: imputation methods
+- title: Imputation methods
   contents:
   - kNN
   - irmi
@@ -16,11 +16,16 @@ reference:
   - initialise
   - maxCat
   - sampleCat
-- title: plotting functions
+- title: Plotting functions
   contents:
   - matches('plot')
-  - matches('Miss')
-  - bgmap
+  - barMiss
+  - histMiss
+  - mosaicMiss
+  - parcoordMiss
+  - scattMiss
+  - scattmatrixMiss
+  - spineMiss
   - marginmatrix
   - colSequence
   - pairsVIM
@@ -28,7 +33,13 @@ reference:
   - rugNA
   - alphablend
   - scattJitt
-- title: datasets
+- title: Maps
+  contents:
+  - colormapMiss
+  - mapMiss
+  - bgmap
+  - growdotMiss
+- title: Datasets
   contents:
   - wine
   - sleep
@@ -45,7 +56,8 @@ reference:
   - food
   - pulplignin
   - kola.background
-- title: other
+  - toydataMiss
+- title: Other
   contents:
   - VIM-package
   - countInf
@@ -53,3 +65,4 @@ reference:
   - gowerD
   - prepare
   - vmGUIenvir
+  - gapMiss
