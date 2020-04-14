@@ -1,0 +1,44 @@
+---
+title: "VIM"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{VIM}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+VIM introduces tools for visualization of missing values. Forthermore, methods
+to impute missing values and visualizing imputed values are featured.
+
+### Visualize missing values
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  fig.align = "center"
+)
+```
+
+```{r setup, message=FALSE}
+library(VIM)
+data(sleep)
+x <- sleep[, c("Dream", "Sleep")]
+head(x)
+marginplot(x)
+```
+
+### Impute missing values
+
+```{r}
+x_imputed <- kNN(x)
+```
+
+### Visualize imputed values
+
+```{r}
+marginplot(x_imputed, delimiter = "_imp")
+```
+

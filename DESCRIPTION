@@ -17,7 +17,11 @@ Imports:
     stats,
     sp,
     vcd,MASS,nnet,e1071,methods,Rcpp,utils,graphics,laeken,ranger
-Suggests: dplyr, testthat
+Suggests: 
+    dplyr,
+    testthat,
+    knitr,
+    rmarkdown
 Description: New tools for the visualization of missing and/or imputed values
     are introduced, which can be used for exploring the data and the structure of
     the missing and/or imputed values. Depending on this structure of the missing
@@ -36,3 +40,4 @@ LinkingTo: Rcpp
 RoxygenNote: 7.0.2
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
+VignetteBuilder: knitr
