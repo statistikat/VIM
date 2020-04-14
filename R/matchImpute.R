@@ -16,7 +16,7 @@
 #' status
 #' @return the imputed data set.
 #' @author Johannes Gussenbauer, Alexander Kowarik
-#' @seealso \code{\link[VIM]{hotdeck}}
+#' @seealso [VIM::hotdeck()]
 #' @keywords manip
 #' @examples
 #' 

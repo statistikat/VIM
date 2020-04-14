@@ -13,7 +13,7 @@
 #' 
 #' This plot consists of several boxplots. First, a standard boxplot of the
 #' variable of interest is produced. Second, boxplots grouped by observed and
-#' missing/imputed values according to \code{selection} are produced for the
+#' missing/imputed values according to `selection` are produced for the
 #' variable of interest.
 #' 
 #' Additionally, the frequencies of the missing/imputed values can be
@@ -21,29 +21,29 @@
 #' values of the variable of interest and their distribution in the different
 #' groups, the second line to the missing/imputed values.
 #' 
-#' If \code{interactive=TRUE}, clicking in the left margin of the plot results
+#' If `interactive=TRUE`, clicking in the left margin of the plot results
 #' in switching to the previous variable and clicking in the right margin
 #' results in switching to the next variable.  Clicking anywhere else on the
 #' graphics device quits the interactive session.
 #' 
-#' @param x a vector, matrix or \code{data.frame}.
+#' @param x a vector, matrix or `data.frame`.
 #' @param delimiter a character-vector to distinguish between variables and
-#' imputation-indices for imputed variables (therefore, \code{x} needs to have
-#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-indices for imputed variables (therefore, `x` needs to have
+#' [colnames()]). If given, it is used to determine the corresponding
 #' imputation-index for any imputed variable (a logical-vector indicating which
 #' values of the variable have been imputed). If such imputation-indices are
 #' found, they are used for highlighting and the colors are adjusted according
-#' to the given colors for imputed variables (see \code{col}).
+#' to the given colors for imputed variables (see `col`).
 #' @param pos a numeric value giving the index of the variable of interest.
-#' Additional variables in \code{x} are used for grouping according to
+#' Additional variables in `x` are used for grouping according to
 #' missingness/number of imputed missings.
 #' @param selection the selection method for grouping according to
 #' missingness/number of imputed missings in multiple additional variables.
-#' Possible values are \code{"none"} (grouping according to missingness/number
+#' Possible values are `"none"` (grouping according to missingness/number
 #' of imputed missings in every other variable that contains missing/imputed
-#' values), \code{"any"} (grouping according to missingness/number of imputed
-#' missings in \emph{any} of the additional variables) and \code{"all"}
-#' (grouping according to missingness/number of imputed missings in \emph{all}
+#' values), `"any"` (grouping according to missingness/number of imputed
+#' missings in *any* of the additional variables) and `"all"`
+#' (grouping according to missingness/number of imputed missings in *all*
 #' of the additional variables).
 #' @param col a vector of length five giving the colors to be used in the plot.
 #' The first color is used for the boxplots of the available data, the
@@ -67,21 +67,21 @@
 #' below each box, or a character vector giving the labels.
 #' @param interactive a logical indicating whether variables can be switched
 #' interactively (see \sQuote{Details}).
-#' @param \dots for \code{pbox}, further arguments and graphical parameters to
-#' be passed to \code{\link[graphics]{boxplot}} and other functions.  For
-#' \code{TKRpbox}, further arguments to be passed to \code{pbox}.
-#' @return a list as returned by \code{\link[graphics]{boxplot}}.
+#' @param \dots for `pbox`, further arguments and graphical parameters to
+#' be passed to [graphics::boxplot()] and other functions.  For
+#' `TKRpbox`, further arguments to be passed to `pbox`.
+#' @return a list as returned by [graphics::boxplot()].
 #' @note Some of the argument names and positions have changed with version 1.3
 #' due to extended functionality and for more consistency with other plot
-#' functions in \code{VIM}.  For back compatibility, the arguments \code{names}
-#' and \code{cex.text} can still be supplied to \code{\dots{}} and are handled
+#' functions in `VIM`.  For back compatibility, the arguments `names`
+#' and `cex.text` can still be supplied to \code{\dots{}} and are handled
 #' correctly.  Nevertheless, they are deprecated and no longer documented.  Use
-#' \code{labels} and \code{cex.numbers} instead.
+#' `labels` and `cex.numbers` instead.
 #' @author Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
-#' @seealso \code{\link{parcoordMiss}}
+#' @seealso [parcoordMiss()]
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
-#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @examples
 #' 

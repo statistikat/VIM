@@ -30,7 +30,7 @@ spineMiss(
 
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
-\code{\link{colnames}}). If given, it is used to determine the corresponding
+\code{\link[=colnames]{colnames()}}). If given, it is used to determine the corresponding
 imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
@@ -46,7 +46,7 @@ variables) and \code{"all"} (highlighting of missing/imputed values in
 \emph{all} of the additional variables).}
 
 \item{breaks}{if the variable of interest is numeric, \code{breaks} controls
-the breakpoints (see \code{\link[graphics]{hist}} for possible values).}
+the breakpoints (see \code{\link[graphics:hist]{graphics::hist()}} for possible values).}
 
 \item{right}{logical; if \code{TRUE} and the variable of interest is
 numeric, the spinogram cells are right-closed (left-open) intervals.}
@@ -83,7 +83,7 @@ vector giving the label(s) (see \sQuote{Details}).}
 switched interactively (see \sQuote{Details}).}
 
 \item{\dots}{further graphical parameters to be passed to
-\code{\link[graphics]{title}} and \code{\link[graphics]{axis}}.}
+\code{\link[graphics:title]{graphics::title()}} and \code{\link[graphics:axis]{graphics::axis()}}.}
 }
 \value{
 a table containing the frequencies corresponding to the cells.
@@ -132,7 +132,7 @@ functions in \code{VIM}.  For back compatibility, the arguments
 \code{\dots{}} and are handled correctly.  Nevertheless, they are deprecated
 and no longer documented.  Use \code{labels} and \code{miss.labels} instead.
 
-The code is based on the function \code{\link[graphics]{spineplot}} by Achim
+The code is based on the function \code{\link[graphics:spineplot]{graphics::spineplot()}} by Achim
 Zeileis.
 }
 \examples{
@@ -154,8 +154,8 @@ data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-\code{\link{histMiss}}, \code{\link{barMiss}},
-\code{\link{mosaicMiss}}
+\code{\link[=histMiss]{histMiss()}}, \code{\link[=barMiss]{barMiss()}},
+\code{\link[=mosaicMiss]{mosaicMiss()}}
 }
 \author{
 Andreas Alfons, Matthias Templ, modifications by Bernd Prantner

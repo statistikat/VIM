@@ -81,7 +81,7 @@ NULL
 #' 
 #' @name brittleness
 #' @docType data
-#' @source \url{https://openmv.net/info/brittleness-index}
+#' @source <https://openmv.net/info/brittleness-index>
 #' @keywords datasets
 #' @format A data frame with 23 observations on the following 3 variables.
 #' \describe{ 
@@ -106,7 +106,7 @@ NULL
 #' 
 #' @name colic
 #' @docType data
-#' @source \url{https://archive.ics.uci.edu/ml/datasets/Horse+Colic}
+#' @source <https://archive.ics.uci.edu/ml/datasets/Horse+Colic>
 #' Creators: Mary McLeish & Matt Cecile, Department of Computer Science, University of Guelph,
 #' Guelph, Ontario, Canada N1G 2W1 
 #' Donor: Will Taylor
@@ -164,9 +164,9 @@ NULL
 
 #' C-horizon of the Kola data with missing values
 #' 
-#' This data set is the same as the \code{\link[mvoutlier]{chorizon}} data set
-#' in package \code{mvoutlier}, except that values below the detection limit
-#' are coded as \code{NA}.
+#' This data set is the same as the [mvoutlier::chorizon()] data set
+#' in package `mvoutlier`, except that values below the detection limit
+#' are coded as `NA`.
 #' 
 #' 
 #' @name chorizonDL
@@ -232,11 +232,11 @@ NULL
 #' numeric vector} \item{Si_XRF}{a numeric vector}
 #' \item{Ti_XRF}{a numeric vector} }
 #' @note For a more detailed description of this data set, see
-#' \code{\link[mvoutlier]{chorizon}} in package \code{mvoutlier}.
-#' @seealso \code{\link[mvoutlier]{chorizon}}
+#' [mvoutlier::chorizon()] in package `mvoutlier`.
+#' @seealso [mvoutlier::chorizon()]
 #' @references Reimann, C., Filzmoser, P., Garrett, R.G. and Dutter, R. (2008)
-#' \emph{Statistical Data Analysis Explained: Applied Environmental Statistics
-#' with R}. Wiley.
+#' *Statistical Data Analysis Explained: Applied Environmental Statistics
+#' with R*. Wiley.
 #' @source Kola Project (1993-1998)
 #' @keywords datasets
 #' @examples
@@ -255,7 +255,7 @@ NULL
 #' 
 #' @name collisions
 #' @docType data
-#' @source \url{https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95}
+#' @source <https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95>
 #' @keywords datasets
 #' @examples
 #' 
@@ -282,7 +282,7 @@ NULL
 #' 
 #' @name diabetes
 #' @docType data
-#' @source \url{https://www.kaggle.com/uciml/pima-indians-diabetes-database/data}
+#' @source <https://www.kaggle.com/uciml/pima-indians-diabetes-database/data>
 #' @references Smith, J.W., Everhart, J.E., Dickson, W.C., Knowler, W.C., & Johannes, R.S. (1988). 
 #' Using the ADAP learning algorithm to forecast the onset of diabetes mellitus. 
 #' In Proceedings of the Symposium on Computer Applications and Medical Care (pp. 261--265). IEEE Computer Society Press.
@@ -315,7 +315,7 @@ NULL
 #' 
 #' @name food
 #' @docType data
-#' @source \url{https://openmv.net/info/food-consumption}
+#' @source <https://openmv.net/info/food-consumption>
 #' @keywords datasets
 #' @format A data frame with 16 observations on the following 21 variables.
 #' @examples
@@ -335,8 +335,8 @@ NULL
 #' @name kola.background
 #' @docType data
 #' @references Reimann, C., Filzmoser, P., Garrett, R.G. and Dutter, R. (2008)
-#' \emph{Statistical Data Analysis Explained: Applied Environmental Statistics
-#' with R}. Wiley, 2008.
+#' *Statistical Data Analysis Explained: Applied Environmental Statistics
+#' with R*. Wiley, 2008.
 #' @source Kola Project (1993-1998)
 #' @keywords datasets
 #' @examples
@@ -359,7 +359,7 @@ NULL
 #' 
 #' @name pulplignin
 #' @docType data
-#' @source \url{https://openmv.net/info/kamyr-digester}
+#' @source <https://openmv.net/info/kamyr-digester>
 #' @references K. Walkush and R.R. Gustafson. Application of feedforward neural networks and partial least 
 #' squares regression for modelling Kappa number in a continuous Kamyr digester", 
 #' Pulp and Paper Canada, 95, 1994, p T7-T13.
@@ -391,7 +391,7 @@ NULL
 #' 
 #' @name SBS5242
 #' @docType data
-#' @source \url{http://www.statistik.at}
+#' @source <http://www.statistik.at>
 #' @keywords datasets
 #' @examples
 #' 
@@ -419,9 +419,9 @@ NULL
 #' numeric vector} \item{Pred}{a numeric vector} \item{Exp}{a
 #' numeric vector} \item{Danger}{a numeric vector} }
 #' @source Allison, T. and Chichetti, D. (1976) Sleep in mammals: ecological
-#' and constitutional correlates. \emph{Science} \bold{194 (4266)}, 732--734.
+#' and constitutional correlates. *Science* **194 (4266)**, 732--734.
 #' 
-#' The data set was imported from \code{GGobi}.
+#' The data set was imported from `GGobi`.
 #' @keywords datasets
 #' @examples
 #' 
@@ -438,7 +438,7 @@ NULL
 #' Tropical Atmosphere Ocean (TAO) project data
 #' 
 #' A small subsample of the Tropical Atmosphere Ocean (TAO) project data,
-#' derived from the \code{GGOBI} project.
+#' derived from the `GGOBI` project.
 #' 
 #' All cases recorded for five locations and two time periods.
 #' 
@@ -451,7 +451,7 @@ NULL
 #' numeric vector} \item{Humidity}{a numeric vector}
 #' \item{UWind}{a numeric vector} \item{VWind}{a numeric
 #' vector} }
-#' @source \url{http://www.pmel.noaa.gov/tao/}
+#' @source <http://www.pmel.noaa.gov/tao/>
 #' @keywords datasets
 #' @examples
 #' 
@@ -535,7 +535,7 @@ NULL
 #' \item{winery}{the winery that made the wine} 
 #' \item{variety_main}{broader category as variety} 
 #' }
-#' @source \url{https://www.kaggle.com/zynicide/wine-reviews}
+#' @source <https://www.kaggle.com/zynicide/wine-reviews>
 #' @keywords datasets
 #' @examples
 #' 
@@ -566,7 +566,7 @@ NULL
 #' values mechanisms in the first place.
 #' 
 #' A graphical user interface available in the package VIMGUI allows an easy
-#' handling of the plot methods.  In addition, \code{VIM} can be used for data
+#' handling of the plot methods.  In addition, `VIM` can be used for data
 #' from essentially any field.
 #' 
 #' \tabular{ll}{ Package: \tab VIM\cr Version: \tab 3.0.3\cr Date: \tab
@@ -582,12 +582,12 @@ NULL
 #' 
 #' Maintainer: Matthias Templ <templ@@tuwien.ac.at>
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
-#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' 
 #' M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
-#' imputation using standard and robust methods.  \emph{Journal of
-#' Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
+#' imputation using standard and robust methods.  *Journal of
+#' Computational Statistics and Data Analysis*, Vol. 55, pp. 2793-2806.
 #' @keywords package
 NULL
 

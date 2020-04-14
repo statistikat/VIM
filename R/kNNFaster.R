@@ -29,7 +29,7 @@
 #' @param k number of Nearest Neighbours used
 #' @param dist_var names or variables to be used for distance calculation
 #' @param weights weights for the variables for distance calculation.
-#' If \code{weights = "auto"} weights will be selected based on variable importance from random forest regression, using function \code{\link[ranger]{ranger}}.
+#' If `weights = "auto"` weights will be selected based on variable importance from random forest regression, using function [ranger::ranger()].
 #' Weights are calculated for each variable seperately.
 #' @param numFun function for aggregating the k Nearest Neighbours in the case
 #' of a numerical variable
@@ -45,7 +45,7 @@
 #' variable should be created show the imputation status
 #' @param imp_suffix suffix for the TRUE/FALSE variables showing the imputation
 #' status
-#' @param addRF TRUE/FALSE each variable will be modelled using random forest regression (\code{\link[ranger]{ranger}}) and used as additional distance variable.
+#' @param addRF TRUE/FALSE each variable will be modelled using random forest regression ([ranger::ranger()]) and used as additional distance variable.
 #' @param onlyRF TRUE/FALSE if TRUE only additional distance variables created from random forest regression will be used as distance variables.
 #' @param addRandom TRUE/FALSE if an additional random variable should be added
 #' for distance calculation
@@ -60,8 +60,8 @@
 #' @return the imputed data set.
 #' @author Alexander Kowarik, Statistik Austria
 #' @references A. Kowarik, M. Templ (2016) Imputation with
-#' R package VIM.  \emph{Journal of
-#' Statistical Software}, 74(7), 1-16.
+#' R package VIM.  *Journal of
+#' Statistical Software*, 74(7), 1-16.
 #' @keywords manip
 #' @examples
 #' 

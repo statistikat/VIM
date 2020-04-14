@@ -100,7 +100,7 @@ parcoordMiss(
 
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
-\code{\link{colnames}}). If given, it is used to determine the corresponding
+\code{\link[=colnames]{colnames()}}). If given, it is used to determine the corresponding
 imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
@@ -157,7 +157,7 @@ axis limits are specified.}
 be enabled (see \sQuote{Details}).}
 
 \item{\dots}{for \code{parcoordMiss}, further graphical parameters to be
-passed down (see \code{\link[graphics]{par}}).  For \code{TKRparcoordMiss},
+passed down (see \code{\link[graphics:par]{graphics::par()}}).  For \code{TKRparcoordMiss},
 further arguments to be passed to \code{parcoordMiss}.}
 }
 \description{
@@ -218,14 +218,14 @@ legend("top", col = c("skyblue", "orange"), lwd = c(1,1),
 \references{
 Wegman, E. J. (1990) Hyperdimensional data analysis using
 parallel coordinates. \emph{Journal of the American Statistical Association}
-\bold{85 (411)}, 664--675.
+\strong{85 (411)}, 664--675.
 
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete data using
 visualization tools.  \emph{Journal of Advances in Data Analysis and
 Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-\code{\link{pbox}}
+\code{\link[=pbox]{pbox()}}
 }
 \author{
 Andreas Alfons, Matthias Templ, modifications by Bernd Prantner

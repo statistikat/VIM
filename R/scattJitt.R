@@ -15,14 +15,14 @@
 #' variables.  In addition, the amount of observed and missing/imputed values
 #' can be represented by a number.
 #' 
-#' @param x a \code{data.frame} or \code{matrix} with two columns.
+#' @param x a `data.frame` or `matrix` with two columns.
 #' @param delimiter a character-vector to distinguish between variables and
-#' imputation-indices for imputed variables (therefore, \code{x} needs to have
-#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-indices for imputed variables (therefore, `x` needs to have
+#' [colnames()]). If given, it is used to determine the corresponding
 #' imputation-index for any imputed variable (a logical-vector indicating which
 #' values of the variable have been imputed). If such imputation-indices are
 #' found, they are used for highlighting and the colors are adjusted according
-#' to the given colors for imputed variables (see \code{col}).
+#' to the given colors for imputed variables (see `col`).
 #' @param col a vector of length five giving the colors to be used in the plot.
 #' The first color will be used for complete observations, the second/fourth
 #' color for missing/imputed values in only one variable, and the third/fifth
@@ -30,12 +30,12 @@
 #' supplied, it is used for all.  Else if two colors are supplied, the second
 #' one is recycled.
 #' @param alpha a numeric value between 0 and 1 giving the level of
-#' transparency of the colors, or \code{NULL}.  This can be used to prevent
+#' transparency of the colors, or `NULL`.  This can be used to prevent
 #' overplotting.
 #' @param cex the character expansion factor for the plot characters.
 #' @param col.line the color for the lines dividing the plot region.
 #' @param lty the line type for the lines dividing the plot region (see
-#' \code{\link[graphics]{par}}).
+#' [graphics::par()]).
 #' @param lwd the line width for the lines dividing the plot region.
 #' @param numbers a logical indicating whether the frequencies of observed and
 #' missing/imputed values should be displayed (see \sQuote{Details}).
@@ -44,24 +44,24 @@
 #' @param main,sub main and sub title.
 #' @param xlab,ylab axis labels.
 #' @param axes a logical indicating whether both axes should be drawn on the
-#' plot.  Use graphical parameter \code{"xaxt"} or \code{"yaxt"} to suppress
+#' plot.  Use graphical parameter `"xaxt"` or `"yaxt"` to suppress
 #' just one of the axes.
 #' @param frame.plot a logical indicating whether a box should be drawn around
 #' the plot.
 #' @param labels a vector of length three giving the axis labels for the
 #' regions for observed, missing and imputed values (see \sQuote{Details}).
 #' @param \dots further graphical parameters to be passed down (see
-#' \code{\link[graphics]{par}}).
+#' [graphics::par()]).
 #' @note Some of the argument names and positions have changed with version 1.3
 #' due to extended functionality and for more consistency with other plot
-#' functions in \code{VIM}.  For back compatibility, the argument
-#' \code{cex.text} can still be supplied to \code{\dots{}} and is handled
+#' functions in `VIM`.  For back compatibility, the argument
+#' `cex.text` can still be supplied to \code{\dots{}} and is handled
 #' correctly.  Nevertheless, it is deprecated and no longer documented.  Use
-#' \code{cex.numbers} instead.
+#' `cex.numbers` instead.
 #' @author Matthias Templ, modifications by Andreas Alfons and Bernd Prantner
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
-#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @examples
 #' 

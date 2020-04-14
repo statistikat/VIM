@@ -30,7 +30,7 @@ scattMiss(
 
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
-\code{\link{colnames}}). If given, it is used to determine the corresponding
+\code{\link[=colnames]{colnames()}}). If given, it is used to determine the corresponding
 imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
@@ -84,7 +84,7 @@ Ignored if \code{quantiles} is \code{NULL}.}
 be changed interactively (see \sQuote{Details}).}
 
 \item{\dots}{further graphical parameters to be passed down (see
-\code{\link[graphics]{par}}).}
+\code{\link[graphics:par]{graphics::par()}}).}
 }
 \description{
 In addition to a standard scatterplot, lines are plotted for the missing
@@ -125,7 +125,7 @@ data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-\code{\link{marginplot}}
+\code{\link[=marginplot]{marginplot()}}
 }
 \author{
 Andreas Alfons, modifications by Bernd Prantner

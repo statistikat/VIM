@@ -22,14 +22,14 @@
 #' by a number (lower left of the plot). The number in the lower left corner is
 #' the number of observations that are missing/imputed in both variables.
 #' 
-#' @param x a \code{matrix} or \code{data.frame} with two columns.
+#' @param x a `matrix` or `data.frame` with two columns.
 #' @param delimiter a character-vector to distinguish between variables and
-#' imputation-indices for imputed variables (therefore, \code{x} needs to have
-#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-indices for imputed variables (therefore, `x` needs to have
+#' [colnames()]). If given, it is used to determine the corresponding
 #' imputation-index for any imputed variable (a logical-vector indicating which
 #' values of the variable have been imputed). If such imputation-indices are
 #' found, they are used for highlighting and the colors are adjusted according
-#' to the given colors for imputed variables (see \code{col}).
+#' to the given colors for imputed variables (see `col`).
 #' @param col a vector of length five giving the colors to be used in the plot.
 #' The first color is used for the scatterplot and the boxplots for the
 #' available data. In case of missing values, the second color is taken for the
@@ -45,7 +45,7 @@
 #' whereas the boxplots for the available data are transparent.  Else if two
 #' colors are supplied, the second one is recycled.
 #' @param alpha a numeric value between 0 and 1 giving the level of
-#' transparency of the colors, or \code{NULL}.  This can be used to prevent
+#' transparency of the colors, or `NULL`.  This can be used to prevent
 #' overplotting.
 #' @param pch a vector of length two giving the plot symbols to be used for the
 #' scatterplot and the univariate scatterplots.  If a single plot character is
@@ -60,31 +60,31 @@
 #' frequencies of the missing/imputed values.
 #' @param zeros a logical vector of length two indicating whether the variables
 #' are semi-continuous, i.e., contain a considerable amount of zeros.  If
-#' \code{TRUE}, only the non-zero observations are used for drawing the
+#' `TRUE`, only the non-zero observations are used for drawing the
 #' respective boxplot.  If a single logical is supplied, it is recycled.
 #' @param xlim,ylim axis limits.
 #' @param main,sub main and sub title.
 #' @param xlab,ylab axis labels.
-#' @param ann a logical indicating whether plot annotation (\code{main},
-#' \code{sub}, \code{xlab}, \code{ylab}) should be displayed.
+#' @param ann a logical indicating whether plot annotation (`main`,
+#' `sub`, `xlab`, `ylab`) should be displayed.
 #' @param axes a logical indicating whether both axes should be drawn on the
-#' plot.  Use graphical parameter \code{"xaxt"} or \code{"yaxt"} to suppress
+#' plot.  Use graphical parameter `"xaxt"` or `"yaxt"` to suppress
 #' only one of the axes.
 #' @param frame.plot a logical indicating whether a box should be drawn around
 #' the plot.
 #' @param \dots further graphical parameters to be passed down (see
-#' \code{\link[graphics]{par}}).
+#' [graphics::par()]).
 #' @note Some of the argument names and positions have changed with versions
 #' 1.3 and 1.4 due to extended functionality and for more consistency with
-#' other plot functions in \code{VIM}.  For back compatibility, the argument
-#' \code{cex.text} can still be supplied to \code{\dots{}} and is handled
+#' other plot functions in `VIM`.  For back compatibility, the argument
+#' `cex.text` can still be supplied to \code{\dots{}} and is handled
 #' correctly.  Nevertheless, it is deprecated and no longer documented.  Use
-#' \code{cex.numbers} instead.
+#' `cex.numbers` instead.
 #' @author Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
-#' @seealso \code{\link{scattMiss}}
+#' @seealso [scattMiss()]
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
-#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @examples
 #' 

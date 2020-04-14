@@ -46,6 +46,6 @@ Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
 \author{
 Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
 
-Maintainer: Matthias Templ <templ@tuwien.ac.at>
+Maintainer: Matthias Templ \href{mailto:templ@tuwien.ac.at}{templ@tuwien.ac.at}
 }
 \keyword{package}

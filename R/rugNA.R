@@ -10,10 +10,10 @@
 #' Add a rug representation of missing/imputed values in only one of the
 #' variables to scatterplots.
 #' 
-#' If \code{side} is 1 or 3, the rug representation consists of values
-#' available in \code{x} but missing/imputed in \code{y}.  Else if \code{side}
-#' is 2 or 4, it consists of values available in \code{y} but missing/imputed
-#' in \code{x}.
+#' If `side` is 1 or 3, the rug representation consists of values
+#' available in `x` but missing/imputed in `y`.  Else if `side`
+#' is 2 or 4, it consists of values available in `y` but missing/imputed
+#' in `x`.
 #' 
 #' @param x,y numeric vectors.
 #' @param ticksize the length of the ticks.  Positive lengths give inward
@@ -22,13 +22,13 @@
 #' representation.
 #' @param col the color to be used for the ticks.
 #' @param alpha the alpha value (between 0 and 1).
-#' @param miss a \code{data.frame} or \code{matrix} with two columns and
-#' logical values. If \code{NULL}, \code{x} and \code{y} are searched for
-#' missing values, otherwise, the first column of \code{miss} is used to
-#' determine the imputed values in \code{x} and the second one for the imputed
-#' values in \code{y}.
+#' @param miss a `data.frame` or `matrix` with two columns and
+#' logical values. If `NULL`, `x` and `y` are searched for
+#' missing values, otherwise, the first column of `miss` is used to
+#' determine the imputed values in `x` and the second one for the imputed
+#' values in `y`.
 #' @param lwd the line width to be used for the ticks.
-#' @param \dots further arguments to be passed to \code{\link[graphics]{Axis}}.
+#' @param \dots further arguments to be passed to [graphics::Axis()].
 #' @author Andreas Alfons, modifications by Bernd Prantner
 #' @keywords color
 #' @examples

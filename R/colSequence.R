@@ -9,7 +9,7 @@
 #' 
 #' Compute color sequences by linear interpolation based on a continuous color
 #' scheme between certain start and end colors.  Color sequences may thereby be
-#' computed in the \emph{HCL} or \emph{RGB} color space.
+#' computed in the *HCL* or *RGB* color space.
 #' 
 #'
 #' @rdname colSequence 
@@ -19,27 +19,27 @@
 #' start color, 1 to the end color).
 #' @param start,end the start and end color, respectively.  For HCL colors,
 #' each can be supplied as a vector of length three (hue, chroma, luminance) or
-#' an object of class "\code{\link[colorspace]{polarLUV}}".  For RGB colors,
+#' an object of class "[colorspace::polarLUV()]".  For RGB colors,
 #' each can be supplied as a character string, a vector of length three (red,
-#' green, blue) or an object of class "\code{\link[colorspace]{RGB}}".
-#' @param space character string; if \code{start} and \code{end} are both
+#' green, blue) or an object of class "[colorspace::RGB()]".
+#' @param space character string; if `start` and `end` are both
 #' numeric, this determines whether they refer to HCL or RGB values.  Possible
-#' values are \code{"hcl"} (for the HCL space) or \code{"rgb"} (for the RGB
+#' values are `"hcl"` (for the HCL space) or `"rgb"` (for the RGB
 #' space).
 #' @param fixup a logical indicating whether the colors should be corrected to
-#' valid RGB values (see \code{\link[colorspace]{hex}}).
-#' @param \dots for \code{colSequence}, additional arguments to be passed to
-#' \code{colSequenceHCL} or \code{colSequenceRGB}.  For \code{colSequenceHCL}
-#' and \code{colSequenceRGB}, additional arguments to be passed to
-#' \code{\link[colorspace]{hex}}.
+#' valid RGB values (see [colorspace::hex()]).
+#' @param \dots for `colSequence`, additional arguments to be passed to
+#' `colSequenceHCL` or `colSequenceRGB`.  For `colSequenceHCL`
+#' and `colSequenceRGB`, additional arguments to be passed to
+#' [colorspace::hex()].
 #' @return A character vector containing hexadecimal strings of the form
-#' \code{"#RRGGBB"}.
+#' `"#RRGGBB"`.
 #' @author Andreas Alfons
-#' @seealso \code{\link[colorspace]{hex}},
-#' \code{\link[colorspace]{sequential_hcl}}
+#' @seealso [colorspace::hex()],
+#' [colorspace::sequential_hcl()]
 #' @references Zeileis, A., Hornik, K., Murrell, P. (2009) Escaping RGBland:
-#' Selecting colors for statistical graphics. \emph{Computational Statistics &
-#' Data Analysis}, \bold{53 (9)}, 1259--1270.
+#' Selecting colors for statistical graphics. *Computational Statistics &
+#' Data Analysis*, **53 (9)**, 1259--1270.
 #' @keywords color
 #' @examples
 #' 

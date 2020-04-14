@@ -96,7 +96,7 @@ pbox(
 
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
-\code{\link{colnames}}). If given, it is used to determine the corresponding
+\code{\link[=colnames]{colnames()}}). If given, it is used to determine the corresponding
 imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
@@ -148,11 +148,11 @@ below each box, or a character vector giving the labels.}
 interactively (see \sQuote{Details}).}
 
 \item{\dots}{for \code{pbox}, further arguments and graphical parameters to
-be passed to \code{\link[graphics]{boxplot}} and other functions.  For
+be passed to \code{\link[graphics:boxplot]{graphics::boxplot()}} and other functions.  For
 \code{TKRpbox}, further arguments to be passed to \code{pbox}.}
 }
 \value{
-a list as returned by \code{\link[graphics]{boxplot}}.
+a list as returned by \code{\link[graphics:boxplot]{graphics::boxplot()}}.
 }
 \description{
 Boxplot of one variable of interest plus information about missing/imputed
@@ -199,7 +199,7 @@ data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-\code{\link{parcoordMiss}}
+\code{\link[=parcoordMiss]{parcoordMiss()}}
 }
 \author{
 Andreas Alfons, Matthias Templ, modifications by Bernd Prantner

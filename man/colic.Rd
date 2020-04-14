@@ -5,9 +5,9 @@
 \alias{colic}
 \title{Colic horse data set}
 \format{A training data frame with 300 observations on the following 31 variables.
-\describe{ 
-\item{surgery}{yes or no} 
-\item{age}{1 equals an adult horse, 2 is a horse younger than 6 months} 
+\describe{
+\item{surgery}{yes or no}
+\item{age}{1 equals an adult horse, 2 is a horse younger than 6 months}
 \item{hospitalID}{ID}
 \item{temp_rectal}{rectal temperature}
 \item{pulse}{heart rate in beats per minute}
@@ -17,26 +17,26 @@
 \item{capillayr_refill_time}{a clinical judgement. The longer the refill, the poorer the circulation. Possible values are
 1 = < 3 seconds and 2 = >= 3 seconds}
 \item{pain}{a subjective judgement of the horse's pain level }
-\item{peristalsis}{an indication of the activity in the horse's gut. 
+\item{peristalsis}{an indication of the activity in the horse's gut.
 As the gut becomes more distended or the horse becomes more toxic, the activity decreases }
-\item{abdominal_distension}{An animal with abdominal distension is likely to be painful and have reduced gut motility. 
+\item{abdominal_distension}{An animal with abdominal distension is likely to be painful and have reduced gut motility.
 A horse with severe abdominal distension is likely to require surgery just tio relieve the pressure }
-\item{nasogastric_tube}{This refers to any gas coming out of the tube. 
+\item{nasogastric_tube}{This refers to any gas coming out of the tube.
 A large gas cap in the stomach is likely to give the horse discomfort }
-\item{nasogastric_reflux}{posible values are 1 = none, 2 = > 1 liter, 3 = < 1 liter. 
-The greater amount of reflux, the more likelihood that there is some 
+\item{nasogastric_reflux}{posible values are 1 = none, 2 = > 1 liter, 3 = < 1 liter.
+The greater amount of reflux, the more likelihood that there is some
 serious obstruction to the fluid passage from the rest of the intestine }
-\item{nasogastric_reflux_PH}{scale is from 0 to 14 with 7 being neutral. 
+\item{nasogastric_reflux_PH}{scale is from 0 to 14 with 7 being neutral.
 Normal values are in the 3 to 4 range }
 \item{rectal_examination}{Rectal examination. Absent feces probably indicates an obstruction }
-\item{abdomen }{abdomen. possible values 1 = normal, 2 = other, 3 = firm feces in the large intestine, 
+\item{abdomen }{abdomen. possible values 1 = normal, 2 = other, 3 = firm feces in the large intestine,
 4 = distended small intestine, 5 = distended large intestine }
-\item{cell_volume }{packed cell volume. normal range is 30 to 50. 
+\item{cell_volume }{packed cell volume. normal range is 30 to 50.
 The level rises as the circulation becomes compromised or as the animal becomes dehydrated. }
 \item{protein}{total protein. Normal values lie in the 6-7.5 (gms/dL) range. The higher the value the greater the dehydration }
-\item{abdominocentesis_appearance}{Abdominocentesis appearance. 
+\item{abdominocentesis_appearance}{Abdominocentesis appearance.
 A needle is put in the horse's abdomen and fluid is obtained from the abdominal cavity }
-\item{abdomcentesis_protein}{abdomcentesis total protein. 
+\item{abdomcentesis_protein}{abdomcentesis total protein.
 The higher the level of protein the more likely it is to have a compromised gut. Values are in gms/dL }
 \item{outcome}{What eventually happened to the horse? }
 \item{surgical_lesion}{retrospectively, was the problem (lesion) surgical?}
@@ -51,14 +51,14 @@ The higher the level of protein the more likely it is to have a compromised gut.
 \source{
 \url{https://archive.ics.uci.edu/ml/datasets/Horse+Colic}
 Creators: Mary McLeish & Matt Cecile, Department of Computer Science, University of Guelph,
-Guelph, Ontario, Canada N1G 2W1 
+Guelph, Ontario, Canada N1G 2W1
 Donor: Will Taylor
 }
 \description{
-This is a modified version of the original training data set 
-taken from the UCI repository, see reference. 
-The modifications are only related to having appropriate levels for factor variables.   
-This data set is about horse diseases where the task is to determine, 
+This is a modified version of the original training data set
+taken from the UCI repository, see reference.
+The modifications are only related to having appropriate levels for factor variables.
+This data set is about horse diseases where the task is to determine,
 if the lesion of the horse was surgical or not.
 }
 \examples{

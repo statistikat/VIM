@@ -15,13 +15,13 @@
 #' each variable.  Even more interesting, there may be certain combinations of
 #' variables with a high number of missing/imputed values.
 #' 
-#' If \code{combined} is \code{FALSE}, two separate plots are drawn for the
+#' If `combined` is `FALSE`, two separate plots are drawn for the
 #' missing/imputed values in each variable and the combinations of
 #' missing/imputed and non-missing values. The barplot on the left hand side
 #' shows the amount of missing/imputed values in each variable.  In the
-#' \emph{aggregation plot} on the right hand side, all existing combinations of
+#' *aggregation plot* on the right hand side, all existing combinations of
 #' missing/imputed and non-missing values in the observations are visualized.
-#' Available, missing and imputed data are color coded as given by \code{col}.
+#' Available, missing and imputed data are color coded as given by `col`.
 #' Additionally, there are two possibilities to represent the frequencies of
 #' occurrence of the different combinations.  The first option is to visualize
 #' the proportions or frequencies by a small bar plot and/or numbers.  The
@@ -31,45 +31,45 @@
 #' occurrence to give more power to finding the structure of missing/imputed
 #' values.
 #' 
-#' If \code{combined} is \code{TRUE}, a small version of the barplot showing
+#' If `combined` is `TRUE`, a small version of the barplot showing
 #' the amount of missing/imputed values in each variable is drawn on top of the
 #' aggregation plot.
 #' 
-#' The graphical parameter \code{oma} will be set unless supplied as an
+#' The graphical parameter `oma` will be set unless supplied as an
 #' argument.
 #' 
 #' @aliases aggr plot.aggr print.aggr summary.aggr print.summary.aggr
-#' @param x a vector, matrix or \code{data.frame}.
+#' @param x a vector, matrix or `data.frame`.
 #' @param delimiter a character-vector to distinguish between variables and
-#' imputation-indices for imputed variables (therefore, \code{x} needs to have
-#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-indices for imputed variables (therefore, `x` needs to have
+#' [colnames()]). If given, it is used to determine the corresponding
 #' imputation-index for any imputed variable (a logical-vector indicating which
 #' values of the variable have been imputed). If such imputation-indices are
 #' found, they are used for highlighting and the colors are adjusted according
-#' to the given colors for imputed variables (see \code{col}).
+#' to the given colors for imputed variables (see `col`).
 #' 
-#' @return for \code{aggr}, a list of class \code{"aggr"} containing the
+#' @return for `aggr`, a list of class `"aggr"` containing the
 #' following components:
 #' - x the data used.
 #' - combinations a character vector representing the combinations of
 #' variables.
 #' -  count the frequencies of these combinations.
 #' -  percent the percentage of these combinations.
-#' -  missings a \code{data.frame} containing the amount of
+#' -  missings a `data.frame` containing the amount of
 #' missing/imputed values in each variable.
 #' -  tabcomb the indicator matrix for the combinations of variables.
 #' @note Some of the argument names and positions have changed with version 1.3
 #' due to extended functionality and for more consistency with other plot
-#' functions in \code{VIM}.  For back compatibility, the arguments \code{labs}
-#' and \code{names.arg} can still be supplied to \code{\dots{}} and are handled
+#' functions in `VIM`.  For back compatibility, the arguments `labs`
+#' and `names.arg` can still be supplied to \code{\dots{}} and are handled
 #' correctly.  Nevertheless, they are deprecated and no longer documented.  Use
-#' \code{ylabs} and \code{labels} instead.
+#' `ylabs` and `labels` instead.
 #' @author Andreas Alfons, Matthias Templ, modifications for displaying imputed
 #' values by Bernd Prantner
-#' @seealso \code{\link{print.aggr}}, \code{\link{summary.aggr}}
+#' @seealso [print.aggr()], [summary.aggr()]
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
-#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @examples
 #' 
@@ -182,7 +182,7 @@ aggr_work <- function(x, delimiter = NULL, plot = TRUE, ...) {
 #' @rdname aggr
 #' @method plot aggr
 #' @param plot a logical indicating whether the results should be plotted (the
-#' default is \code{TRUE}).
+#' default is `TRUE`).
 #' @param col a vector of length three giving the colors to be used for
 #' observed, missing and imputed data. If only one color is supplied, it is
 #' used for missing and imputed data and observed data is transparent. If only
@@ -195,8 +195,8 @@ aggr_work <- function(x, delimiter = NULL, plot = TRUE, ...) {
 #' @param prop a logical indicating whether the proportion of missing/imputed
 #' values and combinations should be used rather than the total amount.
 #' @param combined a logical indicating whether the two plots should be
-#' combined.  If \code{FALSE}, a separate barplot on the left hand side shows
-#' the amount of missing/imputed values in each variable.  If \code{TRUE}, a
+#' combined.  If `FALSE`, a separate barplot on the left hand side shows
+#' the amount of missing/imputed values in each variable.  If `TRUE`, a
 #' small version of this barplot is drawn on top of the plot for the
 #' combinations of missing/imputed and non-missing values.  See
 #' \dQuote{Details} for more information.
@@ -204,18 +204,18 @@ aggr_work <- function(x, delimiter = NULL, plot = TRUE, ...) {
 #' the frequencies of occurrence of the corresponding combinations.
 #' @param only.miss a logical indicating whether the small barplot for the
 #' frequencies of the combinations should only be drawn for combinations
-#' including missing/imputed values (if \code{bars} is \code{TRUE}).  This is
+#' including missing/imputed values (if `bars` is `TRUE`).  This is
 #' useful if most observations are complete, in which case the corresponding
 #' bar would dominate the barplot such that the remaining bars are too
 #' compressed.  The proportion or frequency of complete observations (as
-#' determined by \code{prop}) is then represented by a number instead of a bar.
+#' determined by `prop`) is then represented by a number instead of a bar.
 #' @param border the color to be used for the border of the bars and
-#' rectangles.  Use \code{border=NA} to omit borders.
+#' rectangles.  Use `border=NA` to omit borders.
 #' @param sortVars a logical indicating whether the variables should be sorted
 #' by the number of missing/imputed values.
 #' @param sortCombs a logical indicating whether the combinations should be
 #' sorted by the frequency of occurrence.
-#' @param ylabs if \code{combined} is \code{TRUE}, a character string giving
+#' @param ylabs if `combined` is `TRUE`, a character string giving
 #' the y-axis label of the combined plot, otherwise a character vector of
 #' length two giving the y-axis labels for the two plots.
 #' @param axes a logical indicating whether axes should be drawn.
@@ -227,13 +227,13 @@ aggr_work <- function(x, delimiter = NULL, plot = TRUE, ...) {
 #' annotation.
 #' @param cex.numbers the character expansion factor to be used for the
 #' proportion or frequencies of the different combinations
-#' @param gap if \code{combined} is \code{FALSE}, a numeric value giving the
+#' @param gap if `combined` is `FALSE`, a numeric value giving the
 #' distance between the two plots in margin lines.
-#' @param \dots for \code{aggr} and \code{TKRaggr}, further arguments and
-#' graphical parameters to be passed to \code{\link{plot.aggr}}.  For
-#' \code{plot.aggr}, further graphical parameters to be passed down.
-#' \code{par("oma")} will be set appropriately unless supplied (see
-#' \code{\link[graphics]{par}}).
+#' @param \dots for `aggr` and `TKRaggr`, further arguments and
+#' graphical parameters to be passed to [plot.aggr()].  For
+#' `plot.aggr`, further graphical parameters to be passed down.
+#' `par("oma")` will be set appropriately unless supplied (see
+#' [graphics::par()]).
 #' @export 
 plot.aggr <- function(x, col = c("skyblue","red","orange"), bars = TRUE, 
 		numbers = FALSE, prop = TRUE, combined = FALSE, varheight = FALSE, 
@@ -543,13 +543,13 @@ plot.aggr <- function(x, col = c("skyblue","red","orange"), bars = TRUE,
 
 #' Print method for objects of class aggr
 #' 
-#' Print method for objects of class \code{"aggr"}.
+#' Print method for objects of class `"aggr"`.
 #' 
 #' 
 #' @param digits the minimum number of significant digits to be used (see
-#' \code{\link{print.default}}).
+#' [print.default()]).
 #' @author Matthias Templ, modifications by Andreas Alfons and Bernd Prantner
-#' @seealso \code{\link{aggr}}
+#' @seealso [aggr()]
 #' @keywords print
 #' @examples
 #' 
@@ -575,19 +575,19 @@ print.aggr <- function(x, ..., digits = NULL) {
 
 #' Summary method for objects of class aggr
 #' 
-#' Summary method for objects of class \code{"aggr"}.
+#' Summary method for objects of class `"aggr"`.
 #' 
 #' 
-#' @param object an object of class \code{"aggr"}.
-#' @return a list of class \code{"summary.aggr"} containing the following
+#' @param object an object of class `"aggr"`.
+#' @return a list of class `"summary.aggr"` containing the following
 #' components:
-#' -  missings a \code{data.frame} containing the amount of missing or
+#' -  missings a `data.frame` containing the amount of missing or
 #' imputed values in each variable.
-#' -  combinations a \code{data.frame} containing a character vector
+#' -  combinations a `data.frame` containing a character vector
 #' representing the combinations of variables along with their frequencies and
 #' percentages.
 #' @author Matthias Templ, modifications by Andreas Alfons
-#' @seealso \code{\link{print.summary.aggr}}, \code{\link{aggr}}
+#' @seealso [print.summary.aggr()], [aggr()]
 #' @keywords print
 #' @examples
 #' 
@@ -609,13 +609,13 @@ summary.aggr <- function(object, ...) {
 
 #' Print method for objects of class summary.aggr
 #' 
-#' Print method for objects of class \code{"summary.aggr"}.
+#' Print method for objects of class `"summary.aggr"`.
 #' 
 #' 
-#' @param x an object of class \code{"summary.aggr"}.
+#' @param x an object of class `"summary.aggr"`.
 #' @param \dots Further arguments, currently ignored.
 #' @author Andreas Alfons, modifications by Bernd Prantner
-#' @seealso \code{\link{summary.aggr}}, \code{\link{aggr}}
+#' @seealso [summary.aggr()], [aggr()]
 #' @keywords print
 #' @examples
 #' 

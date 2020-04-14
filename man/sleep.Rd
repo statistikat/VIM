@@ -13,7 +13,7 @@ numeric vector} \item{Pred}{a numeric vector} \item{Exp}{a
 numeric vector} \item{Danger}{a numeric vector} }}
 \source{
 Allison, T. and Chichetti, D. (1976) Sleep in mammals: ecological
-and constitutional correlates. \emph{Science} \bold{194 (4266)}, 732--734.
+and constitutional correlates. \emph{Science} \strong{194 (4266)}, 732--734.
 
 The data set was imported from \code{GGobi}.
 }

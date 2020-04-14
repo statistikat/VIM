@@ -17,7 +17,7 @@ mentioned types can also be provided.}
 already existing plot (the default is \code{FALSE}).}
 
 \item{\dots}{further arguments and graphical parameters to be passed to
-\code{plot} and/or \code{\link[graphics]{lines}}.}
+\code{plot} and/or \code{\link[graphics:lines]{graphics::lines()}}.}
 }
 \description{
 Plot a background map.
@@ -34,7 +34,7 @@ data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-\code{\link{growdotMiss}}, \code{\link{mapMiss}}
+\code{\link[=growdotMiss]{growdotMiss()}}, \code{\link[=mapMiss]{mapMiss()}}
 }
 \author{
 Andreas Alfons

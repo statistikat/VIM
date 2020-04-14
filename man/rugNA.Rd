@@ -37,7 +37,7 @@ values in \code{y}.}
 
 \item{lwd}{the line width to be used for the ticks.}
 
-\item{\dots}{further arguments to be passed to \code{\link[graphics]{Axis}}.}
+\item{\dots}{further arguments to be passed to \code{\link[graphics:Axis]{graphics::Axis()}}.}
 }
 \description{
 Add a rug representation of missing/imputed values in only one of the

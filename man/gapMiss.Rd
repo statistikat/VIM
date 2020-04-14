@@ -9,7 +9,7 @@ gapMiss(x, what = mean)
 \arguments{
 \item{x}{a numeric vector}
 
-\item{what}{default is the arithmetic mean. 
+\item{what}{default is the arithmetic mean.
 One can include an own function that returns a vector of lenght 1 (e.g. median)}
 }
 \value{
@@ -19,7 +19,7 @@ The gap statistics
 Computes the average missing value gap of a vector.
 }
 \details{
-The length of each sequence of missing values (gap) in a vector is calculated and the 
+The length of each sequence of missing values (gap) in a vector is calculated and the
 mean gap is reported
 }
 \examples{

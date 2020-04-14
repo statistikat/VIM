@@ -58,11 +58,11 @@ prepare (x, scaling = c("none","classical","MCD","robust","onestep"),
 \code{"alr"}.}
 
 \item{alpha}{a numeric parameter controlling the size of the subset for the
-\emph{MCD} (if \code{scaling="MCD"}). See \code{\link[robustbase]{covMcd}}.}
+\emph{MCD} (if \code{scaling="MCD"}). See \code{\link[robustbase:covMcd]{robustbase::covMcd()}}.}
 
 \item{powers}{a numeric vector giving the powers to be used in the Box-Cox
 transformation (if \code{transformation="boxcox"}).  If \code{NULL}, the
-powers are calculated with function \code{\link[car]{powerTransform}}.}
+powers are calculated with function \code{\link[car:powerTransform]{car::powerTransform()}}.}
 
 \item{start}{a constant to be added prior to Box-Cox transformation (if
 \code{transformation="boxcox"}).}
@@ -78,21 +78,21 @@ This function is used by the \code{VIM} GUI for transformation and
 standardization of the data.
 }
 \details{
-\bold{Transformation}:
+\strong{Transformation}:
 
 \code{"none"}: no transformation is used.
 
 \code{"logarithm"}: compute the the logarithm (to the base 10).
 
 \code{"boxcox"}: apply a Box-Cox transformation. Powers may be specified or
-calculated with the function \code{\link[car]{powerTransform}}.
+calculated with the function \code{\link[car:powerTransform]{car::powerTransform()}}.
 
-\bold{Standardization}:
+\strong{Standardization}:
 
 \code{"none"}: no standardization is used.
 
 \code{"classical"}: apply a \emph{z}-Transformation on each variable by
-using function \code{\link{scale}}.
+using function \code{\link[=scale]{scale()}}.
 
 \code{"robust"}: apply a robustified \emph{z}-Transformation by using median
 and MAD.
@@ -105,7 +105,7 @@ prepare(x, scaling = "robust", transformation = "logarithm")
 
 }
 \seealso{
-\code{\link{scale}}, \code{\link[car]{powerTransform}}
+\code{\link[=scale]{scale()}}, \code{\link[car:powerTransform]{car::powerTransform()}}
 }
 \author{
 Matthias Templ, modifications by Andreas Alfons

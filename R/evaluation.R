@@ -12,8 +12,8 @@
 #' @return the error measures value
 #' @author Matthias Templ
 #' @references M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
-#' regression imputation using standard and robust methods.  \emph{Journal of
-#' Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
+#' regression imputation using standard and robust methods.  *Journal of
+#' Computational Statistics and Data Analysis*, Vol. 55, pp. 2793-2806.
 #' 
 # seealso \code{\link{robCompositions::rdcm}}
 #' @details This function has been mainly written for procudures 

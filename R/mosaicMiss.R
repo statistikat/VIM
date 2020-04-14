@@ -17,45 +17,45 @@
 #' variable or combination of variables can be highlighted in order to explore
 #' their structure.
 #' 
-#' @param x a matrix or \code{data.frame}.
+#' @param x a matrix or `data.frame`.
 #' @param delimiter a character-vector to distinguish between variables and
-#' imputation-indices for imputed variables (therefore, \code{x} needs to have
-#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-indices for imputed variables (therefore, `x` needs to have
+#' [colnames()]). If given, it is used to determine the corresponding
 #' imputation-index for any imputed variable (a logical-vector indicating which
 #' values of the variable have been imputed). If such imputation-indices are
 #' found, they are used for highlighting and the colors are adjusted according
-#' to the given colors for imputed variables (see \code{col}).
+#' to the given colors for imputed variables (see `col`).
 #' @param highlight a vector giving the variables to be used for highlighting.
-#' If \code{NULL} (the default), all variables are used for highlighting.
+#' If `NULL` (the default), all variables are used for highlighting.
 #' @param selection the selection method for highlighting missing/imputed
-#' values in multiple highlight variables.  Possible values are \code{"any"}
-#' (highlighting of missing/imputed values in \emph{any} of the highlight
-#' variables) and \code{"all"} (highlighting of missing/imputed values in
-#' \emph{all} of the highlight variables).
+#' values in multiple highlight variables.  Possible values are `"any"`
+#' (highlighting of missing/imputed values in *any* of the highlight
+#' variables) and `"all"` (highlighting of missing/imputed values in
+#' *all* of the highlight variables).
 #' @param plotvars a vector giving the categorical variables to be plotted.  If
-#' \code{NULL} (the default), all variables are plotted.
+#' `NULL` (the default), all variables are plotted.
 #' @param col a vector of length three giving the colors to be used for
 #' observed, missing and imputed data. If only one color is supplied, the tiles
 #' corresponding to observed data are transparent and the supplied color is
 #' used for highlighting.
 #' @param labels a list of arguments for the labeling function
-#' \code{\link[vcd]{labeling_border}}.
+#' [vcd::labeling_border()].
 #' @param miss.labels either a logical indicating whether labels should be
 #' plotted for observed and missing/imputed (highlighted) data, or a character
 #' vector giving the labels.
-#' @param \dots additional arguments to be passed to \code{\link[vcd]{mosaic}}.
-#' @return An object of class \code{"structable"} is returned invisibly.
-#' @note This function uses the highly flexible \code{strucplot} framework of
-#' package \code{vcd}.
+#' @param \dots additional arguments to be passed to [vcd::mosaic()].
+#' @return An object of class `"structable"` is returned invisibly.
+#' @note This function uses the highly flexible `strucplot` framework of
+#' package `vcd`.
 #' @author Andreas Alfons, modifications by Bernd Prantner
-#' @seealso \code{\link{spineMiss}}, \code{\link[vcd]{mosaic}}
+#' @seealso [spineMiss()], [vcd::mosaic()]
 #' @references Meyer, D., Zeileis, A. and Hornik, K. (2006) The
-#' \code{strucplot} framework: Visualizing multi-way contingency tables with
-#' \pkg{vcd}. \emph{Journal of Statistical Software}, \bold{17 (3)}, 1--48.
+#' `strucplot` framework: Visualizing multi-way contingency tables with
+#' \pkg{vcd}. *Journal of Statistical Software*, **17 (3)**, 1--48.
 #' 
 #' M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete data using
-#' visualization tools.  \emph{Journal of Advances in Data Analysis and
-#' Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' visualization tools.  *Journal of Advances in Data Analysis and
+#' Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @examples
 #' 

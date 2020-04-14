@@ -5,17 +5,17 @@
 \alias{brittleness}
 \title{Brittleness index data set}
 \format{A data frame with 23 observations on the following 3 variables.
-\describe{ 
-\item{TK104}{Brittleness for batches of raw material in reactor 104} 
-\item{TK105}{Brittleness for batches of raw material in reactor 105} 
+\describe{
+\item{TK104}{Brittleness for batches of raw material in reactor 104}
+\item{TK105}{Brittleness for batches of raw material in reactor 105}
 \item{TK107}{Brittleness for batches of raw material in reactor 107}
 }}
 \source{
 \url{https://openmv.net/info/brittleness-index}
 }
 \description{
-A plastic product is produced in three parallel reactors (TK104, TK105, or TK107). 
-For each row in the dataset, we have the same batch of raw material that was split, and fed to the 3 reactors. 
+A plastic product is produced in three parallel reactors (TK104, TK105, or TK107).
+For each row in the dataset, we have the same batch of raw material that was split, and fed to the 3 reactors.
 These values are the brittleness index for the product produced in the reactor. A simulated data set.
 }
 \examples{

@@ -114,14 +114,14 @@ growdotMiss(
 \item{coords}{a matrix or \code{data.frame} with two columns giving the
 spatial coordinates of the observations.}
 
-\item{map}{a background map to be passed to \code{\link{bgmap}}.}
+\item{map}{a background map to be passed to \code{\link[=bgmap]{bgmap()}}.}
 
 \item{pos}{a numeric value giving the index of the variable determining the
 dot sizes.}
 
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
-\code{\link{colnames}}). If given, it is used to determine the corresponding
+\code{\link[=colnames]{colnames()}}). If given, it is used to determine the corresponding
 imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
@@ -170,13 +170,13 @@ of the legend.}
 \item{ncircles}{the number of circles displayed in the legend.}
 
 \item{ndigits}{the number of digits displayed in the legend.  Note that \
-this is just a suggestion (see \code{\link{format}}).}
+this is just a suggestion (see \code{\link[=format]{format()}}).}
 
 \item{interactive}{a logical indicating whether information about certain
 observations can be displayed interactively (see \sQuote{Details}).}
 
 \item{\dots}{for \code{growdotMiss}, further arguments and graphical
-parameters to be passed to \code{\link{bgmap}}.  For \code{bubbleMiss}, the
+parameters to be passed to \code{\link[=bgmap]{bgmap()}}.  For \code{bubbleMiss}, the
 arguments to be passed to \code{growdotMiss}.}
 }
 \description{
@@ -185,8 +185,8 @@ Observations with missing/imputed values in additional variables are
 highlighted.
 }
 \details{
-The smallest dots correspond to the 10\% quantile and the largest dots to
-the 99\% quantile.  In between, the dots grow exponentially, with \code{exp}
+The smallest dots correspond to the 10\\% quantile and the largest dots to
+the 99\\% quantile.  In between, the dots grow exponentially, with \code{exp}
 defining the shape of the exponential function.  Missings/imputed missings
 in the variable of interest will be drawn as rectangles.
 
@@ -223,8 +223,8 @@ data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-\code{\link{bgmap}}, \code{\link{mapMiss}},
-\code{\link{colormapMiss}}
+\code{\link[=bgmap]{bgmap()}}, \code{\link[=mapMiss]{mapMiss()}},
+\code{\link[=colormapMiss]{colormapMiss()}}
 }
 \author{
 Andreas Alfons, Matthias Templ, Peter Filzmoser, Bernd Prantner

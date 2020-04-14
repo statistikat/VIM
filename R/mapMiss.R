@@ -10,30 +10,30 @@
 #' 
 #' Map of observed and missing/imputed values.
 #' 
-#' If \code{interactive=TRUE}, detailed information for an observation can be
+#' If `interactive=TRUE`, detailed information for an observation can be
 #' printed on the console by clicking on the corresponding point.  Clicking in
 #' a region that does not contain any points quits the interactive session.
 #' 
-#' @param x a vector, matrix or \code{data.frame}.
-#' @param coords a \code{data.frame} or matrix with two columns giving the
+#' @param x a vector, matrix or `data.frame`.
+#' @param coords a `data.frame` or matrix with two columns giving the
 #' spatial coordinates of the observations.
-#' @param map a background map to be passed to \code{\link{bgmap}}.
+#' @param map a background map to be passed to [bgmap()].
 #' @param delimiter a character-vector to distinguish between variables and
-#' imputation-indices for imputed variables (therefore, \code{x} needs to have
-#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-indices for imputed variables (therefore, `x` needs to have
+#' [colnames()]). If given, it is used to determine the corresponding
 #' imputation-index for any imputed variable (a logical-vector indicating which
 #' values of the variable have been imputed). If such imputation-indices are
 #' found, they are used for highlighting and the colors are adjusted according
-#' to the given colors for imputed variables (see \code{col}).
+#' to the given colors for imputed variables (see `col`).
 #' @param selection the selection method for displaying missing/imputed values
-#' in the map.  Possible values are \code{"any"} (display missing/imputed
-#' values in \emph{any} variable) and \code{"all"} (display missing/imputed
-#' values in \emph{all} variables).
+#' in the map.  Possible values are `"any"` (display missing/imputed
+#' values in *any* variable) and `"all"` (display missing/imputed
+#' values in *all* variables).
 #' @param col a vector of length three giving the colors to be used for
 #' observed, missing and imputed values.  If a single color is supplied, it is
 #' used for all values.
 #' @param alpha a numeric value between 0 and 1 giving the level of
-#' transparency of the colors, or \code{NULL}.  This can be used to prevent
+#' transparency of the colors, or `NULL`.  This can be used to prevent
 #' overplotting.
 #' @param pch a vector of length two giving the plot characters to be used for
 #' observed and missing/imputed values.  If a single plot character is
@@ -43,13 +43,13 @@
 #' @param interactive a logical indicating whether information about selected
 #' observations can be displayed interactively (see \sQuote{Details}).
 #' @param \dots further graphical parameters to be passed to
-#' \code{\link{bgmap}} and \code{\link[graphics]{points}}.
+#' [bgmap()] and [graphics::points()].
 #' @author Matthias Templ, Andreas Alfons, modifications by Bernd Prantner
-#' @seealso \code{\link{bgmap}}, \code{\link{bubbleMiss}},
-#' \code{\link{colormapMiss}}
+#' @seealso [bgmap()], [bubbleMiss()],
+#' [colormapMiss()]
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
-#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @examples
 #' 

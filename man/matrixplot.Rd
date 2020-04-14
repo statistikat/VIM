@@ -90,7 +90,7 @@ matrixplot(
 
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
-\code{\link{colnames}}). If given, it is used to determine the corresponding
+\code{\link[=colnames]{colnames()}}). If given, it is used to determine the corresponding
 imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
@@ -100,9 +100,9 @@ to the given colors for imputed variables (see \code{col}).}
 the data matrix by, or \code{NULL} to plot without sorting.}
 
 \item{col}{the colors to be used in the plot.  RGB colors may be specified
-as character strings or as objects of class "\code{\link[colorspace]{RGB}}".
+as character strings or as objects of class "\code{\link[colorspace:RGB]{colorspace::RGB()}}".
 HCL colors need to be specified as objects of class
-"\code{\link[colorspace]{polarLUV}}".  If only one color is supplied, it is
+"\code{\link[colorspace:polarLUV]{colorspace::polarLUV()}}".  If only one color is supplied, it is
 used for missing and imputed data and a greyscale is used for available
 data. If two colors are supplied, the first is used for missing and the
 second for imputed data and a greyscale for available data.  If three colors
@@ -114,7 +114,7 @@ as end color for the available data, while the third/fourth color is used
 for missing/imputed data.}
 
 \item{fixup}{a logical indicating whether the colors should be corrected to
-valid RGB values (see \code{\link[colorspace]{hex}}).}
+valid RGB values (see \code{\link[colorspace:hex]{colorspace::hex()}}).}
 
 \item{xlim, ylim}{axis limits.}
 
@@ -135,8 +135,8 @@ unless axis limits are specified.}
 sorting can be selected interactively (see \sQuote{Details}).}
 
 \item{\dots}{for \code{matrixplot} and \code{iimagMiss}, further graphical
-parameters to be passed to \code{\link[graphics]{plot.window}},
-\code{\link[graphics]{title}} and \code{\link[graphics]{axis}}.  For
+parameters to be passed to \code{\link[graphics:plot.window]{graphics::plot.window()}},
+\code{\link[graphics:title]{graphics::title()}} and \code{\link[graphics:axis]{graphics::axis()}}.  For
 \code{TKRmatrixplot}, further arguments to be passed to \code{matrixplot}.}
 }
 \description{

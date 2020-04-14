@@ -26,8 +26,8 @@
 #' @return the imputed data set.
 #' @author Alexander Kowarik
 #' @references A. Kowarik, M. Templ (2016) Imputation with
-#' R package VIM.  \emph{Journal of
-#' Statistical Software}, 74(7), 1-16.
+#' R package VIM.  *Journal of
+#' Statistical Software*, 74(7), 1-16.
 #' @keywords manip
 #' @examples
 #' 

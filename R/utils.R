@@ -94,8 +94,8 @@ isImp <- function(x, pos, delimiter, imp_var, selection = c("none","any","all"))
 #' 
 #' @aliases countInf countNA
 #' @param x a vector.
-#' @return  \code{countInf} returns the number of infinite values in \code{x}.
-#' \code{countNA} returns the number of missing values in \code{x}.
+#' @return  `countInf` returns the number of infinite values in `x`.
+#' `countNA` returns the number of missing values in `x`.
 #' @author Andreas Alfons
 #' @keywords utilities
 #' @examples

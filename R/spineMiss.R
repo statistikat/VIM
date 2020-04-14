@@ -22,7 +22,7 @@
 #' observations, it is now possible to compare the proportions of
 #' missing/imputed values among the different categories/classes.
 #' 
-#' If \code{only.miss=TRUE}, the missing/imputed values in the variable of
+#' If `only.miss=TRUE`, the missing/imputed values in the variable of
 #' interest are also visualized by a cell in the spine plot or spinogram.  If
 #' additional variables are supplied, this cell is again split into two parts
 #' according to missingness/number if imputed values in the additional
@@ -34,38 +34,38 @@
 #' values.  Each of the two cells is again split into two parts according to
 #' missingness/number of imputed values in the additional variables.  Note that
 #' this display does not make sense if only one variable is supplied, therefore
-#' \code{only.miss} is ignored in that case.
+#' `only.miss` is ignored in that case.
 #' 
-#' If \code{interactive=TRUE}, clicking in the left margin of the plot results
+#' If `interactive=TRUE`, clicking in the left margin of the plot results
 #' in switching to the previous variable and clicking in the right margin
 #' results in switching to the next variable.  Clicking anywhere else on the
 #' graphics device quits the interactive session.
 #' 
-#' @param x a vector, matrix or \code{data.frame}.
+#' @param x a vector, matrix or `data.frame`.
 #' @param delimiter a character-vector to distinguish between variables and
-#' imputation-indices for imputed variables (therefore, \code{x} needs to have
-#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-indices for imputed variables (therefore, `x` needs to have
+#' [colnames()]). If given, it is used to determine the corresponding
 #' imputation-index for any imputed variable (a logical-vector indicating which
 #' values of the variable have been imputed). If such imputation-indices are
 #' found, they are used for highlighting and the colors are adjusted according
-#' to the given colors for imputed variables (see \code{col}).
+#' to the given colors for imputed variables (see `col`).
 #' @param pos a numeric value giving the index of the variable of interest.
-#' Additional variables in \code{x} are used for highlighting.
+#' Additional variables in `x` are used for highlighting.
 #' @param selection the selection method for highlighting missing/imputed
-#' values in multiple additional variables.  Possible values are \code{"any"}
-#' (highlighting of missing/imputed values in \emph{any} of the additional
-#' variables) and \code{"all"} (highlighting of missing/imputed values in
-#' \emph{all} of the additional variables).
-#' @param breaks if the variable of interest is numeric, \code{breaks} controls
-#' the breakpoints (see \code{\link[graphics]{hist}} for possible values).
-#' @param right logical; if \code{TRUE} and the variable of interest is
+#' values in multiple additional variables.  Possible values are `"any"`
+#' (highlighting of missing/imputed values in *any* of the additional
+#' variables) and `"all"` (highlighting of missing/imputed values in
+#' *all* of the additional variables).
+#' @param breaks if the variable of interest is numeric, `breaks` controls
+#' the breakpoints (see [graphics::hist()] for possible values).
+#' @param right logical; if `TRUE` and the variable of interest is
 #' numeric, the spinogram cells are right-closed (left-open) intervals.
 #' @param col a vector of length six giving the colors to be used. If only one
 #' color is supplied, the bars are transparent and the supplied color is used
 #' for highlighting missing/imputed values.  Else if two colors are supplied,
 #' they are recycled.
 #' @param border the color to be used for the border of the cells.  Use
-#' \code{border=NA} to omit borders.
+#' `border=NA` to omit borders.
 #' @param main,sub main and sub title.
 #' @param xlab,ylab axis labels.
 #' @param axes a logical indicating whether axes should be drawn on the plot.
@@ -73,7 +73,7 @@
 #' indicating whether labels should be plotted below each cell, or a character
 #' vector giving the labels.  This is ignored if the variable of interest is
 #' numeric.
-#' @param only.miss logical; if \code{TRUE}, the missing/imputed values in the
+#' @param only.miss logical; if `TRUE`, the missing/imputed values in the
 #' variable of interest are also visualized by a cell in the spineplot or
 #' spinogram.  Otherwise, a small spineplot is drawn on the right hand side
 #' (see \sQuote{Details}).
@@ -83,23 +83,23 @@
 #' @param interactive a logical indicating whether the variables can be
 #' switched interactively (see \sQuote{Details}).
 #' @param \dots further graphical parameters to be passed to
-#' \code{\link[graphics]{title}} and \code{\link[graphics]{axis}}.
+#' [graphics::title()] and [graphics::axis()].
 #' @return a table containing the frequencies corresponding to the cells.
 #' @note Some of the argument names and positions have changed with version 1.3
 #' due to extended functionality and for more consistency with other plot
-#' functions in \code{VIM}.  For back compatibility, the arguments
-#' \code{xaxlabels} and \code{missaxlabels} can still be supplied to
+#' functions in `VIM`.  For back compatibility, the arguments
+#' `xaxlabels` and `missaxlabels` can still be supplied to
 #' \code{\dots{}} and are handled correctly.  Nevertheless, they are deprecated
-#' and no longer documented.  Use \code{labels} and \code{miss.labels} instead.
+#' and no longer documented.  Use `labels` and `miss.labels` instead.
 #' 
-#' The code is based on the function \code{\link[graphics]{spineplot}} by Achim
+#' The code is based on the function [graphics::spineplot()] by Achim
 #' Zeileis.
 #' @author Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
-#' @seealso \code{\link{histMiss}}, \code{\link{barMiss}},
-#' \code{\link{mosaicMiss}}
+#' @seealso [histMiss()], [barMiss()],
+#' [mosaicMiss()]
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
-#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @examples
 #' 

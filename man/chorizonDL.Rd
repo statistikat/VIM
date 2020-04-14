@@ -68,13 +68,13 @@ numeric vector} \item{Si_XRF}{a numeric vector}
 Kola Project (1993-1998)
 }
 \description{
-This data set is the same as the \code{\link[mvoutlier]{chorizon}} data set
+This data set is the same as the \code{\link[mvoutlier:chorizon]{mvoutlier::chorizon()}} data set
 in package \code{mvoutlier}, except that values below the detection limit
 are coded as \code{NA}.
 }
 \note{
 For a more detailed description of this data set, see
-\code{\link[mvoutlier]{chorizon}} in package \code{mvoutlier}.
+\code{\link[mvoutlier:chorizon]{mvoutlier::chorizon()}} in package \code{mvoutlier}.
 }
 \examples{
 
@@ -88,6 +88,6 @@ Reimann, C., Filzmoser, P., Garrett, R.G. and Dutter, R. (2008)
 with R}. Wiley.
 }
 \seealso{
-\code{\link[mvoutlier]{chorizon}}
+\code{\link[mvoutlier:chorizon]{mvoutlier::chorizon()}}
 }
 \keyword{datasets}

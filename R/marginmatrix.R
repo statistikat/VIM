@@ -11,20 +11,20 @@
 #' Create a scatterplot matrix with information about missing/imputed values in
 #' the plot margins of each panel.
 #' 
-#' \code{marginmatrix} uses \code{\link{pairsVIM}} with a panel function based
-#' on \code{\link{marginplot}}.
+#' `marginmatrix` uses [pairsVIM()] with a panel function based
+#' on [marginplot()].
 #' 
-#' The graphical parameter \code{oma} will be set unless supplied as an
+#' The graphical parameter `oma` will be set unless supplied as an
 #' argument.
 #' 
-#' @param x a matrix or \code{data.frame}.
+#' @param x a matrix or `data.frame`.
 #' @param delimiter a character-vector to distinguish between variables and
-#' imputation-indices for imputed variables (therefore, \code{x} needs to have
-#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-indices for imputed variables (therefore, `x` needs to have
+#' [colnames()]). If given, it is used to determine the corresponding
 #' imputation-index for any imputed variable (a logical-vector indicating which
 #' values of the variable have been imputed). If such imputation-indices are
 #' found, they are used for highlighting and the colors are adjusted according
-#' to the given colors for imputed variables (see \code{col}).
+#' to the given colors for imputed variables (see `col`).
 #' @param col a vector of length five giving the colors to be used in the
 #' marginplots in the off-diagonal panels.  The first color is used for the
 #' scatterplot and the boxplots for the available data, the second/fourth color
@@ -36,17 +36,17 @@
 #' whereas the boxplots for the available data are transparent.  Else if two
 #' colors are supplied, the second one is recycled.
 #' @param alpha a numeric value between 0 and 1 giving the level of
-#' transparency of the colors, or \code{NULL}.  This can be used to prevent
+#' transparency of the colors, or `NULL`.  This can be used to prevent
 #' overplotting.
 #' @param \dots further arguments and graphical parameters to be passed to
-#' \code{\link{pairsVIM}} and \code{\link{marginplot}}.  \code{par("oma")} will
-#' be set appropriately unless supplied (see \code{\link[graphics]{par}}).
+#' [pairsVIM()] and [marginplot()].  `par("oma")` will
+#' be set appropriately unless supplied (see [graphics::par()]).
 #' @author Andreas Alfons, modifications by Bernd Prantner
-#' @seealso \code{\link{marginplot}}, \code{\link{pairsVIM}},
-#' \code{\link{scattmatrixMiss}}
+#' @seealso [marginplot()], [pairsVIM()],
+#' [scattmatrixMiss()]
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
-#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @examples
 #' 

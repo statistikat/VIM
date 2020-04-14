@@ -3,7 +3,7 @@
 #' Location were everything from package VIM and VIMGUI is stored.
 #' 
 #' Internal information regarding the VIM GUI is stored in the environment
-#' \code{vmGUIenvir}.
+#' `vmGUIenvir`.
 #' 
 #' @aliases vmGUIenvir putVm getVm existsVm rmVm
 #' @param x object name
@@ -13,8 +13,8 @@
 #' @author Andreas Alfons, based on an initial design by Matthias Templ,
 #' modifications by Bernd Prantner
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
-#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords multivariate hplot
 #' @rdname vmGUIenvir
 #' @export vmGUIenvir

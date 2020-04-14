@@ -8,49 +8,49 @@
 
 #' Transformation and standardization
 #' 
-#' This function is used by the \code{VIM} GUI for transformation and
+#' This function is used by the `VIM` GUI for transformation and
 #' standardization of the data.
 #' 
 #' 
-#' \bold{Transformation}:
+#' **Transformation**:
 #' 
-#' \code{"none"}: no transformation is used.
+#' `"none"`: no transformation is used.
 #' 
-#' \code{"logarithm"}: compute the the logarithm (to the base 10).
+#' `"logarithm"`: compute the the logarithm (to the base 10).
 #' 
-#' \code{"boxcox"}: apply a Box-Cox transformation. Powers may be specified or
-#' calculated with the function \code{\link[car]{powerTransform}}.
+#' `"boxcox"`: apply a Box-Cox transformation. Powers may be specified or
+#' calculated with the function [car::powerTransform()].
 #' 
-#' \bold{Standardization}:
+#' **Standardization**:
 #' 
-#' \code{"none"}: no standardization is used.
+#' `"none"`: no standardization is used.
 #' 
-#' \code{"classical"}: apply a \emph{z}-Transformation on each variable by
-#' using function \code{\link{scale}}.
+#' `"classical"`: apply a *z*-Transformation on each variable by
+#' using function [scale()].
 #' 
-#' \code{"robust"}: apply a robustified \emph{z}-Transformation by using median
+#' `"robust"`: apply a robustified *z*-Transformation by using median
 #' and MAD.
 #' 
-#' @param x a vector, matrix or \code{data.frame}.
+#' @param x a vector, matrix or `data.frame`.
 #' @param scaling the scaling to be applied to the data.  Possible values are
-#' \code{"none"}, \code{"classical"}, \code{MCD}, \code{"robust"} and
-#' \code{"onestep"}.
+#' `"none"`, `"classical"`, `MCD`, `"robust"` and
+#' `"onestep"`.
 #' @param transformation the transformation of the data.  Possible values are
-#' \code{"none"}, \code{"minus"}, \code{"reciprocal"}, \code{"logarithm"},
-#' \code{"exponential"}, \code{"boxcox"}, \code{"clr"}, \code{"ilr"} and
-#' \code{"alr"}.
+#' `"none"`, `"minus"`, `"reciprocal"`, `"logarithm"`,
+#' `"exponential"`, `"boxcox"`, `"clr"`, `"ilr"` and
+#' `"alr"`.
 #' @param alpha a numeric parameter controlling the size of the subset for the
-#' \emph{MCD} (if \code{scaling="MCD"}). See \code{\link[robustbase]{covMcd}}.
+#' *MCD* (if `scaling="MCD"`). See [robustbase::covMcd()].
 #' @param powers a numeric vector giving the powers to be used in the Box-Cox
-#' transformation (if \code{transformation="boxcox"}).  If \code{NULL}, the
-#' powers are calculated with function \code{\link[car]{powerTransform}}.
+#' transformation (if `transformation="boxcox"`).  If `NULL`, the
+#' powers are calculated with function [car::powerTransform()].
 #' @param start a constant to be added prior to Box-Cox transformation (if
-#' \code{transformation="boxcox"}).
+#' `transformation="boxcox"`).
 #' @param alrVar variable to be used as denominator in the additive logratio
-#' transformation (if \code{transformation="alr"}).
+#' transformation (if `transformation="alr"`).
 #' @return Transformed and standardized data.
 #' @author Matthias Templ, modifications by Andreas Alfons
-#' @seealso \code{\link{scale}}, \code{\link[car]{powerTransform}}
+#' @seealso [scale()], [car::powerTransform()]
 #' @keywords manip
 #' @examples
 #' 

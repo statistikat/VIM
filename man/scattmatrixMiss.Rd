@@ -72,7 +72,7 @@ scattmatrixMiss(
 
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
-\code{\link{colnames}}). If given, it is used to determine the corresponding
+\code{\link[=colnames]{colnames()}}). If given, it is used to determine the corresponding
 imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
@@ -114,8 +114,8 @@ non-highlighted and highlighted observations) and \code{"none"}.}
 highlighting can be selected interactively (see \sQuote{Details}).}
 
 \item{\dots}{for \code{scattmatrixMiss}, further arguments and graphical
-parameters to be passed to \code{\link{pairsVIM}}.  \code{par("oma")} will
-be set appropriately unless supplied (see \code{\link[graphics]{par}}).  For
+parameters to be passed to \code{\link[=pairsVIM]{pairsVIM()}}.  \code{par("oma")} will
+be set appropriately unless supplied (see \code{\link[graphics:par]{graphics::par()}}).  For
 \code{TKRscattmatrixMiss}, further arguments to be passed to
 \code{scattmatrixMiss}.}
 }
@@ -124,7 +124,7 @@ Scatterplot matrix in which observations with missing/imputed values in
 certain variables are highlighted.
 }
 \details{
-\code{scattmatrixMiss} uses \code{\link{pairsVIM}} with a panel function
+\code{scattmatrixMiss} uses \code{\link[=pairsVIM]{pairsVIM()}} with a panel function
 that allows highlighting of missing/imputed values.
 
 If \code{interactive=TRUE}, the variables to be used for highlighting can be
@@ -172,7 +172,7 @@ data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-\code{\link{pairsVIM}}, \code{\link{marginmatrix}}
+\code{\link[=pairsVIM]{pairsVIM()}}, \code{\link[=marginmatrix]{marginmatrix()}}
 }
 \author{
 Andreas Alfons, Matthias Templ, modifications by Bernd Prantner

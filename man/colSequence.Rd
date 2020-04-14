@@ -19,9 +19,9 @@ start color, 1 to the end color).}
 
 \item{start, end}{the start and end color, respectively.  For HCL colors,
 each can be supplied as a vector of length three (hue, chroma, luminance) or
-an object of class "\code{\link[colorspace]{polarLUV}}".  For RGB colors,
+an object of class "\code{\link[colorspace:polarLUV]{colorspace::polarLUV()}}".  For RGB colors,
 each can be supplied as a character string, a vector of length three (red,
-green, blue) or an object of class "\code{\link[colorspace]{RGB}}".}
+green, blue) or an object of class "\code{\link[colorspace:RGB]{colorspace::RGB()}}".}
 
 \item{space}{character string; if \code{start} and \code{end} are both
 numeric, this determines whether they refer to HCL or RGB values.  Possible
@@ -31,10 +31,10 @@ space).}
 \item{\dots}{for \code{colSequence}, additional arguments to be passed to
 \code{colSequenceHCL} or \code{colSequenceRGB}.  For \code{colSequenceHCL}
 and \code{colSequenceRGB}, additional arguments to be passed to
-\code{\link[colorspace]{hex}}.}
+\code{\link[colorspace:hex]{colorspace::hex()}}.}
 
 \item{fixup}{a logical indicating whether the colors should be corrected to
-valid RGB values (see \code{\link[colorspace]{hex}}).}
+valid RGB values (see \code{\link[colorspace:hex]{colorspace::hex()}}).}
 }
 \value{
 A character vector containing hexadecimal strings of the form
@@ -61,11 +61,11 @@ colSequence(p, RGB(1, 1, 0), "red")
 \references{
 Zeileis, A., Hornik, K., Murrell, P. (2009) Escaping RGBland:
 Selecting colors for statistical graphics. \emph{Computational Statistics &
-Data Analysis}, \bold{53 (9)}, 1259--1270.
+Data Analysis}, \strong{53 (9)}, 1259--1270.
 }
 \seealso{
-\code{\link[colorspace]{hex}},
-\code{\link[colorspace]{sequential_hcl}}
+\code{\link[colorspace:hex]{colorspace::hex()}},
+\code{\link[colorspace:sequential_hcl]{colorspace::sequential_hcl()}}
 }
 \author{
 Andreas Alfons

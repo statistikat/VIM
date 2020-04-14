@@ -34,7 +34,7 @@ the error measures value
 Various error measures evaluating the quality of imputations
 }
 \details{
-This function has been mainly written for procudures 
+This function has been mainly written for procudures
 that evaluate imputation or replacement of rounded zeros. The ni parameter can thus, e.g. be
 used for expressing the number of rounded zeros.
 }

@@ -50,13 +50,13 @@
 #' status
 #' @return the imputed data set.
 #' @author Matthias Templ, Alexander Kowarik
-#' @seealso \code{\link[mi]{mi}}
+#' @seealso [mi::mi()]
 #' @references M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
-#' regression imputation using standard and robust methods.  \emph{Journal of
-#' Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
+#' regression imputation using standard and robust methods.  *Journal of
+#' Computational Statistics and Data Analysis*, Vol. 55, pp. 2793-2806.
 #' @references A. Kowarik, M. Templ (2016) Imputation with
-#' R package VIM.  \emph{Journal of
-#' Statistical Software}, 74(7), 1-16.
+#' R package VIM.  *Journal of
+#' Statistical Software*, 74(7), 1-16.
 #' @keywords manip
 #' @examples
 #' 
@@ -640,11 +640,11 @@ Inter.list <- function(A){ # common entries from a list of vectors
 #' Rough estimation of missing values in a vector according to its type.
 #' 
 #' Missing values are imputed with the mean for vectors of class
-#' \code{"numeric"}, with the median for vectors of class \code{"integer"}, and
-#' with the mode for vectors of class \code{"factor"}.  Hence, \code{x} should
-#' be prepared in the following way: assign class \code{"numeric"} to numeric
-#' vectors, assign class \code{"integer"} to ordinal vectors, and assign class
-#' \code{"factor"} to nominal or binary vectors.
+#' `"numeric"`, with the median for vectors of class `"integer"`, and
+#' with the mode for vectors of class `"factor"`.  Hence, `x` should
+#' be prepared in the following way: assign class `"numeric"` to numeric
+#' vectors, assign class `"integer"` to ordinal vectors, and assign class
+#' `"factor"` to nominal or binary vectors.
 #' 
 #' @param x a vector.
 #' @param mixed a character vector containing the names of variables of type

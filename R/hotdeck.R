@@ -38,8 +38,8 @@
 #' @note If the sequential hotdeck does not lead to a suitable,
 #' a random donor in the group will be used.
 #' @references A. Kowarik, M. Templ (2016) Imputation with
-#' R package VIM.  \emph{Journal of
-#' Statistical Software}, 74(7), 1-16.
+#' R package VIM.  *Journal of
+#' Statistical Software*, 74(7), 1-16.
 #' @keywords manip
 #' @examples
 #' 

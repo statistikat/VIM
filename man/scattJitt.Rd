@@ -30,7 +30,7 @@ scattJitt(
 
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
-\code{\link{colnames}}). If given, it is used to determine the corresponding
+\code{\link[=colnames]{colnames()}}). If given, it is used to determine the corresponding
 imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
@@ -52,7 +52,7 @@ overplotting.}
 \item{col.line}{the color for the lines dividing the plot region.}
 
 \item{lty}{the line type for the lines dividing the plot region (see
-\code{\link[graphics]{par}}).}
+\code{\link[graphics:par]{graphics::par()}}).}
 
 \item{lwd}{the line width for the lines dividing the plot region.}
 
@@ -77,7 +77,7 @@ the plot.}
 regions for observed, missing and imputed values (see \sQuote{Details}).}
 
 \item{\dots}{further graphical parameters to be passed down (see
-\code{\link[graphics]{par}}).}
+\code{\link[graphics:par]{graphics::par()}}).}
 }
 \description{
 Create a bivariate jitter plot.

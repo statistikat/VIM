@@ -73,11 +73,11 @@ mapMiss(
 \item{coords}{a \code{data.frame} or matrix with two columns giving the
 spatial coordinates of the observations.}
 
-\item{map}{a background map to be passed to \code{\link{bgmap}}.}
+\item{map}{a background map to be passed to \code{\link[=bgmap]{bgmap()}}.}
 
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
-\code{\link{colnames}}). If given, it is used to determine the corresponding
+\code{\link[=colnames]{colnames()}}). If given, it is used to determine the corresponding
 imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
@@ -108,7 +108,7 @@ supplied, it will be used for both.}
 observations can be displayed interactively (see \sQuote{Details}).}
 
 \item{\dots}{further graphical parameters to be passed to
-\code{\link{bgmap}} and \code{\link[graphics]{points}}.}
+\code{\link[=bgmap]{bgmap()}} and \code{\link[graphics:points]{graphics::points()}}.}
 }
 \description{
 Map of observed and missing/imputed values.
@@ -138,8 +138,8 @@ data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-\code{\link{bgmap}}, \code{\link{bubbleMiss}},
-\code{\link{colormapMiss}}
+\code{\link[=bgmap]{bgmap()}}, \code{\link[=bubbleMiss]{bubbleMiss()}},
+\code{\link[=colormapMiss]{colormapMiss()}}
 }
 \author{
 Matthias Templ, Andreas Alfons, modifications by Bernd Prantner

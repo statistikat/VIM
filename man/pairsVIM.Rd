@@ -27,11 +27,11 @@ pairsVIM(
 
 \item{\dots}{further arguments and graphical parameters to be passed down.
 \code{par("oma")} will be set appropriately unless supplied (see
-\code{\link[graphics]{par}}).}
+\code{\link[graphics:par]{graphics::par()}}).}
 
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
-\code{\link{colnames}}). If given, it is used to determine the corresponding
+\code{\link[=colnames]{colnames()}}). If given, it is used to determine the corresponding
 imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
@@ -70,8 +70,8 @@ lines.}
 Create a scatterplot matrix.
 }
 \details{
-This function is the workhorse for \code{\link{marginmatrix}} and
-\code{\link{scattmatrixMiss}}.
+This function is the workhorse for \code{\link[=marginmatrix]{marginmatrix()}} and
+\code{\link[=scattmatrixMiss]{scattmatrixMiss()}}.
 
 The graphical parameter \code{oma} will be set unless supplied as an
 argument.
@@ -80,7 +80,7 @@ A panel function should not attempt to start a new plot, since the
 coordinate system for each panel is set up by \code{pairsVIM}.
 }
 \note{
-The code is based on \code{\link[graphics]{pairs}}.  Starting with
+The code is based on \code{\link[graphics:pairs]{graphics::pairs()}}.  Starting with
 version 1.4, infinite values are no longer removed before passing the
 \code{x} and \code{y} vectors to the panel functions.
 }
@@ -98,7 +98,7 @@ data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-\code{\link{marginmatrix}}, \code{\link{scattmatrixMiss}}
+\code{\link[=marginmatrix]{marginmatrix()}}, \code{\link[=scattmatrixMiss]{scattmatrixMiss()}}
 }
 \author{
 Andreas Alfons, modifications by Bernd Prantner

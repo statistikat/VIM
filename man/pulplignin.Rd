@@ -12,11 +12,11 @@
 Pulp quality by lignin content remaining
 }
 \details{
-Pulp quality is measured by the lignin content remaining in the pulp: 
-the Kappa number. This data set is used to understand which variables 
-in the process influence the Kappa number, and if it can be predicted 
+Pulp quality is measured by the lignin content remaining in the pulp:
+the Kappa number. This data set is used to understand which variables
+in the process influence the Kappa number, and if it can be predicted
 accurately enough for an inferential sensor application.
-Variables with a number at the end have been lagged by that 
+Variables with a number at the end have been lagged by that
 number of hours to line up the data.
 }
 \examples{
@@ -27,8 +27,8 @@ aggr(pulplignin)
 
 }
 \references{
-K. Walkush and R.R. Gustafson. Application of feedforward neural networks and partial least 
-squares regression for modelling Kappa number in a continuous Kamyr digester", 
+K. Walkush and R.R. Gustafson. Application of feedforward neural networks and partial least
+squares regression for modelling Kappa number in a continuous Kamyr digester",
 Pulp and Paper Canada, 95, 1994, p T7-T13.
 }
 \keyword{datasets}

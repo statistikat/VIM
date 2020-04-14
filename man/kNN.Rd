@@ -145,7 +145,7 @@ kNN(
 \item{dist_var}{names or variables to be used for distance calculation}
 
 \item{weights}{weights for the variables for distance calculation.
-If \code{weights = "auto"} weights will be selected based on variable importance from random forest regression, using function \code{\link[ranger]{ranger}}.
+If \code{weights = "auto"} weights will be selected based on variable importance from random forest regression, using function \code{\link[ranger:ranger]{ranger::ranger()}}.
 Weights are calculated for each variable seperately.}
 
 \item{numFun}{function for aggregating the k Nearest Neighbours in the case
@@ -177,7 +177,7 @@ variable should be created show the imputation status}
 \item{imp_suffix}{suffix for the TRUE/FALSE variables showing the imputation
 status}
 
-\item{addRF}{TRUE/FALSE each variable will be modelled using random forest regression (\code{\link[ranger]{ranger}}) and used as additional distance variable.}
+\item{addRF}{TRUE/FALSE each variable will be modelled using random forest regression (\code{\link[ranger:ranger]{ranger::ranger()}}) and used as additional distance variable.}
 
 \item{onlyRF}{TRUE/FALSE if TRUE only additional distance variables created from random forest regression will be used as distance variables.}
 

@@ -92,7 +92,7 @@ histMiss(
 
 \item{delimiter}{a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, \code{x} needs to have
-\code{\link{colnames}}). If given, it is used to determine the corresponding
+\code{\link[=colnames]{colnames()}}). If given, it is used to determine the corresponding
 imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
@@ -108,7 +108,7 @@ variables) and \code{"all"} (highlighting of missing/imputed values in
 \emph{all} of the additional variables).}
 
 \item{breaks}{either a character string naming an algorithm to compute the
-breakpoints (see \code{\link{hist}}), or a numeric value giving the number
+breakpoints (see \code{\link[=hist]{hist()}}), or a numeric value giving the number
 of cells.}
 
 \item{right}{logical; if \code{TRUE}, the histogram cells are right-closed
@@ -140,14 +140,16 @@ vector giving the label(s) (see \sQuote{Details}).}
 switched interactively (see \sQuote{Details}).}
 
 \item{\dots}{further graphical parameters to be passed to
-\code{\link[graphics]{title}} and \code{\link[graphics]{axis}}.}
+\code{\link[graphics:title]{graphics::title()}} and \code{\link[graphics:axis]{graphics::axis()}}.}
 }
 \value{
 a list with the following components:
-- breaks the breakpoints.
-- counts the number of observations in each cell.
-- missings the number of highlighted observations in each cell.
-- mids the cell midpoints.
+\itemize{
+\item breaks the breakpoints.
+\item counts the number of observations in each cell.
+\item missings the number of highlighted observations in each cell.
+\item mids the cell midpoints.
+}
 }
 \description{
 Histogram with highlighting of missing/imputed values in other variables by
@@ -209,7 +211,7 @@ data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-\code{\link{spineMiss}}, \code{\link{barMiss}}
+\code{\link[=spineMiss]{spineMiss()}}, \code{\link[=barMiss]{barMiss()}}
 }
 \author{
 Andreas Alfons, Bernd Prantner

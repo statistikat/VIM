@@ -223,7 +223,7 @@ R package VIM.  \emph{Journal of
 Statistical Software}, 74(7), 1-16.
 }
 \seealso{
-\code{\link[mi]{mi}}
+\code{\link[mi:mi]{mi::mi()}}
 }
 \author{
 Matthias Templ, Alexander Kowarik

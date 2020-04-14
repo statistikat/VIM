@@ -143,16 +143,16 @@ continuously.}
 
 \item{col}{the color range (start end end) to be used.  RGB colors may be
 specified as character strings or as objects of class
-"\code{\link[colorspace]{RGB}}".  HCL colors need to be specified as objects
-of class "\code{\link[colorspace]{polarLUV}}".  If only one color is
+"\code{\link[colorspace:RGB]{colorspace::RGB()}}".  HCL colors need to be specified as objects
+of class "\code{\link[colorspace:polarLUV]{colorspace::polarLUV()}}".  If only one color is
 supplied, it is used as end color, while the start color is taken to be
 transparent for RGB or white for HCL.}
 
 \item{gamma}{numeric; the display \emph{gamma} value (see
-\code{\link[colorspace]{hex}}).}
+\code{\link[colorspace:hex]{colorspace::hex()}}).}
 
 \item{fixup}{a logical indicating whether the colors should be corrected to
-valid RGB values (see \code{\link[colorspace]{hex}}).}
+valid RGB values (see \code{\link[colorspace:hex]{colorspace::hex()}}).}
 
 \item{coords}{a matrix or \code{data.frame} with two columns giving the
 coordinates for the labels.}
@@ -191,27 +191,29 @@ horizontally or vertically.}
 }
 \value{
 \code{colormapMiss} returns a list with the following components:
-- nmiss a numeric vector containing the number of missing/imputed
+\itemize{
+\item nmiss a numeric vector containing the number of missing/imputed
 values in each region.
-- nobs a numeric vector containing the number of observations in
+\item nobs a numeric vector containing the number of observations in
 each region.
-- pmiss a numeric vector containing the proportion of missing
+\item pmiss a numeric vector containing the proportion of missing
 values in each region.
-- prop a logical indicating whether the proportion of
+\item prop a logical indicating whether the proportion of
 missing/imputed values have been used rather than the total amount.
-- range the range of the proportion or amount of missing/imputed
+\item range the range of the proportion or amount of missing/imputed
 values corresponding to the color range.
-- n either a positive integer giving the number of equally spaced
+\item n either a positive integer giving the number of equally spaced
 cut-off points for a discretized color scheme, or \code{NULL} for a
 continuous color scheme.
-- start the start color of the color scheme.
-- end the end color of the color scheme.
-- space a character string giving the color space (either
+\item start the start color of the color scheme.
+\item end the end color of the color scheme.
+\item space a character string giving the color space (either
 \code{"rgb"} for RGB colors or \code{"hcl"} for HCL colors).
-- gamma numeric; the display \emph{gamma} value (see
-\code{\link[colorspace]{hex}}).
-- fixup a logical indicating whether the colors have been
-corrected to valid RGB values (see \code{\link[colorspace]{hex}}).
+\item gamma numeric; the display \emph{gamma} value (see
+\code{\link[colorspace:hex]{colorspace::hex()}}).
+\item fixup a logical indicating whether the colors have been
+corrected to valid RGB values (see \code{\link[colorspace:hex]{colorspace::hex()}}).
+}
 }
 \description{
 Colored map in which the proportion or amount of missing/imputed values in
@@ -243,8 +245,8 @@ data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
-\code{\link{colSequence}}, \code{\link{growdotMiss}},
-\code{\link{mapMiss}}
+\code{\link[=colSequence]{colSequence()}}, \code{\link[=growdotMiss]{growdotMiss()}},
+\code{\link[=mapMiss]{mapMiss()}}
 }
 \author{
 Andreas Alfons, modifications to show imputed values by Bernd

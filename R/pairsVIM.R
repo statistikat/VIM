@@ -10,29 +10,29 @@
 #' 
 #' Create a scatterplot matrix.
 #' 
-#' This function is the workhorse for \code{\link{marginmatrix}} and
-#' \code{\link{scattmatrixMiss}}.
+#' This function is the workhorse for [marginmatrix()] and
+#' [scattmatrixMiss()].
 #' 
-#' The graphical parameter \code{oma} will be set unless supplied as an
+#' The graphical parameter `oma` will be set unless supplied as an
 #' argument.
 #' 
 #' A panel function should not attempt to start a new plot, since the
-#' coordinate system for each panel is set up by \code{pairsVIM}.
+#' coordinate system for each panel is set up by `pairsVIM`.
 #' 
-#' @param x a matrix or \code{data.frame}.
+#' @param x a matrix or `data.frame`.
 #' @param delimiter a character-vector to distinguish between variables and
-#' imputation-indices for imputed variables (therefore, \code{x} needs to have
-#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-indices for imputed variables (therefore, `x` needs to have
+#' [colnames()]). If given, it is used to determine the corresponding
 #' imputation-index for any imputed variable (a logical-vector indicating which
 #' values of the variable have been imputed). If such imputation-indices are
 #' found, they are used for highlighting and the colors are adjusted according
-#' to the given colors for imputed variables (see \code{col}).
+#' to the given colors for imputed variables (see `col`).
 #' @param main,sub main and sub title.
 #' @param panel a \code{function(x, y, \dots{})}, which is used to plot the
 #' contents of each off-diagonal panel of the display.
 #' @param \dots further arguments and graphical parameters to be passed down.
-#' \code{par("oma")} will be set appropriately unless supplied (see
-#' \code{\link[graphics]{par}}).
+#' `par("oma")` will be set appropriately unless supplied (see
+#' [graphics::par()]).
 #' @param lower,upper separate panel functions to be used below and above the
 #' diagonal, respectively.
 #' @param diagonal optional \code{function(x, \dots{})} to be applied on the
@@ -44,19 +44,19 @@
 #' @param cex.labels the character expansion factor to be used for the labels.
 #' @param font.labels the font to be used for the labels.
 #' @param layout a character string giving the layout of the scatterplot
-#' matrix.  Possible values are \code{"matrix"} (a matrix-like layout with the
-#' first row on top) and \code{"graph"} (a graph-like layout with the first row
+#' matrix.  Possible values are `"matrix"` (a matrix-like layout with the
+#' first row on top) and `"graph"` (a graph-like layout with the first row
 #' at the bottom).
 #' @param gap a numeric value giving the distance between the panels in margin
 #' lines.
-#' @note The code is based on \code{\link[graphics]{pairs}}.  Starting with
+#' @note The code is based on [graphics::pairs()].  Starting with
 #' version 1.4, infinite values are no longer removed before passing the
-#' \code{x} and \code{y} vectors to the panel functions.
+#' `x` and `y` vectors to the panel functions.
 #' @author Andreas Alfons, modifications by Bernd Prantner
-#' @seealso \code{\link{marginmatrix}}, \code{\link{scattmatrixMiss}}
+#' @seealso [marginmatrix()], [scattmatrixMiss()]
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
-#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @examples
 #' 

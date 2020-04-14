@@ -5,17 +5,17 @@
 \alias{wine}
 \title{Wine tasting and price}
 \format{A data frame with 9627 observations on the following 9 variables.
-\describe{ 
-\item{country}{country of origin} 
-\item{points}{the number of points WineEnthusiast rated the wine on a scale of 1-100 
-(though they say they only post reviews for wines that score >=80)} 
-\item{price}{the cost for a bottle of the wine} 
-\item{province}{the province or state that the wine is from} 
-\item{taster_name}{name of the person who tasted and reviewed the wine} 
-\item{taster_twitter_handle}{Twitter handle for the person who tasted ane reviewed the wine} 
-\item{variety}{the type of grapes used to make the wine (ie pinot noir)} 
-\item{winery}{the winery that made the wine} 
-\item{variety_main}{broader category as variety} 
+\describe{
+\item{country}{country of origin}
+\item{points}{the number of points WineEnthusiast rated the wine on a scale of 1-100
+(though they say they only post reviews for wines that score >=80)}
+\item{price}{the cost for a bottle of the wine}
+\item{province}{the province or state that the wine is from}
+\item{taster_name}{name of the person who tasted and reviewed the wine}
+\item{taster_twitter_handle}{Twitter handle for the person who tasted ane reviewed the wine}
+\item{variety}{the type of grapes used to make the wine (ie pinot noir)}
+\item{winery}{the winery that made the wine}
+\item{variety_main}{broader category as variety}
 }}
 \source{
 \url{https://www.kaggle.com/zynicide/wine-reviews}
@@ -24,9 +24,9 @@
 Wine reviews from France, Switzerland, Austria and Germany.
 }
 \details{
-The data was scraped from WineEnthusiast during the week of Nov 22th, 2017. 
-The code for the scraper can be found at https://github.com/zackthoutt/wine-deep-learning 
-This data set is slightly modified, i.e. only four countries are selected and 
+The data was scraped from WineEnthusiast during the week of Nov 22th, 2017.
+The code for the scraper can be found at https://github.com/zackthoutt/wine-deep-learning
+This data set is slightly modified, i.e. only four countries are selected and
 broader categories on the variety have been added.
 }
 \examples{

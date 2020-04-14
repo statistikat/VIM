@@ -22,39 +22,39 @@
 #' observations across the graph.  As a remedy, missing values may be
 #' represented by a point above the corresponding coordinate axis, which is
 #' separated from the main plot by a small gap and a horizontal line, as
-#' determined by \code{plotNA}.  Connected lines can then be drawn for all
+#' determined by `plotNA`.  Connected lines can then be drawn for all
 #' observations.  Nevertheless, a caveat of this display is that it may draw
 #' attention away from the main relationships between the variables.
 #' 
-#' If \code{interactive} is \code{TRUE}, it is possible switch between this
+#' If `interactive` is `TRUE`, it is possible switch between this
 #' display and the standard display without the separate level for missing
 #' values by clicking in the top margin of the plot. In addition, the variables
 #' to be used for highlighting can be selected interactively.  Observations
 #' with missing/imputed values in any or in all of the selected variables are
-#' highlighted (as determined by \code{selection}).  A variable can be added to
+#' highlighted (as determined by `selection`).  A variable can be added to
 #' the selection by clicking on a coordinate axis.  If a variable is already
 #' selected, clicking on its coordinate axis removes it from the selection.
 #' Clicking anywhere outside the plot region (except the top margin, if
 #' missing/imputed values exist) quits the interactive session.
 #' 
-#' @param x a matrix or \code{data.frame}.
+#' @param x a matrix or `data.frame`.
 #' @param delimiter a character-vector to distinguish between variables and
-#' imputation-indices for imputed variables (therefore, \code{x} needs to have
-#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-indices for imputed variables (therefore, `x` needs to have
+#' [colnames()]). If given, it is used to determine the corresponding
 #' imputation-index for any imputed variable (a logical-vector indicating which
 #' values of the variable have been imputed). If such imputation-indices are
 #' found, they are used for highlighting and the colors are adjusted according
-#' to the given colors for imputed variables (see \code{col}).
+#' to the given colors for imputed variables (see `col`).
 #' @param highlight a vector giving the variables to be used for highlighting.
-#' If \code{NULL} (the default), all variables are used for highlighting.
+#' If `NULL` (the default), all variables are used for highlighting.
 #' @param selection the selection method for highlighting missing/imputed
-#' values in multiple highlight variables.  Possible values are \code{"any"}
-#' (highlighting of missing/imputed values in \emph{any} of the highlight
-#' variables) and \code{"all"} (highlighting of missing/imputed values in
-#' \emph{all} of the highlight variables).
-#' @param plotvars a vector giving the variables to be plotted.  If \code{NULL}
+#' values in multiple highlight variables.  Possible values are `"any"`
+#' (highlighting of missing/imputed values in *any* of the highlight
+#' variables) and `"all"` (highlighting of missing/imputed values in
+#' *all* of the highlight variables).
+#' @param plotvars a vector giving the variables to be plotted.  If `NULL`
 #' (the default), all variables are plotted.
-#' @param col if \code{plotNA} is \code{TRUE}, a vector of length six giving
+#' @param col if `plotNA` is `TRUE`, a vector of length six giving
 #' the colors to be used for observations with different combinations of
 #' observed and missing/imputed values in the plot variables and highlight
 #' variables (vectors of length one or two are recycled).  Otherwise, a vector
@@ -64,9 +64,9 @@
 #' variables should be represented by a point above the corresponding
 #' coordinate axis to prevent disconnected lines.
 #' @param alpha a numeric value between 0 and 1 giving the level of
-#' transparency of the colors, or \code{NULL}.  This can be used to prevent
+#' transparency of the colors, or `NULL`.  This can be used to prevent
 #' overplotting.
-#' @param lty if \code{plotNA} is \code{TRUE}, a vector of length four giving
+#' @param lty if `plotNA` is `TRUE`, a vector of length four giving
 #' the line types to be used for observations with different combinations of
 #' observed and missing/imputed values in the plot variables and highlight
 #' variables (vectors of length one or two are recycled).  Otherwise, a vector
@@ -78,28 +78,28 @@
 #' @param labels either a logical indicating whether labels should be plotted
 #' below each coordinate axis, or a character vector giving the labels.
 #' @param xpd a logical indicating whether the lines should be allowed to go
-#' outside the plot region.  If \code{NULL}, it defaults to \code{TRUE} unless
+#' outside the plot region.  If `NULL`, it defaults to `TRUE` unless
 #' axis limits are specified.
 #' @param interactive a logical indicating whether interactive features should
 #' be enabled (see \sQuote{Details}).
-#' @param \dots for \code{parcoordMiss}, further graphical parameters to be
-#' passed down (see \code{\link[graphics]{par}}).  For \code{TKRparcoordMiss},
-#' further arguments to be passed to \code{parcoordMiss}.
+#' @param \dots for `parcoordMiss`, further graphical parameters to be
+#' passed down (see [graphics::par()]).  For `TKRparcoordMiss`,
+#' further arguments to be passed to `parcoordMiss`.
 #' @note Some of the argument names and positions have changed with versions
 #' 1.3 and 1.4 due to extended functionality and for more consistency with
-#' other plot functions in \code{VIM}.  For back compatibility, the arguments
-#' \code{colcomb} and \code{xaxlabels} can still be supplied to \code{\dots{}}
+#' other plot functions in `VIM`.  For back compatibility, the arguments
+#' `colcomb` and `xaxlabels` can still be supplied to \code{\dots{}}
 #' and are handled correctly.  Nevertheless, they are deprecated and no longer
-#' documented.  Use \code{highlight} and \code{labels} instead.
+#' documented.  Use `highlight` and `labels` instead.
 #' @author Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
-#' @seealso \code{\link{pbox}}
+#' @seealso [pbox()]
 #' @references Wegman, E. J. (1990) Hyperdimensional data analysis using
-#' parallel coordinates. \emph{Journal of the American Statistical Association}
-#' \bold{85 (411)}, 664--675.
+#' parallel coordinates. *Journal of the American Statistical Association*
+#' **85 (411)**, 664--675.
 #' 
 #' M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete data using
-#' visualization tools.  \emph{Journal of Advances in Data Analysis and
-#' Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' visualization tools.  *Journal of Advances in Data Analysis and
+#' Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @examples
 #' 

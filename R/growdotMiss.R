@@ -13,43 +13,43 @@
 #' highlighted.
 #' 
 #' The smallest dots correspond to the 10\% quantile and the largest dots to
-#' the 99\% quantile.  In between, the dots grow exponentially, with \code{exp}
+#' the 99\% quantile.  In between, the dots grow exponentially, with `exp`
 #' defining the shape of the exponential function.  Missings/imputed missings
 #' in the variable of interest will be drawn as rectangles.
 #' 
-#' If \code{interactive=TRUE}, detailed information for an observation can be
+#' If `interactive=TRUE`, detailed information for an observation can be
 #' printed on the console by clicking on the corresponding point.  Clicking in
 #' a region that does not contain any points quits the interactive session.
 #' 
 #' @aliases growdotMiss bubbleMiss
-#' @param x a vector, matrix or \code{data.frame}.
-#' @param coords a matrix or \code{data.frame} with two columns giving the
+#' @param x a vector, matrix or `data.frame`.
+#' @param coords a matrix or `data.frame` with two columns giving the
 #' spatial coordinates of the observations.
-#' @param map a background map to be passed to \code{\link{bgmap}}.
+#' @param map a background map to be passed to [bgmap()].
 #' @param pos a numeric value giving the index of the variable determining the
 #' dot sizes.
 #' @param delimiter a character-vector to distinguish between variables and
-#' imputation-indices for imputed variables (therefore, \code{x} needs to have
-#' \code{\link{colnames}}). If given, it is used to determine the corresponding
+#' imputation-indices for imputed variables (therefore, `x` needs to have
+#' [colnames()]). If given, it is used to determine the corresponding
 #' imputation-index for any imputed variable (a logical-vector indicating which
 #' values of the variable have been imputed). If such imputation-indices are
 #' found, they are used for highlighting and the colors are adjusted according
-#' to the given colors for imputed variables (see \code{col}).
+#' to the given colors for imputed variables (see `col`).
 #' @param selection the selection method for highlighting missing/imputed
-#' values in multiple additional variables.  Possible values are \code{"any"}
-#' (highlighting of missing/imputed values in \emph{any} of the additional
-#' variables) and \code{"all"} (highlighting of missing/imputed values in
-#' \emph{all} of the additional variables).
-#' @param log a logical indicating whether the variable given by \code{pos}
+#' values in multiple additional variables.  Possible values are `"any"`
+#' (highlighting of missing/imputed values in *any* of the additional
+#' variables) and `"all"` (highlighting of missing/imputed values in
+#' *all* of the additional variables).
+#' @param log a logical indicating whether the variable given by `pos`
 #' should be log-transformed.
 #' @param col a vector of length six giving the colors to be used in the plot.
 #' If only one color is supplied, it is used for the borders of non-highlighted
 #' dots and the surface area of highlighted dots.  Else if two colors are
 #' supplied, they are recycled.
 #' @param border a vector of length four giving the colors to be used for the
-#' borders of the growing dots.  Use \code{NA} to omit borders.
+#' borders of the growing dots.  Use `NA` to omit borders.
 #' @param alpha a numeric value between 0 and 1 giving the level of
-#' transparency of the colors, or \code{NULL}.  This can be used to prevent
+#' transparency of the colors, or `NULL`.  This can be used to prevent
 #' overplotting.
 #' @param scale scaling factor of the map.
 #' @param size a vector of length two giving the sizes for the smallest and
@@ -64,25 +64,25 @@
 #' @param cex.legtext the character expansion factor to be used in the legend.
 #' @param ncircles the number of circles displayed in the legend.
 #' @param ndigits the number of digits displayed in the legend.  Note that \
-#' this is just a suggestion (see \code{\link{format}}).
+#' this is just a suggestion (see [format()]).
 #' @param interactive a logical indicating whether information about certain
 #' observations can be displayed interactively (see \sQuote{Details}).
-#' @param \dots for \code{growdotMiss}, further arguments and graphical
-#' parameters to be passed to \code{\link{bgmap}}.  For \code{bubbleMiss}, the
-#' arguments to be passed to \code{growdotMiss}.
-#' @note The function was renamed to \code{growdotMiss} in version 1.3.
-#' \code{bubbleMiss} is a (deprecated) wrapper for \code{growdotMiss} for back
+#' @param \dots for `growdotMiss`, further arguments and graphical
+#' parameters to be passed to [bgmap()].  For `bubbleMiss`, the
+#' arguments to be passed to `growdotMiss`.
+#' @note The function was renamed to `growdotMiss` in version 1.3.
+#' `bubbleMiss` is a (deprecated) wrapper for `growdotMiss` for back
 #' compatibility with older versions. However, due to extended functionality,
 #' some of the argument positions have changed.
 #' 
 #' The code is based on (removed from CRAN) bubbleFIN from package
 #' StatDA.
 #' @author Andreas Alfons, Matthias Templ, Peter Filzmoser, Bernd Prantner
-#' @seealso \code{\link{bgmap}}, \code{\link{mapMiss}},
-#' \code{\link{colormapMiss}}
+#' @seealso [bgmap()], [mapMiss()],
+#' [colormapMiss()]
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
-#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @examples
 #' 

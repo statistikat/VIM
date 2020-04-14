@@ -8,29 +8,29 @@
 #' 
 #' Colored map in which the proportion or amount of missing/imputed values in
 #' each region is coded according to a continuous or discrete color scheme.
-#' The sequential color palette may thereby be computed in the \emph{HCL} or
-#' the \emph{RGB} color space.
+#' The sequential color palette may thereby be computed in the *HCL* or
+#' the *RGB* color space.
 #' 
-#' The proportion or amount of missing/imputed values in \code{x} of each
+#' The proportion or amount of missing/imputed values in `x` of each
 #' region is coded according to a continuous or discrete color scheme in the
-#' color range defined by \code{col}.  In addition, the proportions or numbers
+#' color range defined by `col`.  In addition, the proportions or numbers
 #' can be shown as labels in the regions.
 #' 
-#' If \code{interactive} is \code{TRUE}, clicking in a region displays more
+#' If `interactive` is `TRUE`, clicking in a region displays more
 #' detailed information about missing/imputed values on the console.  Clicking
 #' outside the borders quits the interactive session.
 #' 
 #' @rdname colormapMiss
 #' @aliases colormapMiss colormapMissLegend
 #' @param x a numeric vector.
-#' @param region a vector or factor of the same length as \code{x} giving the
+#' @param region a vector or factor of the same length as `x` giving the
 #' regions.
 #' @param map an object of any class that contains polygons and provides its
-#' own plot method (e.g., \code{"SpatialPolygons"} from package \code{sp}).
+#' own plot method (e.g., `"SpatialPolygons"` from package `sp`).
 #' @param imp_index a logical-vector indicating which values of \sQuote{x} have
 #' been imputed. If given, it is used for highlighting and the colors are
 #' adjusted according to the given colors for imputed variables (see
-#' \code{col}).
+#' `col`).
 #' @param prop a logical indicating whether the proportion of missing/imputed
 #' values should be used rather than the total amount.
 #' @param polysRegion a numeric vector specifying the region that each polygon
@@ -38,23 +38,23 @@
 #' @param range a numeric vector of length two specifying the range (minimum
 #' and maximum) of the proportion or amount of missing/imputed values to be
 #' used for the color scheme.
-#' @param n for \code{colormapMiss}, the number of equally spaced cut-off
+#' @param n for `colormapMiss`, the number of equally spaced cut-off
 #' points for a discretized color scheme.  If this is not a positive integer, a
 #' continuous color scheme is used (the default).  In the latter case, the
 #' number of rectangles to be drawn in the legend can be specified in
-#' \code{colormapMissLegend}.  A reasonably large number makes it appear
+#' `colormapMissLegend`.  A reasonably large number makes it appear
 #' continuously.
 #' @param col the color range (start end end) to be used.  RGB colors may be
 #' specified as character strings or as objects of class
-#' "\code{\link[colorspace]{RGB}}".  HCL colors need to be specified as objects
-#' of class "\code{\link[colorspace]{polarLUV}}".  If only one color is
+#' "[colorspace::RGB()]".  HCL colors need to be specified as objects
+#' of class "[colorspace::polarLUV()]".  If only one color is
 #' supplied, it is used as end color, while the start color is taken to be
 #' transparent for RGB or white for HCL.
-#' @param gamma numeric; the display \emph{gamma} value (see
-#' \code{\link[colorspace]{hex}}).
+#' @param gamma numeric; the display *gamma* value (see
+#' [colorspace::hex()]).
 #' @param fixup a logical indicating whether the colors should be corrected to
-#' valid RGB values (see \code{\link[colorspace]{hex}}).
-#' @param coords a matrix or \code{data.frame} with two columns giving the
+#' valid RGB values (see [colorspace::hex()]).
+#' @param coords a matrix or `data.frame` with two columns giving the
 #' coordinates for the labels.
 #' @param numbers a logical indicating whether the corresponding proportions or
 #' numbers of missing/imputed values should be used as labels for the regions.
@@ -66,16 +66,16 @@
 #' @param interactive a logical indicating whether more detailed information
 #' about missing/imputed values should be displayed interactively (see
 #' \sQuote{Details}).
-#' @param xleft left \emph{x} position of the legend.
-#' @param ybottom bottom \emph{y} position of the legend.
-#' @param xright right \emph{x} position of the legend.
-#' @param ytop top \emph{y} position of the legend.
-#' @param cmap a list as returned by \code{colormapMiss} that contains the
+#' @param xleft left *x* position of the legend.
+#' @param ybottom bottom *y* position of the legend.
+#' @param xright right *x* position of the legend.
+#' @param ytop top *y* position of the legend.
+#' @param cmap a list as returned by `colormapMiss` that contains the
 #' required information for the legend.
 #' @param horizontal a logical indicating whether the legend should be drawn
 #' horizontally or vertically.
-#' @param \dots further arguments to be passed to \code{plot}.
-#' @return \code{colormapMiss} returns a list with the following components:
+#' @param \dots further arguments to be passed to `plot`.
+#' @return `colormapMiss` returns a list with the following components:
 #' - nmiss a numeric vector containing the number of missing/imputed
 #' values in each region.
 #' - nobs a numeric vector containing the number of observations in
@@ -87,29 +87,29 @@
 #' - range the range of the proportion or amount of missing/imputed
 #' values corresponding to the color range.
 #' - n either a positive integer giving the number of equally spaced
-#' cut-off points for a discretized color scheme, or \code{NULL} for a
+#' cut-off points for a discretized color scheme, or `NULL` for a
 #' continuous color scheme.
 #' - start the start color of the color scheme.
 #' - end the end color of the color scheme.
 #' - space a character string giving the color space (either
-#' \code{"rgb"} for RGB colors or \code{"hcl"} for HCL colors).
-#' - gamma numeric; the display \emph{gamma} value (see
-#' \code{\link[colorspace]{hex}}).
+#' `"rgb"` for RGB colors or `"hcl"` for HCL colors).
+#' - gamma numeric; the display *gamma* value (see
+#' [colorspace::hex()]).
 #' - fixup a logical indicating whether the colors have been
-#' corrected to valid RGB values (see \code{\link[colorspace]{hex}}).
+#' corrected to valid RGB values (see [colorspace::hex()]).
 #' @note Some of the argument names and positions have changed with versions
 #' 1.3 and 1.4 due to extended functionality and for more consistency with
-#' other plot functions in \code{VIM}.  For back compatibility, the arguments
-#' \code{cex.text} and \code{col.text} can still be supplied to \code{\dots{}}
+#' other plot functions in `VIM`.  For back compatibility, the arguments
+#' `cex.text` and `col.text` can still be supplied to \code{\dots{}}
 #' and are handled correctly.  Nevertheless, they are deprecated and no longer
-#' documented.  Use \code{cex.numbers} and \code{col.numbers} instead.
+#' documented.  Use `cex.numbers` and `col.numbers` instead.
 #' @author Andreas Alfons, modifications to show imputed values by Bernd
 #' Prantner
-#' @seealso \code{\link{colSequence}}, \code{\link{growdotMiss}},
-#' \code{\link{mapMiss}}
+#' @seealso [colSequence()], [growdotMiss()],
+#' [mapMiss()]
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  \emph{Journal of Advances in Data Analysis
-#' and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @export colormapMiss
 colormapMiss <- function(x, region, map, imp_index = NULL,
