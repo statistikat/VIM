@@ -50,6 +50,9 @@
 <li>
   <a href="../reference/index.html">Reference</a>
 </li>
+<li>
+  <a href="../news/index.html">Changelog</a>
+</li>
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
@@ -81,34 +84,45 @@
 
     
     
-<p>VIM introduces tools for visualization of missing values. Forthermore, methods to impute missing values and visualizing imputed values are featured.</p>
+<p>VIM introduces tools for visualization of missing and imputed values. Forthermore, methods to impute missing values are featured. This vignette will give a brief look at a common imputation scenario and showcase how VIM can be used to both impute the data and also interpret the results visually.</p>
 <div id="visualize-missing-values" class="section level3">
 <h3 class="hasAnchor">
 <a href="#visualize-missing-values" class="anchor"></a>Visualize missing values</h3>
 <div class="sourceCode" id="cb1"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">VIM</span>)
 <span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="no">sleep</span>)
-<span class="no">x</span> <span class="kw">&lt;-</span> <span class="no">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Dream"</span>, <span class="st">"Sleep"</span>)]
-<span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span>(<span class="no">x</span>)
-<span class="co">#&gt;   Dream Sleep</span>
-<span class="co">#&gt; 1    NA   3.3</span>
-<span class="co">#&gt; 2   2.0   8.3</span>
-<span class="co">#&gt; 3    NA  12.5</span>
-<span class="co">#&gt; 4    NA  16.5</span>
-<span class="co">#&gt; 5   1.8   3.9</span>
-<span class="co">#&gt; 6   0.7   9.8</span>
-<span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(<span class="no">x</span>)</pre></body></html></div>
+<span class="no">a</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/aggr.html">aggr</a></span>(<span class="no">sleep</span>, <span class="kw">plot</span> <span class="kw">=</span> <span class="fl">FALSE</span>)
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(<span class="no">a</span>, <span class="kw">numbers</span> <span class="kw">=</span> <span class="fl">TRUE</span>, <span class="kw">prop</span> <span class="kw">=</span> <span class="fl">FALSE</span>)</pre></body></html></div>
 <p><img src="VIM_files/figure-html/setup-1.png" width="672" style="display: block; margin: auto;"></p>
+<p>The left plot shows the amount of missings for each column in the dataset <code>sleep</code> and the right plot shows how often each combination of missings occur. For example, there are 9 rows wich contain a missing in both <code>NonD</code> and <code>Dream</code>.</p>
+<p>For simplicity, we will only look at the variables <code>Dream</code> and <code>Sleep</code> for the remainer of this vignette. Bivariate datasets can be passed to special functions that visualize the structure of missings such as <code><a href="../reference/marginplot.html">marginplot()</a></code>.</p>
+<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="no">x</span> <span class="kw">&lt;-</span> <span class="no">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Dream"</span>, <span class="st">"Sleep"</span>)]
+<span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(<span class="no">x</span>)</pre></body></html></div>
+<p><img src="VIM_files/figure-html/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;"></p>
+<p>The <strong><font color="red">red</font></strong> boxplot on the left shows the distrubution of all values of <code>Sleep</code> where <code>Dream</code> contains a missing value. The <strong><font color="#87ceeb">blue</font></strong> boxplot on the left shows the distribution of the values of <code>Sleep</code> where <code>Dream</code> is observed.</p>
 </div>
 <div id="impute-missing-values" class="section level3">
 <h3 class="hasAnchor">
 <a href="#impute-missing-values" class="anchor"></a>Impute missing values</h3>
-<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="no">x_imputed</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="no">x</span>)</pre></body></html></div>
+<p>In order to impute missing values, <code>VIM</code> offers a spectrum of imputation methods like <code><a href="../reference/kNN.html">kNN()</a></code> (k nearest neighbor), <code><a href="../reference/hotdeck.html">hotdeck()</a></code> and so forth. Those functions can be applied to a <code>data.frame</code> and return another <code>data.frame</code> where missings are replaced by imputed values.</p>
+<div class="sourceCode" id="cb3"><html><body><pre class="r"><span class="no">x_imputed</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="no">x</span>)</pre></body></html></div>
+<p>Note however, that in certain circumstances, there will be missings left in the returned dataset depending on the method used.</p>
 </div>
 <div id="visualize-imputed-values" class="section level3">
 <h3 class="hasAnchor">
 <a href="#visualize-imputed-values" class="anchor"></a>Visualize imputed values</h3>
-<div class="sourceCode" id="cb3"><html><body><pre class="r"><span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(<span class="no">x_imputed</span>, <span class="kw">delimiter</span> <span class="kw">=</span> <span class="st">"_imp"</span>)</pre></body></html></div>
-<p><img src="VIM_files/figure-html/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;"></p>
+<p>The same functions that visualize missing values can also visualize the imputed dataset.</p>
+<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(<span class="no">x_imputed</span>, <span class="kw">delimiter</span> <span class="kw">=</span> <span class="st">"_imp"</span>)</pre></body></html></div>
+<p><img src="VIM_files/figure-html/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;"></p>
+<p>In this plot three differnt colors are used in the top-right. These colors represent the structure of missings.</p>
+<ul>
+<li>
+<strong><font color="#8b5a00">brown</font></strong> points represent values where <code>Dream</code> was missing initially</li>
+<li>
+<strong><font color="#ffa500">beige</font></strong> points represent values where <code>Sleep</code> was missing initially</li>
+<li>
+<strong>black</strong> points represent values where both <code>Dream</code> and <code>Sleep</code> were missing initially</li>
+</ul>
+<p>The <code><a href="../reference/kNN.html">kNN()</a></code> method seemingly preserves the correlation between <code>Dream</code> and <code>Sleep</code>.</p>
 </div>
   </div>
 
