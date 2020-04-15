@@ -27,3 +27,9 @@ remotes::install_github("statistikat/VIM")
 * A hands-on guide for VIM can be found in the [get started vignette](http://statistikat.github.io/VIM/articles/VIM.html).
 * The [reference documentation](http://statistikat.github.io/VIM/reference)
   provides detaled documentation about all exposed functons from the package.
+  
+### Related Publications
+
+* [Exploring incomplete data using visualization techniques](https://www.researchgate.net/publication/226283718_Exploring_incomplete_data_using_visualization_techniques)
+* [Iterative stepwise regression imputation using standard
+and robust methods](http://file.statistik.tuwien.ac.at/filz/papers/CSDA11TKF.pdf)
