@@ -1,3 +1,29 @@
+# VIM 5.1.1
+
+* add pkgdown site via travis and gh-pages
+* add `vignette("VIM")`
+* update REAMDE.md
+* update reference documentation with `roxygen2md::roxygen2md()`
+
+# VIM 5.1.0
+
+* updates for `gowerD()`
+* separate help pages for `maxCat()` and `sampleCat()`
+* remove links to certain packages
+
+# VIM 5.0.0
+
+## New datasets
+
+* bcancer
+* brittleness
+* colic
+* diabetes
+* food
+* pulplignin
+* toydataMiss
+* wine
+
 # VIM 4.9.1
 
 * data set `collision` added
