@@ -73,7 +73,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">5.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">5.1.1</span>
       </span>
     </div>
 
@@ -119,12 +119,56 @@
       <small>Source: <a href='https://github.com/statistikat/VIM/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
+    <div id="vim-5-1-1" class="section level1">
+<h1 class="page-header" data-toc-text="5.1.1">
+<a href="#vim-5-1-1" class="anchor"></a>VIM 5.1.1<small> 2020-03-10 </small>
+</h1>
+<ul>
+<li>add pkgdown site via travis and gh-pages</li>
+<li>add <code><a href="../articles/VIM.html">vignette("VIM")</a></code>
+</li>
+<li>update REAMDE.md</li>
+<li>update reference documentation with <code>roxygen2md::roxygen2md()</code>
+</li>
+</ul>
+</div>
+    <div id="vim-5-1-0" class="section level1">
+<h1 class="page-header" data-toc-text="5.1.0">
+<a href="#vim-5-1-0" class="anchor"></a>VIM 5.1.0<small> 2020-02-05 </small>
+</h1>
+<ul>
+<li>updates for <code><a href="../reference/gowerD.html">gowerD()</a></code>
+</li>
+<li>separate help pages for <code><a href="../reference/maxCat.html">maxCat()</a></code> and <code><a href="../reference/sampleCat.html">sampleCat()</a></code>
+</li>
+<li>remove links to certain packages</li>
+</ul>
+</div>
+    <div id="vim-5-0-0" class="section level1">
+<h1 class="page-header" data-toc-text="5.0.0">
+<a href="#vim-5-0-0" class="anchor"></a>VIM 5.0.0<small> Unreleased </small>
+</h1>
+<div id="new-datasets" class="section level2">
+<h2 class="hasAnchor">
+<a href="#new-datasets" class="anchor"></a>New datasets</h2>
+<ul>
+<li>bcancer</li>
+<li>brittleness</li>
+<li>colic</li>
+<li>diabetes</li>
+<li>food</li>
+<li>pulplignin</li>
+<li>toydataMiss</li>
+<li>wine</li>
+</ul>
+</div>
+</div>
     <div id="vim-4-9-1" class="section level1">
 <h1 class="page-header" data-toc-text="4.9.1">
 <a href="#vim-4-9-1" class="anchor"></a>VIM 4.9.1<small> Unreleased </small>
 </h1>
 <ul>
-<li>data set collision added</li>
+<li>data set <code>collision</code> added</li>
 </ul>
 </div>
     <div id="vim-4-8-0" class="section level1">
@@ -140,7 +184,7 @@
 <a href="#vim-4-7-18" class="anchor"></a>VIM 4.7.18<small> Unreleased </small>
 </h1>
 <ul>
-<li>added imp_var and imp_suffix to irmi, so it is more consistent with the other functions</li>
+<li>added <code>imp_var</code> and <code>imp_suffix</code> to <code><a href="../reference/irmi.html">irmi()</a></code>, so it is more consistent with the other functions (<a href='https://github.com/statistikat/VIM/issues/27'>#27</a>)</li>
 </ul>
 </div>
     <div id="vim-4-7-17" class="section level1">
@@ -148,7 +192,8 @@
 <a href="#vim-4-7-17" class="anchor"></a>VIM 4.7.17<small> Unreleased </small>
 </h1>
 <ul>
-<li>added parameter addRF, only RF to kNN, to use random forest in combination with kNN</li>
+<li>added parameter addRF, only RF to <code><a href="../reference/kNN.html">kNN()</a></code>, to use random forest in combination with <code><a href="../reference/kNN.html">kNN()</a></code>
+</li>
 </ul>
 </div>
     <div id="vim-4-7-12" class="section level1">
@@ -159,7 +204,7 @@
 <li>testthat package used for all tests</li>
 <li>added travis automatically building/checking</li>
 <li>covr for code coverage (vis functions are currently not covered by any tests)</li>
-<li>new imputation function matchImpute for faster imputation randomly by group</li>
+<li>new imputation function <code><a href="../reference/matchImpute.html">matchImpute()</a></code> for faster imputation randomly by group</li>
 </ul>
 </div>
     <div id="vim-4-7-1" class="section level1">
@@ -167,7 +212,7 @@
 <a href="#vim-4-7-1" class="anchor"></a>VIM 4.7.1<small> Unreleased </small>
 </h1>
 <ul>
-<li>new imputation function ‘matchImpute’ for imputing random within groups</li>
+<li>new imputation function <code><a href="../reference/matchImpute.html">matchImpute()</a></code> for imputing random within groups</li>
 </ul>
 </div>
     <div id="vim-4-6-1" class="section level1">
@@ -175,7 +220,7 @@
 <a href="#vim-4-6-1" class="anchor"></a>VIM 4.6.1<small> Unreleased </small>
 </h1>
 <ul>
-<li>use ordered logistic regression for ordinal variables in irmi</li>
+<li>use ordered logistic regression for ordinal variables in <code><a href="../reference/irmi.html">irmi()</a></code> (<a href='https://github.com/statistikat/VIM/issues/23'>#23</a>)</li>
 </ul>
 </div>
     <div id="vim-4-6-0" class="section level1">
@@ -183,9 +228,9 @@
 <a href="#vim-4-6-0" class="anchor"></a>VIM 4.6.0<small> 2016-10-17 </small>
 </h1>
 <ul>
-<li>new option for kNN ‘weightDist’ to use the distances for the k nearest neighbours as weights</li>
+<li>new option for <code><a href="../reference/kNN.html">kNN()</a></code>: <code>weightDist</code> to use the distances for the k nearest neighbours as weights</li>
 <li>Bytecompile is enabled</li>
-<li>The R function which.minN is not used anymore, instead there is a C++ function, kNN is now about 1.6 times faster on a replication (100x) of the sleep dataset</li>
+<li>The R function <code>which.minN()</code> is not used anymore, instead there is a C++ function, <code><a href="../reference/kNN.html">kNN()</a></code> is now about 1.6 times faster on a replication (100x) of the sleep dataset</li>
 </ul>
 </div>
     <div id="vim-4-4-0" class="section level1">
@@ -193,9 +238,10 @@
 <a href="#vim-4-4-0" class="anchor"></a>VIM 4.4.0<small> Unreleased </small>
 </h1>
 <ul>
-<li>bugfix wrong observations marked as imputed in the hotdeck function</li>
+<li>bugfix wrong observations marked as imputed in <code><a href="../reference/hotdeck.html">hotdeck()</a></code>
+</li>
 <li>
-<p>random sorting is now used in hotdeck if no ord_var is defined</p>
+<p>random sorting is now used in <code><a href="../reference/hotdeck.html">hotdeck()</a></code> if no <code>ord_var</code> is defined</p>
 <h1 id="vim-4.2.3" class="page-header" data-toc-text="4.4.0">VIM 4.2.3<small> Unreleased </small>
 </h1>
 </li>
@@ -207,7 +253,7 @@
 <a href="#vim-4-2-1" class="anchor"></a>VIM 4.2.1<small> Unreleased </small>
 </h1>
 <ul>
-<li>new option for kNN ‘useImputedDist’ if the imputed values of a variable should be used in subsequent imputation of another variable.</li>
+<li>new option for <code><a href="../reference/kNN.html">kNN()</a></code> <code>useImputedDist</code> if the imputed values of a variable should be used in subsequent imputation of another variable.</li>
 </ul>
 </div>
     <div id="vim-4-2-0" class="section level1">
@@ -215,7 +261,7 @@
 <a href="#vim-4-2-0" class="anchor"></a>VIM 4.2.0<small> Unreleased </small>
 </h1>
 <ul>
-<li>bug fixed in irmi with newer version of nnet (multinom) and if residual scale can not be computed (noise)</li>
+<li>bug fixed in <code><a href="../reference/irmi.html">irmi()</a></code> with newer version of nnet (multinom) and if residual scale can not be computed (noise)</li>
 <li>Improvement Gower dist with only missing values in data.x or data.y</li>
 </ul>
 </div>
@@ -224,11 +270,14 @@
 <a href="#vim-4-1-0" class="anchor"></a>VIM 4.1.0<small> 2014-10-25 </small>
 </h1>
 <ul>
-<li>new parameter modelFormula in irmi</li>
-<li>bug fixes in irmi</li>
-<li>updated hotdeck based on data.table -&gt; faster and quite stable</li>
+<li>new parameter <code>modelFormula</code> in <code><a href="../reference/irmi.html">irmi()</a></code>
+</li>
+<li>bug fixes in <code><a href="../reference/irmi.html">irmi()</a></code>
+</li>
+<li>updated <code><a href="../reference/hotdeck.html">hotdeck()</a></code> based on data.table -&gt; faster and quite stable</li>
 <li>bug fix if range of a variable is 0 in gower.dist</li>
-<li>small fixed kNN</li>
+<li>small fixed <code><a href="../reference/kNN.html">kNN()</a></code>
+</li>
 </ul>
 </div>
     <div id="vim-4-0-1" class="section level1">
@@ -236,9 +285,11 @@
 <a href="#vim-4-0-1" class="anchor"></a>VIM 4.0.1<small> Unreleased </small>
 </h1>
 <ul>
-<li>small bugfix for using makeNA in kNN</li>
+<li>small bugfix for using <code>makeNA</code> in <code><a href="../reference/kNN.html">kNN()</a></code>
+</li>
 <li>“Nothing to impute”-Error is now a warning</li>
-<li>imp_var now updates existing TF imp_vars (with warning)</li>
+<li>
+<code>imp_var</code> now updates existing TF <code>imp_vars</code> (with warning)</li>
 </ul>
 </div>
     <div id="vim-4-0-0" class="section level1">
@@ -248,7 +299,8 @@
 <ul>
 <li>new pacakge VIMGUI contains all GUI functions</li>
 <li>vignettes moved to VIMGUI</li>
-<li>new imputation function regressionImp</li>
+<li>new imputation function <code><a href="../reference/regressionImp.html">regressionImp()</a></code>
+</li>
 <li>roxygen style comments -&gt; help files</li>
 </ul>
 </div>
