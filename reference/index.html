@@ -130,7 +130,7 @@
       <tr>
         <th colspan="2">
           <h2 id="section-imputation-methods" class="hasAnchor"><a href="#section-imputation-methods" class="anchor"></a>Imputation methods</h2>
-          <p class="section-desc"></p>
+          <p class="section-desc"><p>Functions to impute missing data</p></p>
         </th>
       </tr>
       
@@ -141,9 +141,9 @@
       <tr>
         
         <td>
-          <p><code><a href="kNN.html">kNN()</a></code> </p>
+          <p><code><a href="hotdeck.html">hotdeck()</a></code> </p>
         </td>
-        <td><p>k-Nearest Neighbour Imputation</p></td>
+        <td><p>Hot-Deck Imputation</p></td>
       </tr><tr>
         
         <td>
@@ -153,21 +153,21 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="hotdeck.html">hotdeck()</a></code> </p>
+          <p><code><a href="kNN.html">kNN()</a></code> </p>
         </td>
-        <td><p>Hot-Deck Imputation</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="regressionImp.html">regressionImp()</a></code> </p>
-        </td>
-        <td><p>Regression Imputation</p></td>
+        <td><p>k-Nearest Neighbour Imputation</p></td>
       </tr><tr>
         
         <td>
           <p><code><a href="matchImpute.html">matchImpute()</a></code> </p>
         </td>
         <td><p>Fast matching/imputation based on categorical variable</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="regressionImp.html">regressionImp()</a></code> </p>
+        </td>
+        <td><p>Regression Imputation</p></td>
       </tr><tr>
         
         <td>
@@ -191,7 +191,7 @@
       <tr>
         <th colspan="2">
           <h2 id="section-plotting-functions" class="hasAnchor"><a href="#section-plotting-functions" class="anchor"></a>Plotting functions</h2>
-          <p class="section-desc"></p>
+          <p class="section-desc"><p>Functions to visualize missing and imputed values.</p></p>
         </th>
       </tr>
       
@@ -208,18 +208,6 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="marginplot.html">marginplot()</a></code> </p>
-        </td>
-        <td><p>Scatterplot with additional information in the margins</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="matrixplot.html">matrixplot()</a></code> </p>
-        </td>
-        <td><p>Matrix plot</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="barMiss.html">barMiss()</a></code> </p>
         </td>
         <td><p>Barplot with information about missing/imputed values</p></td>
@@ -232,15 +220,51 @@
       </tr><tr>
         
         <td>
+          <p><code><a href="marginmatrix.html">marginmatrix()</a></code> </p>
+        </td>
+        <td><p>Marginplot Matrix</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="marginplot.html">marginplot()</a></code> </p>
+        </td>
+        <td><p>Scatterplot with additional information in the margins</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="matrixplot.html">matrixplot()</a></code> </p>
+        </td>
+        <td><p>Matrix plot</p></td>
+      </tr><tr>
+        
+        <td>
           <p><code><a href="mosaicMiss.html">mosaicMiss()</a></code> </p>
         </td>
         <td><p>Mosaic plot with information about missing/imputed values</p></td>
       </tr><tr>
         
         <td>
+          <p><code><a href="pairsVIM.html">pairsVIM()</a></code> </p>
+        </td>
+        <td><p>Scatterplot Matrices</p></td>
+      </tr><tr>
+        
+        <td>
           <p><code><a href="parcoordMiss.html">parcoordMiss()</a></code> </p>
         </td>
         <td><p>Parallel coordinate plot with information about missing/imputed values</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="pbox.html">pbox()</a></code> </p>
+        </td>
+        <td><p>Parallel boxplots with information about missing/imputed values</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="scattJitt.html">scattJitt()</a></code> </p>
+        </td>
+        <td><p>Bivariate jitter plot</p></td>
       </tr><tr>
         
         <td>
@@ -262,27 +286,9 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="marginmatrix.html">marginmatrix()</a></code> </p>
-        </td>
-        <td><p>Marginplot Matrix</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="colSequence.html">colSequence()</a></code> <code><a href="colSequence.html">colSequenceRGB()</a></code> <code><a href="colSequence.html">colSequenceHCL()</a></code> </p>
         </td>
         <td><p>HCL and RGB color sequences</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="pairsVIM.html">pairsVIM()</a></code> </p>
-        </td>
-        <td><p>Scatterplot Matrices</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="pbox.html">pbox()</a></code> </p>
-        </td>
-        <td><p>Parallel boxplots with information about missing/imputed values</p></td>
       </tr><tr>
         
         <td>
@@ -295,12 +301,6 @@
           <p><code><a href="alphablend.html">alphablend()</a></code> </p>
         </td>
         <td><p>Alphablending for colors</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="scattJitt.html">scattJitt()</a></code> </p>
-        </td>
-        <td><p>Bivariate jitter plot</p></td>
       </tr>
     </tbody><tbody>
       <tr>
@@ -354,39 +354,15 @@
       <tr>
         
         <td>
-          <p><code><a href="wine.html">wine</a></code> </p>
+          <p><code><a href="SBS5242.html">SBS5242</a></code> </p>
         </td>
-        <td><p>Wine tasting and price</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="sleep.html">sleep</a></code> </p>
-        </td>
-        <td><p>Mammal sleep data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="testdata.html">testdata</a></code> </p>
-        </td>
-        <td><p>Simulated data set for testing purpose</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="tao.html">tao</a></code> </p>
-        </td>
-        <td><p>Tropical Atmosphere Ocean (TAO) project data</p></td>
+        <td><p>Synthetic subset of the Austrian structural business statistics data</p></td>
       </tr><tr>
         
         <td>
           <p><code><a href="bcancer.html">bcancer</a></code> </p>
         </td>
         <td><p>Breast cancer Wisconsin data set</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="SBS5242.html">SBS5242</a></code> </p>
-        </td>
-        <td><p>Synthetic subset of the Austrian structural business statistics data</p></td>
       </tr><tr>
         
         <td>
@@ -426,21 +402,45 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="pulplignin.html">pulplignin</a></code> </p>
-        </td>
-        <td><p>Pulp lignin content</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="kola.background.html">kola.background</a></code> </p>
         </td>
         <td><p>Background map for the Kola project data</p></td>
       </tr><tr>
         
         <td>
+          <p><code><a href="pulplignin.html">pulplignin</a></code> </p>
+        </td>
+        <td><p>Pulp lignin content</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="sleep.html">sleep</a></code> </p>
+        </td>
+        <td><p>Mammal sleep data</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="tao.html">tao</a></code> </p>
+        </td>
+        <td><p>Tropical Atmosphere Ocean (TAO) project data</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="testdata.html">testdata</a></code> </p>
+        </td>
+        <td><p>Simulated data set for testing purpose</p></td>
+      </tr><tr>
+        
+        <td>
           <p><code><a href="toydataMiss.html">toydataMiss</a></code> </p>
         </td>
         <td><p>Simulated toy data set for examples</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="wine.html">wine</a></code> </p>
+        </td>
+        <td><p>Wine tasting and price</p></td>
       </tr>
     </tbody><tbody>
       <tr>
