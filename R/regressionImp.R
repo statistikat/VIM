@@ -84,14 +84,15 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
   TFna2 <- apply(data[,c(rhs2),drop=FALSE],1,function(x)!any(is.na(x)))
   for(lhsV in lhs){
     form <- as.formula(paste(lhsV,"~",rhs))
+    lhs_vector <- data[[lhsV]]
     #Check if there are missings in this LHS variable
-    if(!any(is.na(data[,lhsV]))){
+    if (!any(is.na(lhs_vector))) {
       cat(paste0("No missings in ",lhsV,".\n"))
     }else{
-      if(class(family)!="function"){
+      if (!inherits(family, "function")) {
         if(family=="AUTO"){
           TFna <- TFna2&!is.na(data[,lhsV])
-          if("numeric"%in%class(unlist(data[,lhsV]))){
+          if (inherits(lhs_vector, "numeric")) {
             nLev <- 0
             if(robust){
               fn <- lmrob
@@ -99,7 +100,11 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
               fn <- lm
             }
             mod <- fn(form,data=data[TFna,])
-          }else if("factor"%in%class(unlist(data[,lhsV]))){
+          } else if (inherits(lhs_vector, "factor") || inherits(lhs_vector, "character")) {
+            if (inherits(lhs_vector, "character")) {
+              dataset[[lhsV]] <- as.factor(dataset[[lhsV]])
+              lhs_vector <- data[[lhsV]]
+            }
             nLev <- length(levels(data[,lhsV]))
             if(nLev==2){
               fam <- binomial
@@ -110,20 +115,21 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
               }
               mod <- fn(form,data=data[TFna,],family=fam)
             }else{
+              ## TODO: what to do if this clause is executed and !all(!TFna3) ?
               co <- capture.output(mod <- multinom(form,data[TFna,]))
             }
           }
-          if(imp_var){
-            if(imp_var%in%colnames(data)){
+          if (imp_var) {
+            if (imp_var %in% colnames(data)) {
               data[,paste(lhsV,"_",imp_suffix,sep="")] <- as.logical(data[,paste(lhsV,"_",imp_suffix,sep="")])
               warning(paste("The following TRUE/FALSE imputation status variables will be updated:",
                       paste(lhsV,"_",imp_suffix,sep="")))
             }else{
-              data$NEWIMPTFVARIABLE <- is.na(data[,lhsV])
+              data$NEWIMPTFVARIABLE <- is.na(lhs_vector)
               colnames(data)[ncol(data)] <- paste(lhsV,"_",imp_suffix,sep="")
             }
           }
-          TFna1 <- is.na(data[,lhsV])
+          TFna1 <- is.na(lhs_vector)
           TFna3 <- TFna1&TFna2
           if(all(!TFna3)){
             #Check if there are missings in this LHS variable where theR RHS variables are "not missing"
@@ -141,10 +147,10 @@ regressionImp_work <- function(formula, family, robust, data,imp_var,imp_suffix,
             }else if(nLev==2){
               if(mod_cat){
                 pre <- predict(mod,newdata=tmp,type="response")
-                pre <- levels(data[,lhsV])[as.numeric(pre>.5)+1]
+                pre <- levels(lhs_vector)[as.numeric(pre>.5)+1]
               }else{
                 pre <- predict(mod,newdata=tmp,type="response")
-                pre <- levels(data[,lhsV])[sapply(pre,function(x)sample(1:2,1,prob=c(1-x,x)))]
+                pre <- levels(lhs_vector)[sapply(pre,function(x)sample(1:2,1,prob=c(1-x,x)))]
               }
 
             }else{
