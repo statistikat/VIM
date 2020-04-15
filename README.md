@@ -31,3 +31,4 @@ remotes::install_github("statistikat/VIM")
 * [Exploring incomplete data using visualization techniques](https://www.researchgate.net/publication/226283718_Exploring_incomplete_data_using_visualization_techniques)
 * [Iterative stepwise regression imputation using standard
 and robust methods](http://file.statistik.tuwien.ac.at/filz/papers/CSDA11TKF.pdf)
+* [Imputation with the R Package VIM](https://www.researchgate.net/publication/309336197_Imputation_with_the_R_package_VIM)
