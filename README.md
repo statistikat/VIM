@@ -1,10 +1,8 @@
----
-title: VIM
----
+# VIM
 
-![Build Status](https://travis-ci.org/statistikat/VIM.svg?branch=master)
+[![Build Status](https://travis-ci.org/statistikat/VIM.svg?branch=master)](https://travis-ci.org/github/statistikat/VIM)
 [![Coverage Status](https://coveralls.io/repos/github/statistikat/VIM/badge.svg?branch=master)](https://coveralls.io/github/statistikat/VIM?branch=master)
-[![CRAN](http://www.r-pkg.org/badges/version/VIM)](https://CRAN.R-project.org/package=VIM)
+[![CRAN status](https://www.r-pkg.org/badges/version/VIM)](https://CRAN.R-project.org/package=VIM)
 [![Downloads](http://cranlogs.r-pkg.org/badges/VIM)](https://CRAN.R-project.org/package=VIM)
 [![Mentioned in Awesome Official Statistics ](https://awesome.re/mentioned-badge.svg)](http://www.awesomeofficialstatistics.org)
 
