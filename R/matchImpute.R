@@ -18,6 +18,7 @@
 #' @author Johannes Gussenbauer, Alexander Kowarik
 #' @seealso [VIM::hotdeck()]
 #' @keywords manip
+#' @family imputation methods
 #' @examples
 #' 
 #' data(sleep,package="VIM")

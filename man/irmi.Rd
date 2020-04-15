@@ -224,8 +224,15 @@ Statistical Software}, 74(7), 1-16.
 }
 \seealso{
 \code{\link[mi:mi]{mi::mi()}}
+
+Other imputation methods: 
+\code{\link{hotdeck}()},
+\code{\link{kNN}()},
+\code{\link{matchImpute}()},
+\code{\link{regressionImp}()}
 }
 \author{
 Matthias Templ, Alexander Kowarik
 }
+\concept{imputation methods}
 \keyword{manip}

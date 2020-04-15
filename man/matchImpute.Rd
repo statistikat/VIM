@@ -86,8 +86,15 @@ imp_testdata2 <- matchImpute(dt,match_var=c("c1","c2","b1","b2"))
 }
 \seealso{
 \code{\link[VIM:hotdeck]{VIM::hotdeck()}}
+
+Other imputation methods: 
+\code{\link{hotdeck}()},
+\code{\link{irmi}()},
+\code{\link{kNN}()},
+\code{\link{regressionImp}()}
 }
 \author{
 Johannes Gussenbauer, Alexander Kowarik
 }
+\concept{imputation methods}
 \keyword{manip}

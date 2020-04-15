@@ -201,9 +201,25 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{
 \code{\link[=spineMiss]{spineMiss()}}, \code{\link[=histMiss]{histMiss()}}
+
+Other plotting functions: 
+\code{\link{aggr}()},
+\code{\link{histMiss}()},
+\code{\link{marginmatrix}()},
+\code{\link{marginplot}()},
+\code{\link{matrixplot}()},
+\code{\link{mosaicMiss}()},
+\code{\link{pairsVIM}()},
+\code{\link{parcoordMiss}()},
+\code{\link{pbox}()},
+\code{\link{scattJitt}()},
+\code{\link{scattMiss}()},
+\code{\link{scattmatrixMiss}()},
+\code{\link{spineMiss}()}
 }
 \author{
 Andreas Alfons, modifications to show imputed values by Bernd
 Prantner
 }
+\concept{plotting functions}
 \keyword{hplot}

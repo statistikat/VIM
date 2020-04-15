@@ -246,6 +246,21 @@ and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 \code{\link[=print.summary.aggr]{print.summary.aggr()}}, \code{\link[=aggr]{aggr()}}
 
 \code{\link[=summary.aggr]{summary.aggr()}}, \code{\link[=aggr]{aggr()}}
+
+Other plotting functions: 
+\code{\link{barMiss}()},
+\code{\link{histMiss}()},
+\code{\link{marginmatrix}()},
+\code{\link{marginplot}()},
+\code{\link{matrixplot}()},
+\code{\link{mosaicMiss}()},
+\code{\link{pairsVIM}()},
+\code{\link{parcoordMiss}()},
+\code{\link{pbox}()},
+\code{\link{scattJitt}()},
+\code{\link{scattMiss}()},
+\code{\link{scattmatrixMiss}()},
+\code{\link{spineMiss}()}
 }
 \author{
 Andreas Alfons, Matthias Templ, modifications for displaying imputed
@@ -257,5 +272,6 @@ Matthias Templ, modifications by Andreas Alfons
 
 Andreas Alfons, modifications by Bernd Prantner
 }
+\concept{plotting functions}
 \keyword{hplot}
 \keyword{print}

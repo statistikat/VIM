@@ -92,7 +92,15 @@ A. Kowarik, M. Templ (2016) Imputation with
 R package VIM.  \emph{Journal of
 Statistical Software}, 74(7), 1-16.
 }
+\seealso{
+Other imputation methods: 
+\code{\link{hotdeck}()},
+\code{\link{irmi}()},
+\code{\link{kNN}()},
+\code{\link{matchImpute}()}
+}
 \author{
 Alexander Kowarik
 }
+\concept{imputation methods}
 \keyword{manip}

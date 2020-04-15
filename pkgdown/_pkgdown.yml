@@ -7,32 +7,19 @@ template:
 
 reference:
 - title: Imputation methods
+  desc: Functions to impute missing data
   contents:
-  - kNN
-  - irmi
-  - hotdeck
-  - regressionImp
-  - matchImpute
+  - has_concept("imputation methods")
   - initialise
   - maxCat
   - sampleCat
 - title: Plotting functions
+  desc: Functions to visualize missing and imputed values.
   contents:
-  - matches('plot')
-  - barMiss
-  - histMiss
-  - mosaicMiss
-  - parcoordMiss
-  - scattMiss
-  - scattmatrixMiss
-  - spineMiss
-  - marginmatrix
+  - has_concept("plotting functions")
   - colSequence
-  - pairsVIM
-  - pbox
   - rugNA
   - alphablend
-  - scattJitt
 - title: Maps
   contents:
   - colormapMiss
@@ -40,23 +27,7 @@ reference:
   - bgmap
   - growdotMiss
 - title: Datasets
-  contents:
-  - wine
-  - sleep
-  - testdata
-  - tao
-  - bcancer
-  - SBS5242
-  - brittleness
-  - chorizonDL
-  - colic
-  - collisions
-  - SBS5242
-  - diabetes
-  - food
-  - pulplignin
-  - kola.background
-  - toydataMiss
+  contents: has_keyword("datasets")
 - title: Other
   contents:
   - VIM-package

@@ -188,7 +188,24 @@ M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
+\seealso{
+Other plotting functions: 
+\code{\link{aggr}()},
+\code{\link{barMiss}()},
+\code{\link{histMiss}()},
+\code{\link{marginmatrix}()},
+\code{\link{marginplot}()},
+\code{\link{mosaicMiss}()},
+\code{\link{pairsVIM}()},
+\code{\link{parcoordMiss}()},
+\code{\link{pbox}()},
+\code{\link{scattJitt}()},
+\code{\link{scattMiss}()},
+\code{\link{scattmatrixMiss}()},
+\code{\link{spineMiss}()}
+}
 \author{
 Andreas Alfons, Matthias Templ, modifications by Bernd Prantner
 }
+\concept{plotting functions}
 \keyword{hplot}
