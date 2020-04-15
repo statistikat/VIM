@@ -10,25 +10,37 @@ This package introduces new tools for the visualization of missing and/or impute
 
 ### Installation
 
-VIM can be installed from CRAN or from GitHub
-
 ```r
-## install release version from CRAN
+## Install release version from CRAN
 install.packages("VIM")
 
-## install development version from GitHub
+## Install development version from GitHub
 remotes::install_github("statistikat/VIM")
 ```
+
+### Usage
+
+The core functionality of VIM can be categorized into two groups
+
+1. Imputation functions such as `kNN()` and `hotdeck()` implement techniques
+   to replace missing values with imputed values.
+2. Visualization functions such as `histMiss()` or `barMiss()` provide extensions
+   of common base graphics which use a special way of highlighting missing
+   and imputed values.
+
+Additionaly, datasets are included to showcase the functions mentioned above.
+Other functions provide tabular aggregations of missings and visualization
+of spatial data.
 
 ### Further reading
 
 * A hands-on guide for VIM can be found in the [get started vignette](http://statistikat.github.io/VIM/articles/VIM.html).
 * The [reference documentation](http://statistikat.github.io/VIM/reference)
-  provides detaled documentation about all exposed functons from the package.
+  provides detailed documentation about all exposed functons from the package.
   
-### Related Publications
+### Publications
 
-* [Exploring incomplete data using visualization techniques](https://www.researchgate.net/publication/226283718_Exploring_incomplete_data_using_visualization_techniques)
-* [Iterative stepwise regression imputation using standard
+* Journal of Statistical Software, 2016: [Imputation with the R Package VIM](https://www.researchgate.net/publication/309336197_Imputation_with_the_R_package_VIM)
+* Advances in Data Analysis and Classification, 2012: [Exploring incomplete data using visualization techniques](https://www.researchgate.net/publication/226283718_Exploring_incomplete_data_using_visualization_techniques)
+* Computational Statistics & Data Analysis, 2011: [Iterative stepwise regression imputation using standard
 and robust methods](http://file.statistik.tuwien.ac.at/filz/papers/CSDA11TKF.pdf)
-* [Imputation with the R Package VIM](https://www.researchgate.net/publication/309336197_Imputation_with_the_R_package_VIM)
