@@ -4,7 +4,15 @@
 \alias{rangerImpute}
 \title{Random Forest Imputation}
 \usage{
-rangerImpute(formula, data, imp_var = TRUE, imp_suffix = "imp", ...)
+rangerImpute(
+  formula,
+  data,
+  imp_var = TRUE,
+  imp_suffix = "imp",
+  ...,
+  verbose = FALSE,
+  median = FALSE
+)
 }
 \arguments{
 \item{formula}{model formula to impute one variable}
@@ -17,6 +25,13 @@ variable should be created show the imputation status}
 \item{imp_suffix}{suffix used for TF imputation variables}
 
 \item{...}{Arguments passed to \code{\link[ranger:ranger]{ranger::ranger()}}}
+
+\item{verbose}{Show the number of observations used for training
+and evaluating the RF-Model. This parameter is also passed down to
+\code{\link[ranger:ranger]{ranger::ranger()}} to show computation status.}
+
+\item{median}{Use a median to average the values of individual trees for
+a more robust estimate.}
 }
 \value{
 the imputed data set.
