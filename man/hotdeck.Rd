@@ -130,6 +130,7 @@ Other imputation methods:
 \code{\link{irmi}()},
 \code{\link{kNN}()},
 \code{\link{matchImpute}()},
+\code{\link{rangerImpute}()},
 \code{\link{regressionImp}()}
 }
 \author{

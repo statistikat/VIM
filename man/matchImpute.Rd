@@ -91,6 +91,7 @@ Other imputation methods:
 \code{\link{hotdeck}()},
 \code{\link{irmi}()},
 \code{\link{kNN}()},
+\code{\link{rangerImpute}()},
 \code{\link{regressionImp}()}
 }
 \author{

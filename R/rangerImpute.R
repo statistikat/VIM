@@ -7,6 +7,8 @@
 #' variable should be created show the imputation status
 #' @param imp_suffix suffix used for TF imputation variables
 #' @param ... Arguments passed to [ranger::ranger()]
+#' @return the imputed data set.
+#' @family imputation methods
 #' @examples 
 #' data(sleep)
 #' rangerImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)

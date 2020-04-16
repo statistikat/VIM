@@ -18,6 +18,9 @@ variable should be created show the imputation status}
 
 \item{...}{Arguments passed to \code{\link[ranger:ranger]{ranger::ranger()}}}
 }
+\value{
+the imputed data set.
+}
 \description{
 Impute missing values based on a random forest model using \code{\link[ranger:ranger]{ranger::ranger()}}
 }
@@ -25,3 +28,12 @@ Impute missing values based on a random forest model using \code{\link[ranger:ra
 data(sleep)
 rangerImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
 }
+\seealso{
+Other imputation methods: 
+\code{\link{hotdeck}()},
+\code{\link{irmi}()},
+\code{\link{kNN}()},
+\code{\link{matchImpute}()},
+\code{\link{regressionImp}()}
+}
+\concept{imputation methods}
