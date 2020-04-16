@@ -4,7 +4,7 @@
 \alias{rangerImpute}
 \title{Random Forest Imputation}
 \usage{
-rangerImpute(formula, data, imp_var = TRUE, imp_suffix = "imp")
+rangerImpute(formula, data, imp_var = TRUE, imp_suffix = "imp", ...)
 }
 \arguments{
 \item{formula}{model formula to impute one variable}
@@ -15,9 +15,11 @@ rangerImpute(formula, data, imp_var = TRUE, imp_suffix = "imp")
 variable should be created show the imputation status}
 
 \item{imp_suffix}{suffix used for TF imputation variables}
+
+\item{...}{Arguments passed to \code{\link[ranger:ranger]{ranger::ranger()}}}
 }
 \description{
-Impute missing values based on a random forest model using \code{ranger::ranger()}
+Impute missing values based on a random forest model using \code{\link[ranger:ranger]{ranger::ranger()}}
 }
 \examples{
 data(sleep)
