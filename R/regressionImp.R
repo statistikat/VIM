@@ -82,7 +82,7 @@ regressionImp_work <- function(formula, family, robust, data, imp_var, imp_suffi
   rhs <- formchar[3]
   rhs2 <- gsub(" ", "", strsplit(rhs, "\\+")[[1]])
   #Missings in RHS variables
-  TFna2 <- apply(data[, c(rhs2), drop = FALSE], 1, function(x) !any(is.na(x)))
+  TFna2 <- apply(subset(data, select = rhs2), 1, function(x) !any(is.na(x)))
   for(lhsV in lhs) {
     form <- as.formula(paste(lhsV, "~", rhs))
     lhs_vector <- data[[lhsV]]
@@ -92,7 +92,7 @@ regressionImp_work <- function(formula, family, robust, data, imp_var, imp_suffi
     } else {
       if (!inherits(family, "function")) {
         if (family == "AUTO") {
-          TFna <- TFna2 & !is.na(data[, lhsV])
+          TFna <- TFna2 & !is.na(lhs_vector)
           if (inherits(lhs_vector, "numeric")) {
             nLev <- 0
             if (robust) {
@@ -162,7 +162,7 @@ regressionImp_work <- function(formula, family, robust, data, imp_var, imp_suffi
           }
         }
       }else{
-        TFna1 <- is.na(data[, lhsV])
+        TFna1 <- is.na(lhs_vector)
         TFna3 <- TFna1 & TFna2
         tmp <- data[TFna3, ]
         tmp[, lhsV] <- 1
