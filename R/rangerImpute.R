@@ -1,6 +1,6 @@
 #' Random Forest Imputation
 #'
-#' Impute missing values based on a random forest model.
+#' Impute missing values based on a random forest model using `ranger::ranger()`
 #' @param formula model formula to impute one variable
 #' @param data A data.frame or survey object containing the data
 #' @param imp_var `TRUE`/`FALSE` if a `TRUE`/`FALSE` variables for each imputed
@@ -8,9 +8,9 @@
 #' @param imp_suffix suffix used for TF imputation variables
 #' @examples 
 #' data(sleep)
-#' randomForestImp_work(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
+#' rangerImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
 #' @export
-randomForestImp_work <- function(formula, data, imp_var = TRUE,
+rangerImpute <- function(formula, data, imp_var = TRUE,
                                  imp_suffix = "imp") {
   formchar <- as.character(formula)
   lhs <- gsub(" ", "", strsplit(formchar[2], "\\+")[[1]])
