@@ -24,10 +24,14 @@ rangerImpute <- function(formula, data, imp_var = TRUE,
   for (lhsV in lhs) {
     form <- as.formula(paste(lhsV, "~", rhs))
     lhs_vector <- data[[lhsV]]
-    lhs_na <- is.na(lhs_vector)
-    mod <- ranger::ranger(form, subset(data, !rhs_na & !lhs_na), ...)
-    predictions <- predict(mod, subset(data, !rhs_na & lhs_na))$predictions
-    data[!rhs_na & lhs_na, lhsV] <- predictions
+    if (!any(is.na(lhs_vector))) {
+      cat(paste0("No missings in ", lhsV, ".\n"))
+    } else {
+      lhs_na <- is.na(lhs_vector)
+      mod <- ranger::ranger(form, subset(data, !rhs_na & !lhs_na), ...)
+      predictions <- predict(mod, subset(data, !rhs_na & lhs_na))$predictions
+      data[!rhs_na & lhs_na, lhsV] <- predictions
+    }
     
     if (imp_var) {
       if (imp_var %in% colnames(data)) {
