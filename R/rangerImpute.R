@@ -7,6 +7,9 @@
 #' variable should be created show the imputation status
 #' @param imp_suffix suffix used for TF imputation variables
 #' @param ... Arguments passed to [ranger::ranger()]
+#' @param verbose Show the number of observations used for training
+#'   and evaluating the RF-Model. This parameter is also passed down to
+#'   [ranger::ranger()] to show computation status.
 #' @return the imputed data set.
 #' @family imputation methods
 #' @examples 
@@ -14,7 +17,7 @@
 #' rangerImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
 #' @export
 rangerImpute <- function(formula, data, imp_var = TRUE,
-                         imp_suffix = "imp", ...) {
+                         imp_suffix = "imp", ..., verbose = FALSE) {
   formchar <- as.character(formula)
   lhs <- gsub(" ", "", strsplit(formchar[2], "\\+")[[1]])
   rhs <- formchar[3]
@@ -28,7 +31,11 @@ rangerImpute <- function(formula, data, imp_var = TRUE,
       cat(paste0("No missings in ", lhsV, ".\n"))
     } else {
       lhs_na <- is.na(lhs_vector)
-      mod <- ranger::ranger(form, subset(data, !rhs_na & !lhs_na), ...)
+      if (verbose)
+        message("Training   model for ", lhsV, " on ", sum(!rhs_na & !lhs_na), " observations")
+      mod <- ranger::ranger(form, subset(data, !rhs_na & !lhs_na), ..., verbose = verbose)
+      if (verbose)
+        message("Evaluating model for ", lhsV, " on ", sum(!rhs_na & lhs_na), " observations")
       predictions <- predict(mod, subset(data, !rhs_na & lhs_na))$predictions
       data[!rhs_na & lhs_na, lhsV] <- predictions
     }
