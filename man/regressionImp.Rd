@@ -97,7 +97,8 @@ Other imputation methods:
 \code{\link{hotdeck}()},
 \code{\link{irmi}()},
 \code{\link{kNN}()},
-\code{\link{matchImpute}()}
+\code{\link{matchImpute}()},
+\code{\link{rangerImpute}()}
 }
 \author{
 Alexander Kowarik

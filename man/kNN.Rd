@@ -215,6 +215,7 @@ Other imputation methods:
 \code{\link{hotdeck}()},
 \code{\link{irmi}()},
 \code{\link{matchImpute}()},
+\code{\link{rangerImpute}()},
 \code{\link{regressionImp}()}
 }
 \author{
