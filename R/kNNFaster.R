@@ -114,6 +114,8 @@ kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnam
                 makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
                 imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE,addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
   data_df <- !is.data.table(data)
+  force(variable)
+  force(dist_var)
   if (data_df) {
     data <- as.data.table(data)
   } else {
@@ -180,6 +182,8 @@ kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnam
   }
   if(length(variable)==0){
     warning(paste("Nothing is imputed, because all variables to be imputed only contains missings."))
+    if (data_df)
+      data <- as.data.frame(data)
     return(data)
   }
   orders <- data[,sapply(.SD,is.ordered)]
