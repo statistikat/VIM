@@ -67,64 +67,26 @@
 #' xImp <- hotdeck(x,ord_var = c("o1","o2","o3"),domain_var="d2")
 #' 
 #' 
-#' @export hotdeck
-hotdeck <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
-    makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
-    imp_var=TRUE,imp_suffix="imp") {
-  UseMethod("hotdeck", data)
-}
-
-#' @rdname hotdeck
 #' @export
-
-hotdeck.data.frame <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
-    makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
-    imp_var=TRUE,imp_suffix="imp") {
-  hotdeck_work(data, variable, ord_var, domain_var, makeNA, NAcond, impNA, donorcond,
-      imp_var, imp_suffix)
-}
-
-#' @rdname hotdeck
-#' @export
-
-hotdeck.survey.design <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
-    makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
-    imp_var=TRUE,imp_suffix="imp") {
-  data$variables <- hotdeck_work(data$variables, variable, ord_var, domain_var, makeNA, NAcond, impNA, donorcond,
-      imp_var, imp_suffix)
-  data$call <- sys.call(-1)
-  data
-}
-
-#' @rdname hotdeck
-#' @export
-
-hotdeck.default <- function(data, variable=NULL, ord_var=NULL,domain_var=NULL,
-    makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
-    imp_var=TRUE,imp_suffix="imp") {
-  hotdeck_work(as.data.frame(data), variable, ord_var, domain_var, makeNA, NAcond, impNA, donorcond,
-      imp_var, imp_suffix)
-}
-
-hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
+hotdeck <- function(data , variable=NULL, ord_var=NULL,domain_var=NULL,
     makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
     imp_var=TRUE,imp_suffix="imp"
     ){
   OriginalSortingVariable <- impvar <- NULL #empty init
   if(is.null(variable)){
-    variable <- colnames(x)
+    variable <- colnames(data)
     variable<-variable[!variable%in%c(ord_var,domain_var)]
   }
   if(!is.null(makeNA)){
     if(!is.list(makeNA)||!length(makeNA)==length(variable))
       stop("makeNA is not defined correctly. \n It should be a list of length equal to the length of the argument 'variable'.")
   }
-  classx <- class(x)
-  VariableSorting <- colnames(x)
-  x$OriginalSortingVariable <- 1:nrow(x)
-  x <- data.table(x)
+  classx <- class(data)
+  VariableSorting <- colnames(data)
+  data$OriginalSortingVariable <- 1:nrow(data)
+  data <- data.table(data)
   if(is.null(variable)){
-    variable  <- colnames(x)[apply(is.na(x),2,any)]
+    variable  <- colnames(data)[apply(is.na(data),2,any)]
   }
   if(!is.null(NAcond))
     warning("NAcond is not implemented yet and will be ignored.")
@@ -228,37 +190,37 @@ hotdeck_work <- function(x , variable=NULL, ord_var=NULL,domain_var=NULL,
   cl <- class(x)
   return(cl[cl!="labelled"])
   }
-  varType <- sapply(x,classWithoutLabelled)[variable]
+  varType <- sapply(data,classWithoutLabelled)[variable]
   if(imp_var){
     for(v in variable){
-      x[,impvar:=FALSE]
+      data[,impvar:=FALSE]
       impvarname <- paste(v,"_",imp_suffix,sep="")
-      setnames(x,"impvar",impvarname)
+      setnames(data,"impvar",impvarname)
       VariableSorting <- c(VariableSorting,impvarname)
     }
   }
   # If no ord_var is defined, a random ordered will be used
   if(is.null(ord_var)){
     RandomVariableForImputationWithHotdeck <- NULL # Init for CRAN check
-    nrowXforRunif <- nrow(x)
-    x[,RandomVariableForImputationWithHotdeck:=runif(nrowXforRunif)]
+    nrowXforRunif <- nrow(data)
+    data[,RandomVariableForImputationWithHotdeck:=runif(nrowXforRunif)]
     ord_var <- "RandomVariableForImputationWithHotdeck"
   }
-  setkeyv(x,ord_var)
+  setkeyv(data,ord_var)
   # if no domain_var is defined, the imputeHD function is automatically called on the
   # whole data set
-  x <- x[,imputeHD(.SD,variableX=variable,varTypeX=varType,
+  data <- data[,imputeHD(.SD,variableX=variable,varTypeX=varType,
     imp_varX=imp_var,imp_suffixX=imp_suffix,impNAX=impNA,makeNAX=makeNA), by = domain_var]
   if(any(ord_var=="RandomVariableForImputationWithHotdeck")){
-    x[,RandomVariableForImputationWithHotdeck:=NULL]
+    data[,RandomVariableForImputationWithHotdeck:=NULL]
     ord_var <- NULL
   }
   
-  setkey(x,OriginalSortingVariable)
-  x[,OriginalSortingVariable:=NULL]
+  setkey(data,OriginalSortingVariable)
+  data[,OriginalSortingVariable:=NULL]
   if(all(classx!="data.table"))
-    return(as.data.frame(x)[,VariableSorting,drop=FALSE])
-  return(x[,VariableSorting,with=FALSE])
+    return(as.data.frame(data)[,VariableSorting,drop=FALSE])
+  return(data[,VariableSorting,with=FALSE])
 }
 #require(data.table)
 #setwd("/Users/alex")

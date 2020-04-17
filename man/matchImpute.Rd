@@ -2,45 +2,9 @@
 % Please edit documentation in R/matchImpute.R
 \name{matchImpute}
 \alias{matchImpute}
-\alias{matchImpute.data.frame}
-\alias{matchImpute.data.table}
-\alias{matchImpute.survey.design}
-\alias{matchImpute.default}
 \title{Fast matching/imputation based on categorical variable}
 \usage{
 matchImpute(
-  data,
-  variable = colnames(data)[!colnames(data) \%in\% match_var],
-  match_var,
-  imp_var = TRUE,
-  imp_suffix = "imp"
-)
-
-\method{matchImpute}{data.frame}(
-  data,
-  variable = colnames(data)[!colnames(data) \%in\% match_var],
-  match_var,
-  imp_var = TRUE,
-  imp_suffix = "imp"
-)
-
-\method{matchImpute}{data.table}(
-  data,
-  variable = colnames(data)[!colnames(data) \%in\% match_var],
-  match_var,
-  imp_var = TRUE,
-  imp_suffix = "imp"
-)
-
-\method{matchImpute}{survey.design}(
-  data,
-  variable = colnames(data$variables)[!colnames(data$variables) \%in\% match_var],
-  match_var,
-  imp_var = TRUE,
-  imp_suffix = "imp"
-)
-
-\method{matchImpute}{default}(
   data,
   variable = colnames(data)[!colnames(data) \%in\% match_var],
   match_var,

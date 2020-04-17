@@ -2,42 +2,9 @@
 % Please edit documentation in R/regressionImp.R
 \name{regressionImp}
 \alias{regressionImp}
-\alias{regressionImp.data.frame}
-\alias{regressionImp.survey.design}
-\alias{regressionImp.default}
 \title{Regression Imputation}
 \usage{
 regressionImp(
-  formula,
-  data,
-  family = "AUTO",
-  robust = FALSE,
-  imp_var = TRUE,
-  imp_suffix = "imp",
-  mod_cat = FALSE
-)
-
-\method{regressionImp}{data.frame}(
-  formula,
-  data,
-  family = "AUTO",
-  robust = FALSE,
-  imp_var = TRUE,
-  imp_suffix = "imp",
-  mod_cat = FALSE
-)
-
-\method{regressionImp}{survey.design}(
-  formula,
-  data,
-  family,
-  robust,
-  imp_var = TRUE,
-  imp_suffix = "imp",
-  mod_cat = FALSE
-)
-
-\method{regressionImp}{default}(
   formula,
   data,
   family = "AUTO",

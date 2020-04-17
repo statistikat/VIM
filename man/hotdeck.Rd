@@ -2,51 +2,9 @@
 % Please edit documentation in R/hotdeck.R
 \name{hotdeck}
 \alias{hotdeck}
-\alias{hotdeck.data.frame}
-\alias{hotdeck.survey.design}
-\alias{hotdeck.default}
 \title{Hot-Deck Imputation}
 \usage{
 hotdeck(
-  data,
-  variable = NULL,
-  ord_var = NULL,
-  domain_var = NULL,
-  makeNA = NULL,
-  NAcond = NULL,
-  impNA = TRUE,
-  donorcond = NULL,
-  imp_var = TRUE,
-  imp_suffix = "imp"
-)
-
-\method{hotdeck}{data.frame}(
-  data,
-  variable = NULL,
-  ord_var = NULL,
-  domain_var = NULL,
-  makeNA = NULL,
-  NAcond = NULL,
-  impNA = TRUE,
-  donorcond = NULL,
-  imp_var = TRUE,
-  imp_suffix = "imp"
-)
-
-\method{hotdeck}{survey.design}(
-  data,
-  variable = NULL,
-  ord_var = NULL,
-  domain_var = NULL,
-  makeNA = NULL,
-  NAcond = NULL,
-  impNA = TRUE,
-  donorcond = NULL,
-  imp_var = TRUE,
-  imp_suffix = "imp"
-)
-
-\method{hotdeck}{default}(
   data,
   variable = NULL,
   ord_var = NULL,

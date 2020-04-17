@@ -88,72 +88,13 @@
 #' td$c1 <- as.ordered(td$c1)
 #' irmi(td)
 #' 
-#' @export irmi
+#' @export
 irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
     robust=FALSE, takeAll=TRUE,
     noise=TRUE, noise.factor=1, force=FALSE,
     robMethod="MM", force.mixed=TRUE, mi=1, 
     addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom",
     imp_var=TRUE,imp_suffix="imp") {
-  UseMethod("irmi", x)
-}
-
-#' @rdname irmi
-#' @export
-
-irmi.data.frame <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
-    robust=FALSE, takeAll=TRUE,
-    noise=TRUE, noise.factor=1, force=FALSE,
-    robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,
-    multinom.method="multinom",imp_var=TRUE,imp_suffix="imp") {
-  irmi_work(x, eps, maxit, mixed, mixed.constant, count, step, 
-      robust, takeAll, noise, noise.factor, force,
-      robMethod, force.mixed, mi, addMixedFactors, 
-      trace,init.method,modelFormulas=modelFormulas,multinom.method=multinom.method,
-      imp_var=imp_var,imp_suffix=imp_suffix)
-}
-
-#' @rdname irmi
-#' @export
-
-irmi.survey.design <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
-    robust=FALSE, takeAll=TRUE,
-    noise=TRUE, noise.factor=1, force=FALSE,
-    robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,
-    multinom.method="multinom",imp_var=TRUE,imp_suffix="imp") {
-  x$variables <- irmi_work(x$variables, eps, maxit, mixed, mixed.constant, count, step, 
-      robust, takeAll, noise, noise.factor, force,
-      robMethod, force.mixed, mi, addMixedFactors, 
-      trace,init.method,modelFormulas=modelFormulas,
-      multinom.method=multinom.method,imp_var=imp_var,imp_suffix=imp_suffix)
-  x$call <- sys.call(-1)
-  x
-}
-
-#' @rdname irmi
-#' @export
-
-irmi.default <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
-    robust=FALSE, takeAll=TRUE,
-    noise=TRUE, noise.factor=1, force=FALSE,
-    robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,
-    multinom.method="multinom",imp_var=TRUE,imp_suffix="imp") {
-  irmi_work(as.data.frame(x), eps, maxit, mixed, mixed.constant, count, step, 
-      robust, takeAll, noise, noise.factor, force,
-      robMethod, force.mixed, mi, addMixedFactors, 
-      trace,init.method,modelFormulas=modelFormulas,
-      multinom.method=multinom.method,imp_var=imp_var,imp_suffix=imp_suffix)
-}
-
-`irmi_work` <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
-    robust=FALSE, takeAll=TRUE,
-    noise=TRUE, noise.factor=1, force=FALSE,
-    robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,
-    multinom.method="multinom",imp_var=TRUE,imp_suffix="imp"){
 #Authors: Alexander Kowarik and Matthias Templ, Statistics Austria, GPL 2 or newer, version: 15. Nov. 2012
   #object mixed conversion into the right format (vector of variable names of type mixed)
 #TODO: Data sets with variables "y" might fail
