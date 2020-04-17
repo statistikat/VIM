@@ -1,8 +1,8 @@
 #' Random Forest Imputation
 #'
 #' Impute missing values based on a random forest model using [ranger::ranger()]
-#' @param formula model formula to impute one variable
-#' @param data A data.frame or survey object containing the data
+#' @param formula model formula for the imputation
+#' @param data A `data.frame` containing the data
 #' @param imp_var `TRUE`/`FALSE` if a `TRUE`/`FALSE` variables for each imputed
 #' variable should be created show the imputation status
 #' @param imp_suffix suffix used for TF imputation variables
@@ -10,8 +10,8 @@
 #' @param verbose Show the number of observations used for training
 #'   and evaluating the RF-Model. This parameter is also passed down to
 #'   [ranger::ranger()] to show computation status.
-#' @param median Use a median to average the values of individual trees for
-#'   a more robust estimate.
+#' @param median Use the median (rather than the arithmetic mean) to average
+#'   the values of individual trees for a more robust estimate.
 #' @return the imputed data set.
 #' @family imputation methods
 #' @examples 
