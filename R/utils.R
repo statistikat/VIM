@@ -19,6 +19,12 @@
 
 # ---------------------------------------
 
+check_data <- function(data) {
+  if (inherits(data, "survey.design"))
+    stop("support for survey.design objects was removed in VIM",
+         " 6.0.0. Use data.frame or data.table instead")
+}
+
 ## utilities for data
 getEscapeChars <- function() {
   c("", "_", "__", "-", " ", "/", "\\", ",")

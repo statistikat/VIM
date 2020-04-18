@@ -53,6 +53,7 @@ primitive.impute <- function(x){
 #' @export
 matchImpute <- function(data,variable=colnames(data)[!colnames(data)%in%match_var],match_var, imp_var=TRUE,
     imp_suffix="imp"){
+  check_data(data)
   is_df <- !is.data.table(data)
   if (is_df)
     data <- as.data.table(data)

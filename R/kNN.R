@@ -113,6 +113,7 @@ kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnam
                 numFun = median, catFun=maxCat,
                 makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
                 imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE,addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
+  check_data(data)
   data_df <- !is.data.table(data)
   force(variable)
   force(dist_var)

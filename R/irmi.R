@@ -98,6 +98,7 @@ irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL
 #Authors: Alexander Kowarik and Matthias Templ, Statistics Austria, GPL 2 or newer, version: 15. Nov. 2012
   #object mixed conversion into the right format (vector of variable names of type mixed)
 #TODO: Data sets with variables "y" might fail
+  check_data(x)
   if(trace){
     message("Method for multinomial models:",multinom.method,"\n")
   }

@@ -42,6 +42,7 @@
 #'
 #' @export
 regressionImp <- function(formula, data, family = "AUTO", robust = FALSE, imp_var = TRUE, imp_suffix = "imp", mod_cat = FALSE) {
+  check_data(data)
   data <- as.data.frame(data)
   formchar <- as.character(formula)
   lhs <- gsub(" ", "", strsplit(formchar[2], "\\+")[[1]])

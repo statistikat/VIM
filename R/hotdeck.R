@@ -72,6 +72,7 @@ hotdeck <- function(data , variable=NULL, ord_var=NULL,domain_var=NULL,
     makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
     imp_var=TRUE,imp_suffix="imp"
     ){
+  check_data(data)
   OriginalSortingVariable <- impvar <- NULL #empty init
   if(is.null(variable)){
     variable <- colnames(data)
