@@ -117,7 +117,7 @@
 #' legend("top", col = c("skyblue", "orange"), lwd = c(1,1), 
 #'     legend = c("observed in Bi", "imputed in Bi"))
 #' 
-#' @export parcoordMiss
+#' @export
 parcoordMiss <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
                          plotvars = NULL, plotNA = TRUE, 
                          col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
@@ -125,65 +125,9 @@ parcoordMiss <- function(x, delimiter = NULL, highlight = NULL, selection = c("a
                          ylim = NULL, main = NULL, sub = NULL, 
                          xlab = NULL, ylab = NULL, labels = TRUE, 
                          xpd = NULL, interactive = TRUE, ...) {
-  UseMethod("parcoordMiss", x)
-}
-
-#' @rdname parcoordMiss
-#' @export
-
-parcoordMiss.data.frame <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
-                                    plotvars = NULL, plotNA = TRUE, 
-                                    col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
-                                    alpha = NULL, lty = par("lty"), xlim = NULL, 
-                                    ylim = NULL, main = NULL, sub = NULL, 
-                                    xlab = NULL, ylab = NULL, labels = TRUE, 
-                                    xpd = NULL, interactive = TRUE, ...) {
-  parcoordMiss_work(x, delimiter, highlight, selection, plotvars, plotNA, col,
-                    alpha, lty, xlim, ylim, main, sub, xlab, ylab, labels,
-                    xpd, interactive, ...)
-}
-
-#' @rdname parcoordMiss
-#' @export
-
-parcoordMiss.survey.design <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
-                                       plotvars = NULL, plotNA = TRUE, 
-                                       col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
-                                       alpha = NULL, lty = par("lty"), xlim = NULL, 
-                                       ylim = NULL, main = NULL, sub = NULL, 
-                                       xlab = NULL, ylab = NULL, labels = TRUE, 
-                                       xpd = NULL, interactive = TRUE, ...) {
-  parcoordMiss_work(x$variables, delimiter, highlight, selection, plotvars, plotNA, col,
-                    alpha, lty, xlim, ylim, main, sub, xlab, ylab, labels,
-                    xpd, interactive, ...)
-}
-
-#' @rdname parcoordMiss
-#' @export
-
-parcoordMiss.default <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
-                                 plotvars = NULL, plotNA = TRUE, 
-                                 col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
-                                 alpha = NULL, lty = par("lty"), xlim = NULL, 
-                                 ylim = NULL, main = NULL, sub = NULL, 
-                                 xlab = NULL, ylab = NULL, labels = TRUE, 
-                                 xpd = NULL, interactive = TRUE, ...) {
-  parcoordMiss_work(as.data.frame(x), delimiter, highlight, selection, plotvars, plotNA, col,
-                    alpha, lty, xlim, ylim, main, sub, xlab, ylab, labels,
-                    xpd, interactive, ...)
-}
-
-parcoordMiss_work <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
-        plotvars = NULL, plotNA = TRUE, 
-		col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
-        alpha = NULL, lty = par("lty"), xlim = NULL, 
-        ylim = NULL, main = NULL, sub = NULL, 
-        xlab = NULL, ylab = NULL, labels = TRUE, 
-        xpd = NULL, interactive = TRUE, ...) {
+  check_data(x)
+  x <- as.data.frame(x)
     # initializations and error messages
-    if(!(inherits(x, c("data.frame","matrix")))) {
-        stop("'x' must be a data.frame or matrix")
-    }
 	imputed <- FALSE # indicates if there are Variables with missing-index
 	## delimiter ##
 	if(!is.null(delimiter)) {

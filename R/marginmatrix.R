@@ -62,42 +62,12 @@
 #' x_imp[,c(1,2,4)] <- log10(x_imp[,c(1,2,4)])
 #' marginmatrix(x_imp, delimiter = "_imp")
 #' 
-#' @export marginmatrix
+#' @export
 marginmatrix <- function(x, delimiter = NULL, 
                          col = c("skyblue","red","red4","orange","orange4"), 
                          alpha = NULL, ...) {
-  UseMethod("marginmatrix", x)
-}
-
-#' @rdname marginmatrix
-#' @export
-
-marginmatrix.data.frame <- function(x, delimiter = NULL, 
-                                    col = c("skyblue","red","red4","orange","orange4"), 
-                                    alpha = NULL, ...) {
-  marginmatrix_work(x, delimiter, col,alpha, ...)
-}
-
-#' @rdname marginmatrix
-#' @export
-
-marginmatrix.survey.design <- function(x, delimiter = NULL, 
-                                       col = c("skyblue","red","red4","orange","orange4"), 
-                                       alpha = NULL, ...) {
-  marginmatrix_work(x$variables, delimiter, col,alpha, ...)
-}
-
-#' @rdname marginmatrix
-#' @export
-
-marginmatrix.default <- function(x, delimiter = NULL, 
-                                 col = c("skyblue","red","red4","orange","orange4"), 
-                                 alpha = NULL, ...) {
-  marginmatrix_work(as.data.frame(x), delimiter, col,alpha, ...)
-}
-
-marginmatrix_work <- function(x, delimiter = NULL, col = c("skyblue","red","red4","orange","orange4"), 
-    alpha = NULL, ...) {
+  check_data(x)
+  x <- as.data.frame(x)
     panel.marginplot <- function(x, y, ...) {
         par(new=TRUE)
         localMarginplot <- function(..., numbers, 

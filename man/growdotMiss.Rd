@@ -3,87 +3,9 @@
 \name{growdotMiss}
 \alias{growdotMiss}
 \alias{bubbleMiss}
-\alias{growdotMiss.data.frame}
-\alias{growdotMiss.survey.design}
-\alias{growdotMiss.default}
 \title{Growing dot map with information about missing/imputed values}
 \usage{
 growdotMiss(
-  x,
-  coords,
-  map,
-  pos = 1,
-  delimiter = NULL,
-  selection = c("any", "all"),
-  log = FALSE,
-  col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
-  border = par("bg"),
-  alpha = NULL,
-  scale = NULL,
-  size = NULL,
-  exp = c(0, 0.95, 0.05),
-  col.map = grey(0.5),
-  legend = TRUE,
-  legtitle = "Legend",
-  cex.legtitle = par("cex"),
-  cex.legtext = par("cex"),
-  ncircles = 6,
-  ndigits = 1,
-  interactive = TRUE,
-  ...
-)
-
-\method{growdotMiss}{data.frame}(
-  x,
-  coords,
-  map,
-  pos = 1,
-  delimiter = NULL,
-  selection = c("any", "all"),
-  log = FALSE,
-  col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
-  border = par("bg"),
-  alpha = NULL,
-  scale = NULL,
-  size = NULL,
-  exp = c(0, 0.95, 0.05),
-  col.map = grey(0.5),
-  legend = TRUE,
-  legtitle = "Legend",
-  cex.legtitle = par("cex"),
-  cex.legtext = par("cex"),
-  ncircles = 6,
-  ndigits = 1,
-  interactive = TRUE,
-  ...
-)
-
-\method{growdotMiss}{survey.design}(
-  x,
-  coords,
-  map,
-  pos = 1,
-  delimiter = NULL,
-  selection = c("any", "all"),
-  log = FALSE,
-  col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
-  border = par("bg"),
-  alpha = NULL,
-  scale = NULL,
-  size = NULL,
-  exp = c(0, 0.95, 0.05),
-  col.map = grey(0.5),
-  legend = TRUE,
-  legtitle = "Legend",
-  cex.legtitle = par("cex"),
-  cex.legtext = par("cex"),
-  ncircles = 6,
-  ndigits = 1,
-  interactive = TRUE,
-  ...
-)
-
-\method{growdotMiss}{default}(
   x,
   coords,
   map,

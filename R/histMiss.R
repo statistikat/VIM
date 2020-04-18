@@ -108,7 +108,7 @@
 #' histMiss(x_IMPUTED, delimiter = "_imp")
 #' histMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
 #' 
-#' @export histMiss
+#' @export
 histMiss <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
                      breaks = "Sturges", right = TRUE, 
                      col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
@@ -116,59 +116,8 @@ histMiss <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"),
                      xlab = NULL, ylab = NULL, axes = TRUE, 
                      only.miss = TRUE, miss.labels = axes, 
                      interactive = TRUE, ...) {
-  UseMethod("histMiss", x)
-}
-
-#' @rdname histMiss
-#' @export
-
-histMiss.data.frame <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
-                                breaks = "Sturges", right = TRUE, 
-                                col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
-                                border = NULL, main = NULL, sub = NULL, 
-                                xlab = NULL, ylab = NULL, axes = TRUE, 
-                                only.miss = TRUE, miss.labels = axes, 
-                                interactive = TRUE, ...) {
-  histMiss_work(x, delimiter, pos, selection, breaks, right, col, border, main, sub,
-            xlab, ylab, axes, only.miss, miss.labels, interactive, ...)
-}
-
-#' @rdname histMiss
-#' @export
-
-histMiss.survey.design <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
-                                   breaks = "Sturges", right = TRUE, 
-                                   col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
-                                   border = NULL, main = NULL, sub = NULL, 
-                                   xlab = NULL, ylab = NULL, axes = TRUE, 
-                                   only.miss = TRUE, miss.labels = axes, 
-                                   interactive = TRUE, ...) {
-  histMiss_work(x$variables, delimiter, pos, selection, breaks, right, col, border, main, sub,
-                xlab, ylab, axes, only.miss, miss.labels, interactive, ...)
-}
-
-#' @rdname histMiss
-#' @export
-
-histMiss.default <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
-                             breaks = "Sturges", right = TRUE, 
-                             col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
-                             border = NULL, main = NULL, sub = NULL, 
-                             xlab = NULL, ylab = NULL, axes = TRUE, 
-                             only.miss = TRUE, miss.labels = axes, 
-                             interactive = TRUE, ...) {
-  histMiss_work(as.data.frame(x), delimiter, pos, selection, breaks, right, col, border, main, sub,
-                xlab, ylab, axes, only.miss, miss.labels, interactive, ...)
-}
-
-histMiss_work <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
-		breaks = "Sturges", right = TRUE, 
-		col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
-		border = NULL, main = NULL, sub = NULL, 
-		xlab = NULL, ylab = NULL, axes = TRUE, 
-		only.miss = TRUE, miss.labels = axes, 
-		interactive = TRUE, ...) {
-	
+  check_data(x)
+  x <- as.data.frame(x)
 
 	imputed <- FALSE # indicates if there are Variables with missing-index
 	# initializations and error messages

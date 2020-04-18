@@ -2,75 +2,9 @@
 % Please edit documentation in R/pbox.R
 \name{pbox}
 \alias{pbox}
-\alias{pbox.data.frame}
-\alias{pbox.survey.design}
-\alias{pbox.default}
 \title{Parallel boxplots with information about missing/imputed values}
 \usage{
 pbox(
-  x,
-  delimiter = NULL,
-  pos = 1,
-  selection = c("none", "any", "all"),
-  col = c("skyblue", "red", "red4", "orange", "orange4"),
-  numbers = TRUE,
-  cex.numbers = par("cex"),
-  xlim = NULL,
-  ylim = NULL,
-  main = NULL,
-  sub = NULL,
-  xlab = NULL,
-  ylab = NULL,
-  axes = TRUE,
-  frame.plot = axes,
-  labels = axes,
-  interactive = TRUE,
-  ...
-)
-
-\method{pbox}{data.frame}(
-  x,
-  delimiter = NULL,
-  pos = 1,
-  selection = c("none", "any", "all"),
-  col = c("skyblue", "red", "red4", "orange", "orange4"),
-  numbers = TRUE,
-  cex.numbers = par("cex"),
-  xlim = NULL,
-  ylim = NULL,
-  main = NULL,
-  sub = NULL,
-  xlab = NULL,
-  ylab = NULL,
-  axes = TRUE,
-  frame.plot = axes,
-  labels = axes,
-  interactive = TRUE,
-  ...
-)
-
-\method{pbox}{survey.design}(
-  x,
-  delimiter = NULL,
-  pos = 1,
-  selection = c("none", "any", "all"),
-  col = c("skyblue", "red", "red4", "orange", "orange4"),
-  numbers = TRUE,
-  cex.numbers = par("cex"),
-  xlim = NULL,
-  ylim = NULL,
-  main = NULL,
-  sub = NULL,
-  xlab = NULL,
-  ylab = NULL,
-  axes = TRUE,
-  frame.plot = axes,
-  labels = axes,
-  interactive = TRUE,
-  ...
-)
-
-\method{pbox}{default}(
   x,
   delimiter = NULL,
   pos = 1,

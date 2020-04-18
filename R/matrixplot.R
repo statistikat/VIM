@@ -94,65 +94,16 @@
 #' x_imp[,c(1,2,4,6,7)] <- log10(x_imp[,c(1,2,4,6,7)])
 #' matrixplot(x_imp, delimiter = "_imp", sortby = "BrainWgt")
 #' 
-#' @export matrixplot
+#' @export
 matrixplot <- function(x, delimiter = NULL, sortby = NULL,
                        col = c("red","orange"),
                        fixup = TRUE, xlim = NULL, ylim = NULL, 
                        main = NULL, sub = NULL, xlab = NULL, 
                        ylab = NULL, axes = TRUE, labels = axes, 
                        xpd = NULL, interactive = TRUE, ...) {
-  UseMethod("matrixplot", x)
-}
-
-#' @rdname matrixplot
-#' @export
-
-matrixplot.data.frame <- function(x, delimiter = NULL, sortby = NULL,
-                                  col = c("red","orange"),
-                                  fixup = TRUE, xlim = NULL, ylim = NULL, 
-                                  main = NULL, sub = NULL, xlab = NULL, 
-                                  ylab = NULL, axes = TRUE, labels = axes, 
-                                  xpd = NULL, interactive = TRUE, ...) {
-  matrixplot_work(x, delimiter, sortby, col, fixup, xlim, ylim,
-                  main, sub, xlab, ylab, axes, labels, xpd, interactive, ...)
-}
-
-#' @rdname matrixplot
-#' @export
-
-matrixplot.survey.design <- function(x, delimiter = NULL, sortby = NULL,
-                                     col = c("red","orange"),
-                                     fixup = TRUE, xlim = NULL, ylim = NULL, 
-                                     main = NULL, sub = NULL, xlab = NULL, 
-                                     ylab = NULL, axes = TRUE, labels = axes, 
-                                     xpd = NULL, interactive = TRUE, ...) {
-  matrixplot_work(x$variables, delimiter, sortby, col, fixup, xlim, ylim,
-                  main, sub, xlab, ylab, axes, labels, xpd, interactive, ...)
-}
-
-#' @rdname matrixplot
-#' @export
-
-matrixplot.default <- function(x, delimiter = NULL, sortby = NULL,
-                               col = c("red","orange"),
-                               fixup = TRUE, xlim = NULL, ylim = NULL, 
-                               main = NULL, sub = NULL, xlab = NULL, 
-                               ylab = NULL, axes = TRUE, labels = axes, 
-                               xpd = NULL, interactive = TRUE, ...) {
-  matrixplot_work(as.data.frame(x), delimiter, sortby, col, fixup, xlim, ylim,
-                  main, sub, xlab, ylab, axes, labels, xpd, interactive, ...)
-}
-
-matrixplot_work <- function(x, delimiter = NULL, sortby = NULL,
-		col = c("red","orange"), 
-        #space = c("rgb", "hcl"), 
-        fixup = TRUE, xlim = NULL, ylim = NULL, 
-        main = NULL, sub = NULL, xlab = NULL, 
-        ylab = NULL, axes = TRUE, labels = axes, 
-        xpd = NULL, interactive = TRUE, ...) {
+  check_data(x)
+  x <- as.data.frame(x)
     # initializations and error messages
-    if(!(inherits(x, c("data.frame","matrix")))) 
-        stop("'x' must be a data.frame or matrix")
 	imputed <- FALSE # indicates if there are Variables with missing-index
 	## delimiter ##
 	if(!is.null(delimiter)) {

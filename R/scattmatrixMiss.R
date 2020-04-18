@@ -96,65 +96,16 @@
 #' x_imp[,c(1,2,4)] <- log10(x_imp[,c(1,2,4)])
 #' scattmatrixMiss(x_imp, delimiter = "_imp", highlight = "Dream")
 #' 
-#' @export scattmatrixMiss
+#' @export
 scattmatrixMiss <- function(x, delimiter = NULL, highlight = NULL, 
                             selection = c("any","all"), plotvars = NULL, 
                             col = c("skyblue","red","orange"), alpha = NULL, 
                             pch = c(1,3), lty = par("lty"), 
                             diagonal = c("density","none"), 
                             interactive = TRUE, ...)  {
-  UseMethod("scattmatrixMiss", x)
-}
-
-#' @rdname scattmatrixMiss
-#' @export
-
-scattmatrixMiss.data.frame <- function(x, delimiter = NULL, highlight = NULL, 
-                                       selection = c("any","all"), plotvars = NULL, 
-                                       col = c("skyblue","red","orange"), alpha = NULL, 
-                                       pch = c(1,3), lty = par("lty"), 
-                                       diagonal = c("density","none"), 
-                                       interactive = TRUE, ...)  {
-  scattmatrixMiss_work(x, delimiter, highlight, selection, plotvars, 
-                       col, alpha, pch, lty, diagonal, interactive, ...)
-}
-
-#' @rdname scattmatrixMiss
-#' @export
-
-scattmatrixMiss.survey.design <- function(x, delimiter = NULL, highlight = NULL, 
-                                          selection = c("any","all"), plotvars = NULL, 
-                                          col = c("skyblue","red","orange"), alpha = NULL, 
-                                          pch = c(1,3), lty = par("lty"), 
-                                          diagonal = c("density","none"), 
-                                          interactive = TRUE, ...)  {
-  scattmatrixMiss_work(x$variables, delimiter, highlight, selection, plotvars, 
-                       col, alpha, pch, lty, diagonal, interactive, ...)
-}
-
-#' @rdname scattmatrixMiss
-#' @export
-
-scattmatrixMiss.default <- function(x, delimiter = NULL, highlight = NULL, 
-                                    selection = c("any","all"), plotvars = NULL, 
-                                    col = c("skyblue","red","orange"), alpha = NULL, 
-                                    pch = c(1,3), lty = par("lty"), 
-                                    diagonal = c("density","none"), 
-                                    interactive = TRUE, ...)  {
-  scattmatrixMiss_work(as.data.frame(x), delimiter, highlight, selection, plotvars, 
-                       col, alpha, pch, lty, diagonal, interactive, ...)
-}
-
-scattmatrixMiss_work <- function(x, delimiter = NULL, highlight = NULL, 
-        selection = c("any","all"), plotvars = NULL, 
-        col = c("skyblue","red","orange"), alpha = NULL, 
-        pch = c(1,3), lty = par("lty"), 
-        diagonal = c("density","none"), 
-        interactive = TRUE, ...) {
+  check_data(x)
+  x <- as.data.frame(x)
     # initializations and error messages
-    if(!(inherits(x, c("data.frame","matrix")))) {
-        stop("'x' must be a data.frame or matrix")
-    }
 	imputed <- FALSE # indicates if there are Variables with missing-index
 	## delimiter ##
 	if(!is.null(delimiter)) {

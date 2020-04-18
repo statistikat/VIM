@@ -2,57 +2,9 @@
 % Please edit documentation in R/scattmatrixMiss.R
 \name{scattmatrixMiss}
 \alias{scattmatrixMiss}
-\alias{scattmatrixMiss.data.frame}
-\alias{scattmatrixMiss.survey.design}
-\alias{scattmatrixMiss.default}
 \title{Scatterplot matrix with information about missing/imputed values}
 \usage{
 scattmatrixMiss(
-  x,
-  delimiter = NULL,
-  highlight = NULL,
-  selection = c("any", "all"),
-  plotvars = NULL,
-  col = c("skyblue", "red", "orange"),
-  alpha = NULL,
-  pch = c(1, 3),
-  lty = par("lty"),
-  diagonal = c("density", "none"),
-  interactive = TRUE,
-  ...
-)
-
-\method{scattmatrixMiss}{data.frame}(
-  x,
-  delimiter = NULL,
-  highlight = NULL,
-  selection = c("any", "all"),
-  plotvars = NULL,
-  col = c("skyblue", "red", "orange"),
-  alpha = NULL,
-  pch = c(1, 3),
-  lty = par("lty"),
-  diagonal = c("density", "none"),
-  interactive = TRUE,
-  ...
-)
-
-\method{scattmatrixMiss}{survey.design}(
-  x,
-  delimiter = NULL,
-  highlight = NULL,
-  selection = c("any", "all"),
-  plotvars = NULL,
-  col = c("skyblue", "red", "orange"),
-  alpha = NULL,
-  pch = c(1, 3),
-  lty = par("lty"),
-  diagonal = c("density", "none"),
-  interactive = TRUE,
-  ...
-)
-
-\method{scattmatrixMiss}{default}(
   x,
   delimiter = NULL,
   highlight = NULL,

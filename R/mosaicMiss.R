@@ -69,47 +69,13 @@
 #' mosaicMiss(kNN(sleep), highlight = 4, 
 #'     plotvars = 8:10, delimiter = "_imp", miss.labels = FALSE)
 #' 
-#' @export mosaicMiss
+#' @export
 mosaicMiss <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
                        plotvars = NULL, col = c("skyblue","red","orange"), 
                        labels = NULL, miss.labels = TRUE, ...) {
-  UseMethod("mosaicMiss", x)
-}
-
-#' @rdname mosaicMiss
-#' @export
-
-mosaicMiss.data.frame <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
-                                  plotvars = NULL, col = c("skyblue","red","orange"), 
-                                  labels = NULL, miss.labels = TRUE, ...) {
-  mosaicMiss_work(x, delimiter, highlight, selection, plotvars, col, labels, miss.labels, ...)
-}
-
-#' @rdname mosaicMiss
-#' @export
-
-mosaicMiss.survey.design <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
-                                     plotvars = NULL, col = c("skyblue","red","orange"), 
-                                     labels = NULL, miss.labels = TRUE, ...) {
-  mosaicMiss_work(x$variables, delimiter, highlight, selection, plotvars, col, labels, miss.labels, ...)
-}
-
-#' @rdname mosaicMiss
-#' @export
-
-mosaicMiss.default <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
-                               plotvars = NULL, col = c("skyblue","red","orange"), 
-                               labels = NULL, miss.labels = TRUE, ...) {
-  mosaicMiss_work(as.data.frame(x), delimiter, highlight, selection, plotvars, col, labels, miss.labels, ...)
-}
-
-mosaicMiss_work <- function(x, delimiter = NULL, highlight = NULL, selection = c("any","all"), 
-        plotvars = NULL, col = c("skyblue","red","orange"), 
-        labels = NULL, miss.labels = TRUE, ...) {
+  check_data(x)
+  x <- as.data.frame(x)
     # initializations and error messages
-    if(!(inherits(x, c("data.frame","matrix")))) {
-        stop("'x' must be a data.frame or matrix")
-    }
 	imputed <- FALSE # indicates if there are Variables with missing-index
 	## delimiter ##
 	if(!is.null(delimiter)) {

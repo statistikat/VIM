@@ -97,7 +97,7 @@
 #' x_imp <- kNN(chorizonDL[,c("Ca","As","Bi" )])
 #' growdotMiss(x_imp, coo, kola.background, delimiter = "_imp", border = "white")
 #' 
-#' @export growdotMiss
+#' @export
 growdotMiss <- function(x, coords, map, pos=1, delimiter = NULL, selection = c("any","all"), 
                         log = FALSE, col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"), 
                         border = par("bg"), alpha = NULL, scale = NULL, 
@@ -106,67 +106,10 @@ growdotMiss <- function(x, coords, map, pos=1, delimiter = NULL, selection = c("
                         legtitle = "Legend", cex.legtitle = par("cex"), 
                         cex.legtext = par("cex"), ncircles = 6, ndigits = 1, 
                         interactive = TRUE, ...)  {
-  UseMethod("growdotMiss", x)
-}
-
-#' @rdname growdotMiss
-#' @export
-
-growdotMiss.data.frame <- function(x, coords, map, pos=1, delimiter = NULL, selection = c("any","all"), 
-                                   log = FALSE, col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"), 
-                                   border = par("bg"), alpha = NULL, scale = NULL, 
-                                   size = NULL, exp = c(0, 0.95, 0.05), 
-                                   col.map = grey(0.5), legend = TRUE, 
-                                   legtitle = "Legend", cex.legtitle = par("cex"), 
-                                   cex.legtext = par("cex"), ncircles = 6, ndigits = 1, 
-                                   interactive = TRUE, ...)  {
-  growdotMiss_work(x, coords, map, pos, delimiter, selection, log, col, border, alpha, scale, size,
-                   exp, col.map, legend, legtitle, cex.legtitle, cex.legtext, ncircles,
-                   ndigits, interactive,...)
-}
-
-#' @rdname growdotMiss
-#' @export
-
-growdotMiss.survey.design <- function(x, coords, map, pos=1, delimiter = NULL, selection = c("any","all"), 
-                                      log = FALSE, col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"), 
-                                      border = par("bg"), alpha = NULL, scale = NULL, 
-                                      size = NULL, exp = c(0, 0.95, 0.05), 
-                                      col.map = grey(0.5), legend = TRUE, 
-                                      legtitle = "Legend", cex.legtitle = par("cex"), 
-                                      cex.legtext = par("cex"), ncircles = 6, ndigits = 1, 
-                                      interactive = TRUE, ...)  {
-  growdotMiss_work(x$variables, coords, map, pos, delimiter, selection, log, col, border, alpha, scale, size,
-                   exp, col.map, legend, legtitle, cex.legtitle, cex.legtext, ncircles,
-                   ndigits, interactive,...)
-}
-
-#' @rdname growdotMiss
-#' @export
-
-growdotMiss.default <- function(x, coords, map, pos=1, delimiter = NULL, selection = c("any","all"), 
-                                log = FALSE, col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"), 
-                                border = par("bg"), alpha = NULL, scale = NULL, 
-                                size = NULL, exp = c(0, 0.95, 0.05), 
-                                col.map = grey(0.5), legend = TRUE, 
-                                legtitle = "Legend", cex.legtitle = par("cex"), 
-                                cex.legtext = par("cex"), ncircles = 6, ndigits = 1, 
-                                interactive = TRUE, ...)  {
-  growdotMiss_work(as.data.frame(x), coords, map, pos, delimiter, selection, log, col, border, alpha, scale, size,
-                   exp, col.map, legend, legtitle, cex.legtitle, cex.legtext, ncircles,
-                   ndigits, interactive,...)
-}
-
-# code is based on Peter Filzmoser's function 'bubbleFIN' in package 'StatDA'
+  check_data(x)
+  x <- as.data.frame(x)
 # FIXME: infinite values
-growdotMiss_work <- function(x, coords, map, pos=1, delimiter = NULL, selection = c("any","all"), 
-        log = FALSE, col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"), 
-        border = par("bg"), alpha = NULL, scale = NULL, 
-        size = NULL, exp = c(0, 0.95, 0.05), 
-        col.map = grey(0.5), legend = TRUE, 
-        legtitle = "Legend", cex.legtitle = par("cex"), 
-        cex.legtext = par("cex"), ncircles = 6, ndigits = 1, 
-        interactive = TRUE, ...) {
+  # code is based on StatDA::bubbleFIN()
     # ncircles ... number of circles for the legend
     # ndigits ... number of digits for the legend
     # error messages
