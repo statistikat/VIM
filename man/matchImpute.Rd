@@ -13,7 +13,7 @@ matchImpute(
 )
 }
 \arguments{
-\item{data}{data.frame, data.table, survey object or matrix}
+\item{data}{data.frame, data.table or matrix}
 
 \item{variable}{variables to be imputed}
 
