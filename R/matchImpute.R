@@ -25,7 +25,7 @@ primitive.impute <- function(x){
 #' The method works by sampling values from the suitable donors.
 #' 
 #' @aliases matchImpute
-#' @param data data.frame, data.table, survey object or matrix
+#' @param data data.frame, data.table or matrix
 #' @param variable variables to be imputed
 #' @param match_var variables used for matching
 #' @param imp_var TRUE/FALSE if a TRUE/FALSE variables for each imputed
