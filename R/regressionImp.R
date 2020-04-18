@@ -13,7 +13,7 @@
 #' (robust=TRUE: [lmrob()], [glmrob()])
 #'
 #' @param formula model formula to impute one variable
-#' @param data A data.frame or survey object containing the data
+#' @param data A data.frame containing the data
 #' @param family family argument for [glm()]. `"AUTO"` (the default) tries to choose
 #' automatically and is the only really tested option!!!
 #' @param robust `TRUE`/`FALSE` if robust regression should be used. See details.

@@ -17,7 +17,7 @@ regressionImp(
 \arguments{
 \item{formula}{model formula to impute one variable}
 
-\item{data}{A data.frame or survey object containing the data}
+\item{data}{A data.frame containing the data}
 
 \item{family}{family argument for \code{\link[=glm]{glm()}}. \code{"AUTO"} (the default) tries to choose
 automatically and is the only really tested option!!!}
