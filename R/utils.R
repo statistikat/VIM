@@ -143,14 +143,6 @@ is.continuous <- function(x) is.numeric(x) && !is.integer(x)
 
 ## utilities for plots
 
-# get plot annotation for variables
-getLabel <- function(v) {
-  sc <- switch(getVm("scaling"), none="", classical="scaled", 
-      MCD="robustly scaled", robust="robustly scaled")
-  if(nchar(sc)) paste(v, " (", sc, ")", sep="")
-  else v
-}
-
 # print out which variables are highlighted
 highlightInfo <- function(highlight, selection = c("any","all"), imputed = FALSE) {
   if(!imputed) label <- "missings"
