@@ -147,42 +147,6 @@ The variables are dropped in reversed order, so that the last element of
   <span class='no'>match_var</span>,
   <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>
-)
-
-<span class='co'># S3 method for data.frame</span>
-<span class='fu'>matchImpute</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>variable</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>)[!<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>) <span class='kw'>%in%</span> <span class='no'>match_var</span>],
-  <span class='no'>match_var</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>
-)
-
-<span class='co'># S3 method for data.table</span>
-<span class='fu'>matchImpute</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>variable</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>)[!<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>) <span class='kw'>%in%</span> <span class='no'>match_var</span>],
-  <span class='no'>match_var</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>
-)
-
-<span class='co'># S3 method for survey.design</span>
-<span class='fu'>matchImpute</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>variable</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>$<span class='no'>variables</span>)[!<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>$<span class='no'>variables</span>) <span class='kw'>%in%</span> <span class='no'>match_var</span>],
-  <span class='no'>match_var</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>
-)
-
-<span class='co'># S3 method for default</span>
-<span class='fu'>matchImpute</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>variable</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>)[!<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>) <span class='kw'>%in%</span> <span class='no'>match_var</span>],
-  <span class='no'>match_var</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -190,7 +154,7 @@ The variables are dropped in reversed order, so that the last element of
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>data</th>
-      <td><p>data.frame, data.table, survey object or matrix</p></td>
+      <td><p>data.frame, data.table or matrix</p></td>
     </tr>
     <tr>
       <th>variable</th>

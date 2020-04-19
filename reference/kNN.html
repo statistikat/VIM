@@ -130,7 +130,7 @@ for numerical, categorical, ordered and semi-continous variables." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>k-Nearest Neighbour Imputation</h1>
-    <small class="dont-index">Source: <a href='https://github.com/statistikat/VIM/blob/master/R/kNNFaster.R'><code>R/kNNFaster.R</code></a></small>
+    <small class="dont-index">Source: <a href='https://github.com/statistikat/VIM/blob/master/R/kNN.R'><code>R/kNN.R</code></a></small>
     <div class="hidden name"><code>kNN.Rd</code></div>
     </div>
 
@@ -140,110 +140,6 @@ for numerical, categorical, ordered and semi-continous variables.</p>
     </div>
 
     <pre class="usage"><span class='fu'>kNN</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>variable</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>),
-  <span class='kw'>metric</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>k</span> <span class='kw'>=</span> <span class='fl'>5</span>,
-  <span class='kw'>dist_var</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>),
-  <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>numFun</span> <span class='kw'>=</span> <span class='no'>median</span>,
-  <span class='kw'>catFun</span> <span class='kw'>=</span> <span class='no'>maxCat</span>,
-  <span class='kw'>makeNA</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>NAcond</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>impNA</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>donorcond</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>mixed</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/vector.html'>vector</a></span>(),
-  <span class='kw'>mixed.constant</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>trace</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>,
-  <span class='kw'>addRF</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>onlyRF</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>addRandom</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>useImputedDist</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>weightDist</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
-)
-
-<span class='co'># S3 method for data.table</span>
-<span class='fu'>kNN</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>variable</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>),
-  <span class='kw'>metric</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>k</span> <span class='kw'>=</span> <span class='fl'>5</span>,
-  <span class='kw'>dist_var</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>),
-  <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>numFun</span> <span class='kw'>=</span> <span class='no'>median</span>,
-  <span class='kw'>catFun</span> <span class='kw'>=</span> <span class='no'>maxCat</span>,
-  <span class='kw'>makeNA</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>NAcond</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>impNA</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>donorcond</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>mixed</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/vector.html'>vector</a></span>(),
-  <span class='kw'>mixed.constant</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>trace</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>,
-  <span class='kw'>addRF</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>onlyRF</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>addRandom</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>useImputedDist</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>weightDist</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
-)
-
-<span class='co'># S3 method for data.frame</span>
-<span class='fu'>kNN</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>variable</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>),
-  <span class='kw'>metric</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>k</span> <span class='kw'>=</span> <span class='fl'>5</span>,
-  <span class='kw'>dist_var</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>),
-  <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>numFun</span> <span class='kw'>=</span> <span class='no'>median</span>,
-  <span class='kw'>catFun</span> <span class='kw'>=</span> <span class='no'>maxCat</span>,
-  <span class='kw'>makeNA</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>NAcond</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>impNA</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>donorcond</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>mixed</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/vector.html'>vector</a></span>(),
-  <span class='kw'>mixed.constant</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>trace</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>,
-  <span class='kw'>addRF</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>onlyRF</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>addRandom</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>useImputedDist</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>weightDist</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
-)
-
-<span class='co'># S3 method for survey.design</span>
-<span class='fu'>kNN</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>variable</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>),
-  <span class='kw'>metric</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>k</span> <span class='kw'>=</span> <span class='fl'>5</span>,
-  <span class='kw'>dist_var</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>),
-  <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>numFun</span> <span class='kw'>=</span> <span class='no'>median</span>,
-  <span class='kw'>catFun</span> <span class='kw'>=</span> <span class='no'>maxCat</span>,
-  <span class='kw'>makeNA</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>NAcond</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>impNA</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>donorcond</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>mixed</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/vector.html'>vector</a></span>(),
-  <span class='kw'>mixed.constant</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>trace</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>,
-  <span class='kw'>addRF</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>onlyRF</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>addRandom</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>useImputedDist</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>weightDist</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
-)
-
-<span class='co'># S3 method for default</span>
-<span class='fu'>kNN</span>(
   <span class='no'>data</span>,
   <span class='kw'>variable</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>),
   <span class='kw'>metric</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,

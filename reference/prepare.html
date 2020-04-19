@@ -139,37 +139,7 @@ standardization of the data." />
 standardization of the data.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>prepare</span> (<span class='no'>x</span>, <span class='kw'>scaling</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>,<span class='st'>"classical"</span>,<span class='st'>"MCD"</span>,<span class='st'>"robust"</span>,<span class='st'>"onestep"</span>),
-    <span class='kw'>transformation</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>,<span class='st'>"minus"</span>,<span class='st'>"reciprocal"</span>,<span class='st'>"logarithm"</span>,
-          <span class='st'>"exponential"</span>,<span class='st'>"boxcox"</span>,<span class='st'>"clr"</span>,<span class='st'>"ilr"</span>,<span class='st'>"alr"</span>),
-     <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>powers</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='no'>alrVar</span>)
-
-<span class='co'># S3 method for data.frame</span>
-<span class='fu'>prepare</span>(
-  <span class='no'>x</span>,
-  <span class='kw'>scaling</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"classical"</span>, <span class='st'>"MCD"</span>, <span class='st'>"robust"</span>, <span class='st'>"onestep"</span>),
-  <span class='kw'>transformation</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"minus"</span>, <span class='st'>"reciprocal"</span>, <span class='st'>"logarithm"</span>, <span class='st'>"exponential"</span>,
-    <span class='st'>"boxcox"</span>, <span class='st'>"clr"</span>, <span class='st'>"ilr"</span>, <span class='st'>"alr"</span>),
-  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>powers</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>start</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='no'>alrVar</span>
-)
-
-<span class='co'># S3 method for survey.design</span>
-<span class='fu'>prepare</span>(
-  <span class='no'>x</span>,
-  <span class='kw'>scaling</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"classical"</span>, <span class='st'>"MCD"</span>, <span class='st'>"robust"</span>, <span class='st'>"onestep"</span>),
-  <span class='kw'>transformation</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"minus"</span>, <span class='st'>"reciprocal"</span>, <span class='st'>"logarithm"</span>, <span class='st'>"exponential"</span>,
-    <span class='st'>"boxcox"</span>, <span class='st'>"clr"</span>, <span class='st'>"ilr"</span>, <span class='st'>"alr"</span>),
-  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>powers</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>start</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='no'>alrVar</span>
-)
-
-<span class='co'># S3 method for default</span>
-<span class='fu'>prepare</span>(
+    <pre class="usage"><span class='fu'>prepare</span>(
   <span class='no'>x</span>,
   <span class='kw'>scaling</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"classical"</span>, <span class='st'>"MCD"</span>, <span class='st'>"robust"</span>, <span class='st'>"onestep"</span>),
   <span class='kw'>transformation</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"minus"</span>, <span class='st'>"reciprocal"</span>, <span class='st'>"logarithm"</span>, <span class='st'>"exponential"</span>,
@@ -247,69 +217,75 @@ and MAD.</p>
     <pre class="examples"><div class='input'>
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
 <span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='no'>sleep</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>, <span class='st'>"BrainWgt"</span>)]
-<span class='fu'>prepare</span>(<span class='no'>x</span>, <span class='kw'>scaling</span> <span class='kw'>=</span> <span class='st'>"robust"</span>, <span class='kw'>transformation</span> <span class='kw'>=</span> <span class='st'>"logarithm"</span>)</div><div class='output co'>#&gt;        BodyWgt     BrainWgt
-#&gt; 1   2.29654423  2.065651791
-#&gt; 2  -0.36479406 -0.341973693
-#&gt; 3   0.00384425  0.337397352
-#&gt; 4  -0.39000221 -0.394162508
-#&gt; 5   2.00622319  1.988808266
-#&gt; 6   0.34751616  0.833886347
-#&gt; 7  -1.50523403 -1.442342190
-#&gt; 8   1.16954595  0.812428746
-#&gt; 9  -0.00384425  0.140573701
-#&gt; 10  0.83068522  1.153063414
-#&gt; 11 -0.62348131 -0.352927979
-#&gt; 12  1.49208299  1.139036650
-#&gt; 13 -0.54553373 -0.702089671
-#&gt; 14  1.21685020  1.135654333
-#&gt; 15 -1.14789050 -0.948840510
-#&gt; 16 -0.03265868  0.132130944
-#&gt; 17 -0.43797777 -0.567778126
-#&gt; 18 -0.85136360 -0.440806763
-#&gt; 19 -0.26091911  0.005159582
-#&gt; 20  0.87301905  0.550618842
-#&gt; 21  1.53106780  1.308030646
-#&gt; 22  0.63891332  0.675385949
-#&gt; 23 -1.00579776 -1.013744471
-#&gt; 24  1.24740764  1.124434445
-#&gt; 25  0.97832006  1.045217553
-#&gt; 26  0.72134356  0.689050210
-#&gt; 27 -1.05790948 -0.520242791
-#&gt; 28 -0.35293675 -0.406877653
-#&gt; 29  1.52646089  1.294696270
-#&gt; 30  1.02745321  0.786209326
-#&gt; 31  0.71006820  0.419225234
-#&gt; 32 -1.96659542 -1.713653541
-#&gt; 33 -1.75704133 -1.507246151
-#&gt; 34  0.88293216  1.544154242
-#&gt; 35 -1.00080057 -0.622653643
-#&gt; 36 -0.27406564 -0.269069705
-#&gt; 37 -1.50523403 -1.339931339
-#&gt; 38 -1.28281320 -1.408413080
-#&gt; 39 -0.20437312 -0.358534177
-#&gt; 40  0.01394457 -0.166658854
-#&gt; 41  1.30446866  1.191378447
-#&gt; 42 -0.58668957 -0.038043210
-#&gt; 43  0.33132958  0.675385949
-#&gt; 44 -0.21894570 -0.147411668
-#&gt; 45  1.22466589  0.834876573
-#&gt; 46 -0.08777861 -0.126197703
-#&gt; 47  0.07533343  0.292253871
-#&gt; 48 -0.74964042 -0.785253337
-#&gt; 49  0.07157342  0.381718343
-#&gt; 50  0.21473507  0.832893358
-#&gt; 51 -0.45176687 -0.120361733
-#&gt; 52  0.02246126  0.070063542
-#&gt; 53  0.45046498  0.619166501
-#&gt; 54  0.84944951  0.824848129
-#&gt; 55 -0.26307088 -0.114619896
-#&gt; 56 -1.21535185 -1.013744471
-#&gt; 57 -0.39664693 -0.673595570
-#&gt; 58 -0.15523996 -0.120361733
-#&gt; 59 -1.04906038 -0.687557603
-#&gt; 60  0.06834383  0.431717260
-#&gt; 61  0.01394457 -0.529255582
-#&gt; 62  0.05806974 -0.005159582</div><div class='input'>
+<span class='fu'>prepare</span>(<span class='no'>x</span>, <span class='kw'>scaling</span> <span class='kw'>=</span> <span class='st'>"robust"</span>, <span class='kw'>transformation</span> <span class='kw'>=</span> <span class='st'>"logarithm"</span>)</div><div class='output co'>#&gt;           BodyWgt     BrainWgt
+#&gt;  [1,]  2.29654423  2.065651791
+#&gt;  [2,] -0.36479406 -0.341973693
+#&gt;  [3,]  0.00384425  0.337397352
+#&gt;  [4,] -0.39000221 -0.394162508
+#&gt;  [5,]  2.00622319  1.988808266
+#&gt;  [6,]  0.34751616  0.833886347
+#&gt;  [7,] -1.50523403 -1.442342190
+#&gt;  [8,]  1.16954595  0.812428746
+#&gt;  [9,] -0.00384425  0.140573701
+#&gt; [10,]  0.83068522  1.153063414
+#&gt; [11,] -0.62348131 -0.352927979
+#&gt; [12,]  1.49208299  1.139036650
+#&gt; [13,] -0.54553373 -0.702089671
+#&gt; [14,]  1.21685020  1.135654333
+#&gt; [15,] -1.14789050 -0.948840510
+#&gt; [16,] -0.03265868  0.132130944
+#&gt; [17,] -0.43797777 -0.567778126
+#&gt; [18,] -0.85136360 -0.440806763
+#&gt; [19,] -0.26091911  0.005159582
+#&gt; [20,]  0.87301905  0.550618842
+#&gt; [21,]  1.53106780  1.308030646
+#&gt; [22,]  0.63891332  0.675385949
+#&gt; [23,] -1.00579776 -1.013744471
+#&gt; [24,]  1.24740764  1.124434445
+#&gt; [25,]  0.97832006  1.045217553
+#&gt; [26,]  0.72134356  0.689050210
+#&gt; [27,] -1.05790948 -0.520242791
+#&gt; [28,] -0.35293675 -0.406877653
+#&gt; [29,]  1.52646089  1.294696270
+#&gt; [30,]  1.02745321  0.786209326
+#&gt; [31,]  0.71006820  0.419225234
+#&gt; [32,] -1.96659542 -1.713653541
+#&gt; [33,] -1.75704133 -1.507246151
+#&gt; [34,]  0.88293216  1.544154242
+#&gt; [35,] -1.00080057 -0.622653643
+#&gt; [36,] -0.27406564 -0.269069705
+#&gt; [37,] -1.50523403 -1.339931339
+#&gt; [38,] -1.28281320 -1.408413080
+#&gt; [39,] -0.20437312 -0.358534177
+#&gt; [40,]  0.01394457 -0.166658854
+#&gt; [41,]  1.30446866  1.191378447
+#&gt; [42,] -0.58668957 -0.038043210
+#&gt; [43,]  0.33132958  0.675385949
+#&gt; [44,] -0.21894570 -0.147411668
+#&gt; [45,]  1.22466589  0.834876573
+#&gt; [46,] -0.08777861 -0.126197703
+#&gt; [47,]  0.07533343  0.292253871
+#&gt; [48,] -0.74964042 -0.785253337
+#&gt; [49,]  0.07157342  0.381718343
+#&gt; [50,]  0.21473507  0.832893358
+#&gt; [51,] -0.45176687 -0.120361733
+#&gt; [52,]  0.02246126  0.070063542
+#&gt; [53,]  0.45046498  0.619166501
+#&gt; [54,]  0.84944951  0.824848129
+#&gt; [55,] -0.26307088 -0.114619896
+#&gt; [56,] -1.21535185 -1.013744471
+#&gt; [57,] -0.39664693 -0.673595570
+#&gt; [58,] -0.15523996 -0.120361733
+#&gt; [59,] -1.04906038 -0.687557603
+#&gt; [60,]  0.06834383  0.431717260
+#&gt; [61,]  0.01394457 -0.529255582
+#&gt; [62,]  0.05806974 -0.005159582
+#&gt; attr(,"scaled:center")
+#&gt;   BodyWgt  BrainWgt 
+#&gt; 0.5240363 1.2367435 
+#&gt; attr(,"scaled:scale")
+#&gt;  BodyWgt BrainWgt 
+#&gt; 1.436526 1.219976 </div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
