@@ -15,9 +15,9 @@ rangerImpute(
 )
 }
 \arguments{
-\item{formula}{model formula to impute one variable}
+\item{formula}{model formula for the imputation}
 
-\item{data}{A data.frame or survey object containing the data}
+\item{data}{A \code{data.frame} containing the data}
 
 \item{imp_var}{\code{TRUE}/\code{FALSE} if a \code{TRUE}/\code{FALSE} variables for each imputed
 variable should be created show the imputation status}
@@ -30,8 +30,8 @@ variable should be created show the imputation status}
 and evaluating the RF-Model. This parameter is also passed down to
 \code{\link[ranger:ranger]{ranger::ranger()}} to show computation status.}
 
-\item{median}{Use a median to average the values of individual trees for
-a more robust estimate.}
+\item{median}{Use the median (rather than the arithmetic mean) to average
+the values of individual trees for a more robust estimate.}
 }
 \value{
 the imputed data set.

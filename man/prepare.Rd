@@ -2,39 +2,9 @@
 % Please edit documentation in R/prepare.R
 \name{prepare}
 \alias{prepare}
-\alias{prepare.data.frame}
-\alias{prepare.survey.design}
-\alias{prepare.default}
 \title{Transformation and standardization}
 \usage{
-prepare (x, scaling = c("none","classical","MCD","robust","onestep"),
-    transformation = c("none","minus","reciprocal","logarithm",
-	  "exponential","boxcox","clr","ilr","alr"),
-     alpha = NULL, powers = NULL, start = 0, alrVar)
-
-\method{prepare}{data.frame}(
-  x,
-  scaling = c("none", "classical", "MCD", "robust", "onestep"),
-  transformation = c("none", "minus", "reciprocal", "logarithm", "exponential",
-    "boxcox", "clr", "ilr", "alr"),
-  alpha = NULL,
-  powers = NULL,
-  start = 0,
-  alrVar
-)
-
-\method{prepare}{survey.design}(
-  x,
-  scaling = c("none", "classical", "MCD", "robust", "onestep"),
-  transformation = c("none", "minus", "reciprocal", "logarithm", "exponential",
-    "boxcox", "clr", "ilr", "alr"),
-  alpha = NULL,
-  powers = NULL,
-  start = 0,
-  alrVar
-)
-
-\method{prepare}{default}(
+prepare(
   x,
   scaling = c("none", "classical", "MCD", "robust", "onestep"),
   transformation = c("none", "minus", "reciprocal", "logarithm", "exponential",

@@ -21,6 +21,7 @@
 rangerImpute <- function(formula, data, imp_var = TRUE,
                          imp_suffix = "imp", ..., verbose = FALSE,
                          median = FALSE) {
+  check_data(data)
   formchar <- as.character(formula)
   lhs <- gsub(" ", "", strsplit(formchar[2], "\\+")[[1]])
   rhs <- formchar[3]

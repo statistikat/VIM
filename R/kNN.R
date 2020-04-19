@@ -1,3 +1,40 @@
+lengthL <- function(x){
+  if(is.list(x)){
+    return(sapply(x,length))
+  }else{
+    return(length(x))
+  }
+}
+
+dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,
+                        don_index,imp_index,weightsx,k,mixed.constant,provideMins=TRUE){
+  #gd <- distance(don_dist_var,imp_dist_var,weights=weightsx)
+  if(is.null(mixed.constant))
+    mixed.constant <- rep(0,length(mixedX))
+  
+  if(provideMins){
+    gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
+                 factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,
+                 nMin=as.integer(k),returnMin=TRUE);
+    colnames(gd$mins) <- imp_index
+    erg2 <- as.matrix(gd$mins)
+  }else{
+    gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
+                 factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,
+                 nMin=as.integer(k));
+    erg2 <- NA
+  }
+  colnames(gd$ind) <- imp_index
+  gd$ind[,] <- don_index[gd$ind]
+  erg <- as.matrix(gd$ind)
+  
+  if(k==1){
+    erg <- t(erg)
+    erg2 <- t(erg2)
+  }
+  list(erg,erg2)
+}
+
 ####Hotdeck in context of kNN-k Nearest Neighbour Imputation
 #Author: Alexander Kowarik, Statistics Austria
 ## (k)NN-Imputation
@@ -71,106 +108,20 @@
 #' library(laeken)
 #' kNN(sleep, numFun = weightedMean, weightDist=TRUE)
 #' 
-#' @export kNN
+#' @export
 kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                 numFun = median, catFun=maxCat,
                 makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
                 imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE,addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
-  UseMethod("kNN", data)
-}
-
-#' @rdname kNN
-#' @export
-
-kNN.data.table <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
-    numFun = median, catFun=maxCat,
-    makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-    imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE, addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
-  kNN_work(copy(data), variable, metric, k, dist_var,weights, numFun, catFun,
-      makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
-      imp_var, imp_suffix, addRF, onlyRF, addRandom,useImputedDist,weightDist)
-}
-
-#' @rdname kNN
-#' @export
-
-kNN.data.frame <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
-                           numFun = median, catFun=maxCat,
-                           makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-                           imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE, addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
-  as.data.frame(kNN_work(as.data.table(data), variable, metric, k, dist_var,weights, numFun, catFun,
-           makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
-           imp_var, imp_suffix, addRF, onlyRF, addRandom,useImputedDist,weightDist))
-}
-
-#' @rdname kNN
-#' @export
-
-kNN.survey.design <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
-                              numFun = median, catFun=maxCat,
-                              makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-                              imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE, addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
-  data$variables <- kNN_work(data$variables, variable, metric, k, dist_var,weights, numFun, catFun,
-           makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
-           imp_var, imp_suffix, addRF, onlyRF,addRandom,useImputedDist,weightDist)
-  data$call <- sys.call(-1)
-  data
-}
-
-#' @rdname kNN
-#' @export
-
-kNN.default <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
-                        numFun = median, catFun=maxCat,
-                        makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-                        imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE, addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
-  kNN_work(as.data.table(data), variable, metric, k, dist_var,weights, numFun, catFun,
-           makeNA, NAcond, impNA, donorcond, mixed, mixed.constant, trace,
-           imp_var, imp_suffix, addRF, onlyRF, addRandom,useImputedDist,weightDist)
-}
-lengthL <- function(x){
-  if(is.list(x)){
-    return(sapply(x,length))
-  }else{
-    return(length(x))
+  check_data(data)
+  data_df <- !is.data.table(data)
+  force(variable)
+  force(dist_var)
+  if (data_df) {
+    data <- as.data.table(data)
+  } else {
+    data <- data.table::copy(data)
   }
-}
-
-
-
-dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,
-                        don_index,imp_index,weightsx,k,mixed.constant,provideMins=TRUE){
-  #gd <- distance(don_dist_var,imp_dist_var,weights=weightsx)
-  if(is.null(mixed.constant))
-    mixed.constant <- rep(0,length(mixedX))
-  
-  if(provideMins){
-    gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
-                 factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,
-                 nMin=as.integer(k),returnMin=TRUE);
-    colnames(gd$mins) <- imp_index
-    erg2 <- as.matrix(gd$mins)
-  }else{
-    gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
-                 factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,
-                 nMin=as.integer(k));
-    erg2 <- NA
-  }
-  colnames(gd$ind) <- imp_index
-  gd$ind[,] <- don_index[gd$ind]
-  erg <- as.matrix(gd$ind)
-  
-  if(k==1){
-    erg <- t(erg)
-    erg2 <- t(erg2)
-  }
-  list(erg,erg2)
-}
-kNN_work <-
-    function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
-        numFun = median, catFun=maxCat,
-        makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-        imp_var=TRUE,imp_suffix="imp",addRF=FALSE, onlyRF=FALSE ,addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE){
   #basic checks
   if(!is.null(mixed.constant)){
     if(length(mixed.constant)!=length(mixed))
@@ -232,6 +183,8 @@ kNN_work <-
   }
   if(length(variable)==0){
     warning(paste("Nothing is imputed, because all variables to be imputed only contains missings."))
+    if (data_df)
+      data <- as.data.frame(data)
     return(data)
   }
   orders <- data[,sapply(.SD,is.ordered)]
@@ -488,5 +441,7 @@ kNN_work <-
   if(!is.null(features_added)){
     data[,c(features_added):=NULL]
   }
+  if (data_df)
+    data <- as.data.frame(data)
   data
 }

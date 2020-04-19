@@ -94,62 +94,15 @@
 #' pbox(kNN(log(chorizonDL[, c(4,8,10,11,17,19,25,29,37,38,40)])),
 #'      delimiter = "_imp")
 #' 
-#' @export pbox
+#' @export
 pbox <- function(x, delimiter = NULL, pos = 1, selection = c("none","any","all"), 
                  col = c("skyblue","red","red4","orange","orange4"), numbers = TRUE, 
                  cex.numbers = par("cex"), xlim = NULL, ylim = NULL, 
                  main = NULL, sub = NULL, xlab = NULL, ylab = NULL, 
                  axes = TRUE, frame.plot = axes, labels = axes, 
                  interactive = TRUE, ...) {
-  UseMethod("pbox", x)
-}
-
-#' @rdname pbox
-#' @export
-
-pbox.data.frame <- function(x, delimiter = NULL, pos = 1, selection = c("none","any","all"), 
-                            col = c("skyblue","red","red4","orange","orange4"), numbers = TRUE, 
-                            cex.numbers = par("cex"), xlim = NULL, ylim = NULL, 
-                            main = NULL, sub = NULL, xlab = NULL, ylab = NULL, 
-                            axes = TRUE, frame.plot = axes, labels = axes, 
-                            interactive = TRUE, ...) {
-  pbox_work(x, delimiter, pos, selection, col, numbers, cex.numbers, xlim, ylim, main, sub,
-            xlab, ylab, axes, frame.plot, labels, interactive, ...)
-}
-
-#' @rdname pbox
-#' @export
-
-pbox.survey.design <- function(x, delimiter = NULL, pos = 1, selection = c("none","any","all"), 
-                               col = c("skyblue","red","red4","orange","orange4"), numbers = TRUE, 
-                               cex.numbers = par("cex"), xlim = NULL, ylim = NULL, 
-                               main = NULL, sub = NULL, xlab = NULL, ylab = NULL, 
-                               axes = TRUE, frame.plot = axes, labels = axes, 
-                               interactive = TRUE, ...) {
-  pbox_work(x$variables, delimiter, pos, selection, col, numbers, cex.numbers, xlim, ylim, main, sub,
-            xlab, ylab, axes, frame.plot, labels, interactive, ...)
-}
-
-#' @rdname pbox
-#' @export
-
-pbox.default <- function(x, delimiter = NULL, pos = 1, selection = c("none","any","all"), 
-                         col = c("skyblue","red","red4","orange","orange4"), numbers = TRUE, 
-                         cex.numbers = par("cex"), xlim = NULL, ylim = NULL, 
-                         main = NULL, sub = NULL, xlab = NULL, ylab = NULL, 
-                         axes = TRUE, frame.plot = axes, labels = axes, 
-                         interactive = TRUE, ...) {
-  pbox_work(as.data.frame(x), delimiter, pos, selection, col, numbers, cex.numbers, xlim, ylim, main, sub,
-            xlab, ylab, axes, frame.plot, labels, interactive, ...)
-}
-
-pbox_work <- function(x, delimiter = NULL, pos = 1, selection = c("none","any","all"), 
-        col = c("skyblue","red","red4","orange","orange4"), numbers = TRUE, 
-        cex.numbers = par("cex"), xlim = NULL, ylim = NULL, 
-        main = NULL, sub = NULL, xlab = NULL, ylab = NULL, 
-        axes = TRUE, frame.plot = axes, labels = axes, 
-        interactive = TRUE, ...) {
-
+  check_data(x)
+  x <- as.data.frame(x)
     # initializations and error messages
 	imputed <- FALSE # indicates if there are Variables with missing-index
     if(is.null(dim(x))) {  # vector

@@ -13,7 +13,7 @@
 #' (robust=TRUE: [lmrob()], [glmrob()])
 #'
 #' @param formula model formula to impute one variable
-#' @param data A data.frame or survey object containing the data
+#' @param data A data.frame containing the data
 #' @param family family argument for [glm()]. `"AUTO"` (the default) tries to choose
 #' automatically and is the only really tested option!!!
 #' @param robust `TRUE`/`FALSE` if robust regression should be used. See details.
@@ -40,43 +40,10 @@
 #' imp_testdata1 <- regressionImp(b1+b2~x1+x2,data=testdata$wna)
 #' imp_testdata3 <- regressionImp(x1~x2,data=testdata$wna,robust=TRUE)
 #'
-#' @export regressionImp
-regressionImp <- function(formula, data, family = "AUTO", robust = FALSE, imp_var = TRUE,
-    imp_suffix = "imp", mod_cat = FALSE) {
-  UseMethod("regressionImp", data)
-}
-
-#' @rdname regressionImp
 #' @export
-
-regressionImp.data.frame <- function(formula, data, family = "AUTO", robust = FALSE, imp_var = TRUE,
-    imp_suffix = "imp", mod_cat = FALSE) {
-  regressionImp_work(formula = formula, data = data, family = family, robust = robust,
-      imp_var = imp_var, imp_suffix = imp_suffix, mod_cat = mod_cat)
-}
-
-#' @rdname regressionImp
-#' @export
-
-regressionImp.survey.design <- function(formula, data, family, robust, imp_var = TRUE,
-    imp_suffix = "imp", mod_cat = FALSE) {
-  data$variables <- regressionImp_work(formula = formula, data = data$variables, family = family,
-      robust = robust, imp_var = imp_var, imp_suffix = imp_suffix, mod_cat = mod_cat)
-  data$call <- sys.call(-1)
-  data
-}
-
-#' @rdname regressionImp
-#' @export
-
-regressionImp.default <- function(formula, data, family = "AUTO", robust = FALSE, imp_var = TRUE,
-    imp_suffix = "imp", mod_cat = FALSE) {
-  regressionImp_work(formula = formula, data = as.data.frame(data), family = family,
-      robust = robust, imp_var = imp_var, imp_suffix = imp_suffix, mod_cat = mod_cat)
-}
-
-regressionImp_work <- function(formula, family, robust, data, imp_var, imp_suffix, mod_cat) {
-
+regressionImp <- function(formula, data, family = "AUTO", robust = FALSE, imp_var = TRUE, imp_suffix = "imp", mod_cat = FALSE) {
+  check_data(data)
+  data <- as.data.frame(data)
   formchar <- as.character(formula)
   lhs <- gsub(" ", "", strsplit(formchar[2], "\\+")[[1]])
   rhs <- formchar[3]

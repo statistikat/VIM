@@ -105,62 +105,16 @@
 #' barMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
 #' 
 #' 
-#' @export barMiss
+#' @export
 barMiss <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
                     col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
                     border = NULL, main = NULL, sub = NULL, 
                     xlab = NULL, ylab = NULL, axes = TRUE, 
                     labels = axes, only.miss = TRUE, 
                     miss.labels = axes, interactive = TRUE, ...) {
-  UseMethod("barMiss", x)
-}
-
-#' @rdname barMiss
-#' @export
-barMiss.data.frame <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
-                               col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
-                               border = NULL, main = NULL, sub = NULL, 
-                               xlab = NULL, ylab = NULL, axes = TRUE, 
-                               labels = axes, only.miss = TRUE, 
-                               miss.labels = axes, interactive = TRUE, ...) {
-  barMiss_work(x, delimiter, pos, selection, col, border, main, sub, xlab, ylab, axes, labels, only.miss,
-               miss.labels, interactive, ...)
-}
-
-#' @rdname barMiss
-#' @export
-
-barMiss.survey.design <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
-                                  col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
-                                  border = NULL, main = NULL, sub = NULL, 
-                                  xlab = NULL, ylab = NULL, axes = TRUE, 
-                                  labels = axes, only.miss = TRUE, 
-                                  miss.labels = axes, interactive = TRUE, ...) {
-  barMiss_work(x$variables, delimiter, pos, selection, col, border, main, sub, xlab, ylab, axes, labels, only.miss,
-               miss.labels, interactive, ...)
-}
-
-#' @rdname barMiss
-#' @export
-
-barMiss.default <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
-                            col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
-                            border = NULL, main = NULL, sub = NULL, 
-                            xlab = NULL, ylab = NULL, axes = TRUE, 
-                            labels = axes, only.miss = TRUE, 
-                            miss.labels = axes, interactive = TRUE, ...) {
-  barMiss_work(as.data.frame(x), delimiter, pos, selection, col, border, main, sub, xlab, ylab, axes, labels, only.miss,
-               miss.labels, interactive, ...)
-}
-
-barMiss_work <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"), 
-        col = c("skyblue","red","skyblue4","red4","orange","orange4"), 
-        border = NULL, main = NULL, sub = NULL, 
-        xlab = NULL, ylab = NULL, axes = TRUE, 
-        labels = axes, only.miss = TRUE, 
-        miss.labels = axes, interactive = TRUE, ...) {
-    
-	imputed <- FALSE # indicates if there are Variables with missing-index
+  check_data(x)
+  x <- as.data.frame(x)
+  imputed <- FALSE # indicates if there are Variables with missing-index
     # initializations and error messages
     if(is.null(dim(x))) {  # vector
 		# call histMiss if the plot variable is continuous

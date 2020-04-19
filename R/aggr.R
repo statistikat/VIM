@@ -88,31 +88,8 @@
 #' 
 #' @export 
 aggr <- function(x, delimiter = NULL, plot = TRUE, ...) {
-  UseMethod("aggr", x)
-}
-
-#' @rdname aggr
-#' @export 
-aggr.data.frame <- function(x, delimiter = NULL, plot = TRUE, ...) {
-  aggr_work(x, delimiter, plot, ...)
-}
-
-#' @rdname aggr
-#' @export 
-aggr.survey.design <- function(x, delimiter = NULL, plot = TRUE, ...) {
-  aggr_work(x$variables, delimiter, plot, ...)
-}
-
-#' @rdname aggr
-#' @export 
-aggr.default <- function(x, delimiter = NULL, plot = TRUE, ...) {
-  aggr_work(as.data.frame(x), delimiter, plot, ...)
-}
-
-#' @rdname aggr
-#' @export 
-aggr_work <- function(x, delimiter = NULL, plot = TRUE, ...) {
-	
+  check_data(x)
+  x <- as.data.frame(x)
 	imputed <- FALSE # indicates if there are Variables with missing-index
 	if(is.null(dim(x))) {
 		n <- length(x)

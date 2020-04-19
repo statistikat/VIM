@@ -2,72 +2,9 @@
 % Please edit documentation in R/histMiss.R
 \name{histMiss}
 \alias{histMiss}
-\alias{histMiss.data.frame}
-\alias{histMiss.survey.design}
-\alias{histMiss.default}
 \title{Histogram with information about missing/imputed values}
 \usage{
 histMiss(
-  x,
-  delimiter = NULL,
-  pos = 1,
-  selection = c("any", "all"),
-  breaks = "Sturges",
-  right = TRUE,
-  col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
-  border = NULL,
-  main = NULL,
-  sub = NULL,
-  xlab = NULL,
-  ylab = NULL,
-  axes = TRUE,
-  only.miss = TRUE,
-  miss.labels = axes,
-  interactive = TRUE,
-  ...
-)
-
-\method{histMiss}{data.frame}(
-  x,
-  delimiter = NULL,
-  pos = 1,
-  selection = c("any", "all"),
-  breaks = "Sturges",
-  right = TRUE,
-  col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
-  border = NULL,
-  main = NULL,
-  sub = NULL,
-  xlab = NULL,
-  ylab = NULL,
-  axes = TRUE,
-  only.miss = TRUE,
-  miss.labels = axes,
-  interactive = TRUE,
-  ...
-)
-
-\method{histMiss}{survey.design}(
-  x,
-  delimiter = NULL,
-  pos = 1,
-  selection = c("any", "all"),
-  breaks = "Sturges",
-  right = TRUE,
-  col = c("skyblue", "red", "skyblue4", "red4", "orange", "orange4"),
-  border = NULL,
-  main = NULL,
-  sub = NULL,
-  xlab = NULL,
-  ylab = NULL,
-  axes = TRUE,
-  only.miss = TRUE,
-  miss.labels = axes,
-  interactive = TRUE,
-  ...
-)
-
-\method{histMiss}{default}(
   x,
   delimiter = NULL,
   pos = 1,

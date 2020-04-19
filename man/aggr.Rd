@@ -6,21 +6,9 @@
 \alias{print.aggr}
 \alias{summary.aggr}
 \alias{print.summary.aggr}
-\alias{aggr.data.frame}
-\alias{aggr.survey.design}
-\alias{aggr.default}
-\alias{aggr_work}
 \title{Aggregations for missing/imputed values}
 \usage{
 aggr(x, delimiter = NULL, plot = TRUE, ...)
-
-\method{aggr}{data.frame}(x, delimiter = NULL, plot = TRUE, ...)
-
-\method{aggr}{survey.design}(x, delimiter = NULL, plot = TRUE, ...)
-
-\method{aggr}{default}(x, delimiter = NULL, plot = TRUE, ...)
-
-aggr_work(x, delimiter = NULL, plot = TRUE, ...)
 
 \method{plot}{aggr}(
   x,

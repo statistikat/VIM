@@ -111,7 +111,7 @@
 #' data using visualization tools.  *Journal of Advances in Data Analysis
 #' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
-#' @export colormapMiss
+#' @export
 colormapMiss <- function(x, region, map, imp_index = NULL,
                          prop = TRUE, polysRegion = 1:length(x), range = NULL,
                          n = NULL, col = c("red","orange"),
@@ -119,63 +119,8 @@ colormapMiss <- function(x, region, map, imp_index = NULL,
                          numbers = TRUE, digits = 2, cex.numbers = 0.8, 
                          col.numbers = par("fg"), legend = TRUE, 
                          interactive = TRUE, ...) {
-  UseMethod("colormapMiss", x)
-}
-
-#' @rdname colormapMiss
-#' @export
-
-colormapMiss.data.frame <- function(x, region, map, imp_index = NULL,
-                                    prop = TRUE, polysRegion = 1:length(x), range = NULL,
-                                    n = NULL, col = c("red","orange"),
-                                    gamma = 2.2, fixup = TRUE, coords = NULL, 
-                                    numbers = TRUE, digits = 2, cex.numbers = 0.8, 
-                                    col.numbers = par("fg"), legend = TRUE, 
-                                    interactive = TRUE, ...) {
-  colormapMiss_work(x, region, map,imp_index, prop, polysRegion, range, n, col,
-                    gamma, fixup, coords, numbers, digits, cex.numbers, col.numbers,
-                    legend, interactive, ...)
-}
-
-#' @rdname colormapMiss
-#' @export
-
-colormapMiss.survey.design <- function(x, region, map, imp_index = NULL,
-                                       prop = TRUE, polysRegion = 1:length(x), range = NULL,
-                                       n = NULL, col = c("red","orange"),
-                                       gamma = 2.2, fixup = TRUE, coords = NULL, 
-                                       numbers = TRUE, digits = 2, cex.numbers = 0.8, 
-                                       col.numbers = par("fg"), legend = TRUE, 
-                                       interactive = TRUE, ...) {
-  colormapMiss_work(x$variables, region, map,imp_index, prop, polysRegion, range, n, col,
-                    gamma, fixup, coords, numbers, digits, cex.numbers, col.numbers,
-                    legend, interactive, ...)
-}
-
-#' @rdname colormapMiss
-#' @export
-
-colormapMiss.default <- function(x, region, map, imp_index = NULL,
-                                 prop = TRUE, polysRegion = 1:length(x), range = NULL,
-                                 n = NULL, col = c("red","orange"),
-                                 gamma = 2.2, fixup = TRUE, coords = NULL, 
-                                 numbers = TRUE, digits = 2, cex.numbers = 0.8, 
-                                 col.numbers = par("fg"), legend = TRUE, 
-                                 interactive = TRUE, ...) {
-  colormapMiss_work(as.data.frame(x), region, map,imp_index, prop, polysRegion, range, n, col,
-                    gamma, fixup, coords, numbers, digits, cex.numbers, col.numbers,
-                    legend, interactive, ...)
-}
-
-colormapMiss_work <- function(x, region, map, imp_index = NULL,
-		prop = TRUE, polysRegion = 1:length(x), range = NULL,
-		n = NULL, col = c("red","orange"),
-        #space = c("rgb", "hcl"), 
-        gamma = 2.2, fixup = TRUE, coords = NULL, 
-        numbers = TRUE, digits = 2, cex.numbers = 0.8, 
-        col.numbers = par("fg"), legend = TRUE, 
-        interactive = TRUE, ...) {
-    
+  check_data(x)
+  x <- as.data.frame(x)
     # back compatibility
     dots <- list(...)
     if(missing(cex.numbers) && "cex.text" %in% names(dots)) {

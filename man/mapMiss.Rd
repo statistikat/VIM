@@ -2,57 +2,9 @@
 % Please edit documentation in R/mapMiss.R
 \name{mapMiss}
 \alias{mapMiss}
-\alias{mapMiss.data.frame}
-\alias{mapMiss.survey.design}
-\alias{mapMiss.default}
 \title{Map with information about missing/imputed values}
 \usage{
 mapMiss(
-  x,
-  coords,
-  map,
-  delimiter = NULL,
-  selection = c("any", "all"),
-  col = c("skyblue", "red", "orange"),
-  alpha = NULL,
-  pch = c(19, 15),
-  col.map = grey(0.5),
-  legend = TRUE,
-  interactive = TRUE,
-  ...
-)
-
-\method{mapMiss}{data.frame}(
-  x,
-  coords,
-  map,
-  delimiter = NULL,
-  selection = c("any", "all"),
-  col = c("skyblue", "red", "orange"),
-  alpha = NULL,
-  pch = c(19, 15),
-  col.map = grey(0.5),
-  legend = TRUE,
-  interactive = TRUE,
-  ...
-)
-
-\method{mapMiss}{survey.design}(
-  x,
-  coords,
-  map,
-  delimiter = NULL,
-  selection = c("any", "all"),
-  col = c("skyblue", "red", "orange"),
-  alpha = NULL,
-  pch = c(19, 15),
-  col.map = grey(0.5),
-  legend = TRUE,
-  interactive = TRUE,
-  ...
-)
-
-\method{mapMiss}{default}(
   x,
   coords,
   map,

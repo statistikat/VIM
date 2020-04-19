@@ -1,3 +1,21 @@
+primitive.impute <- function(x){
+  x.na <- is.na(x)
+  if(all(!x.na)|all(x.na)){
+    return(x)
+  }
+  # if(all(x.na)){
+  #   warning("no donors present in subsample")
+  #   return(x)
+  # }
+  n.imp <- sum(x.na)
+  if(length(x[!x.na])>1){
+    x[x.na] <- sample(x[!x.na],n.imp,replace=TRUE)
+  }else{
+    x[x.na] <- x[!x.na]
+  }
+  return(x)
+}
+
 #' Fast matching/imputation based on categorical variable
 #' 
 #' Suitable donors are searched based on matching of the categorical variables.
@@ -7,7 +25,7 @@
 #' The method works by sampling values from the suitable donors.
 #' 
 #' @aliases matchImpute
-#' @param data data.frame, data.table, survey object or matrix
+#' @param data data.frame, data.table or matrix
 #' @param variable variables to be imputed
 #' @param match_var variables used for matching
 #' @param imp_var TRUE/FALSE if a TRUE/FALSE variables for each imputed
@@ -32,63 +50,15 @@
 #' imp_testdata2 <- matchImpute(dt,match_var=c("c1","c2","b1","b2"))
 
 # working function
-#' @export matchImpute
+#' @export
 matchImpute <- function(data,variable=colnames(data)[!colnames(data)%in%match_var],match_var, imp_var=TRUE,
-    imp_suffix="imp") {
-  UseMethod("matchImpute", data)
-}
-
-#' @rdname matchImpute
-#' @export
-
-matchImpute.data.frame <- function(data,variable=colnames(data)[!colnames(data)%in%match_var],match_var, imp_var=TRUE,
-    imp_suffix="imp") {
-  as.data.frame(matchImpute.default(data.table(data), variable, match_var, imp_var, imp_suffix))
-}
-
-#' @rdname matchImpute
-#' @export
-
-matchImpute.data.table <- function(data,variable=colnames(data)[!colnames(data)%in%match_var],match_var, imp_var=TRUE,
-    imp_suffix="imp") {
-  matchImpute.default(copy(data), variable, match_var, imp_var, imp_suffix)
-}
-
-#' @rdname matchImpute
-#' @export
-
-matchImpute.survey.design <- function(data,variable=colnames(data$variables)[!colnames(data$variables)%in%match_var],match_var, imp_var=TRUE,
-    imp_suffix="imp") {
-  data$variables <- matchImpute.default(data.table(data$variables), variable,
-      match_var, imp_var, imp_suffix)
-  data$call <- sys.call(-1)
-  data
-}
-primitive.impute <- function(x){
-  x.na <- is.na(x)
-  if(all(!x.na)|all(x.na)){
-    return(x)
-  }
-  # if(all(x.na)){
-  #   warning("no donors present in subsample")
-  #   return(x)
-  # }
-  n.imp <- sum(x.na)
-  if(length(x[!x.na])>1){
-    x[x.na] <- sample(x[!x.na],n.imp,replace=TRUE)
-  }else{
-    x[x.na] <- x[!x.na]
-  }
-  return(x)
-}
-# main function
-# imp_var can only be a single collumn (yet)
-
-#' @rdname matchImpute
-#' @export
-
-matchImpute.default <- function(data,variable=colnames(data)[!colnames(data)%in%match_var],match_var, imp_var=TRUE,
     imp_suffix="imp"){
+  check_data(data)
+  is_df <- !is.data.table(data)
+  if (is_df)
+    data <- as.data.table(data)
+  else
+    data <- data.table::copy(data)
   na_present <- data[,sum(sapply(lapply(.SD,is.na),sum)),.SDcols=variable]
   
   if(imp_var){
@@ -114,6 +84,8 @@ matchImpute.default <- function(data,variable=colnames(data)[!colnames(data)%in%
     count_missings <- rbind(count_missings,c(j,na_present))
   }
   attr(data,"count_missings") <- count_missings
+  if (is_df)
+    data <- as.data.frame(data)
   return(data)
   
 }
