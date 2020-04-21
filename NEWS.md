@@ -1,11 +1,12 @@
+# VIM 6.0.0
+
+- remove support for survey objects (#36)
+- extend documentation with new vignettes and pkgdown
+- add rangerImpute() to impute values with `ranger::ranger()` (#35)
+- change data.table dependency from depends to imports (#41)
+- remove exports for VIMGUI (e32ab7b)
+
 # VIM 5.1.1
-
-* add pkgdown site via travis and gh-pages
-* add `vignette("VIM")`
-* update REAMDE.md
-* update reference documentation with `roxygen2md::roxygen2md()`
-
-# VIM 5.1.0
 
 * updates for `gowerD()`
 * separate help pages for `maxCat()` and `sampleCat()`
@@ -45,26 +46,47 @@
 * testthat package used for all tests
 * added travis automatically building/checking
 * covr for code coverage (vis functions are currently not covered by any tests)
-* new imputation function `matchImpute()` for faster imputation randomly by group
 
 # VIM 4.7.1
-* new imputation function `matchImpute()` for imputing random within groups
+* new imputation function `matchImpute()` for imputing randomly within groups
 
-# VIM 4.6.1 
+# VIM 4.7.0
+
+* remove handling of `impNA` in `hotdeck()`
+* add regression tests
+* bugfix for `irmi()` with factors (#13). Thanks @Deleetdk
+* bugfix with colorspace package (#4)
+
+# VIM 4.6.1
+
 * use ordered logistic regression for ordinal variables in `irmi()` (#23)
+* add support for ordered factors (#7)
+* bugfixes (#8, #9)
 
 # VIM 4.6.0
 
+* bugfixes for `kNN()` and `data.table`
+* bugfix for labelled vars in `hotdeck()`
+* add JSS citation
+* bugfix, if a `data.frame` is passed to `irmi()` (#6)
+  
+# VIM 4.5.0
+
 * new option for `kNN()`: `weightDist` to use the distances for the k nearest neighbours as weights
+* The R function `which.minN()` is not used anymore, instead there is a C++ function, `kNN()` is now about 1.6 times faster on a replication (100x) of the sleep dataset
 * Bytecompile is enabled
-* The R function `which.minN()` is not used anymore, instead there is a C++ function, `kNN()` is now about 1.6 times faster on
-  a replication (100x) of the sleep dataset
 
 # VIM 4.4.0
 
 * bugfix  wrong observations marked as imputed in `hotdeck()`
 * random sorting is now used in `hotdeck()` if no `ord_var` is defined
+
+# VIM 4.3.0
+
+* bugfix for `hotdeck()` with `makeNA`
+
 # VIM 4.2.3
+
 * bugfix for the computation of distances for ordered variables
 
 # VIM 4.2.1
