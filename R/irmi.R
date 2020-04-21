@@ -14,40 +14,42 @@
 #' @param maxit maximum number of iterations
 #' @param mixed column index of the semi-continuous variables
 #' @param mixed.constant vector with length equal to the number of
-#' semi-continuous variables specifying the point of the semi-continuous
-#' distribution with non-zero probability
+#'   semi-continuous variables specifying the point of the semi-continuous
+#'   distribution with non-zero probability
 #' @param count column index of count variables
 #' @param step a stepwise model selection is applied when the parameter is set
-#' to TRUE
+#'   to TRUE
 #' @param robust if TRUE, robust regression methods will be applied
 #' @param takeAll takes information of (initialised) missings in the response
 #' as well for regression imputation.
 #' @param noise irmi has the option to add a random error term to the imputed
-#' values, this creates the possibility for multiple imputation. The error term
-#' has mean 0 and variance corresponding to the variance of the regression
-#' residuals.
+#'   values, this creates the possibility for multiple imputation. The error term
+#'   has mean 0 and variance corresponding to the variance of the regression
+#'   residuals.
 #' @param noise.factor amount of noise.
 #' @param force if TRUE, the algorithm tries to find a solution in any case,
-#' possible by using different robust methods automatically.
+#'   possible by using different robust methods automatically.
 #' @param robMethod regression method when the response is continuous.
 #' @param force.mixed if TRUE, the algorithm tries to find a solution in any
-#' case, possible by using different robust methods automatically.
-#' @param addMixedFactors if TRUE add additional factor variable for each mixed variable as X variable in the regression
-#' @param modelFormulas a named list with the name of variables for the  rhs of the formulas, which must contain a rhs formula for each variable with missing values, it should look like list(y1=c("x1","x2"),y2=c("x1","x3"))
-#' 
-#' if factor variables for the mixed variables should be created for the
-#' regression models
+#'   case, possible by using different robust methods automatically.
+#' @param addMixedFactors if TRUE add additional factor variable for each
+#'   mixed variable as X variable in the regression
+#' @param modelFormulas a named list with the name of variables for the  rhs
+#'   of the formulas, which must contain a rhs formula for each variable with
+#'   missing values, it should look like `list(y1=c("x1","x2"),y2=c("x1","x3"))``
+#'   if factor variables for the mixed variables should be created for the
+#'   regression models
 #' @param mi number of multiple imputations.
 #' @param trace Additional information about the iterations when trace equals
-#' TRUE.
+#'   TRUE.
 #' @param init.method Method for initialization of missing values (kNN or
-#' median)
+#'   median)
 #' @param multinom.method Method for estimating the multinomial models
-#' (current default and only available method is multinom)
+#'   (current default and only available method is multinom)
 #' @param imp_var TRUE/FALSE if a TRUE/FALSE variables for each imputed
-#' variable should be created show the imputation status
+#'   variable should be created show the imputation status
 #' @param imp_suffix suffix for the TRUE/FALSE variables showing the imputation
-#' status
+#'   status
 #' @return the imputed data set.
 #' @author Matthias Templ, Alexander Kowarik
 #' @seealso [mi::mi()]
@@ -65,23 +67,27 @@
 #' irmi(sleep)
 #' 
 #' data(testdata)
-#' imp_testdata1 <- irmi(testdata$wna,mixed=testdata$mixed)
+#' imp_testdata1 <- irmi(testdata$wna, mixed = testdata$mixed)
 #' 
 #' # mixed.constant != 0 (-10)
-#' testdata$wna$m1[testdata$wna$m1==0] <- -10
-#' testdata$wna$m2 <- log(testdata$wna$m2+0.001)
-#' imp_testdata2 <- irmi(testdata$wna,mixed=testdata$mixed,mixed.constant=c(-10,log(0.001)))
-#' imp_testdata2$m2 <- exp(imp_testdata2$m2)-0.001
+#' testdata$wna$m1[testdata$wna$m1 == 0] <- -10
+#' testdata$wna$m2 <- log(testdata$wna$m2 + 0.001)
+#' imp_testdata2 <- irmi(
+#'   testdata$wna,
+#'   mixed = testdata$mixed,
+#'   mixed.constant = c(-10,log(0.001))
+#' )
+#' imp_testdata2$m2 <- exp(imp_testdata2$m2) - 0.001
 #' 
 #' #example with fixed formulas for the variables with missing
-#' form=list(
-#' NonD=c("BodyWgt","BrainWgt"),
-#' Dream=c("BodyWgt","BrainWgt"),
-#' Sleep=c("BrainWgt"),
-#' Span=c("BodyWgt"),
-#' Gest=c("BodyWgt","BrainWgt")
+#' form = list(
+#'   NonD  = c("BodyWgt", "BrainWgt"),
+#'   Dream = c("BodyWgt", "BrainWgt"),
+#'   Sleep = c("BrainWgt"           ),
+#'   Span  = c("BodyWgt"            ),
+#'   Gest  = c("BodyWgt", "BrainWgt")
 #' )
-#' irmi(sleep,modelFormulas=form,trace=TRUE)
+#' irmi(sleep, modelFormulas = form, trace = TRUE)
 #' 
 #' # Example with ordered variable
 #' td <- testdata$wna
@@ -89,61 +95,63 @@
 #' irmi(td)
 #' 
 #' @export
-irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL, step=FALSE, 
-    robust=FALSE, takeAll=TRUE,
-    noise=TRUE, noise.factor=1, force=FALSE,
-    robMethod="MM", force.mixed=TRUE, mi=1, 
-    addMixedFactors=FALSE, trace=FALSE,init.method="kNN",modelFormulas=NULL,multinom.method="multinom",
-    imp_var=TRUE,imp_suffix="imp") {
-#Authors: Alexander Kowarik and Matthias Templ, Statistics Austria, GPL 2 or newer, version: 15. Nov. 2012
-  #object mixed conversion into the right format (vector of variable names of type mixed)
+irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
+    count = NULL, step = FALSE, robust = FALSE, takeAll = TRUE, noise = TRUE,
+    noise.factor = 1, force = FALSE, robMethod = "MM", force.mixed = TRUE,
+    mi = 1, addMixedFactors = FALSE, trace = FALSE, init.method = "kNN",
+    modelFormulas = NULL, multinom.method = "multinom", imp_var = TRUE,
+    imp_suffix = "imp") {
+#Authors: Alexander Kowarik and Matthias Templ, Statistics Austria, GPL 2 or
+#newer, version: 15. Nov. 2012
+#object mixed conversion into the right format (vector of variable names of
+#type mixed)
 #TODO: Data sets with variables "y" might fail
   check_data(x)
-  if(trace){
-    message("Method for multinomial models:",multinom.method,"\n")
+  if (trace) {
+    message("Method for multinomial models:", multinom.method, "\n")
   }
-  if(!is.data.frame(x)){
-    if(is.matrix(x))
+  if (!is.data.frame(x)) {
+    if (is.matrix(x))
       x <- as.data.frame(x)
     else
       stop("data frame must be provided")
   }
-  if(!is.null(mixed.constant)&&!is.null(mixed)){
-    if(length(mixed)!=length(mixed.constant))
+  if (!is.null(mixed.constant) && !is.null(mixed)) {
+    if (length(mixed) != length(mixed.constant))
       stop("The length of 'mixed' and 'mixed.constant' differ.")
   }
-  if(!is.null(mixed)){
-    if(!is.character(mixed)){
-      if(is.logical(mixed)){
-        if(length(mixed)!=length(colnames(x)))
+  if (!is.null(mixed)) {
+    if (!is.character(mixed)) {
+      if (is.logical(mixed)) {
+        if (length(mixed) != length(colnames(x)))
           stop("the mixed parameter is not defined correct.")
         mixed <- colnames(x)[mixed]
-      } else if(is.numeric(mixed)){
-        if(max(mixed)>length(colnames(x)))
+      } else if (is.numeric(mixed)) {
+        if (max(mixed) > length(colnames(x)))
           stop("the mixed parameter is not defined correct.")
         mixed <- colnames(x)[mixed]
-      }      
-    }else if(!all(mixed%in%colnames(x))){
+      }
+    } else if (!all(mixed %in% colnames(x))) {
       stop("Not all mixed variables are found in the colnames of the input dataset.")
     }
   }
-  if(!is.null(count)){
-    if(!is.character(count)){
-      if(is.logical(count)){
-        if(length(count)!=length(colnames(x)))
+  if (!is.null(count)) {
+    if (!is.character(count)) {
+      if (is.logical(count)) {
+        if (length(count) != length(colnames(x)))
           stop("the count parameter is not defined correct.")
         count <- colnames(x)[count]
-      }else if(is.numeric(count)){
-        if(max(count)>length(colnames(x)))
+      } else if (is.numeric(count)) {
+        if (max(count) > length(colnames(x)))
           stop("the count parameter is not defined correct.")
         count <- colnames(x)[count]
-      }      
-    }else if(!all(count%in%colnames(x))){
+      }
+    } else if (!all(count %in% colnames(x))) {
       stop("Not all count variables are found in the colnames of the input dataset.")
     }
   }
-  class1 <- function(x) class(x)[1] 
-  types <- lapply(x,class1)
+  class1 <- function(x) class(x)[1]
+  types <- lapply(x, class1)
 #  if(any(types=="ordered")){
 #    for(i in which(types=="ordered")){
 #      msg <- paste(names(x)[i]," is defined as ordered,but irmi cannot deal with ordered variables
@@ -153,26 +161,26 @@ irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL
 #      types[i] <- "factor"
 #    }
 #  }
-  types[colnames(x)%in%mixed] <- "mixed"
-  types[colnames(x)%in%count] <- "count"
-  
-  attributes(types)$names <-NULL
+  types[colnames(x) %in% mixed] <- "mixed"
+  types[colnames(x) %in% count] <- "count"
+
+  attributes(types)$names <- NULL
   types <- unlist(types)
-  if(any(types=="character")){
-    chrInd <- which(types=="character")
+  if (any(types == "character")) {
+    chrInd <- which(types == "character")
     warning("At least one character variable is converted into a factor")
-    for(ind in chrInd){
-      x[,ind] <- as.factor(x[,ind])
+    for (ind in chrInd){
+      x[, ind] <- as.factor(x[, ind])
       types[ind] <- "factor"
     }
   }
-  
+
   #determine factor type: dichotomous or polytomous
   #detect problematic factors
   indFac <- which(types == "factor")
-  for(ind in indFac){
+  for (ind in indFac) {
     #get number of levels
-    fac_nlevels = nlevels(x[[ind]])
+    fac_nlevels <- nlevels(x[[ind]])
     if (fac_nlevels == 2)
       types[ind] <- "binary"
     else if (fac_nlevels > 2)
@@ -180,40 +188,40 @@ irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL
     else stop(sprintf("factor with less than 2 levels detected! - `%s`", names(x)[ind]))
   }
   indOrd <- which(types == "ordered")
-  for(ind in indOrd){
+  for (ind in indOrd) {
     #get number of levels
-    fac_nlevels = nlevels(x[[ind]])
+    fac_nlevels <- nlevels(x[[ind]])
     if (fac_nlevels == 2)
       types[ind] <- "binary"
   }
-  
-  missingSummary <- cbind(types,apply(x,2,function(x)sum(is.na(x))))
-  colnames(missingSummary) <- c("type","#missing")
-  if(imp_var){
-    imp_vars <- paste(rownames(missingSummary),"_",imp_suffix,sep="")
-    imp_vardf <- as.data.frame(apply(x,2,function(x)is.na(x)))
+
+  missingSummary <- cbind(types, apply(x, 2, function(x) sum(is.na(x))))
+  colnames(missingSummary) <- c("type", "#missing")
+  if (imp_var) {
+    imp_vars <- paste(rownames(missingSummary), "_", imp_suffix, sep = "")
+    imp_vardf <- as.data.frame(apply(x, 2, function(x) is.na(x)))
     colnames(imp_vardf) <- imp_vars
-    imp_vardf <- imp_vardf[,missingSummary[,2]!="0",drop=FALSE]
+    imp_vardf <- imp_vardf[, missingSummary[, 2] != "0", drop = FALSE]
   }
-#				 save(x, file="xtest.RData")				 
+# save(x, file="xtest.RData")
   N <- n <- dim(x)[1]
   P <- dim(x)[2]
   ## error management:
-  if(dim(x)[2] < 2) stop("Less than 2 variables included in x.") 
-  if(step&&robust)
+  if (dim(x)[2] < 2) stop("Less than 2 variables included in x.")
+  if (step && robust)
     stop("robust stepwise is not yet implemented")
-  if(!any(is.na(x))) message("No missings in x. Nothing to impute")
-  if(any(apply(x, 1, function(x) all(is.na(x))))) stop("Unit non-responses included in x.")
+  if (!any(is.na(x))) message("No missings in x. Nothing to impute")
+  if (any(apply(x, 1, function(x) all(is.na(x))))) stop("Unit non-responses included in x.")
   ## mixed into logical vector:
-  if(!is.logical(mixed) & !is.null(mixed)){
+  if (!is.logical(mixed) & !is.null(mixed)) {
     ind <- rep(FALSE, P)
     ind[mixed] <- TRUE
     mixedlog <- ind
   } else mixedlog <- mixed
-  if(!is.character(mixed)){
+  if (!is.character(mixed)) {
     mixed <- colnames(x)[mixed]
-  } 
-  if(!is.character(count)){
+  }
+  if (!is.character(count)) {
     count <- colnames(x)[count]
   }
 #  if(!is.null(mixed) && length(mixed) != P) stop(paste("Length of mixed must either be NULL or", P))
@@ -225,135 +233,139 @@ irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL
   #}  else countlog <- count
 #  if(is.null(mixed)) mixed <- rep(FALSE, P)
 #  if(is.null(count)) count <- rep(FALSE, P)
-#  if(!is.null(count) && length(count) != P) stop(paste("Length of mixed must either be NULL or", P)) 
+#  if(!is.null(count) && length(count) != P) stop(paste("Length of mixed must either be NULL or", P))
 #if(any(countlog == mixedlog) && countlog == TRUE) stop(paste("you declined variable", which(countlog==mixedlog && countlog==TRUE), "to be both, count and mixed"))
-  if(length(Inter(list(count,mixed)))>0) stop(paste("you declined a variable to be both, count and mixed"))
+  if (length(Inter(list(count, mixed))) > 0)
+    stop(paste("you declined a variable to be both, count and mixed"))
   #for(i in which(countlog)){
-  #  class(x[,i]) <- c("count", "numeric")	  
+  #  class(x[,i]) <- c("count", "numeric")
   # }
-  
-  
-  
+
   ## check for factors in x
   factors <- vector()
-  for(i in 1:ncol(x)){
-    factors <- c(factors,is.factor(x[,i]))
+  for (i in 1:ncol(x)) {
+    factors <- c(factors, is.factor(x[, i]))
   }
-  
-  
+
   ## Recode the levels of a factor to 1:number of levels
-  if(any(factors)){
+  if (any(factors)) {
     factors <- colnames(x)[factors]
     origLevels <- list()
-    for(f in 1:length(factors)){
-      origLevels[[f]] <- levels(x[,factors[f]])
-      levels(x[,factors[f]]) <- 0:(length(origLevels[[f]])-1)
+    for (f in 1:length(factors)) {
+      origLevels[[f]] <- levels(x[, factors[f]])
+      levels(x[, factors[f]]) <- 0:(length(origLevels[[f]]) - 1)
     }
   } else factors <- character(0)
-  
-  VarswithNA <-vector()
-  
+
+  VarswithNA <- vector()
+
   ## index for missingness
-  w2  <- is.na(x)
-  
+  w2 <- is.na(x)
+
   ## variables that include missings
-  for(i in seq(P)){
-    if(anyNA(x[,i]))
-      VarswithNA <- c(VarswithNA,i)    
+  for (i in seq(P)) {
+    if (anyNA(x[, i]))
+      VarswithNA <- c(VarswithNA, i)
   }
   ## count runden, da MIttelwertimputation in initialise:
-  ndigitsCount <- apply(x[,types=="count", drop=FALSE], 2, 
-      function(x){
-        x <- as.character(x)
-        max(unlist(lapply(strsplit(x, "\\."), function(x) ifelse(length(x) > 1, nchar(strsplit(x, "\\.")[2]), 0))))
-      })
-  
+  ndigitsCount <- apply(
+    x[, types == "count", drop = FALSE], 2,
+    function(x){
+      x <- as.character(x)
+      max(unlist(lapply(
+        strsplit(x, "\\."),
+        function(x) ifelse(length(x) > 1, nchar(strsplit(x, "\\.")[2]), 0)
+      )))
+    })
+
   ## initialisiere
   #for( j in 1:ncol(x) ) {
   #print(paste("HIER:", j))
-  x <- initialise(x,mixed=mixed,method=init.method,mixed.constant=mixed.constant)  
+  x <- initialise(x, mixed = mixed, method = init.method,
+                  mixed.constant = mixed.constant)
   #}
-  
+
   ## round count variables:
   j <- 0
-  for( i in which(types=="count")){
-    j <- j+1
-    x[,i] <- round(x[,i], ndigitsCount[j])
-  } 
-  
-  if(trace) print(head(x))
+  for (i in which(types == "count")) {
+    j <- j + 1
+    x[, i] <- round(x[, i], ndigitsCount[j])
+  }
+
+  if (trace) print(head(x))
   mixedTF <- FALSE
   mixedConstant <- 0
   ### outer loop
   d <- 99999
   it <- 0
-  while(d > eps && it < maxit){
-    it = it + 1
-    if(trace)
-      message("Iteration",it,"\n")
+  while (d > eps && it < maxit) {
+    it <- it + 1
+    if (trace)
+      message("Iteration", it, "\n")
     xSave <- x
     ## inner loop
-    for(i in VarswithNA){
-      if(trace){
-        print(paste("inner loop:",i))
-        if(Sys.info()[1] == "Windows") flush.console()
+    for (i in VarswithNA) {
+      if (trace) {
+        print(paste("inner loop:", i))
+        if (Sys.info()[1] == "Windows") flush.console()
       }
-      yPart <- x[, i, drop=FALSE]
-      wy <- which(w2[,i])
-      xPart <- x[, -i, drop=FALSE]
-      
+      yPart <- x[, i, drop = FALSE]
+      wy <- which(w2[, i])
+      xPart <- x[, -i, drop = FALSE]
+
       ## --- Start Additonal xvars for mixed vars
-      if(!is.null(mixed)&&addMixedFactors){
-        if(any(names(xPart)%in%mixed)){
-          mixedIndex <- which(names(xPart)%in%mixed)
-          for(ii in 1:length(mixedIndex)){
-            namenew <- paste(names(xPart)[mixedIndex[ii]],"ADDMIXED",sep="")
-            if(is.null(mixed.constant))
-              xPart[,namenew] <- as.numeric(xPart[,mixedIndex[ii]]==0)
+      if (!is.null(mixed) && addMixedFactors) {
+        if (any(names(xPart) %in% mixed)) {
+          mixedIndex <- which(names(xPart) %in% mixed)
+          for (ii in 1:length(mixedIndex)) {
+            namenew <- paste(names(xPart)[mixedIndex[ii]], "ADDMIXED", sep = "")
+            if (is.null(mixed.constant))
+              xPart[, namenew] <- as.numeric(xPart[, mixedIndex[ii]] == 0)
             else
-              xPart[,namenew] <- as.numeric(xPart[,mixedIndex[ii]]==mixed.constant[ii])
-          }          
+              xPart[, namenew] <- as.numeric(xPart[, mixedIndex[ii]] == mixed.constant[ii])
+          }
         }
       } ## end additional xvars for mixed vars ---
-      if(!takeAll){
-        dataForReg <- data.frame(cbind(yPart[-wy,], xPart[-wy,])) ## part, wo in y keine missings
-      } else{
+      if (!takeAll) {
+        dataForReg <- data.frame(cbind(yPart[-wy, ], xPart[-wy, ])) ## part, wo in y keine missings
+      } else {
         dataForReg <- data.frame(cbind(yPart, xPart))
       }
-      if(!is.null(mixed)){
-        if(names(x)[i] %in% mixed){
+      if (!is.null(mixed)) {
+        if (names(x)[i] %in% mixed) {
           mixedTF <- TRUE
-          if(is.null(mixed.constant)){
+          if (is.null(mixed.constant)) {
             mixedConstant <- 0
-          }else{
-            mixedConstant <- mixed.constant[which(mixed==names(x)[i])]
+          } else {
+            mixedConstant <- mixed.constant[which(mixed == names(x)[i])]
           }
-        } else{
+        } else {
           mixedTF <- FALSE
         }
       }
       colnames(dataForReg)[1] <- "y"
-      new.dat <- data.frame(cbind(rep(1,length(wy)), xPart[wy,,drop=FALSE])) 
-      
+      new.dat <- data.frame(cbind(rep(1, length(wy)), xPart[wy,, drop = FALSE]))
+
       #print(attributes(dataForReg$y)$cn)
-      
-      if(trace){
+
+      if (trace) {
         print(types[[i]])
       }
-      if( types[i]=="integer"||types[i]=="numeric" || types[i] =="mixed"){ ## todo: ausserhalb der Schleife!!
-        meth = "numeric" 
-      } else if( types[i]=="binary" ){ 
-        meth = "bin" 
-      } else if( types[i]=="nominal" ){ 
-        meth = "factor" 
-      } else if( types[i]=="count"){
-        meth = "count"
-      }else if( types[i]=="ordered" ){ 
-        meth = "ordered" 
+      if (types[i] == "integer" || types[i] == "numeric" || types[i] == "mixed") {
+        ## todo: ausserhalb der Schleife!!
+        meth <- "numeric"
+      } else if (types[i] == "binary") {
+        meth <- "bin"
+      } else if (types[i] == "nominal") {
+        meth <- "factor"
+      } else if (types[i] == "count") {
+        meth <- "count"
+      } else if (types[i] == "ordered") {
+        meth <- "ordered"
       }
-      
+
       ## replace initialised missings:
-      if(length(wy) > 0){ 
+      if (length(wy) > 0) {
         #idataForReg <<- dataForReg
         #indata <<- new.dat[,-1,drop=FALSE]
         #imeth <<- meth
@@ -366,154 +378,175 @@ irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL
         #inoise <<- FALSE
         #itypes <<- types
         #debug(getM)
-        if(trace)
+        if (trace)
           print(meth)
         #print(lapply(dataForReg, class))
         #if(i==10) stop("ZUR KONTROLLE i=10")
-        if(!is.null(modelFormulas)){
-          TFform <- names(modelFormulas)==colnames(x)[i]
-          if(any(TFform))
+        if (!is.null(modelFormulas)) {
+          TFform <- names(modelFormulas) == colnames(x)[i]
+          if (any(TFform))
             activeFormula <- modelFormulas[[which(TFform)]]
           else
-            activeFormula <- names(dataForReg)[names(dataForReg)!="y"]
-        }else
-          activeFormula <- names(dataForReg)[names(dataForReg)!="y"]
-        if(trace){
-          print(paste("formula used:",paste(colnames(x)[i],"~",paste(activeFormula,collapse="+"))))
-          if(Sys.info()[1] == "Windows") flush.console()
+            activeFormula <- names(dataForReg)[names(dataForReg) != "y"]
+        } else
+          activeFormula <- names(dataForReg)[names(dataForReg) != "y"]
+        if (trace) {
+          print(paste("formula used:", paste(colnames(x)[i], "~",
+                                             paste(activeFormula, collapse = "+"))))
+          if (Sys.info()[1] == "Windows") flush.console()
         }
-        x[wy,i] <- getM(xReg=dataForReg, ndata=new.dat[,-1,drop=FALSE], type=meth, 
-            index=wy, mixedTF=mixedTF,mixedConstant=mixedConstant, factors=factors, step=step, 
-            robust=robust, noise=FALSE, force=force, robMethod,form=activeFormula,multinom.method=multinom.method)
+        x[wy, i] <- getM(
+          xReg = dataForReg, ndata = new.dat[, -1, drop = FALSE], type = meth,
+          index = wy, mixedTF = mixedTF, mixedConstant = mixedConstant,
+          factors = factors, step = step, robust = robust, noise = FALSE,
+          force = force, robMethod, form = activeFormula,
+          multinom.method = multinom.method)
         #if(!testdigits(x$x5)) stop()
-      }	
+      }
     }  ## end inner loop
     d <- 0
-    if(any(types%in%c("numeric","mixed")))
-      d <- sum((xSave[,types%in%c("numeric","mixed")] - x[,types%in%c("numeric","mixed")])^2, na.rm=TRUE)  #todo: Faktoren anders behandeln.
-    if(any(!types%in%c("numeric","mixed")))
-      d <- d + sum(xSave[,!types%in%c("numeric","mixed")]!=x[,!types%in%c("numeric","mixed")])
+    if (any(types %in% c("numeric", "mixed")))
+      d <- sum( (xSave[, types %in% c("numeric", "mixed")] -
+                   x[, types %in% c("numeric", "mixed")]) ^ 2,
+                na.rm = TRUE)  #todo: Faktoren anders behandeln.
+    if (any(!types %in% c("numeric", "mixed")))
+      d <- d + sum(xSave[, !types %in% c("numeric", "mixed")] != x[, !types %in% c("numeric", "mixed")])
     flush.console()
-    if(trace){
-      print(paste("it =",it,",  Wert =",d))
+    if (trace) {
+      print(paste("it =", it, ",  Wert =", d))
       print(paste("eps", eps))
       print(paste("test:", d > eps))
     }
   } ## end outer loop
-  
-  
-  if( it > 1 ){ 
+
+  if (it > 1) {
     d <- 0
-    if(any(types%in%c("numeric","mixed")))
-      d <- sum((xSave[,types%in%c("numeric","mixed")] - x[,types%in%c("numeric","mixed")])^2, na.rm=TRUE)  #todo: Faktoren anders behandeln.
-    if(any(!types%in%c("numeric","mixed")))
-      d <- d + sum(xSave[,!types%in%c("numeric","mixed")]!=x[,!types%in%c("numeric","mixed")])
-    if(trace){
-      if( it < maxit ){ 
-        print(paste(d, "<", eps, "= eps")); print(paste("      --> finished after", it, "iterations"))
-      } else if (it == maxit){
-        print("not converged...");print(paste(d, "<", eps, "= eps"))
+    if (any(types %in% c("numeric", "mixed")))
+      d <- sum( (xSave[, types %in% c("numeric", "mixed")] -
+                   x[, types %in% c("numeric", "mixed")]) ^ 2, na.rm = TRUE)
+    #todo: Faktoren anders behandeln.
+    if (any(!types %in% c("numeric", "mixed")))
+      d <- d + sum(xSave[, !types %in% c("numeric", "mixed")] != x[, !types %in% c("numeric", "mixed")])
+    if (trace) {
+      if (it < maxit) {
+        print(paste(d, "<", eps, "= eps"))
+        print(paste("      --> finished after", it, "iterations"))
+      } else if (it == maxit) {
+        print("not converged...")
+        print(paste(d, "<", eps, "= eps"))
       }
-    }	
+    }
   }
   ### Add NOISE:
   ### A last run with building the model and adding noise...
-  if(noise && mi==1){
-    for(i in seq(P)){
+  if (noise && mi == 1) {
+    for (i in seq(P)) {
       flush.console()
-      yPart <- x[, i, drop=FALSE]
-      wy <- which(w2[,i])
-      xPart <- x[, -i, drop=FALSE]
-      if(!takeAll){
-        dataForReg <- data.frame(cbind(yPart[-wy,], xPart[-wy,])) ## part, wo in y keine missings
-      }else{
+      yPart <- x[, i, drop = FALSE]
+      wy <- which(w2[, i])
+      xPart <- x[, -i, drop = FALSE]
+      if (!takeAll) {
+        dataForReg <- data.frame(cbind(yPart[-wy, ], xPart[-wy, ])) ## part, wo in y keine missings
+      } else {
         dataForReg <- data.frame(cbind(yPart, xPart))
       }
-      if(!is.null(mixed)){
-        if(names(x)[i] %in% mixed){
+      if (!is.null(mixed)) {
+        if (names(x)[i] %in% mixed) {
           mixedTF <- TRUE
-          if(is.null(mixed.constant)){
+          if (is.null(mixed.constant)) {
             mixedConstant <- 0
-          }else{
-            mixedConstant <- mixed.constant[which(mixed==names(x)[i])]
+          } else {
+            mixedConstant <- mixed.constant[which(mixed == names(x)[i])]
           }
-        }else{
+        } else {
           mixedTF <- FALSE
         }
       }
       colnames(dataForReg)[1] <- "y"
-      new.dat <- data.frame(cbind(rep(1,length(wy)), xPart[wy,,drop=FALSE])) 
-      if( types[i]=="numeric" || types[i] =="mixed"){ ## todo: ausserhalb der Schleife!!
-        meth = "numeric" 
-      } else if( types[i]=="binary" ){ 
-        meth = "bin" 
-      } else if( types[i]=="nominal" ){ 
-        meth = "factor" 
-      } else if( types[i]=="count"){
-        meth = "count"
-      } else if( types[i]=="ordered"){
-        meth = "ordered"
+      new.dat <- data.frame(cbind(rep(1, length(wy)), xPart[wy,, drop = FALSE]))
+      if (types[i] == "numeric" || types[i] == "mixed") {
+        ## todo: ausserhalb der Schleife!!
+        meth <- "numeric"
+      } else if (types[i] == "binary") {
+        meth <- "bin"
+      } else if (types[i] == "nominal") {
+        meth <- "factor"
+      } else if (types[i] == "count") {
+        meth <- "count"
+      } else if (types[i] == "ordered") {
+        meth <- "ordered"
       }
-      if(!is.null(modelFormulas)){
-        TFform <- names(modelFormulas)==colnames(x)[i]
-        if(any(TFform))
+      if (!is.null(modelFormulas)) {
+        TFform <- names(modelFormulas) == colnames(x)[i]
+        if (any(TFform))
           activeFormula <- modelFormulas[[which(TFform)]]
         else
-          activeFormula <- names(dataForReg)[names(dataForReg)!="y"]
-      }else
-        activeFormula <- names(dataForReg)[names(dataForReg)!="y"]
-      if(length(wy) > 0) x[wy,i] <- getM(xReg=dataForReg, ndata=new.dat[,-1,drop=FALSE], 
-            type=meth, index=wy,mixedTF=mixedTF,mixedConstant=mixedConstant,factors=factors,
-            step=step,robust=robust,noise=TRUE,noise.factor=noise.factor,force=force,robMethod,form=activeFormula,multinom.method=multinom.method)
+          activeFormula <- names(dataForReg)[names(dataForReg) != "y"]
+      } else
+        activeFormula <- names(dataForReg)[names(dataForReg) != "y"]
+      if (length(wy) > 0) x[wy, i] <- getM(
+        xReg = dataForReg, ndata = new.dat[, -1, drop = FALSE], type = meth,
+        index = wy, mixedTF = mixedTF, mixedConstant = mixedConstant,
+        factors = factors, step = step, robust = robust, noise = TRUE,
+        noise.factor = noise.factor, force = force, robMethod,
+        form = activeFormula, multinom.method = multinom.method)
     }
   }
   ## End NOISE
   #if(!testdigits(x$x5)) stop("s121212121212asasa\n")
   ## Begin multiple imputation
-  if(mi>1&&!noise){
+  if (mi > 1 && !noise) {
     message("Noise option is set automatically to TRUE")
     noise <- TRUE
   }
-  if(mi>1){
+  if (mi > 1) {
     mimp <- list()
-    xSave1 <- x 
-    for(m in 1:mi){
-      for(i in seq(P)){
+    xSave1 <- x
+    for (m in 1:mi) {
+      for (i in seq(P)) {
         flush.console()
-        yPart <- x[, i, drop=FALSE]
-        wy <- which(w2[,i])
-        xPart <- x[, -i, drop=FALSE]
-        if(!takeAll){
-          dataForReg <- data.frame(cbind(yPart[-wy,], xPart[-wy,])) ## part, wo in y keine missings
-        }else{
+        yPart <- x[, i, drop = FALSE]
+        wy <- which(w2[, i])
+        xPart <- x[, -i, drop = FALSE]
+        if (!takeAll) {
+          dataForReg <- data.frame(cbind(yPart[-wy, ], xPart[-wy, ])) ## part, wo in y keine missings
+        } else {
           dataForReg <- data.frame(cbind(yPart, xPart))
         }
-        if(!is.null(mixed)){
-          if(names(x)[i] %in% mixed){
+        if (!is.null(mixed)) {
+          if (names(x)[i] %in% mixed) {
             mixedTF <- TRUE
-            if(is.null(mixed.constant))
+            if (is.null(mixed.constant))
               mixedConstant <- 0
             else
-              mixedConstant <- mixed.constant[which(mixed==names(x)[i])]
-          }else{
+              mixedConstant <- mixed.constant[which(mixed == names(x)[i])]
+          } else {
             mixedTF <- FALSE
           }
         }
         colnames(dataForReg)[1] <- "y"
-        new.dat <- data.frame(cbind(rep(1,length(wy)), xPart[wy,,drop=FALSE])) 
-        if( class(dataForReg$y) == "numeric" ) meth = "numeric" else if( class(dataForReg$y) == "factor" & length(levels(dataForReg$y))==2) meth = "bin" else meth = "factor"
+        new.dat <- data.frame(cbind(rep(1, length(wy)), xPart[wy,, drop = FALSE]))
+        if (class(dataForReg$y) == "numeric")
+          meth <- "numeric"
+        else if (class(dataForReg$y) == "factor" & length(levels(dataForReg$y)) == 2)
+          meth <- "bin"
+        else
+          meth <- "factor"
         ## replace initialised missings:
-        if(!is.null(modelFormulas)){
-          TFform <- names(modelFormulas)==colnames(x)[i]
-          if(any(TFform))
+        if (!is.null(modelFormulas)) {
+          TFform <- names(modelFormulas) == colnames(x)[i]
+          if (any(TFform))
             activeFormula <- modelFormulas[[which(TFform)]]
           else
-            activeFormula <- names(dataForReg)[names(dataForReg)!="y"]
-        }else
-          activeFormula <- names(dataForReg)[names(dataForReg)!="y"]
-        if(length(wy) > 0) x[wy,i] <- getM(xReg=dataForReg, ndata=new.dat[,-1,drop=FALSE], type=meth, index=wy,mixedTF=mixedTF,mixedConstant=mixedConstant,
-              factors=factors,step=step,robust=robust,noise=TRUE,
-              noise.factor=noise.factor,force=force,robMethod,form=activeFormula,multinom.method=multinom.method)
+            activeFormula <- names(dataForReg)[names(dataForReg) != "y"]
+        } else
+          activeFormula <- names(dataForReg)[names(dataForReg) != "y"]
+        if (length(wy) > 0) x[wy, i] <- getM(
+          xReg = dataForReg, ndata = new.dat[, -1, drop = FALSE], type = meth,
+          index = wy, mixedTF = mixedTF, mixedConstant = mixedConstant,
+          factors = factors, step = step, robust = robust, noise = TRUE,
+          noise.factor = noise.factor, force = force, robMethod,
+          form = activeFormula, multinom.method = multinom.method)
       }
       mimp[[m]] <- x
       x <- xSave1
@@ -521,55 +554,57 @@ irmi <- function(x, eps=5, maxit=100, mixed=NULL,mixed.constant=NULL, count=NULL
     x <- mimp
   }
   ##  End Multiple Imputation
-  
+
   ## Recode factors to their original coding
-  if(length(factors)>0){
-    for(f in 1:length(factors)){
-#		cat("vorher\n")
-#		print(str(x))
-      
-#		print(origLevels[[f]])
-      if(mi>1){
-        for(mii in 1:mi)
-          levels(x[[mii]][,factors[f]]) <- origLevels[[f]]
-      }else{
-        levels(x[,factors[f]]) <- origLevels[[f]]
+  if (length(factors) > 0) {
+    for (f in 1:length(factors)) {
+#    cat("vorher\n")
+#    print(str(x))
+
+#    print(origLevels[[f]])
+      if (mi > 1) {
+        for (mii in 1:mi)
+          levels(x[[mii]][, factors[f]]) <- origLevels[[f]]
+      } else {
+        levels(x[, factors[f]]) <- origLevels[[f]]
       }
-      
-#	  cat("nachher\n")
+#    cat("nachher\n")
     }
   }
-  if(trace){
+  if (trace) {
     message("Imputation performed on the following data set:\n")
     print(missingSummary)
   }
-  if(imp_var){
-    if(trace){
-      message(paste("The variables",paste(colnames(imp_vardf),collapse=","), "are added to the data set."))
+  if (imp_var) {
+    if (trace) {
+      message(paste("The variables", paste(colnames(imp_vardf), collapse = ","),
+                    "are added to the data set."))
     }
-    x <- cbind(x,imp_vardf)
+    x <- cbind(x, imp_vardf)
   }
   invisible(x)
-  
+
 }
 
 
 ### utility functions
 anyNA <- function(X) any(is.na(X))
 Unit <- function(A) UseMethod("Unit")
-Unit.list <- function(A){ # Units a list of vectors into one vector
-  a<-vector()
-  for(i in 1:length(A)){
-    a <- c(a,A[[i]])
+Unit.list <- function(A) {
+  # Units a list of vectors into one vector
+  a <- vector()
+  for (i in 1:length(A)) {
+    a <- c(a, A[[i]])
   }
   levels(as.factor(a))
 }
 Inter <- function(A) UseMethod("Inter")
-Inter.list <- function(A){ # common entries from a list of vectors
-  a<-Unit(A)
-  TF <- rep(TRUE,length(a))
-  for(i in 1:length(a)){
-    for(j in 1:length(A)){
+Inter.list <- function(A) {
+  # common entries from a list of vectors
+  a <- Unit(A)
+  TF <- rep(TRUE, length(a))
+  for (i in 1:length(a)) {
+    for (j in 1:length(A)) {
       TF[i] <- TF[i] && a[i] %in% A[[j]]
     }
   }
