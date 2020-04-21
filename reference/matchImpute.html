@@ -201,7 +201,7 @@ status</p></td>
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>testdata</span>,<span class='kw'>package</span><span class='kw'>=</span><span class='st'>"VIM"</span>)
 <span class='no'>imp_testdata1</span> <span class='kw'>&lt;-</span> <span class='fu'>matchImpute</span>(<span class='no'>testdata</span>$<span class='no'>wna</span>,<span class='kw'>match_var</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"c1"</span>,<span class='st'>"c2"</span>,<span class='st'>"b1"</span>,<span class='st'>"b2"</span>))
 
-<span class='no'>dt</span> <span class='kw'>&lt;-</span> <span class='fu'>data.table</span>(<span class='no'>testdata</span>$<span class='no'>wna</span>)
+<span class='no'>dt</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>data.table</span><span class='kw ns'>::</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/data.table.html'>data.table</a></span>(<span class='no'>testdata</span>$<span class='no'>wna</span>)
 <span class='no'>imp_testdata2</span> <span class='kw'>&lt;-</span> <span class='fu'>matchImpute</span>(<span class='no'>dt</span>,<span class='kw'>match_var</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"c1"</span>,<span class='st'>"c2"</span>,<span class='st'>"b1"</span>,<span class='st'>"b2"</span>))</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
