@@ -45,7 +45,7 @@ imp_data <- matchImpute(sleep,variable=c("NonD","Dream","Sleep","Span","Gest"),
 data(testdata,package="VIM")
 imp_testdata1 <- matchImpute(testdata$wna,match_var=c("c1","c2","b1","b2"))
 
-dt <- data.table(testdata$wna)
+dt <- data.table::data.table(testdata$wna)
 imp_testdata2 <- matchImpute(dt,match_var=c("c1","c2","b1","b2"))
 }
 \seealso{

@@ -9,7 +9,7 @@ Authors@R: c(
   person("Gregor", "de Cillia", email = "gregor.decillia@statistik.gv.at", role = c("aut")),
   person("Bernd", "Prantner", role = c("ctb")))
 Depends:
-    R (>= 3.5.0),colorspace,grid,data.table(>= 1.9.4)
+    R (>= 3.5.0),colorspace,grid
 Imports:
     car,
     grDevices,
@@ -17,7 +17,8 @@ Imports:
     robustbase,
     stats,
     sp,
-    vcd,MASS,nnet,e1071,methods,Rcpp,utils,graphics,laeken,ranger
+    vcd,MASS,nnet,e1071,methods,Rcpp,utils,graphics,laeken,ranger,
+    data.table(>= 1.9.4)
 Suggests: 
     dplyr,
     testthat,
