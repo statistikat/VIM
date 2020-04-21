@@ -167,9 +167,9 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
   attributes(types)$names <- NULL
   types <- unlist(types)
   if (any(types == "character")) {
-    chrInd <- which(types == "character")
+    chr_ind <- which(types == "character")
     warning("At least one character variable is converted into a factor")
-    for (ind in chrInd){
+    for (ind in chr_ind) {
       x[, ind] <- as.factor(x[, ind])
       types[ind] <- "factor"
     }
@@ -177,8 +177,8 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
 
   #determine factor type: dichotomous or polytomous
   #detect problematic factors
-  indFac <- which(types == "factor")
-  for (ind in indFac) {
+  ind_fac <- which(types == "factor")
+  for (ind in ind_fac) {
     #get number of levels
     fac_nlevels <- nlevels(x[[ind]])
     if (fac_nlevels == 2)
@@ -187,21 +187,21 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
       types[ind] <- "nominal"
     else stop(sprintf("factor with less than 2 levels detected! - `%s`", names(x)[ind]))
   }
-  indOrd <- which(types == "ordered")
-  for (ind in indOrd) {
+  ind_ord <- which(types == "ordered")
+  for (ind in ind_ord) {
     #get number of levels
     fac_nlevels <- nlevels(x[[ind]])
     if (fac_nlevels == 2)
       types[ind] <- "binary"
   }
 
-  missingSummary <- cbind(types, apply(x, 2, function(x) sum(is.na(x))))
-  colnames(missingSummary) <- c("type", "#missing")
+  missing_summary <- cbind(types, apply(x, 2, function(x) sum(is.na(x))))
+  colnames(missing_summary) <- c("type", "#missing")
   if (imp_var) {
-    imp_vars <- paste(rownames(missingSummary), "_", imp_suffix, sep = "")
+    imp_vars <- paste(rownames(missing_summary), "_", imp_suffix, sep = "")
     imp_vardf <- as.data.frame(apply(x, 2, function(x) is.na(x)))
     colnames(imp_vardf) <- imp_vars
-    imp_vardf <- imp_vardf[, missingSummary[, 2] != "0", drop = FALSE]
+    imp_vardf <- imp_vardf[, missing_summary[, 2] != "0", drop = FALSE]
   }
 # save(x, file="xtest.RData")
   P <- dim(x)[2]
@@ -248,14 +248,14 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
   ## Recode the levels of a factor to 1:number of levels
   if (any(factors)) {
     factors <- colnames(x)[factors]
-    origLevels <- list()
+    orig_levels <- list()
     for (f in 1:length(factors)) {
-      origLevels[[f]] <- levels(x[, factors[f]])
-      levels(x[, factors[f]]) <- 0:(length(origLevels[[f]]) - 1)
+      orig_levels[[f]] <- levels(x[, factors[f]])
+      levels(x[, factors[f]]) <- 0:(length(orig_levels[[f]]) - 1)
     }
   } else factors <- character(0)
 
-  VarswithNA <- vector()
+  vars_with_na <- vector()
 
   ## index for missingness
   w2 <- is.na(x)
@@ -263,10 +263,10 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
   ## variables that include missings
   for (i in seq(P)) {
     if (anyNA(x[, i]))
-      VarswithNA <- c(VarswithNA, i)
+      vars_with_na <- c(vars_with_na, i)
   }
   ## count runden, da MIttelwertimputation in initialise:
-  ndigitsCount <- apply(
+  n_digits_count <- apply(
     x[, types == "count", drop = FALSE], 2,
     function(x){
       x <- as.character(x)
@@ -287,12 +287,12 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
   j <- 0
   for (i in which(types == "count")) {
     j <- j + 1
-    x[, i] <- round(x[, i], ndigitsCount[j])
+    x[, i] <- round(x[, i], n_digits_count[j])
   }
 
   if (trace) print(head(x))
-  mixedTF <- FALSE
-  mixedConstant <- 0
+  mixed_tf <- FALSE
+  mixed_constant <- 0
   ### outer loop
   d <- 99999
   it <- 0
@@ -300,51 +300,51 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
     it <- it + 1
     if (trace)
       message("Iteration", it, "\n")
-    xSave <- x
+    x_save <- x
     ## inner loop
-    for (i in VarswithNA) {
+    for (i in vars_with_na) {
       if (trace) {
         print(paste("inner loop:", i))
         if (Sys.info()[1] == "Windows") flush.console()
       }
-      yPart <- x[, i, drop = FALSE]
+      y_part <- x[, i, drop = FALSE]
       wy <- which(w2[, i])
-      xPart <- x[, -i, drop = FALSE]
+      x_part <- x[, -i, drop = FALSE]
 
       ## --- Start Additonal xvars for mixed vars
       if (!is.null(mixed) && addMixedFactors) {
-        if (any(names(xPart) %in% mixed)) {
-          mixedIndex <- which(names(xPart) %in% mixed)
-          for (ii in 1:length(mixedIndex)) {
-            namenew <- paste(names(xPart)[mixedIndex[ii]], "ADDMIXED", sep = "")
+        if (any(names(x_part) %in% mixed)) {
+          mixed_index <- which(names(x_part) %in% mixed)
+          for (ii in 1:length(mixed_index)) {
+            namenew <- paste(names(x_part)[mixed_index[ii]], "ADDMIXED", sep = "")
             if (is.null(mixed.constant))
-              xPart[, namenew] <- as.numeric(xPart[, mixedIndex[ii]] == 0)
+              x_part[, namenew] <- as.numeric(x_part[, mixed_index[ii]] == 0)
             else
-              xPart[, namenew] <- as.numeric(xPart[, mixedIndex[ii]] == mixed.constant[ii])
+              x_part[, namenew] <- as.numeric(x_part[, mixed_index[ii]] == mixed.constant[ii])
           }
         }
       } ## end additional xvars for mixed vars ---
       if (!takeAll) {
-        dataForReg <- data.frame(cbind(yPart[-wy, ], xPart[-wy, ])) ## part, wo in y keine missings
+        data_for_reg <- data.frame(cbind(y_part[-wy, ], x_part[-wy, ])) ## part, wo in y keine missings
       } else {
-        dataForReg <- data.frame(cbind(yPart, xPart))
+        data_for_reg <- data.frame(cbind(y_part, x_part))
       }
       if (!is.null(mixed)) {
         if (names(x)[i] %in% mixed) {
-          mixedTF <- TRUE
+          mixed_tf <- TRUE
           if (is.null(mixed.constant)) {
-            mixedConstant <- 0
+            mixed_constant <- 0
           } else {
-            mixedConstant <- mixed.constant[which(mixed == names(x)[i])]
+            mixed_constant <- mixed.constant[which(mixed == names(x)[i])]
           }
         } else {
-          mixedTF <- FALSE
+          mixed_tf <- FALSE
         }
       }
-      colnames(dataForReg)[1] <- "y"
-      new.dat <- data.frame(cbind(rep(1, length(wy)), xPart[wy,, drop = FALSE]))
+      colnames(data_for_reg)[1] <- "y"
+      new.dat <- data.frame(cbind(rep(1, length(wy)), x_part[wy,, drop = FALSE]))
 
-      #print(attributes(dataForReg$y)$cn)
+      #print(attributes(data_for_reg$y)$cn)
 
       if (trace) {
         print(types[[i]])
@@ -364,12 +364,12 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
 
       ## replace initialised missings:
       if (length(wy) > 0) {
-        #idataForReg <<- dataForReg
+        #idata_for_reg <<- data_for_reg
         #indata <<- new.dat[,-1,drop=FALSE]
         #imeth <<- meth
         #ii <<- i
         #iindex <<- wy
-        #imixedTF<<- mixedTF
+        #imixed_tf<<- mixed_tf
         #ifactors <<- factors
         #istep <<- step
         #irobust <<- robust
@@ -378,37 +378,37 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
         #debug(getM)
         if (trace)
           print(meth)
-        #print(lapply(dataForReg, class))
+        #print(lapply(data_for_reg, class))
         #if(i==10) stop("ZUR KONTROLLE i=10")
         if (!is.null(modelFormulas)) {
           TFform <- names(modelFormulas) == colnames(x)[i]
           if (any(TFform))
-            activeFormula <- modelFormulas[[which(TFform)]]
+            active_formula <- modelFormulas[[which(TFform)]]
           else
-            activeFormula <- names(dataForReg)[names(dataForReg) != "y"]
+            active_formula <- names(data_for_reg)[names(data_for_reg) != "y"]
         } else
-          activeFormula <- names(dataForReg)[names(dataForReg) != "y"]
+          active_formula <- names(data_for_reg)[names(data_for_reg) != "y"]
         if (trace) {
           print(paste("formula used:", paste(colnames(x)[i], "~",
-                                             paste(activeFormula, collapse = "+"))))
+                                             paste(active_formula, collapse = "+"))))
           if (Sys.info()[1] == "Windows") flush.console()
         }
         x[wy, i] <- getM(
-          xReg = dataForReg, ndata = new.dat[, -1, drop = FALSE], type = meth,
-          index = wy, mixedTF = mixedTF, mixedConstant = mixedConstant,
+          x_reg = data_for_reg, ndata = new.dat[, -1, drop = FALSE], type = meth,
+          index = wy, mixed_tf = mixed_tf, mixed_constant = mixed_constant,
           factors = factors, step = step, robust = robust, noise = FALSE,
-          force = force, robMethod, form = activeFormula,
+          force = force, robMethod, form = active_formula,
           multinom.method = multinom.method)
         #if(!testdigits(x$x5)) stop()
       }
     }  ## end inner loop
     d <- 0
     if (any(types %in% c("numeric", "mixed")))
-      d <- sum( (xSave[, types %in% c("numeric", "mixed")] -
+      d <- sum( (x_save[, types %in% c("numeric", "mixed")] -
                    x[, types %in% c("numeric", "mixed")]) ^ 2,
                 na.rm = TRUE)  #todo: Faktoren anders behandeln.
     if (any(!types %in% c("numeric", "mixed")))
-      d <- d + sum(xSave[, !types %in% c("numeric", "mixed")] != x[, !types %in% c("numeric", "mixed")])
+      d <- d + sum(x_save[, !types %in% c("numeric", "mixed")] != x[, !types %in% c("numeric", "mixed")])
     flush.console()
     if (trace) {
       print(paste("it =", it, ",  Wert =", d))
@@ -420,11 +420,11 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
   if (it > 1) {
     d <- 0
     if (any(types %in% c("numeric", "mixed")))
-      d <- sum( (xSave[, types %in% c("numeric", "mixed")] -
+      d <- sum( (x_save[, types %in% c("numeric", "mixed")] -
                    x[, types %in% c("numeric", "mixed")]) ^ 2, na.rm = TRUE)
     #todo: Faktoren anders behandeln.
     if (any(!types %in% c("numeric", "mixed")))
-      d <- d + sum(xSave[, !types %in% c("numeric", "mixed")] != x[, !types %in% c("numeric", "mixed")])
+      d <- d + sum(x_save[, !types %in% c("numeric", "mixed")] != x[, !types %in% c("numeric", "mixed")])
     if (trace) {
       if (it < maxit) {
         print(paste(d, "<", eps, "= eps"))
@@ -440,28 +440,28 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
   if (noise && mi == 1) {
     for (i in seq(P)) {
       flush.console()
-      yPart <- x[, i, drop = FALSE]
+      y_part <- x[, i, drop = FALSE]
       wy <- which(w2[, i])
-      xPart <- x[, -i, drop = FALSE]
+      x_part <- x[, -i, drop = FALSE]
       if (!takeAll) {
-        dataForReg <- data.frame(cbind(yPart[-wy, ], xPart[-wy, ])) ## part, wo in y keine missings
+        data_for_reg <- data.frame(cbind(y_part[-wy, ], x_part[-wy, ])) ## part, wo in y keine missings
       } else {
-        dataForReg <- data.frame(cbind(yPart, xPart))
+        data_for_reg <- data.frame(cbind(y_part, x_part))
       }
       if (!is.null(mixed)) {
         if (names(x)[i] %in% mixed) {
-          mixedTF <- TRUE
+          mixed_tf <- TRUE
           if (is.null(mixed.constant)) {
-            mixedConstant <- 0
+            mixed_constant <- 0
           } else {
-            mixedConstant <- mixed.constant[which(mixed == names(x)[i])]
+            mixed_constant <- mixed.constant[which(mixed == names(x)[i])]
           }
         } else {
-          mixedTF <- FALSE
+          mixed_tf <- FALSE
         }
       }
-      colnames(dataForReg)[1] <- "y"
-      new.dat <- data.frame(cbind(rep(1, length(wy)), xPart[wy,, drop = FALSE]))
+      colnames(data_for_reg)[1] <- "y"
+      new.dat <- data.frame(cbind(rep(1, length(wy)), x_part[wy,, drop = FALSE]))
       if (types[i] == "numeric" || types[i] == "mixed") {
         ## todo: ausserhalb der Schleife!!
         meth <- "numeric"
@@ -477,17 +477,17 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
       if (!is.null(modelFormulas)) {
         TFform <- names(modelFormulas) == colnames(x)[i]
         if (any(TFform))
-          activeFormula <- modelFormulas[[which(TFform)]]
+          active_formula <- modelFormulas[[which(TFform)]]
         else
-          activeFormula <- names(dataForReg)[names(dataForReg) != "y"]
+          active_formula <- names(data_for_reg)[names(data_for_reg) != "y"]
       } else
-        activeFormula <- names(dataForReg)[names(dataForReg) != "y"]
+        active_formula <- names(data_for_reg)[names(data_for_reg) != "y"]
       if (length(wy) > 0) x[wy, i] <- getM(
-        xReg = dataForReg, ndata = new.dat[, -1, drop = FALSE], type = meth,
-        index = wy, mixedTF = mixedTF, mixedConstant = mixedConstant,
+        x_reg = data_for_reg, ndata = new.dat[, -1, drop = FALSE], type = meth,
+        index = wy, mixed_tf = mixed_tf, mixed_constant = mixed_constant,
         factors = factors, step = step, robust = robust, noise = TRUE,
         noise.factor = noise.factor, force = force, robMethod,
-        form = activeFormula, multinom.method = multinom.method)
+        form = active_formula, multinom.method = multinom.method)
     }
   }
   ## End NOISE
@@ -499,34 +499,34 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
   }
   if (mi > 1) {
     mimp <- list()
-    xSave1 <- x
+    x_save1 <- x
     for (m in 1:mi) {
       for (i in seq(P)) {
         flush.console()
-        yPart <- x[, i, drop = FALSE]
+        y_part <- x[, i, drop = FALSE]
         wy <- which(w2[, i])
-        xPart <- x[, -i, drop = FALSE]
+        x_part <- x[, -i, drop = FALSE]
         if (!takeAll) {
-          dataForReg <- data.frame(cbind(yPart[-wy, ], xPart[-wy, ])) ## part, wo in y keine missings
+          data_for_reg <- data.frame(cbind(y_part[-wy, ], x_part[-wy, ])) ## part, wo in y keine missings
         } else {
-          dataForReg <- data.frame(cbind(yPart, xPart))
+          data_for_reg <- data.frame(cbind(y_part, x_part))
         }
         if (!is.null(mixed)) {
           if (names(x)[i] %in% mixed) {
-            mixedTF <- TRUE
+            mixed_tf <- TRUE
             if (is.null(mixed.constant))
-              mixedConstant <- 0
+              mixed_constant <- 0
             else
-              mixedConstant <- mixed.constant[which(mixed == names(x)[i])]
+              mixed_constant <- mixed.constant[which(mixed == names(x)[i])]
           } else {
-            mixedTF <- FALSE
+            mixed_tf <- FALSE
           }
         }
-        colnames(dataForReg)[1] <- "y"
-        new.dat <- data.frame(cbind(rep(1, length(wy)), xPart[wy,, drop = FALSE]))
-        if (class(dataForReg$y) == "numeric")
+        colnames(data_for_reg)[1] <- "y"
+        new.dat <- data.frame(cbind(rep(1, length(wy)), x_part[wy,, drop = FALSE]))
+        if (class(data_for_reg$y) == "numeric")
           meth <- "numeric"
-        else if (class(dataForReg$y) == "factor" & length(levels(dataForReg$y)) == 2)
+        else if (class(data_for_reg$y) == "factor" & length(levels(data_for_reg$y)) == 2)
           meth <- "bin"
         else
           meth <- "factor"
@@ -534,20 +534,20 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
         if (!is.null(modelFormulas)) {
           TFform <- names(modelFormulas) == colnames(x)[i]
           if (any(TFform))
-            activeFormula <- modelFormulas[[which(TFform)]]
+            active_formula <- modelFormulas[[which(TFform)]]
           else
-            activeFormula <- names(dataForReg)[names(dataForReg) != "y"]
+            active_formula <- names(data_for_reg)[names(data_for_reg) != "y"]
         } else
-          activeFormula <- names(dataForReg)[names(dataForReg) != "y"]
+          active_formula <- names(data_for_reg)[names(data_for_reg) != "y"]
         if (length(wy) > 0) x[wy, i] <- getM(
-          xReg = dataForReg, ndata = new.dat[, -1, drop = FALSE], type = meth,
-          index = wy, mixedTF = mixedTF, mixedConstant = mixedConstant,
+          x_reg = data_for_reg, ndata = new.dat[, -1, drop = FALSE], type = meth,
+          index = wy, mixed_tf = mixed_tf, mixed_constant = mixed_constant,
           factors = factors, step = step, robust = robust, noise = TRUE,
           noise.factor = noise.factor, force = force, robMethod,
-          form = activeFormula, multinom.method = multinom.method)
+          form = active_formula, multinom.method = multinom.method)
       }
       mimp[[m]] <- x
-      x <- xSave1
+      x <- x_save1
     }
     x <- mimp
   }
@@ -559,19 +559,19 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
 #    cat("vorher\n")
 #    print(str(x))
 
-#    print(origLevels[[f]])
+#    print(orig_levels[[f]])
       if (mi > 1) {
         for (mii in 1:mi)
-          levels(x[[mii]][, factors[f]]) <- origLevels[[f]]
+          levels(x[[mii]][, factors[f]]) <- orig_levels[[f]]
       } else {
-        levels(x[, factors[f]]) <- origLevels[[f]]
+        levels(x[, factors[f]]) <- orig_levels[[f]]
       }
 #    cat("nachher\n")
     }
   }
   if (trace) {
     message("Imputation performed on the following data set:\n")
-    print(missingSummary)
+    print(missing_summary)
   }
   if (imp_var) {
     if (trace) {
@@ -657,51 +657,51 @@ initialise <- function(x, mixed, method = "kNN", mixed.constant = NULL) {
 }
 
 ## switch function to automatically select methods
-getM <- function(xReg, ndata, type, index, mixedTF, mixedConstant, factors,
+getM <- function(x_reg, ndata, type, index, mixed_tf, mixed_constant, factors,
                  step, robust, noise, noise.factor = 1, force = FALSE,
                  robMethod = "MM", form = NULL, multinom.method = "mnlogit") {
   switch(
     type,
-    numeric = useLM(xReg, ndata, index, mixedTF, mixedConstant, factors, step,
+    numeric = useLM(x_reg, ndata, index, mixed_tf, mixed_constant, factors, step,
                     robust, noise, noise.factor, force, robMethod, form = form),
-    factor = useMN(xReg, ndata, index, factors, step, robust, form = form,
+    factor = useMN(x_reg, ndata, index, factors, step, robust, form = form,
                     multinom.method = multinom.method),
-    bin = useB(xReg, ndata, index, factors, step, robust, form = form),
-    count   = useGLMcount(xReg, ndata, index, factors, step, robust,
+    bin = useB(x_reg, ndata, index, factors, step, robust, form = form),
+    count   = useGLMcount(x_reg, ndata, index, factors, step, robust,
                           form = form),
-    ordered  = useOrd(xReg, ndata, index, factors, step, robust, form = form),
+    ordered  = useOrd(x_reg, ndata, index, factors, step, robust, form = form),
   )
 }
 
 ### LM+GLM --- useLM start
-useLM <- function(xReg, ndata, wy, mixedTF, mixedConstant, factors, step,
+useLM <- function(x_reg, ndata, wy, mixed_tf, mixed_constant, factors, step,
                   robust, noise, noise.factor, force, robMethod, form) {
-  n <- nrow(xReg)
-  factors <- Inter(list(colnames(xReg), factors))
+  n <- nrow(x_reg)
+  factors <- Inter(list(colnames(x_reg), factors))
   ## for semicontinuous variables
-  if (mixedTF) {
-    delFactors <- vector()
+  if (mixed_tf) {
+    del_factors <- vector()
     if (length(factors) > 0){
       for (f in 1:length(factors)) {
-        if (any(summary(xReg[, factors[f]]) == 0)) {
-          xReg <- xReg[, -which(colnames(xReg) == factors[f])]
+        if (any(summary(x_reg[, factors[f]]) == 0)) {
+          x_reg <- x_reg[, -which(colnames(x_reg) == factors[f])]
           ndata <- ndata[, -which(colnames(ndata) == factors[f])]
-          delFactors <- c(delFactors, factors[f])
+          del_factors <- c(del_factors, factors[f])
         }
       }
     }
-    xReg1 <- xReg
-    xReg1$y[xReg$y == mixedConstant] <- 0
-    xReg1$y[xReg$y != mixedConstant] <- 1
-    form <- form[form %in% names(xReg1)]
+    x_reg1 <- x_reg
+    x_reg1$y[x_reg$y == mixed_constant] <- 0
+    x_reg1$y[x_reg$y != mixed_constant] <- 1
+    form <- form[form %in% names(x_reg1)]
     if (class(form) != "formula")
       form <- as.formula(paste("y ~", paste(form, collapse = "+")))
     else
       form <- y ~ .
     if (!robust)
-      glm.bin <- glm(form, data = xReg1, family = "binomial")
+      glm.bin <- glm(form, data = x_reg1, family = "binomial")
     else {
-      glm.bin <- glm(form, data = xReg1, family = "binomial")
+      glm.bin <- glm(form, data = x_reg1, family = "binomial")
     }
 #     if VGAM will be chosen instead of multinom:
 #	  op <- options() #Alles auskommentiert, weil VGAM draussen!
@@ -714,12 +714,12 @@ useLM <- function(xReg, ndata, wy, mixedTF, mixedConstant, factors, step,
     imp <- predict(glm.bin, newdata = ndata, type = "response")
     imp[imp < 0.5] <- 0
     imp[imp >= 0.5] <- 1
-    xReg <- xReg[xReg$y != mixedConstant, ]
-    factors2 <- factors[!factors %in% delFactors]
+    x_reg <- x_reg[x_reg$y != mixed_constant, ]
+    factors2 <- factors[!factors %in% del_factors]
     if (length(factors2) > 0) {
       for (f in 1:length(factors2)) {
-        if (any(summary(xReg[, factors2[f]]) == 0)) {
-          xReg <- xReg[, -which(colnames(xReg) == factors2[f])]
+        if (any(summary(x_reg[, factors2[f]]) == 0)) {
+          x_reg <- x_reg[, -which(colnames(x_reg) == factors2[f])]
           ndata <- ndata[, -which(colnames(ndata) == factors2[f])]
         }
       }
@@ -727,12 +727,12 @@ useLM <- function(xReg, ndata, wy, mixedTF, mixedConstant, factors, step,
     ## for continuous variables:
   } else {
     if (length(factors) > 0) {
-      delFactors <- vector()
+      del_factors <- vector()
       for (f in 1:length(factors)) {
-        if (any(summary(xReg[, factors[f]]) == 0)) {
-          xReg <- xReg[, -which(colnames(xReg) == factors[f])]
+        if (any(summary(x_reg[, factors[f]]) == 0)) {
+          x_reg <- x_reg[, -which(colnames(x_reg) == factors[f])]
           ndata <- ndata[, -which(colnames(ndata) == factors[f])]
-          delFactors <- c(delFactors, factors[f])
+          del_factors <- c(del_factors, factors[f])
         }
       }
     }
@@ -740,42 +740,42 @@ useLM <- function(xReg, ndata, wy, mixedTF, mixedConstant, factors, step,
   }
   ##Two-Step
   if (class(form) != "formula") {
-    form <- form[form %in% names(xReg)]
+    form <- form[form %in% names(x_reg)]
     if (length(form) > 0)
       form <- as.formula(paste("y ~", paste(form, collapse = "+")))
     else
       form <- y ~ .
   } else {
-    formVars <- all.vars(form)[-1]
-    if (any(!formVars %in% colnames(xReg))) {
-      formVars <- formVars[formVars %in% colnames(xReg)]
-      form <- as.formula(paste("y ~", paste(formVars, collapse = "+")))
+    form_vars <- all.vars(form)[-1]
+    if (any(!form_vars %in% colnames(x_reg))) {
+      form_vars <- form_vars[form_vars %in% colnames(x_reg)]
+      form <- as.formula(paste("y ~", paste(form_vars, collapse = "+")))
     }
   }
   if (!robust) {
-    glm.num <- glm(form, data = xReg, family = "gaussian")
+    glm.num <- glm(form, data = x_reg, family = "gaussian")
     #cat("not ROBUST!!!!!!!!\n")
   } else {
     if (exists("glm.num"))
       rm(glm.num)
     if (force) {
-      try(glm.num <- rlm(form, data = xReg, method = "MM"), silent = TRUE)
+      try(glm.num <- rlm(form, data = x_reg, method = "MM"), silent = TRUE)
       if (!exists("glm.num")) {
-        try(glm.num <- lmrob(form, data = xReg), silent = TRUE)
+        try(glm.num <- lmrob(form, data = x_reg), silent = TRUE)
         if (!exists("glm.num")) {
-          glm.num <- rlm(form, data = xReg, method = "M")
+          glm.num <- rlm(form, data = x_reg, method = "M")
           if (!exists("glm.num")) {
-            glm.num <- glm(form, data = xReg, family = "gaussian")
+            glm.num <- glm(form, data = x_reg, family = "gaussian")
           }
         }
       }
     } else {
       if (robMethod == "lmrob") {
-        glm.num <- lmrob(form, data = xReg)
+        glm.num <- lmrob(form, data = x_reg)
       } else if (robMethod == "lqs") {
-        glm.num <- lqs(form, data = xReg)
+        glm.num <- lqs(form, data = x_reg)
       } else {
-        glm.num <- rlm(form, data = xReg, method = robMethod)
+        glm.num <- rlm(form, data = x_reg, method = robMethod)
       }
     }
   }
@@ -789,28 +789,27 @@ useLM <- function(xReg, ndata, wy, mixedTF, mixedConstant, factors, step,
 
   if (noise) {
     if (!robust) {
-      consistencyFactor <- sqrt( (nrow(ndata[imp == 1, , drop = FALSE]) / n + 1))#*n/(n+1)
-      nout <- nrow(ndata[imp == 1, , drop = FALSE])
-      p.glm.num <- predict(glm.num, newdata = ndata[imp == 1, drop = FALSE], se.fit = TRUE)
-      if (is.nan(p.glm.num $ residual.scale)) {
+      consistency_factor <- sqrt( (nrow(ndata[imp == 1,, drop = FALSE]) / n + 1))#*n/(n+1)
+      p_glm_num <- predict(glm.num, newdata = ndata[imp == 1,, drop = FALSE], se.fit = TRUE)
+      if (is.nan(p_glm_num $ residual.scale)) {
         warning("The residual scale could not be computed, probably due to a rank deficient model. It is set to 1\n")
-        p.glm.num$residual.scale <- 1
+        p_glm_num$residual.scale <- 1
       }
-      imp2 <- p.glm.num$fit + noise.factor * rnorm(length(p.glm.num$fit), 0, p.glm.num$residual.scale * consistencyFactor)
+      imp2 <- p_glm_num$fit + noise.factor * rnorm(length(p_glm_num$fit), 0, p_glm_num$residual.scale * consistency_factor)
     } else {
-      nout <- nrow(ndata[imp == 1, drop = FALSE])
-      consistencyFactor <- sqrt( (nrow(ndata[imp == 1, drop = FALSE]) / n + 1))#*(n)/(n+1))
-      p.glm.num <- predict(glm.num, newdata = ndata[imp == 1, drop = FALSE])
+      nout <- nrow(ndata[imp == 1,, drop = FALSE])
+      consistency_factor <- sqrt( (nrow(ndata[imp == 1,, drop = FALSE]) / n + 1))#*(n)/(n+1))
+      p_glm_num <- predict(glm.num, newdata = ndata[imp == 1,, drop = FALSE])
       if (is.nan(glm.num$s)) {
         warning("The residual scale could not be computed, probably due to a rank deficient model. It is set to 1\n")
         glm.num$s <- 1
       }
-      imp2 <- p.glm.num + noise.factor * rnorm(length(p.glm.num), 0, glm.num$s * consistencyFactor)
+      imp2 <- p_glm_num + noise.factor * rnorm(length(p_glm_num), 0, glm.num$s * consistency_factor)
     }
   } else
-    imp2 <- predict(glm.num, newdata = ndata[imp == 1, drop = FALSE])
+    imp2 <- predict(glm.num, newdata = ndata[imp == 1,, drop = FALSE])
   imp3 <- imp
-  imp3[imp == 0] <- mixedConstant
+  imp3[imp == 0] <- mixed_constant
   imp3[imp == 1] <- imp2
   return(imp3)
 #		library(VGAM, warn.conflicts = FALSE, verbose=FALSE)
@@ -818,28 +817,28 @@ useLM <- function(xReg, ndata, wy, mixedTF, mixedConstant, factors, step,
 }
 
 ## count data as response
-useGLMcount <- function(xReg,  ndata, wy, factors, step, robust, form) {
-  factors <- Inter(list(colnames(xReg), factors))
+useGLMcount <- function(x_reg,  ndata, wy, factors, step, robust, form) {
+  factors <- Inter(list(colnames(x_reg), factors))
   if (length(factors) > 0) {
     for (f in 1:length(factors)) {
-      if (any(summary(xReg[, factors[f]]) == 0)) {
-        xReg <- xReg[, -which(colnames(xReg) == factors[f])]
+      if (any(summary(x_reg[, factors[f]]) == 0)) {
+        x_reg <- x_reg[, -which(colnames(x_reg) == factors[f])]
         ndata <- ndata[, -which(colnames(ndata) == factors[f])]
       }
     }
   }
-  form <- form[form %in% names(xReg)]
+  form <- form[form %in% names(x_reg)]
   if (length(form) > 0)
     form <- as.formula(paste("y ~", paste(form, collapse = "+")))
   else
     form <- y ~ .
   if (robust) {
-    #glmc <- glm(y~ ., data=xReg, family=poisson)
-    glmc <- glmrob(form, data = xReg, family = poisson)
-    glmc$rank <- ncol(xReg)
+    #glmc <- glm(y~ ., data=x_reg, family=poisson)
+    glmc <- glmrob(form, data = x_reg, family = poisson)
+    glmc$rank <- ncol(x_reg)
     #glmc$coef <- glmcR$coef
   } else {
-    glmc <- glm(form, data = xReg, family = poisson)
+    glmc <- glm(form, data = x_reg, family = poisson)
   }
   if (step & robust) stop("both step and robust equals TRUE not provided")
   if (step) {
@@ -851,26 +850,26 @@ useGLMcount <- function(xReg,  ndata, wy, factors, step, robust, form) {
 }
 
 # categorical response
-useMN <- function(xReg, ndata, wy, factors, step, robust, form, multinom.method){
-  factors <- Inter(list(colnames(xReg), factors))
+useMN <- function(x_reg, ndata, wy, factors, step, robust, form, multinom.method){
+  factors <- Inter(list(colnames(x_reg), factors))
   if (length(factors) > 0) {
     for (f in 1:length(factors)) {
-      if (any(summary(xReg[, factors[f]]) == 0)) {
-        xReg <- xReg[, -which(colnames(xReg) == factors[f])]
+      if (any(summary(x_reg[, factors[f]]) == 0)) {
+        x_reg <- x_reg[, -which(colnames(x_reg) == factors[f])]
         ndata <- ndata[, -which(colnames(ndata) == factors[f])]
       }
     }
   }
-  form <- form[form %in% names(xReg)]
+  form <- form[form %in% names(x_reg)]
   if (length(form) > 0)
     form <- as.formula(paste("y ~", paste(form, collapse = "+")))
   else
     form <- y ~ .
   if (multinom.method == "multinom") {
     co <- capture.output(multimod <- multinom(
-      form, data = xReg, summ = 2, maxit = 50, trace = FALSE, MaxNWts = 50000 ))
+      form, data = x_reg, summ = 2, maxit = 50, trace = FALSE, MaxNWts = 50000 ))
     if (step) {
-      multimod <- stepAIC(multimod, xReg)
+      multimod <- stepAIC(multimod, x_reg)
     }
     imp <- predict(multimod, newdata = ndata)
   } else {
@@ -881,58 +880,58 @@ useMN <- function(xReg, ndata, wy, factors, step, robust, form, multinom.method)
 
 
 # ordered response
-useOrd <- function(xReg, ndata,  wy, factors, step, robust, form){
-  factors <- Inter(list(colnames(xReg), factors))
+useOrd <- function(x_reg, ndata,  wy, factors, step, robust, form){
+  factors <- Inter(list(colnames(x_reg), factors))
   if (length(factors) > 0) {
     for (f in 1:length(factors)) {
-      if (any(summary(xReg[, factors[f]]) == 0)) {
-        xReg <- xReg[, -which(colnames(xReg) == factors[f])]
+      if (any(summary(x_reg[, factors[f]]) == 0)) {
+        x_reg <- x_reg[, -which(colnames(x_reg) == factors[f])]
         ndata <- ndata[, -which(colnames(ndata) == factors[f])]
       }
     }
   }
-  form <- form[form %in% names(xReg)]
+  form <- form[form %in% names(x_reg)]
   if (length(form) > 0)
     form <- as.formula(paste("y ~", paste(form, collapse = "+")))
   else
     form <- y ~ .
-  multimod <- polr(form, data = xReg)
+  multimod <- polr(form, data = x_reg)
   if (step) {
-    multimod <- stepAIC(multimod, xReg)
+    multimod <- stepAIC(multimod, x_reg)
   }
   imp <- predict(multimod, newdata = ndata)
   return(imp)
 }
 
 # binary response
-useB <- function(xReg,  ndata, wy, factors, step, robust, form) {
-  factors <- Inter(list(colnames(xReg), factors))
+useB <- function(x_reg,  ndata, wy, factors, step, robust, form) {
+  factors <- Inter(list(colnames(x_reg), factors))
   #TODO: Faktoren mit 2 Levels und nicht Levels 0 1, funktionieren NICHT!!!!
   if (length(factors) > 0){
     for (f in 1:length(factors)) {
-      if (any(summary(xReg[, factors[f]]) == 0)) {
-        xReg <- xReg[, -which(colnames(xReg) == factors[f])]
+      if (any(summary(x_reg[, factors[f]]) == 0)) {
+        x_reg <- x_reg[, -which(colnames(x_reg) == factors[f])]
         ndata <- ndata[, -which(colnames(ndata) == factors[f])]
       }
     }
   }
-  form <- form[form %in% names(xReg)]
+  form <- form[form %in% names(x_reg)]
   if (length(form) > 0)
     form <- as.formula(paste("y ~", paste(form, collapse = "+")))
   else
     form <- y ~ .
   if (!robust)
-    glm.bin <- glm(form, data = xReg, family = "binomial")
-  else{
-#		glm.bin <- BYlogreg(x0=xReg[,-1], xReg[,1]) ## BYlogreg kann niemals funken
-    glm.bin <- glm(form, data = xReg, family = "binomial")
+    glm.bin <- glm(form, data = x_reg, family = "binomial")
+  else {
+#		glm.bin <- BYlogreg(x0=x_reg[,-1], x_reg[,1]) ## BYlogreg kann niemals funken
+    glm.bin <- glm(form, data = x_reg, family = "binomial")
 #      if(exists("glm.bin"))
 #        rm(glm.bin)
-#      try(glm.bin <- glmrob(y ~ . , data=xReg, family="binomial"),silent=TRUE)
+#      try(glm.bin <- glmrob(y ~ . , data=x_reg, family="binomial"),silent=TRUE)
 #      if(exists("glm.bin"))
-#        glm.bin$rank <- ncol(xReg)
+#        glm.bin$rank <- ncol(x_reg)
 #      else
-#        glm.bin <- glm(y ~ . , data=xReg, family="binomial")
+#        glm.bin <- glm(y ~ . , data=x_reg, family="binomial")
 
   }
 #	op <- options() # Alles auskommentiert, weil VGAM draussen
