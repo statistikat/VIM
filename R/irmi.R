@@ -204,7 +204,6 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
     imp_vardf <- imp_vardf[, missingSummary[, 2] != "0", drop = FALSE]
   }
 # save(x, file="xtest.RData")
-  N <- n <- dim(x)[1]
   P <- dim(x)[2]
   ## error management:
   if (dim(x)[2] < 2) stop("Less than 2 variables included in x.")
@@ -216,8 +215,7 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
   if (!is.logical(mixed) & !is.null(mixed)) {
     ind <- rep(FALSE, P)
     ind[mixed] <- TRUE
-    mixedlog <- ind
-  } else mixedlog <- mixed
+  }
   if (!is.character(mixed)) {
     mixed <- colnames(x)[mixed]
   }
@@ -898,7 +896,7 @@ useOrd <- function(xReg, ndata,  wy, factors, step, robust, form){
     form <- as.formula(paste("y ~", paste(form, collapse = "+")))
   else
     form <- y ~ .
-  co <- capture.output(multimod <- polr(form, data = xReg))
+  multimod <- polr(form, data = xReg)
   if (step) {
     multimod <- stepAIC(multimod, xReg)
   }
