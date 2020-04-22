@@ -181,11 +181,9 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
   for (ind in ind_fac) {
     #get number of levels
     fac_nlevels <- nlevels(x[[ind]])
-    if (fac_nlevels == 2)
-      types[ind] <- "binary"
-    else if (fac_nlevels > 2)
-      types[ind] <- "nominal"
-    else stop(sprintf("factor with less than 2 levels detected! - `%s`", names(x)[ind]))
+    if (fac_nlevels < 2)
+      stop(sprintf("factor with less than 2 levels detected! - `%s`", names(x)[ind]))
+    types[ind] = ifelse(fac_nlevels == 2, "binary", "nominal")
   }
   ind_ord <- which(types == "ordered")
   for (ind in ind_ord) {
@@ -349,20 +347,20 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
       if (trace) {
         print(types[[i]])
       }
-      if (types[i] == "integer" || types[i] == "numeric" || types[i] == "mixed") {
+
+      meth <- switch(
         ## todo: ausserhalb der Schleife!!
-        meth <- "numeric"
-      } else if (types[i] == "binary") {
-        meth <- "bin"
-      } else if (types[i] == "nominal") {
-        meth <- "factor"
-      } else if (types[i] == "count") {
-        meth <- "count"
-      } else if (types[i] == "ordered") {
-        meth <- "ordered"
-      } else if (types[i] == "logical") {
-        meth <- "bin"
-      }
+        types[i],
+        integer = "numeric",
+        numeric = "numeric",
+        mixed = "numeric",
+        binary = "bin",
+        nominal = "factor",
+        count = "count",
+        ordered = "ordered",
+        logical = "bin",
+        stop("unsupported variable type for column ", i)
+      )
 
       ## replace initialised missings:
       if (length(wy) > 0) {
@@ -464,18 +462,21 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
       }
       colnames(data_for_reg)[1] <- "y"
       new.dat <- data.frame(cbind(rep(1, length(wy)), x_part[wy,, drop = FALSE]))
-      if (types[i] == "numeric" || types[i] == "mixed" || types[i] == "integer") {
+
+      meth <- switch(
         ## todo: ausserhalb der Schleife!!
-        meth <- "numeric"
-      } else if (types[i] == "binary") {
-        meth <- "bin"
-      } else if (types[i] == "nominal") {
-        meth <- "factor"
-      } else if (types[i] == "count") {
-        meth <- "count"
-      } else if (types[i] == "ordered") {
-        meth <- "ordered"
-      }
+        types[i],
+        integer = "numeric",
+        numeric = "numeric",
+        mixed = "numeric",
+        binary = "bin",
+        nominal = "factor",
+        count = "count",
+        ordered = "ordered",
+        logical = "bin",
+        stop("unsupported variable type for column ", i)
+      )
+
       if (!is.null(modelFormulas)) {
         TFform <- names(modelFormulas) == colnames(x)[i]
         if (any(TFform))
@@ -772,13 +773,12 @@ useLM <- function(x_reg, ndata, wy, mixed_tf, mixed_constant, factors, step,
         }
       }
     } else {
-      if (robMethod == "lmrob") {
-        glm.num <- lmrob(form, data = x_reg)
-      } else if (robMethod == "lqs") {
-        glm.num <- lqs(form, data = x_reg)
-      } else {
-        glm.num <- rlm(form, data = x_reg, method = robMethod)
-      }
+      glm.num <- switch(
+        robMethod,
+        lmrob = lmrob(form, data = x_reg),
+        lqs = lqs(form, data = x_reg),
+        rlm(form, data = x_reg, method = robMethod)
+      )
     }
   }
 #  op <- options()#Alles auskommentiert, weil VGAM draussen
