@@ -1,11 +1,11 @@
 #' Aggregation function for a factor variable
-#' 
+#'
 #' The function maxCat chooses the level
-#' with the most occurrences and random if the maximum is not unique. 
-#' 
-#' @param x factor vector 
+#' with the most occurrences and random if the maximum is not unique.
+#'
+#' @param x factor vector
 #' @param weights numeric vector providing weights for the observations in x
-#' @export 
+#' @export
 
 
 maxCat <- function(x,weights = NULL){
