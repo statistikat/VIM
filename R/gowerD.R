@@ -1,8 +1,8 @@
 #' Computes the extended Gower distance of two data sets
-#' 
+#'
 #' The function gowerD is used by kNN to compute the distances for numerical,
 #' factor ordered and semi-continous variables.
-#' 
+#'
 #' @param data.x data frame
 #' @param data.y data frame
 #' @param weights numeric vector providing weights for the observations in x
@@ -20,18 +20,18 @@
 #' @examples
 #' data(sleep)
 #' # all variables used as numerical
-#' gowerD(sleep) 
-#' 
-#' # split in numerical an 
+#' gowerD(sleep)
+#'
+#' # split in numerical an
 #' gowerD(sleep, numerical = c("BodyWgt", "BrainWgt", "NonD", "Dream", "Sleep", "Span", "Gest"),
 #'   orders = c("Pred","Exp","Danger"), levOrders = c(5,5,5))
-#'   
+#'
 #' # as before but only returning the index of the closest observation
 #' gowerD(sleep, numerical = c("BodyWgt", "BrainWgt", "NonD", "Dream", "Sleep", "Span", "Gest"),
 #'   orders = c("Pred","Exp","Danger"), levOrders = c(5,5,5), returnIndex = TRUE)
-#' @export 
+#' @export
 
- 
+
 
 gowerD <- function(data.x, data.y = data.x,
                    weights = rep(1, ncol(data.x)),
@@ -101,7 +101,7 @@ gowerD <- function(data.x, data.y = data.x,
       out$ind <-  out$ind[,1,drop=FALSE]
       out$mins <-  out$mins[,1,drop=FALSE]
     }
-      
+
   }else{
     out <- gowerd(as.matrix(data.x), as.matrix(data.y),weights[weightind],
         c(length(numerical),length(factors),length(orders),length(mixed)),
@@ -109,7 +109,7 @@ gowerD <- function(data.x, data.y = data.x,
     if(justone)
       out <-  out$delta[,1,drop=FALSE]
     else
-      out <- out$delta  
+      out <- out$delta
   }
   return(out)
 }
