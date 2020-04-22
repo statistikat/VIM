@@ -193,10 +193,10 @@ kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnam
   if(length(orders)>0){
     levOrders <- data[,sapply(.SD,function(x)length(levels(x))),.SDcols=orders]
   }
-  factors <- data[,sapply(.SD,function(x)is.factor(x)|is.character(x))]
+  factors <- data[,sapply(.SD,function(x)is.factor(x)|is.character(x)|is.logical(x))]
   factors <- colnames(data)[factors]
   factors <- factors[!factors%in%orders]
-  
+
   numerical <- data[,sapply(.SD,function(x)is.numeric(x)|is.integer(x))]
   numerical <- colnames(data)[numerical]
   numerical <- numerical[!numerical%in%mixed]

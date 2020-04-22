@@ -10,6 +10,7 @@
 
 maxCat <- function(x,weights = NULL){
   #choose cat with max prob, random if max is not unique
+  is_logical <- is.logical(x)
   if(!is.factor(x))
     x <- as.factor(x)
   s <- summary(x)
@@ -21,5 +22,8 @@ maxCat <- function(x,weights = NULL){
   }
   if(sum(s>0)>1)
     s <- sample(s)
-  names(s)[which.max(s)]
+  if (is_logical)
+    as.logical(names(s)[which.max(s)])
+  else
+    names(s)[which.max(s)]
 }

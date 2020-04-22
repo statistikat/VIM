@@ -360,6 +360,8 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
         meth <- "count"
       } else if (types[i] == "ordered") {
         meth <- "ordered"
+      } else if (types[i] == "logical") {
+        meth <- "bin"
       }
 
       ## replace initialised missings:
@@ -941,6 +943,8 @@ useB <- function(x_reg,  ndata, wy, factors, step, robust, form) {
   if (step)
     glm.bin <- stepAIC(glm.bin, trace = -1)
   imp <- predict(glm.bin, newdata = ndata, type = "response")
+  if (is.logical(x_reg$y))
+    return(imp >= 0.5)
   imp[imp < 0.5] <- 0
   imp[imp >= 0.5] <- 1
 #    library(VGAM, warn.conflicts = FALSE, verbose=FALSE)
