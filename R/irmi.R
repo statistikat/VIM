@@ -464,7 +464,7 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
       }
       colnames(data_for_reg)[1] <- "y"
       new.dat <- data.frame(cbind(rep(1, length(wy)), x_part[wy,, drop = FALSE]))
-      if (types[i] == "numeric" || types[i] == "mixed") {
+      if (types[i] == "numeric" || types[i] == "mixed" || types[i] == "integer") {
         ## todo: ausserhalb der Schleife!!
         meth <- "numeric"
       } else if (types[i] == "binary") {
