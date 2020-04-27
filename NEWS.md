@@ -1,10 +1,11 @@
 # VIM 6.0.0
 
-- remove support for survey objects (#36)
 - extend documentation with new vignettes and pkgdown
 - add rangerImpute() to impute values with `ranger::ranger()` (#35)
+- remove support for survey objects (#36)
+- remove exports for VIMGUI (#40)
 - change data.table dependency from depends to imports (#41)
-- remove exports for VIMGUI (e32ab7b)
+- bugfixes for `irmi()` with logical and integer columns (#42)
 
 # VIM 5.1.1
 
