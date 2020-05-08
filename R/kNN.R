@@ -247,7 +247,12 @@ kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnam
           next;
         }
         ranger.formula <- as.formula(paste(variable[i],paste(regressors,collapse = "+"),sep="~"))
-
+        class_data.mod <- sapply(data.mod,function(x)class(x)[1])
+        if("character"%in%class_data.mod){
+          for(cn in colnames(data.mod)[class_data.mod=="character"]){
+            data.mod[[cn]] <- as.factor(data.mod[[cn]])
+          }
+        }
         ranger.mod <- ranger(ranger.formula,data=data.mod)
 
         new_feature <- c(paste0(variable[i],"randomForestFeature"))
