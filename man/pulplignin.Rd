@@ -4,7 +4,9 @@
 \name{pulplignin}
 \alias{pulplignin}
 \title{Pulp lignin content}
-\format{A data frame with 301 observations on the following 23 variables.}
+\format{
+A data frame with 301 observations on the following 23 variables.
+}
 \source{
 \url{https://openmv.net/info/kamyr-digester}
 }

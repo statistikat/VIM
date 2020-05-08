@@ -4,7 +4,8 @@
 \name{bcancer}
 \alias{bcancer}
 \title{Breast cancer Wisconsin data set}
-\format{A data frame with 699 observations on the following 11 variables.
+\format{
+A data frame with 699 observations on the following 11 variables.
 \describe{
 \item{ID}{Sample ID}
 \item{clump_thickness}{as integer from 1 - 10}
@@ -17,7 +18,8 @@
 \item{normal_nucleoli}{as integer from 1 - 10}
 \item{mitoses}{as integer from 1 - 10}
 \item{class}{benign or malignant}
-}}
+}
+}
 \description{
 Dataset containing the original Wisconsin breast cancer data.
 }

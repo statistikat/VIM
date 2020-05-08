@@ -4,12 +4,14 @@
 \name{brittleness}
 \alias{brittleness}
 \title{Brittleness index data set}
-\format{A data frame with 23 observations on the following 3 variables.
+\format{
+A data frame with 23 observations on the following 3 variables.
 \describe{
 \item{TK104}{Brittleness for batches of raw material in reactor 104}
 \item{TK105}{Brittleness for batches of raw material in reactor 105}
 \item{TK107}{Brittleness for batches of raw material in reactor 107}
-}}
+}
+}
 \source{
 \url{https://openmv.net/info/brittleness-index}
 }

@@ -55,12 +55,12 @@ returnIndex=TRUE: a named list with "ind" containing the requested indices and "
 \examples{
 data(sleep)
 # all variables used as numerical
-gowerD(sleep) 
+gowerD(sleep)
 
-# split in numerical an 
+# split in numerical an
 gowerD(sleep, numerical = c("BodyWgt", "BrainWgt", "NonD", "Dream", "Sleep", "Span", "Gest"),
   orders = c("Pred","Exp","Danger"), levOrders = c(5,5,5))
-  
+
 # as before but only returning the index of the closest observation
 gowerD(sleep, numerical = c("BodyWgt", "BrainWgt", "NonD", "Dream", "Sleep", "Span", "Gest"),
   orders = c("Pred","Exp","Danger"), levOrders = c(5,5,5), returnIndex = TRUE)

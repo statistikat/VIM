@@ -4,7 +4,8 @@
 \name{diabetes}
 \alias{diabetes}
 \title{Indian Prime Diabetes Data}
-\format{A data frame with 768 observations on the following 9 variables.
+\format{
+A data frame with 768 observations on the following 9 variables.
 \describe{
 \item{Pregnancies}{Number of times pregnant}
 \item{Glucose}{Plasma glucose concentration a 2 hours in an oral glucose tolerance test}
@@ -15,7 +16,8 @@
 \item{DiabetesPedigreeFunction}{Diabetes pedigree function}
 \item{Age}{Age in years}
 \item{Outcome}{Diabetes (yes or no)}
-}}
+}
+}
 \source{
 \url{https://www.kaggle.com/uciml/pima-indians-diabetes-database/data}
 }

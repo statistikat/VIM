@@ -4,7 +4,8 @@
 \name{wine}
 \alias{wine}
 \title{Wine tasting and price}
-\format{A data frame with 9627 observations on the following 9 variables.
+\format{
+A data frame with 9627 observations on the following 9 variables.
 \describe{
 \item{country}{country of origin}
 \item{points}{the number of points WineEnthusiast rated the wine on a scale of 1-100
@@ -16,7 +17,8 @@
 \item{variety}{the type of grapes used to make the wine (ie pinot noir)}
 \item{winery}{the winery that made the wine}
 \item{variety_main}{broader category as variety}
-}}
+}
+}
 \source{
 \url{https://www.kaggle.com/zynicide/wine-reviews}
 }

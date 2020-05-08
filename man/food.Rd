@@ -4,7 +4,9 @@
 \name{food}
 \alias{food}
 \title{Food consumption}
-\format{A data frame with 16 observations on the following 21 variables.}
+\format{
+A data frame with 16 observations on the following 21 variables.
+}
 \source{
 \url{https://openmv.net/info/food-consumption}
 }

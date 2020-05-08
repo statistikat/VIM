@@ -4,7 +4,8 @@
 \name{colic}
 \alias{colic}
 \title{Colic horse data set}
-\format{A training data frame with 300 observations on the following 31 variables.
+\format{
+A training data frame with 300 observations on the following 31 variables.
 \describe{
 \item{surgery}{yes or no}
 \item{age}{1 equals an adult horse, 2 is a horse younger than 6 months}
@@ -47,7 +48,8 @@ The higher the level of protein the more likely it is to have a compromised gut.
 \item{temp_extreme_ordered}{temperature of extremities (ordered)}
 \item{mucous_membranes_col}{mucous membranes. A subjective measurement of colour }
 \item{mucous_membranes_group}{different recodings of mucous membrances}
-}}
+}
+}
 \source{
 \url{https://archive.ics.uci.edu/ml/datasets/Horse+Colic}
 Creators: Mary McLeish & Matt Cecile, Department of Computer Science, University of Guelph,

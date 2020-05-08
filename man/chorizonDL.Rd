@@ -4,7 +4,8 @@
 \name{chorizonDL}
 \alias{chorizonDL}
 \title{C-horizon of the Kola data with missing values}
-\format{A data frame with 606 observations on the following 110 variables.
+\format{
+A data frame with 606 observations on the following 110 variables.
 \describe{ \item{*ID}{a numeric vector} \item{XCOO}{a
 numeric vector} \item{YCOO}{a numeric vector} \item{Ag}{a
 numeric vector} \item{Ag_INAA}{a numeric vector} \item{Al}{a
@@ -63,7 +64,8 @@ numeric vector} \item{K_XRF}{a numeric vector}
 \item{Mg_XRF}{a numeric vector} \item{Mn_XRF}{a numeric
 vector} \item{Na_XRF}{a numeric vector} \item{P_XRF}{a
 numeric vector} \item{Si_XRF}{a numeric vector}
-\item{Ti_XRF}{a numeric vector} }}
+\item{Ti_XRF}{a numeric vector} }
+}
 \source{
 Kola Project (1993-1998)
 }

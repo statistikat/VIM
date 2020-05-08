@@ -4,7 +4,8 @@
 \name{testdata}
 \alias{testdata}
 \title{Simulated data set for testing purpose}
-\format{The format is: List of 4
+\format{
+The format is: List of 4
 \itemize{
 \item \verb{$wna} : a \code{data.frame} with 500 obs. of 8 variables:
 \itemize{
@@ -30,7 +31,8 @@
 }
 \item \verb{$mixed}: \code{c("m1", "m2")}
 \item \verb{$outlierInd}: `NULL``
-}}
+}
+}
 \description{
 2 numeric, 2 binary, 2 nominal and 2 mixed (semi-continous) variables
 }
