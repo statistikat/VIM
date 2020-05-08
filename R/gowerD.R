@@ -60,10 +60,16 @@ gowerD <- function(data.x, data.y = data.x,
     else
       return(max(x,na.rm=na.rm))
   }
+  as.numericX <- function(x,...){
+    if("character"%in%class(x)){
+      x <- as.factor(x)
+    }
+    return(as.numeric(x,...))
+  }
   #weights <- rep(1,ncol(data.x))
   for(i in 1:ncol(data.x)){
-    data.x[,i] <- as.numeric(data.x[,i])
-    data.y[,i] <- as.numeric(data.y[,i])
+    data.x[,i] <- as.numericX(data.x[,i])
+    data.y[,i] <- as.numericX(data.y[,i])
   }
   weightind <- order(match(colnames(data.x),c(numerical,factors,orders,mixed)))
   data.x <- data.x[,c(numerical,factors,orders,mixed),drop=FALSE]
