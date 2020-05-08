@@ -18,7 +18,7 @@ test_that("rangerImpute accuracy", {
   df.out <- rangerImpute(y ~ x, df)
   expect_lt(
     max_dist(df.out$y, df$x),
-    0.05
+    0.06
   )
 })
 
@@ -32,7 +32,7 @@ test_that("results form median and mean are similar", {
   df.out2 <- rangerImpute(y ~ x, df, median = TRUE)
   expect_lt(
     max_dist(df.out$y, df.out2$y),
-    0.02
+    0.03
   )
 })
 
@@ -47,3 +47,4 @@ test_that("factor regressor used reasonably", {
   df.out <- rangerImpute(x ~ fac, df2)
   expect_identical(as.factor(df.out$x >= 0), df$fac)
 })
+
