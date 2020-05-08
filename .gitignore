@@ -7,3 +7,4 @@ VIM.Rproj
 *.Rproj
 docs
 inst/doc
+revdep
