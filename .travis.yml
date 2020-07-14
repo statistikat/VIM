@@ -7,6 +7,9 @@ r_github_packages:
   - r-lib/covr
   - r-lib/pkgdown
 
+r_packages:
+  - kableExtra
+
 after_success:
   - Rscript -e 'covr::coveralls(function_exclusions="irmi*")'
 
