@@ -56,9 +56,9 @@ imp_df <- irmi(df)
 aggr(imp_df, delimiter = "imp")
 ```
 
-The plot indicates that all missing values have been imputed by the `IRMI` algorithm. The following table displays the first five results of the imputation for all variables.
+The plot indicates that all missing values have been imputed by the IRMI algorithm. The following table displays the first five results of the imputation for all variables.
 
-```{r echo=F}
+```{r echo=F,warning=F}
 results <- cbind("TRUE" = as.numeric(iris[as.matrix(y[which(y$col==1),])]),
       "IMPUTED" = as.numeric(imp_df[as.matrix(y[which(y$col==1),])]),
       "TRUE" = as.numeric(iris[as.matrix(y[which(y$col==2),])]),
