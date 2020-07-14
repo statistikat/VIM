@@ -1,5 +1,5 @@
 ---
-title: "Imputation Method IRMI"
+title: "Imputation Method IRMI algorithm"
 author: Wolfgang Rannetbauer
 output: rmarkdown::html_vignette
 vignette: >
