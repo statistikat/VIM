@@ -3,7 +3,7 @@ title: "Imputation Method IRMI"
 author: Wolfgang Rannetbauer
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Model based Imputation Methods}
+  %\VignetteIndexEntry{Imputation Method IRMI}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
