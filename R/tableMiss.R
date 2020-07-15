@@ -31,6 +31,6 @@ tableMiss <- function(x, delimiter = "_imp") {
     x[col] <- colored_column(x, col, delimiter)
   reactable::reactable(
     x[, !grepl("imp", names)],
-    defaultColDef = colDef(html = TRUE), highlight = TRUE
+    defaultColDef = reactable::colDef(html = TRUE), highlight = TRUE
   )
 }
