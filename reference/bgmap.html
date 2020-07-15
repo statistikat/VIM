@@ -100,6 +100,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -137,7 +140,7 @@
     <p>Plot a background map.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>bgmap</span>(<span class='no'>map</span>, <span class='kw'>add</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>bgmap</span>(<span class='kw'>map</span>, add = <span class='fl'>FALSE</span>, <span class='kw'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -169,13 +172,15 @@ data using visualization tools.  <em>Journal of Advances in Data Analysis
 and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='growdotMiss.html'>growdotMiss()</a></code>, <code><a href='mapMiss.html'>mapMiss()</a></code></p></div>
+    <div class='dont-index'><p><code>growdotMiss()</code>, <code>mapMiss()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Andreas Alfons</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>kola.background</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
-<span class='fu'>bgmap</span>(<span class='no'>kola.background</span>)</div><div class='img'><img src='bgmap-1.png' alt='' width='700' height='433' /></div><div class='input'>
-</div></pre>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>kola.background</span>, package = <span class='st'>"VIM"</span>)
+<span class='fu'>bgmap</span>(<span class='kw'>kola.background</span>)</div><div class='img'><img src='bgmap-1.png' alt='' width='700' height='433' /></div><div class='input'></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

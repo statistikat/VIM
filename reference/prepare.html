@@ -101,6 +101,9 @@ standardization of the data." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -140,14 +143,14 @@ standardization of the data.</p>
     </div>
 
     <pre class="usage"><span class='fu'>prepare</span>(
-  <span class='no'>x</span>,
-  <span class='kw'>scaling</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"classical"</span>, <span class='st'>"MCD"</span>, <span class='st'>"robust"</span>, <span class='st'>"onestep"</span>),
-  <span class='kw'>transformation</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"minus"</span>, <span class='st'>"reciprocal"</span>, <span class='st'>"logarithm"</span>, <span class='st'>"exponential"</span>,
+  <span class='kw'>x</span>,
+  scaling = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"classical"</span>, <span class='st'>"MCD"</span>, <span class='st'>"robust"</span>, <span class='st'>"onestep"</span>),
+  transformation = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"none"</span>, <span class='st'>"minus"</span>, <span class='st'>"reciprocal"</span>, <span class='st'>"logarithm"</span>, <span class='st'>"exponential"</span>,
     <span class='st'>"boxcox"</span>, <span class='st'>"clr"</span>, <span class='st'>"ilr"</span>, <span class='st'>"alr"</span>),
-  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>powers</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>start</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='no'>alrVar</span>
+  alpha = <span class='kw'>NULL</span>,
+  powers = <span class='kw'>NULL</span>,
+  start = <span class='fl'>0</span>,
+  <span class='kw'>alrVar</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -212,12 +215,15 @@ and MAD.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code><a href='https://rdrr.io/r/base/scale.html'>scale()</a></code>, <code><a href='https://rdrr.io/pkg/car/man/powerTransform.html'>car::powerTransform()</a></code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Matthias Templ, modifications by Andreas Alfons</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
-<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='no'>sleep</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>, <span class='st'>"BrainWgt"</span>)]
-<span class='fu'>prepare</span>(<span class='no'>x</span>, <span class='kw'>scaling</span> <span class='kw'>=</span> <span class='st'>"robust"</span>, <span class='kw'>transformation</span> <span class='kw'>=</span> <span class='st'>"logarithm"</span>)</div><div class='output co'>#&gt;           BodyWgt     BrainWgt
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
+<span class='kw'>x</span> <span class='op'>&lt;-</span> <span class='kw'>sleep</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>, <span class='st'>"BrainWgt"</span>)]
+<span class='fu'>prepare</span>(<span class='kw'>x</span>, scaling = <span class='st'>"robust"</span>, transformation = <span class='st'>"logarithm"</span>)</div><div class='output co'>#&gt;           BodyWgt     BrainWgt
 #&gt;  [1,]  2.29654423  2.065651791
 #&gt;  [2,] -0.36479406 -0.341973693
 #&gt;  [3,]  0.00384425  0.337397352
@@ -285,8 +291,7 @@ and MAD.</p>
 #&gt; 0.5240363 1.2367435 
 #&gt; attr(,"scaled:scale")
 #&gt;  BodyWgt BrainWgt 
-#&gt; 1.436526 1.219976 </div><div class='input'>
-</div></pre>
+#&gt; 1.436526 1.219976 </div><div class='input'></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

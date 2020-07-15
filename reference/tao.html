@@ -101,6 +101,9 @@ derived from the GGOBI project." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -161,8 +164,8 @@ vector</p></dd>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>tao</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>tao</span>)</div><div class='output co'>#&gt;       Year         Latitude        Longitude      Sea.Surface.Temp
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>tao</span>, package = <span class='st'>"VIM"</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='kw'>tao</span>)</div><div class='output co'>#&gt;       Year         Latitude        Longitude      Sea.Surface.Temp
 #&gt;  Min.   :1993   Min.   :-5.000   Min.   :-110.0   Min.   :21.60   
 #&gt;  1st Qu.:1993   1st Qu.:-2.000   1st Qu.:-110.0   1st Qu.:23.50   
 #&gt;  Median :1995   Median :-1.000   Median :-102.5   Median :26.55   
@@ -177,8 +180,7 @@ vector</p></dd>
 #&gt;  Mean   :25.03   Mean   :84.43   Mean   :-3.716   Mean   : 2.636  
 #&gt;  3rd Qu.:27.08   3rd Qu.:88.10   3rd Qu.:-2.600   3rd Qu.: 4.100  
 #&gt;  Max.   :28.50   Max.   :94.80   Max.   : 4.300   Max.   : 7.300  
-#&gt;  NA's   :81      NA's   :93                                       </div><div class='input'><span class='fu'><a href='aggr.html'>aggr</a></span>(<span class='no'>tao</span>)</div><div class='img'><img src='tao-1.png' alt='' width='700' height='433' /></div><div class='input'>
-</div></pre>
+#&gt;  NA's   :81      NA's   :93                                       </div><div class='input'><span class='fu'>aggr</span>(<span class='kw'>tao</span>)</div><div class='img'><img src='tao-1.png' alt='' width='700' height='433' /></div><div class='input'></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

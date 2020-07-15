@@ -104,6 +104,9 @@ be highlighted." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -146,25 +149,25 @@ be highlighted.</p>
     </div>
 
     <pre class="usage"><span class='fu'>parcoordMiss</span>(
-  <span class='no'>x</span>,
-  <span class='kw'>delimiter</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>highlight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>selection</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"any"</span>, <span class='st'>"all"</span>),
-  <span class='kw'>plotvars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>plotNA</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>col</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"skyblue4"</span>, <span class='st'>"red4"</span>, <span class='st'>"orange"</span>, <span class='st'>"orange4"</span>),
-  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>lty</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"lty"</span>),
-  <span class='kw'>xlim</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>ylim</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>main</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>sub</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>xlab</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>ylab</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>labels</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>xpd</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>interactive</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='no'>...</span>
+  <span class='kw'>x</span>,
+  delimiter = <span class='kw'>NULL</span>,
+  highlight = <span class='kw'>NULL</span>,
+  selection = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"any"</span>, <span class='st'>"all"</span>),
+  plotvars = <span class='kw'>NULL</span>,
+  plotNA = <span class='fl'>TRUE</span>,
+  col = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"skyblue4"</span>, <span class='st'>"red4"</span>, <span class='st'>"orange"</span>, <span class='st'>"orange4"</span>),
+  alpha = <span class='kw'>NULL</span>,
+  lty = <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"lty"</span>),
+  xlim = <span class='kw'>NULL</span>,
+  ylim = <span class='kw'>NULL</span>,
+  main = <span class='kw'>NULL</span>,
+  sub = <span class='kw'>NULL</span>,
+  xlab = <span class='kw'>NULL</span>,
+  ylab = <span class='kw'>NULL</span>,
+  labels = <span class='fl'>TRUE</span>,
+  xpd = <span class='kw'>NULL</span>,
+  interactive = <span class='fl'>TRUE</span>,
+  <span class='kw'>...</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -309,34 +312,36 @@ visualization tools.  <em>Journal of Advances in Data Analysis and
 Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='pbox.html'>pbox()</a></code></p>
+    <div class='dont-index'><p><code>pbox()</code></p>
 <p>Other plotting functions: 
-<code><a href='aggr.html'>aggr</a>()</code>,
-<code><a href='barMiss.html'>barMiss</a>()</code>,
-<code><a href='histMiss.html'>histMiss</a>()</code>,
-<code><a href='marginmatrix.html'>marginmatrix</a>()</code>,
-<code><a href='marginplot.html'>marginplot</a>()</code>,
-<code><a href='matrixplot.html'>matrixplot</a>()</code>,
-<code><a href='mosaicMiss.html'>mosaicMiss</a>()</code>,
-<code><a href='pairsVIM.html'>pairsVIM</a>()</code>,
-<code><a href='pbox.html'>pbox</a>()</code>,
-<code><a href='scattJitt.html'>scattJitt</a>()</code>,
-<code><a href='scattMiss.html'>scattMiss</a>()</code>,
-<code><a href='scattmatrixMiss.html'>scattmatrixMiss</a>()</code>,
-<code><a href='spineMiss.html'>spineMiss</a>()</code></p></div>
+<code>aggr()</code>,
+<code>barMiss()</code>,
+<code>histMiss()</code>,
+<code>marginmatrix()</code>,
+<code>marginplot()</code>,
+<code>matrixplot()</code>,
+<code>mosaicMiss()</code>,
+<code>pairsVIM()</code>,
+<code>pbox()</code>,
+<code>scattJitt()</code>,
+<code>scattMiss()</code>,
+<code>scattmatrixMiss()</code>,
+<code>spineMiss()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Andreas Alfons, Matthias Templ, modifications by Bernd Prantner</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>chorizonDL</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>chorizonDL</span>, package = <span class='st'>"VIM"</span>)
 <span class='co'>## for missing values</span>
-<span class='fu'>parcoordMiss</span>(<span class='no'>chorizonDL</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>15</span>,<span class='fl'>101</span>:<span class='fl'>110</span>)],
-    <span class='kw'>plotvars</span><span class='kw'>=</span><span class='fl'>2</span>:<span class='fl'>11</span>, <span class='kw'>interactive</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/legend.html'>legend</a></span>(<span class='st'>"top"</span>, <span class='kw'>col</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>), <span class='kw'>lwd</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>1</span>),
-    <span class='kw'>legend</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"observed in Bi"</span>, <span class='st'>"missing in Bi"</span>))</div><div class='img'><img src='parcoordMiss-1.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='fu'>parcoordMiss</span>(<span class='kw'>chorizonDL</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>15</span>,<span class='fl'>101</span><span class='op'>:</span><span class='fl'>110</span>)], 
+    plotvars=<span class='fl'>2</span><span class='op'>:</span><span class='fl'>11</span>, interactive = <span class='fl'>FALSE</span>)</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/legend.html'>legend</a></span>(<span class='st'>"top"</span>, col = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>), lwd = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>1</span>), 
+    legend = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"observed in Bi"</span>, <span class='st'>"missing in Bi"</span>))</div><div class='img'><img src='parcoordMiss-1.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'>## for imputed values</span>
-<span class='fu'>parcoordMiss</span>(<span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='no'>chorizonDL</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>15</span>,<span class='fl'>101</span>:<span class='fl'>110</span>)]), <span class='kw'>delimiter</span> <span class='kw'>=</span> <span class='st'>"_imp"</span> ,
-    <span class='kw'>plotvars</span><span class='kw'>=</span><span class='fl'>2</span>:<span class='fl'>11</span>, <span class='kw'>interactive</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/legend.html'>legend</a></span>(<span class='st'>"top"</span>, <span class='kw'>col</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"orange"</span>), <span class='kw'>lwd</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>1</span>),
-    <span class='kw'>legend</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"observed in Bi"</span>, <span class='st'>"imputed in Bi"</span>))</div><div class='img'><img src='parcoordMiss-2.png' alt='' width='700' height='433' /></div><div class='input'>
-</div></pre>
+<span class='fu'>parcoordMiss</span>(<span class='fu'>kNN</span>(<span class='kw'>chorizonDL</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>15</span>,<span class='fl'>101</span><span class='op'>:</span><span class='fl'>110</span>)]), delimiter = <span class='st'>"_imp"</span> ,
+    plotvars=<span class='fl'>2</span><span class='op'>:</span><span class='fl'>11</span>, interactive = <span class='fl'>FALSE</span>)</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/legend.html'>legend</a></span>(<span class='st'>"top"</span>, col = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"orange"</span>), lwd = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>1</span>), 
+    legend = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"observed in Bi"</span>, <span class='st'>"imputed in Bi"</span>))</div><div class='img'><img src='parcoordMiss-2.png' alt='' width='700' height='433' /></div><div class='input'></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

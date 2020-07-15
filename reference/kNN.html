@@ -101,6 +101,9 @@ for numerical, categorical, ordered and semi-continous variables." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -140,28 +143,28 @@ for numerical, categorical, ordered and semi-continous variables.</p>
     </div>
 
     <pre class="usage"><span class='fu'>kNN</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>variable</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>),
-  <span class='kw'>metric</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>k</span> <span class='kw'>=</span> <span class='fl'>5</span>,
-  <span class='kw'>dist_var</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>),
-  <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>numFun</span> <span class='kw'>=</span> <span class='no'>median</span>,
-  <span class='kw'>catFun</span> <span class='kw'>=</span> <span class='no'>maxCat</span>,
-  <span class='kw'>makeNA</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>NAcond</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>impNA</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>donorcond</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>mixed</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/vector.html'>vector</a></span>(),
-  <span class='kw'>mixed.constant</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>trace</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>,
-  <span class='kw'>addRF</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>onlyRF</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>addRandom</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>useImputedDist</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>weightDist</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
+  <span class='kw'>data</span>,
+  variable = <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='kw'>data</span>),
+  metric = <span class='kw'>NULL</span>,
+  k = <span class='fl'>5</span>,
+  dist_var = <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='kw'>data</span>),
+  weights = <span class='kw'>NULL</span>,
+  numFun = <span class='kw'>median</span>,
+  catFun = <span class='kw'>maxCat</span>,
+  makeNA = <span class='kw'>NULL</span>,
+  NAcond = <span class='kw'>NULL</span>,
+  impNA = <span class='fl'>TRUE</span>,
+  donorcond = <span class='kw'>NULL</span>,
+  mixed = <span class='fu'><a href='https://rdrr.io/r/base/vector.html'>vector</a></span>(),
+  mixed.constant = <span class='kw'>NULL</span>,
+  trace = <span class='fl'>FALSE</span>,
+  imp_var = <span class='fl'>TRUE</span>,
+  imp_suffix = <span class='st'>"imp"</span>,
+  addRF = <span class='fl'>FALSE</span>,
+  onlyRF = <span class='fl'>FALSE</span>,
+  addRandom = <span class='fl'>FALSE</span>,
+  useImputedDist = <span class='fl'>TRUE</span>,
+  weightDist = <span class='fl'>FALSE</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -280,16 +283,19 @@ Statistical Software</em>, 74(7), 1-16.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p>Other imputation methods: 
-<code><a href='hotdeck.html'>hotdeck</a>()</code>,
-<code><a href='irmi.html'>irmi</a>()</code>,
-<code><a href='matchImpute.html'>matchImpute</a>()</code>,
-<code><a href='rangerImpute.html'>rangerImpute</a>()</code>,
-<code><a href='regressionImp.html'>regressionImp</a>()</code></p></div>
+<code>hotdeck()</code>,
+<code>irmi()</code>,
+<code>matchImpute()</code>,
+<code>rangerImpute()</code>,
+<code>regressionImp()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Alexander Kowarik, Statistik Austria</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>)
-<span class='fu'>kNN</span>(<span class='no'>sleep</span>)</div><div class='output co'>#&gt;     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger BodyWgt_imp
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>)
+<span class='fu'>kNN</span>(<span class='kw'>sleep</span>)</div><div class='output co'>#&gt;     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger BodyWgt_imp
 #&gt; 1  6654.000  5712.00  3.2   0.8   3.3  38.6 645.0    3   5      3       FALSE
 #&gt; 2     1.000     6.60  6.3   2.0   8.3   4.5  42.0    3   1      3       FALSE
 #&gt; 3     3.385    44.50 12.8   2.4  12.5  14.0  60.0    1   1      1       FALSE
@@ -477,8 +483,8 @@ Statistical Software</em>, 74(7), 1-16.</p>
 #&gt; 59      FALSE
 #&gt; 60      FALSE
 #&gt; 61      FALSE
-#&gt; 62      FALSE</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='no'>laeken</span>)
-<span class='fu'>kNN</span>(<span class='no'>sleep</span>, <span class='kw'>numFun</span> <span class='kw'>=</span> <span class='no'>weightedMean</span>, <span class='kw'>weightDist</span><span class='kw'>=</span><span class='fl'>TRUE</span>)</div><div class='output co'>#&gt;     BodyWgt BrainWgt      NonD     Dream     Sleep       Span      Gest Pred
+#&gt; 62      FALSE</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='kw'>laeken</span>)
+<span class='fu'>kNN</span>(<span class='kw'>sleep</span>, numFun = <span class='kw'>weightedMean</span>, weightDist=<span class='fl'>TRUE</span>)</div><div class='output co'>#&gt;     BodyWgt BrainWgt      NonD     Dream     Sleep       Span      Gest Pred
 #&gt; 1  6654.000  5712.00  3.621115 1.0244651  3.300000  38.600000 645.00000    3
 #&gt; 2     1.000     6.60  6.300000 2.0000000  8.300000   4.500000  42.00000    3
 #&gt; 3     3.385    44.50 12.130785 2.7984870 12.500000  14.000000  60.00000    1
@@ -666,8 +672,7 @@ Statistical Software</em>, 74(7), 1-16.</p>
 #&gt; 59    FALSE    FALSE   FALSE      FALSE
 #&gt; 60    FALSE    FALSE   FALSE      FALSE
 #&gt; 61    FALSE    FALSE   FALSE      FALSE
-#&gt; 62    FALSE    FALSE   FALSE      FALSE</div><div class='input'>
-</div></pre>
+#&gt; 62    FALSE    FALSE   FALSE      FALSE</div><div class='input'></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

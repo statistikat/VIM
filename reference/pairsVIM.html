@@ -100,6 +100,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -138,21 +141,21 @@
     </div>
 
     <pre class="usage"><span class='fu'>pairsVIM</span>(
-  <span class='no'>x</span>,
-  <span class='no'>...</span>,
-  <span class='kw'>delimiter</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>main</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>sub</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>panel</span> <span class='kw'>=</span> <span class='no'>points</span>,
-  <span class='kw'>lower</span> <span class='kw'>=</span> <span class='no'>panel</span>,
-  <span class='kw'>upper</span> <span class='kw'>=</span> <span class='no'>panel</span>,
-  <span class='kw'>diagonal</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>labels</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>pos.labels</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>cex.labels</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>font.labels</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"font"</span>),
-  <span class='kw'>layout</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"matrix"</span>, <span class='st'>"graph"</span>),
-  <span class='kw'>gap</span> <span class='kw'>=</span> <span class='fl'>1</span>
+  <span class='kw'>x</span>,
+  <span class='kw'>...</span>,
+  delimiter = <span class='kw'>NULL</span>,
+  main = <span class='kw'>NULL</span>,
+  sub = <span class='kw'>NULL</span>,
+  panel = <span class='kw'>points</span>,
+  lower = <span class='kw'>panel</span>,
+  upper = <span class='kw'>panel</span>,
+  diagonal = <span class='kw'>NULL</span>,
+  labels = <span class='fl'>TRUE</span>,
+  pos.labels = <span class='kw'>NULL</span>,
+  cex.labels = <span class='kw'>NULL</span>,
+  font.labels = <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"font"</span>),
+  layout = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"matrix"</span>, <span class='st'>"graph"</span>),
+  gap = <span class='fl'>1</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -231,8 +234,8 @@ lines.</p></td>
 
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>This function is the workhorse for <code><a href='marginmatrix.html'>marginmatrix()</a></code> and
-<code><a href='scattmatrixMiss.html'>scattmatrixMiss()</a></code>.</p>
+    <p>This function is the workhorse for <code>marginmatrix()</code> and
+<code>scattmatrixMiss()</code>.</p>
 <p>The graphical parameter <code>oma</code> will be set unless supplied as an
 argument.</p>
 <p>A panel function should not attempt to start a new plot, since the
@@ -249,29 +252,31 @@ data using visualization tools.  <em>Journal of Advances in Data Analysis
 and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='marginmatrix.html'>marginmatrix()</a></code>, <code><a href='scattmatrixMiss.html'>scattmatrixMiss()</a></code></p>
+    <div class='dont-index'><p><code>marginmatrix()</code>, <code>scattmatrixMiss()</code></p>
 <p>Other plotting functions: 
-<code><a href='aggr.html'>aggr</a>()</code>,
-<code><a href='barMiss.html'>barMiss</a>()</code>,
-<code><a href='histMiss.html'>histMiss</a>()</code>,
-<code><a href='marginmatrix.html'>marginmatrix</a>()</code>,
-<code><a href='marginplot.html'>marginplot</a>()</code>,
-<code><a href='matrixplot.html'>matrixplot</a>()</code>,
-<code><a href='mosaicMiss.html'>mosaicMiss</a>()</code>,
-<code><a href='parcoordMiss.html'>parcoordMiss</a>()</code>,
-<code><a href='pbox.html'>pbox</a>()</code>,
-<code><a href='scattJitt.html'>scattJitt</a>()</code>,
-<code><a href='scattMiss.html'>scattMiss</a>()</code>,
-<code><a href='scattmatrixMiss.html'>scattmatrixMiss</a>()</code>,
-<code><a href='spineMiss.html'>spineMiss</a>()</code></p></div>
+<code>aggr()</code>,
+<code>barMiss()</code>,
+<code>histMiss()</code>,
+<code>marginmatrix()</code>,
+<code>marginplot()</code>,
+<code>matrixplot()</code>,
+<code>mosaicMiss()</code>,
+<code>parcoordMiss()</code>,
+<code>pbox()</code>,
+<code>scattJitt()</code>,
+<code>scattMiss()</code>,
+<code>scattmatrixMiss()</code>,
+<code>spineMiss()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Andreas Alfons, modifications by Bernd Prantner</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
-<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='no'>sleep</span>[, -(<span class='fl'>8</span>:<span class='fl'>10</span>)]
-<span class='no'>x</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>4</span>,<span class='fl'>6</span>,<span class='fl'>7</span>)] <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log10</a></span>(<span class='no'>x</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>4</span>,<span class='fl'>6</span>,<span class='fl'>7</span>)])
-<span class='fu'>pairsVIM</span>(<span class='no'>x</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: variable 'Dream' contains infinite values</span></div><div class='img'><img src='pairsVIM-1.png' alt='' width='700' height='433' /></div><div class='input'>
-</div></pre>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
+<span class='kw'>x</span> <span class='op'>&lt;-</span> <span class='kw'>sleep</span>[, <span class='op'>-</span>(<span class='fl'>8</span><span class='op'>:</span><span class='fl'>10</span>)]
+<span class='kw'>x</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>4</span>,<span class='fl'>6</span>,<span class='fl'>7</span>)] <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log10</a></span>(<span class='kw'>x</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>4</span>,<span class='fl'>6</span>,<span class='fl'>7</span>)])
+<span class='fu'>pairsVIM</span>(<span class='kw'>x</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: variable 'Dream' contains infinite values</span></div><div class='img'><img src='pairsVIM-1.png' alt='' width='700' height='433' /></div><div class='input'></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

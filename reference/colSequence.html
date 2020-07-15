@@ -102,6 +102,9 @@ computed in the HCL or RGB color space." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -141,11 +144,11 @@ scheme between certain start and end colors.  Color sequences may thereby be
 computed in the <em>HCL</em> or <em>RGB</em> color space.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>colSequence</span>(<span class='no'>p</span>, <span class='no'>start</span>, <span class='no'>end</span>, <span class='kw'>space</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"hcl"</span>, <span class='st'>"rgb"</span>), <span class='no'>...</span>)
+    <pre class="usage"><span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='kw'>start</span>, <span class='kw'>end</span>, space = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"hcl"</span>, <span class='st'>"rgb"</span>), <span class='kw'>...</span>)
 
-<span class='fu'>colSequenceRGB</span>(<span class='no'>p</span>, <span class='no'>start</span>, <span class='no'>end</span>, <span class='kw'>fixup</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)
+<span class='fu'>colSequenceRGB</span>(<span class='kw'>p</span>, <span class='kw'>start</span>, <span class='kw'>end</span>, fixup = <span class='fl'>TRUE</span>, <span class='kw'>...</span>)
 
-<span class='fu'>colSequenceHCL</span>(<span class='no'>p</span>, <span class='no'>start</span>, <span class='no'>end</span>, <span class='kw'>fixup</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)</pre>
+<span class='fu'>colSequenceHCL</span>(<span class='kw'>p</span>, <span class='kw'>start</span>, <span class='kw'>end</span>, fixup = <span class='fl'>TRUE</span>, <span class='kw'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -198,16 +201,18 @@ Data Analysis</em>, <strong>53 (9)</strong>, 1259--1270.</p>
 
     <div class='dont-index'><p><code><a href='http://colorspace.R-Forge.R-project.org//reference/hex.html'>colorspace::hex()</a></code>,
 <code><a href='http://colorspace.R-Forge.R-project.org//reference/hcl_palettes.html'>colorspace::sequential_hcl()</a></code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Andreas Alfons</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>0.3</span>, <span class='fl'>0.55</span>, <span class='fl'>0.8</span>, <span class='fl'>1</span>)
+<span class='kw'>p</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>0.3</span>, <span class='fl'>0.55</span>, <span class='fl'>0.8</span>, <span class='fl'>1</span>)
 
 <span class='co'>## HCL colors</span>
-<span class='fu'>colSequence</span>(<span class='no'>p</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>0</span>, <span class='fl'>100</span>), <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>100</span>, <span class='fl'>50</span>))</div><div class='output co'>#&gt; [1] "#FFFFFF" "#FAC8D1" "#F09AAB" "#E16A86" "#D33F6A"</div><div class='input'><span class='fu'>colSequence</span>(<span class='no'>p</span>, <span class='fu'>polarLUV</span>(<span class='kw'>L</span><span class='kw'>=</span><span class='fl'>90</span>, <span class='kw'>C</span><span class='kw'>=</span><span class='fl'>30</span>, <span class='kw'>H</span><span class='kw'>=</span><span class='fl'>90</span>), <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>100</span>, <span class='fl'>50</span>))</div><div class='output co'>#&gt; [1] "#E2E6BD" "#DBBD80" "#DB975E" "#D86B5B" "#D33F6A"</div><div class='input'>
+<span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>0</span>, <span class='fl'>100</span>), <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>100</span>, <span class='fl'>50</span>))</div><div class='output co'>#&gt; [1] "#FFFFFF" "#FAC8D1" "#F09AAB" "#E16A86" "#D33F6A"</div><div class='input'><span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='fu'>polarLUV</span>(L=<span class='fl'>90</span>, C=<span class='fl'>30</span>, H=<span class='fl'>90</span>), <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>100</span>, <span class='fl'>50</span>))</div><div class='output co'>#&gt; [1] "#E2E6BD" "#DBBD80" "#DB975E" "#D86B5B" "#D33F6A"</div><div class='input'>
 <span class='co'>## RGB colors</span>
-<span class='fu'>colSequence</span>(<span class='no'>p</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>1</span>, <span class='fl'>1</span>), <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>0</span>, <span class='fl'>0</span>), <span class='kw'>space</span><span class='kw'>=</span><span class='st'>"rgb"</span>)</div><div class='output co'>#&gt; [1] "#FFFFFF" "#FFDADA" "#FFB3B3" "#FF7C7C" "#FF0000"</div><div class='input'><span class='fu'>colSequence</span>(<span class='no'>p</span>, <span class='fu'>RGB</span>(<span class='fl'>1</span>, <span class='fl'>1</span>, <span class='fl'>0</span>), <span class='st'>"red"</span>)</div><div class='output co'>#&gt; [1] "#FFFF00" "#FFDA00" "#FFB300" "#FF7C00" "#FF0000"</div><div class='input'>
-</div></pre>
+<span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>1</span>, <span class='fl'>1</span>), <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>0</span>, <span class='fl'>0</span>), space=<span class='st'>"rgb"</span>)</div><div class='output co'>#&gt; [1] "#FFFFFF" "#FFDADA" "#FFB3B3" "#FF7C7C" "#FF0000"</div><div class='input'><span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='fu'>RGB</span>(<span class='fl'>1</span>, <span class='fl'>1</span>, <span class='fl'>0</span>), <span class='st'>"red"</span>)</div><div class='output co'>#&gt; [1] "#FFFF00" "#FFDA00" "#FFB300" "#FF7C00" "#FF0000"</div><div class='input'></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

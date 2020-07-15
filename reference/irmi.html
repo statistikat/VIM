@@ -101,6 +101,9 @@ and the remaining variables serve as the regressors." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -140,28 +143,28 @@ and the remaining variables serve as the regressors.</p>
     </div>
 
     <pre class="usage"><span class='fu'>irmi</span>(
-  <span class='no'>x</span>,
-  <span class='kw'>eps</span> <span class='kw'>=</span> <span class='fl'>5</span>,
-  <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>100</span>,
-  <span class='kw'>mixed</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>mixed.constant</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>count</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>step</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>robust</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>takeAll</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>noise</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>noise.factor</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>force</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>robMethod</span> <span class='kw'>=</span> <span class='st'>"MM"</span>,
-  <span class='kw'>force.mixed</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>mi</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>addMixedFactors</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>trace</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>init.method</span> <span class='kw'>=</span> <span class='st'>"kNN"</span>,
-  <span class='kw'>modelFormulas</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>multinom.method</span> <span class='kw'>=</span> <span class='st'>"multinom"</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>
+  <span class='kw'>x</span>,
+  eps = <span class='fl'>5</span>,
+  maxit = <span class='fl'>100</span>,
+  mixed = <span class='kw'>NULL</span>,
+  mixed.constant = <span class='kw'>NULL</span>,
+  count = <span class='kw'>NULL</span>,
+  step = <span class='fl'>FALSE</span>,
+  robust = <span class='fl'>FALSE</span>,
+  takeAll = <span class='fl'>TRUE</span>,
+  noise = <span class='fl'>TRUE</span>,
+  noise.factor = <span class='fl'>1</span>,
+  force = <span class='fl'>FALSE</span>,
+  robMethod = <span class='st'>"MM"</span>,
+  force.mixed = <span class='fl'>TRUE</span>,
+  mi = <span class='fl'>1</span>,
+  addMixedFactors = <span class='fl'>FALSE</span>,
+  trace = <span class='fl'>FALSE</span>,
+  init.method = <span class='st'>"kNN"</span>,
+  modelFormulas = <span class='kw'>NULL</span>,
+  multinom.method = <span class='st'>"multinom"</span>,
+  imp_var = <span class='fl'>TRUE</span>,
+  imp_suffix = <span class='st'>"imp"</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -297,39 +300,42 @@ Statistical Software</em>, 74(7), 1-16.</p>
 
     <div class='dont-index'><p><code>mi::mi()</code></p>
 <p>Other imputation methods: 
-<code><a href='hotdeck.html'>hotdeck</a>()</code>,
-<code><a href='kNN.html'>kNN</a>()</code>,
-<code><a href='matchImpute.html'>matchImpute</a>()</code>,
-<code><a href='rangerImpute.html'>rangerImpute</a>()</code>,
-<code><a href='regressionImp.html'>regressionImp</a>()</code></p></div>
+<code>hotdeck()</code>,
+<code>kNN()</code>,
+<code>matchImpute()</code>,
+<code>rangerImpute()</code>,
+<code>regressionImp()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Matthias Templ, Alexander Kowarik</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>)
-<span class='fu'>irmi</span>(<span class='no'>sleep</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>)
+<span class='fu'>irmi</span>(<span class='kw'>sleep</span>)
 
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>testdata</span>)
-<span class='no'>imp_testdata1</span> <span class='kw'>&lt;-</span> <span class='fu'>irmi</span>(<span class='no'>testdata</span>$<span class='no'>wna</span>, <span class='kw'>mixed</span> <span class='kw'>=</span> <span class='no'>testdata</span>$<span class='no'>mixed</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>testdata</span>)
+<span class='kw'>imp_testdata1</span> <span class='op'>&lt;-</span> <span class='fu'>irmi</span>(<span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>wna</span>, mixed = <span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>mixed</span>)
 
 <span class='co'># mixed.constant != 0 (-10)</span>
-<span class='no'>testdata</span>$<span class='no'>wna</span>$<span class='no'>m1</span>[<span class='no'>testdata</span>$<span class='no'>wna</span>$<span class='no'>m1</span> <span class='kw'>==</span> <span class='fl'>0</span>] <span class='kw'>&lt;-</span> -<span class='fl'>10</span>
-<span class='no'>testdata</span>$<span class='no'>wna</span>$<span class='no'>m2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>testdata</span>$<span class='no'>wna</span>$<span class='no'>m2</span> + <span class='fl'>0.001</span>)
-<span class='no'>imp_testdata2</span> <span class='kw'>&lt;-</span> <span class='fu'>irmi</span>(
-  <span class='no'>testdata</span>$<span class='no'>wna</span>,
-  <span class='kw'>mixed</span> <span class='kw'>=</span> <span class='no'>testdata</span>$<span class='no'>mixed</span>,
-  <span class='kw'>mixed.constant</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(-<span class='fl'>10</span>,<span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='fl'>0.001</span>))
+<span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>wna</span><span class='op'>$</span><span class='kw'>m1</span>[<span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>wna</span><span class='op'>$</span><span class='kw'>m1</span> <span class='op'>==</span> <span class='fl'>0</span>] <span class='op'>&lt;-</span> <span class='op'>-</span><span class='fl'>10</span>
+<span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>wna</span><span class='op'>$</span><span class='kw'>m2</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>wna</span><span class='op'>$</span><span class='kw'>m2</span> <span class='op'>+</span> <span class='fl'>0.001</span>)
+<span class='kw'>imp_testdata2</span> <span class='op'>&lt;-</span> <span class='fu'>irmi</span>(
+  <span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>wna</span>,
+  mixed = <span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>mixed</span>,
+  mixed.constant = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='op'>-</span><span class='fl'>10</span>,<span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='fl'>0.001</span>))
 )
-<span class='no'>imp_testdata2</span>$<span class='no'>m2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>exp</a></span>(<span class='no'>imp_testdata2</span>$<span class='no'>m2</span>) - <span class='fl'>0.001</span>
+<span class='kw'>imp_testdata2</span><span class='op'>$</span><span class='kw'>m2</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>exp</a></span>(<span class='kw'>imp_testdata2</span><span class='op'>$</span><span class='kw'>m2</span>) <span class='op'>-</span> <span class='fl'>0.001</span>
 
 <span class='co'>#example with fixed formulas for the variables with missing</span>
-<span class='no'>form</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(
-  <span class='kw'>NonD</span>  <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>, <span class='st'>"BrainWgt"</span>),
-  <span class='kw'>Dream</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>, <span class='st'>"BrainWgt"</span>),
-  <span class='kw'>Sleep</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BrainWgt"</span>           ),
-  <span class='kw'>Span</span>  <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>            ),
-  <span class='kw'>Gest</span>  <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>, <span class='st'>"BrainWgt"</span>)
+<span class='kw'>form</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(
+  NonD  = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>, <span class='st'>"BrainWgt"</span>),
+  Dream = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>, <span class='st'>"BrainWgt"</span>),
+  Sleep = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BrainWgt"</span>           ),
+  Span  = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>            ),
+  Gest  = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>, <span class='st'>"BrainWgt"</span>)
 )
-<span class='fu'>irmi</span>(<span class='no'>sleep</span>, <span class='kw'>modelFormulas</span> <span class='kw'>=</span> <span class='no'>form</span>, <span class='kw'>trace</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</div><div class='output co'>#&gt; <span class='message'>Method for multinomial models:multinom</span></div><div class='output co'>#&gt;    BodyWgt BrainWgt NonD Dream Sleep Span Gest Pred Exp Danger
+<span class='fu'>irmi</span>(<span class='kw'>sleep</span>, modelFormulas = <span class='kw'>form</span>, trace = <span class='fl'>TRUE</span>)</div><div class='output co'>#&gt; <span class='message'>Method for multinomial models:multinom</span></div><div class='output co'>#&gt;    BodyWgt BrainWgt NonD Dream Sleep Span Gest Pred Exp Danger
 #&gt; 1 6654.000   5712.0  3.2   0.8   3.3 38.6  645    3   5      3
 #&gt; 2    1.000      6.6  6.3   2.0   8.3  4.5   42    3   1      3
 #&gt; 3    3.385     44.5 12.8   2.4  12.5 14.0   60    1   1      1
@@ -415,9 +421,10 @@ Statistical Software</em>, 74(7), 1-16.</p>
 #&gt; Exp      "integer" "0"     
 #&gt; Danger   "integer" "0"     </div><div class='output co'>#&gt; <span class='message'>The variables NonD_imp,Dream_imp,Sleep_imp,Span_imp,Gest_imp are added to the data set.</span></div><div class='input'>
 <span class='co'># Example with ordered variable</span>
-<span class='no'>td</span> <span class='kw'>&lt;-</span> <span class='no'>testdata</span>$<span class='no'>wna</span>
-<span class='no'>td</span>$<span class='no'>c1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>as.ordered</a></span>(<span class='no'>td</span>$<span class='no'>c1</span>)
-<span class='fu'>irmi</span>(<span class='no'>td</span>)</div></pre>
+<span class='kw'>td</span> <span class='op'>&lt;-</span> <span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>wna</span>
+<span class='kw'>td</span><span class='op'>$</span><span class='kw'>c1</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>as.ordered</a></span>(<span class='kw'>td</span><span class='op'>$</span><span class='kw'>c1</span>)
+<span class='fu'>irmi</span>(<span class='kw'>td</span>)
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

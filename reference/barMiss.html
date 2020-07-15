@@ -103,6 +103,9 @@ hand side." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -144,22 +147,22 @@ hand side.</p>
     </div>
 
     <pre class="usage"><span class='fu'>barMiss</span>(
-  <span class='no'>x</span>,
-  <span class='kw'>delimiter</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>pos</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>selection</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"any"</span>, <span class='st'>"all"</span>),
-  <span class='kw'>col</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"skyblue4"</span>, <span class='st'>"red4"</span>, <span class='st'>"orange"</span>, <span class='st'>"orange4"</span>),
-  <span class='kw'>border</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>main</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>sub</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>xlab</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>ylab</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>axes</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>labels</span> <span class='kw'>=</span> <span class='no'>axes</span>,
-  <span class='kw'>only.miss</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>miss.labels</span> <span class='kw'>=</span> <span class='no'>axes</span>,
-  <span class='kw'>interactive</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='no'>...</span>
+  <span class='kw'>x</span>,
+  delimiter = <span class='kw'>NULL</span>,
+  pos = <span class='fl'>1</span>,
+  selection = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"any"</span>, <span class='st'>"all"</span>),
+  col = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"skyblue4"</span>, <span class='st'>"red4"</span>, <span class='st'>"orange"</span>, <span class='st'>"orange4"</span>),
+  border = <span class='kw'>NULL</span>,
+  main = <span class='kw'>NULL</span>,
+  sub = <span class='kw'>NULL</span>,
+  xlab = <span class='kw'>NULL</span>,
+  ylab = <span class='kw'>NULL</span>,
+  axes = <span class='fl'>TRUE</span>,
+  labels = <span class='kw'>axes</span>,
+  only.miss = <span class='fl'>TRUE</span>,
+  miss.labels = <span class='kw'>axes</span>,
+  interactive = <span class='fl'>TRUE</span>,
+  <span class='kw'>...</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -288,32 +291,35 @@ data using visualization tools.  <em>Journal of Advances in Data Analysis
 and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='spineMiss.html'>spineMiss()</a></code>, <code><a href='histMiss.html'>histMiss()</a></code></p>
+    <div class='dont-index'><p><code>spineMiss()</code>, <code>histMiss()</code></p>
 <p>Other plotting functions: 
-<code><a href='aggr.html'>aggr</a>()</code>,
-<code><a href='histMiss.html'>histMiss</a>()</code>,
-<code><a href='marginmatrix.html'>marginmatrix</a>()</code>,
-<code><a href='marginplot.html'>marginplot</a>()</code>,
-<code><a href='matrixplot.html'>matrixplot</a>()</code>,
-<code><a href='mosaicMiss.html'>mosaicMiss</a>()</code>,
-<code><a href='pairsVIM.html'>pairsVIM</a>()</code>,
-<code><a href='parcoordMiss.html'>parcoordMiss</a>()</code>,
-<code><a href='pbox.html'>pbox</a>()</code>,
-<code><a href='scattJitt.html'>scattJitt</a>()</code>,
-<code><a href='scattMiss.html'>scattMiss</a>()</code>,
-<code><a href='scattmatrixMiss.html'>scattmatrixMiss</a>()</code>,
-<code><a href='spineMiss.html'>spineMiss</a>()</code></p></div>
+<code>aggr()</code>,
+<code>histMiss()</code>,
+<code>marginmatrix()</code>,
+<code>marginplot()</code>,
+<code>matrixplot()</code>,
+<code>mosaicMiss()</code>,
+<code>pairsVIM()</code>,
+<code>parcoordMiss()</code>,
+<code>pbox()</code>,
+<code>scattJitt()</code>,
+<code>scattMiss()</code>,
+<code>scattmatrixMiss()</code>,
+<code>spineMiss()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Andreas Alfons, modifications to show imputed values by Bernd
+Prantner</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
 <span class='co'>## for missing values</span>
-<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='no'>sleep</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Exp"</span>, <span class='st'>"Sleep"</span>)]
-<span class='fu'>barMiss</span>(<span class='no'>x</span>)</div><div class='img'><img src='barMiss-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>barMiss</span>(<span class='no'>x</span>, <span class='kw'>only.miss</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</div><div class='img'><img src='barMiss-2.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='kw'>x</span> <span class='op'>&lt;-</span> <span class='kw'>sleep</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Exp"</span>, <span class='st'>"Sleep"</span>)]
+<span class='fu'>barMiss</span>(<span class='kw'>x</span>)</div><div class='img'><img src='barMiss-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>barMiss</span>(<span class='kw'>x</span>, only.miss = <span class='fl'>FALSE</span>)</div><div class='img'><img src='barMiss-2.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'>## for imputed values</span>
-<span class='no'>x_IMPUTED</span>  <span class='kw'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='no'>sleep</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Exp"</span>, <span class='st'>"Sleep"</span>)])
-<span class='fu'>barMiss</span>(<span class='no'>x_IMPUTED</span>, <span class='kw'>delimiter</span> <span class='kw'>=</span> <span class='st'>"_imp"</span>)</div><div class='img'><img src='barMiss-3.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>barMiss</span>(<span class='no'>x_IMPUTED</span>, <span class='kw'>delimiter</span> <span class='kw'>=</span> <span class='st'>"_imp"</span>, <span class='kw'>only.miss</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</div><div class='img'><img src='barMiss-4.png' alt='' width='700' height='433' /></div><div class='input'>
-
+<span class='kw'>x_IMPUTED</span>  <span class='op'>&lt;-</span> <span class='fu'>kNN</span>(<span class='kw'>sleep</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Exp"</span>, <span class='st'>"Sleep"</span>)])
+<span class='fu'>barMiss</span>(<span class='kw'>x_IMPUTED</span>, delimiter = <span class='st'>"_imp"</span>)</div><div class='img'><img src='barMiss-3.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>barMiss</span>(<span class='kw'>x_IMPUTED</span>, delimiter = <span class='st'>"_imp"</span>, only.miss = <span class='fl'>FALSE</span>)</div><div class='img'><img src='barMiss-4.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

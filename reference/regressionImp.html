@@ -100,6 +100,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -138,13 +141,13 @@
     </div>
 
     <pre class="usage"><span class='fu'>regressionImp</span>(
-  <span class='no'>formula</span>,
-  <span class='no'>data</span>,
-  <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"AUTO"</span>,
-  <span class='kw'>robust</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>,
-  <span class='kw'>mod_cat</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
+  <span class='kw'>formula</span>,
+  <span class='kw'>data</span>,
+  family = <span class='st'>"AUTO"</span>,
+  robust = <span class='fl'>FALSE</span>,
+  imp_var = <span class='fl'>TRUE</span>,
+  imp_suffix = <span class='st'>"imp"</span>,
+  mod_cat = <span class='fl'>FALSE</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -199,21 +202,23 @@ Statistical Software</em>, 74(7), 1-16.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p>Other imputation methods: 
-<code><a href='hotdeck.html'>hotdeck</a>()</code>,
-<code><a href='irmi.html'>irmi</a>()</code>,
-<code><a href='kNN.html'>kNN</a>()</code>,
-<code><a href='matchImpute.html'>matchImpute</a>()</code>,
-<code><a href='rangerImpute.html'>rangerImpute</a>()</code></p></div>
+<code>hotdeck()</code>,
+<code>irmi()</code>,
+<code>kNN()</code>,
+<code>matchImpute()</code>,
+<code>rangerImpute()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Alexander Kowarik</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>)
-<span class='no'>sleepImp1</span> <span class='kw'>&lt;-</span> <span class='fu'>regressionImp</span>(<span class='no'>Dream</span>+<span class='no'>NonD</span>~<span class='no'>BodyWgt</span>+<span class='no'>BrainWgt</span>,<span class='kw'>data</span><span class='kw'>=</span><span class='no'>sleep</span>)
-<span class='no'>sleepImp2</span> <span class='kw'>&lt;-</span> <span class='fu'>regressionImp</span>(<span class='no'>Sleep</span>+<span class='no'>Gest</span>+<span class='no'>Span</span>+<span class='no'>Dream</span>+<span class='no'>NonD</span>~<span class='no'>BodyWgt</span>+<span class='no'>BrainWgt</span>,<span class='kw'>data</span><span class='kw'>=</span><span class='no'>sleep</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>)
+<span class='kw'>sleepImp1</span> <span class='op'>&lt;-</span> <span class='fu'>regressionImp</span>(<span class='kw'>Dream</span><span class='op'>+</span><span class='kw'>NonD</span><span class='op'>~</span><span class='kw'>BodyWgt</span><span class='op'>+</span><span class='kw'>BrainWgt</span>,data=<span class='kw'>sleep</span>)
+<span class='kw'>sleepImp2</span> <span class='op'>&lt;-</span> <span class='fu'>regressionImp</span>(<span class='kw'>Sleep</span><span class='op'>+</span><span class='kw'>Gest</span><span class='op'>+</span><span class='kw'>Span</span><span class='op'>+</span><span class='kw'>Dream</span><span class='op'>+</span><span class='kw'>NonD</span><span class='op'>~</span><span class='kw'>BodyWgt</span><span class='op'>+</span><span class='kw'>BrainWgt</span>,data=<span class='kw'>sleep</span>)
 
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>testdata</span>)
-<span class='no'>imp_testdata1</span> <span class='kw'>&lt;-</span> <span class='fu'>regressionImp</span>(<span class='no'>b1</span>+<span class='no'>b2</span>~<span class='no'>x1</span>+<span class='no'>x2</span>,<span class='kw'>data</span><span class='kw'>=</span><span class='no'>testdata</span>$<span class='no'>wna</span>)</div><div class='output co'>#&gt; There still missing values in variable b2 . Probably due to missing values in the regressors.</div><div class='input'><span class='no'>imp_testdata3</span> <span class='kw'>&lt;-</span> <span class='fu'>regressionImp</span>(<span class='no'>x1</span>~<span class='no'>x2</span>,<span class='kw'>data</span><span class='kw'>=</span><span class='no'>testdata</span>$<span class='no'>wna</span>,<span class='kw'>robust</span><span class='kw'>=</span><span class='fl'>TRUE</span>)</div><div class='output co'>#&gt; There still missing values in variable x1 . Probably due to missing values in the regressors.</div><div class='input'>
-</div></pre>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>testdata</span>)
+<span class='kw'>imp_testdata1</span> <span class='op'>&lt;-</span> <span class='fu'>regressionImp</span>(<span class='kw'>b1</span><span class='op'>+</span><span class='kw'>b2</span><span class='op'>~</span><span class='kw'>x1</span><span class='op'>+</span><span class='kw'>x2</span>,data=<span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>wna</span>)</div><div class='output co'>#&gt; There still missing values in variable b2 . Probably due to missing values in the regressors.</div><div class='input'><span class='kw'>imp_testdata3</span> <span class='op'>&lt;-</span> <span class='fu'>regressionImp</span>(<span class='kw'>x1</span><span class='op'>~</span><span class='kw'>x2</span>,data=<span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>wna</span>,robust=<span class='fl'>TRUE</span>)</div><div class='output co'>#&gt; There still missing values in variable x1 . Probably due to missing values in the regressors.</div><div class='input'></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

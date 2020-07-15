@@ -101,6 +101,9 @@ variables to scatterplots." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -140,15 +143,15 @@ variables to scatterplots.</p>
     </div>
 
     <pre class="usage"><span class='fu'>rugNA</span>(
-  <span class='no'>x</span>,
-  <span class='no'>y</span>,
-  <span class='kw'>ticksize</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>side</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>col</span> <span class='kw'>=</span> <span class='st'>"red"</span>,
-  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>miss</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>lwd</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
-  <span class='no'>...</span>
+  <span class='kw'>x</span>,
+  <span class='kw'>y</span>,
+  ticksize = <span class='kw'>NULL</span>,
+  side = <span class='fl'>1</span>,
+  col = <span class='st'>"red"</span>,
+  alpha = <span class='kw'>NULL</span>,
+  miss = <span class='kw'>NULL</span>,
+  lwd = <span class='fl'>0.5</span>,
+  <span class='kw'>...</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -200,21 +203,23 @@ values in <code>y</code>.</p></td>
 available in <code>x</code> but missing/imputed in <code>y</code>.  Else if <code>side</code>
 is 2 or 4, it consists of values available in <code>y</code> but missing/imputed
 in <code>x</code>.</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Andreas Alfons, modifications by Bernd Prantner</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>tao</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>tao</span>, package = <span class='st'>"VIM"</span>)
 <span class='co'>## for missing values</span>
-<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='no'>tao</span>[, <span class='st'>"Air.Temp"</span>]
-<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='no'>tao</span>[, <span class='st'>"Humidity"</span>]
-<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>x</span>, <span class='no'>y</span>)</div><div class='input'><span class='fu'>rugNA</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='kw'>side</span> <span class='kw'>=</span> <span class='fl'>1</span>)</div><div class='input'><span class='fu'>rugNA</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='kw'>side</span> <span class='kw'>=</span> <span class='fl'>2</span>)</div><div class='img'><img src='rugNA-1.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='kw'>x</span> <span class='op'>&lt;-</span> <span class='kw'>tao</span>[, <span class='st'>"Air.Temp"</span>]
+<span class='kw'>y</span> <span class='op'>&lt;-</span> <span class='kw'>tao</span>[, <span class='st'>"Humidity"</span>]
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span>(<span class='kw'>x</span>, <span class='kw'>y</span>)</div><div class='input'><span class='fu'>rugNA</span>(<span class='kw'>x</span>, <span class='kw'>y</span>, side = <span class='fl'>1</span>)</div><div class='input'><span class='fu'>rugNA</span>(<span class='kw'>x</span>, <span class='kw'>y</span>, side = <span class='fl'>2</span>)</div><div class='img'><img src='rugNA-1.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'>## for imputed values</span>
-<span class='no'>x_imp</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='no'>tao</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Air.Temp"</span>,<span class='st'>"Humidity"</span>)])
-<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='no'>x_imp</span>[, <span class='st'>"Air.Temp"</span>]
-<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='no'>x_imp</span>[, <span class='st'>"Humidity"</span>]
-<span class='no'>miss</span> <span class='kw'>&lt;-</span> <span class='no'>x_imp</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Air.Temp_imp"</span>,<span class='st'>"Humidity_imp"</span>)]
-<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>x</span>, <span class='no'>y</span>)</div><div class='input'><span class='fu'>rugNA</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='kw'>side</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>col</span> <span class='kw'>=</span> <span class='st'>"orange"</span>, <span class='kw'>miss</span> <span class='kw'>=</span> <span class='no'>miss</span>)</div><div class='input'><span class='fu'>rugNA</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='kw'>side</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>col</span> <span class='kw'>=</span> <span class='st'>"orange"</span>, <span class='kw'>miss</span> <span class='kw'>=</span> <span class='no'>miss</span>)</div><div class='img'><img src='rugNA-2.png' alt='' width='700' height='433' /></div><div class='input'>
-</div></pre>
+<span class='kw'>x_imp</span> <span class='op'>&lt;-</span> <span class='fu'>kNN</span>(<span class='kw'>tao</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Air.Temp"</span>,<span class='st'>"Humidity"</span>)])
+<span class='kw'>x</span> <span class='op'>&lt;-</span> <span class='kw'>x_imp</span>[, <span class='st'>"Air.Temp"</span>]
+<span class='kw'>y</span> <span class='op'>&lt;-</span> <span class='kw'>x_imp</span>[, <span class='st'>"Humidity"</span>]
+<span class='kw'>miss</span> <span class='op'>&lt;-</span> <span class='kw'>x_imp</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Air.Temp_imp"</span>,<span class='st'>"Humidity_imp"</span>)]
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span>(<span class='kw'>x</span>, <span class='kw'>y</span>)</div><div class='input'><span class='fu'>rugNA</span>(<span class='kw'>x</span>, <span class='kw'>y</span>, side = <span class='fl'>1</span>, col = <span class='st'>"orange"</span>, miss = <span class='kw'>miss</span>)</div><div class='input'><span class='fu'>rugNA</span>(<span class='kw'>x</span>, <span class='kw'>y</span>, side = <span class='fl'>2</span>, col = <span class='st'>"orange"</span>, miss = <span class='kw'>miss</span>)</div><div class='img'><img src='rugNA-2.png' alt='' width='700' height='433' /></div><div class='input'></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

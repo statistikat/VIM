@@ -58,6 +58,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -100,15 +103,19 @@
 <div id="visualize-missing-values" class="section level3">
 <h3 class="hasAnchor">
 <a href="#visualize-missing-values" class="anchor"></a>Visualize missing values</h3>
-<div class="sourceCode" id="cb1"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">VIM</span>)
-<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="no">sleep</span>)
-<span class="no">a</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/aggr.html">aggr</a></span>(<span class="no">sleep</span>, <span class="kw">plot</span> <span class="kw">=</span> <span class="fl">FALSE</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/plot.html">plot</a></span>(<span class="no">a</span>, <span class="kw">numbers</span> <span class="kw">=</span> <span class="fl">TRUE</span>, <span class="kw">prop</span> <span class="kw">=</span> <span class="fl">FALSE</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb1"><pre class="downlit">
+<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="kw"><a href="https://github.com/statistikat/VIM">VIM</a></span>)
+<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="kw">sleep</span>)
+<span class="kw">a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/aggr.html">aggr</a></span>(<span class="kw">sleep</span>, plot = <span class="fl">FALSE</span>)
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span>(<span class="kw">a</span>, numbers = <span class="fl">TRUE</span>, prop = <span class="fl">FALSE</span>)
+</pre></div>
 <p><img src="VIM_files/figure-html/setup-1.png" width="672" style="display: block; margin: auto;"></p>
 <p>The left plot shows the amount of missings for each column in the dataset <code>sleep</code> and the right plot shows how often each combination of missings occur. For example, there are 9 rows wich contain a missing in both <code>NonD</code> and <code>Dream</code>.</p>
 <p>For simplicity, we will only look at the variables <code>Dream</code> and <code>Sleep</code> for the remainer of this vignette. Bivariate datasets can be passed to special functions that visualize the structure of missings such as <code><a href="../reference/marginplot.html">marginplot()</a></code>.</p>
-<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="no">x</span> <span class="kw">&lt;-</span> <span class="no">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Dream"</span>, <span class="st">"Sleep"</span>)]
-<span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(<span class="no">x</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb2"><pre class="downlit">
+<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Dream"</span>, <span class="st">"Sleep"</span>)]
+<span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(<span class="kw">x</span>)
+</pre></div>
 <p><img src="VIM_files/figure-html/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;"></p>
 <p>The <strong><font color="red">red</font></strong> boxplot on the left shows the distrubution of all values of <code>Sleep</code> where <code>Dream</code> contains a missing value. The <strong><font color="#87ceeb">blue</font></strong> boxplot on the left shows the distribution of the values of <code>Sleep</code> where <code>Dream</code> is observed.</p>
 </div>
@@ -116,14 +123,18 @@
 <h3 class="hasAnchor">
 <a href="#impute-missing-values" class="anchor"></a>Impute missing values</h3>
 <p>In order to impute missing values, <code>VIM</code> offers a spectrum of imputation methods like <code><a href="../reference/kNN.html">kNN()</a></code> (k nearest neighbor), <code><a href="../reference/hotdeck.html">hotdeck()</a></code> and so forth. Those functions can be applied to a <code>data.frame</code> and return another <code>data.frame</code> where missings are replaced by imputed values.</p>
-<div class="sourceCode" id="cb3"><html><body><pre class="r"><span class="no">x_imputed</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="no">x</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb3"><pre class="downlit">
+<span class="kw">x_imputed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="kw">x</span>)
+</pre></div>
 <p>Note however, that in certain circumstances, there will be missings left in the returned dataset depending on the method used.</p>
 </div>
 <div id="visualize-imputed-values" class="section level3">
 <h3 class="hasAnchor">
 <a href="#visualize-imputed-values" class="anchor"></a>Visualize imputed values</h3>
 <p>The same functions that visualize missing values can also visualize the imputed dataset.</p>
-<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(<span class="no">x_imputed</span>, <span class="kw">delimiter</span> <span class="kw">=</span> <span class="st">"_imp"</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb4"><pre class="downlit">
+<span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(<span class="kw">x_imputed</span>, delimiter = <span class="st">"_imp"</span>)
+</pre></div>
 <p><img src="VIM_files/figure-html/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;"></p>
 <p>In this plot three differnt colors are used in the top-right. These colors represent the structure of missings.</p>
 <ul>

@@ -100,6 +100,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -138,18 +141,18 @@
     </div>
 
     <pre class="usage"><span class='fu'>mapMiss</span>(
-  <span class='no'>x</span>,
-  <span class='no'>coords</span>,
-  <span class='no'>map</span>,
-  <span class='kw'>delimiter</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>selection</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"any"</span>, <span class='st'>"all"</span>),
-  <span class='kw'>col</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"orange"</span>),
-  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>pch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>19</span>, <span class='fl'>15</span>),
-  <span class='kw'>col.map</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/gray.html'>grey</a></span>(<span class='fl'>0.5</span>),
-  <span class='kw'>legend</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>interactive</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='no'>...</span>
+  <span class='kw'>x</span>,
+  <span class='kw'>coords</span>,
+  <span class='kw'>map</span>,
+  delimiter = <span class='kw'>NULL</span>,
+  selection = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"any"</span>, <span class='st'>"all"</span>),
+  col = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"orange"</span>),
+  alpha = <span class='kw'>NULL</span>,
+  pch = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>19</span>, <span class='fl'>15</span>),
+  col.map = <span class='fu'><a href='https://rdrr.io/r/grDevices/gray.html'>grey</a></span>(<span class='fl'>0.5</span>),
+  legend = <span class='fl'>TRUE</span>,
+  interactive = <span class='fl'>TRUE</span>,
+  <span class='kw'>...</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -166,7 +169,7 @@ spatial coordinates of the observations.</p></td>
     </tr>
     <tr>
       <th>map</th>
-      <td><p>a background map to be passed to <code><a href='bgmap.html'>bgmap()</a></code>.</p></td>
+      <td><p>a background map to be passed to <code>bgmap()</code>.</p></td>
     </tr>
     <tr>
       <th>delimiter</th>
@@ -219,7 +222,7 @@ observations can be displayed interactively (see &#8216;Details&#8217;).</p></td
     <tr>
       <th>...</th>
       <td><p>further graphical parameters to be passed to
-<code><a href='bgmap.html'>bgmap()</a></code> and <code><a href='https://rdrr.io/r/graphics/points.html'>graphics::points()</a></code>.</p></td>
+<code>bgmap()</code> and <code><a href='https://rdrr.io/r/graphics/points.html'>graphics::points()</a></code>.</p></td>
     </tr>
     </table>
 
@@ -235,27 +238,29 @@ data using visualization tools.  <em>Journal of Advances in Data Analysis
 and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='bgmap.html'>bgmap()</a></code>, <code><a href='growdotMiss.html'>bubbleMiss()</a></code>,
-<code><a href='colormapMiss.html'>colormapMiss()</a></code></p></div>
+    <div class='dont-index'><p><code>bgmap()</code>, <code>bubbleMiss()</code>,
+<code>colormapMiss()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Matthias Templ, Andreas Alfons, modifications by Bernd Prantner</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>chorizonDL</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>kola.background</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
-<span class='no'>coo</span> <span class='kw'>&lt;-</span> <span class='no'>chorizonDL</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"XCOO"</span>, <span class='st'>"YCOO"</span>)]
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>chorizonDL</span>, package = <span class='st'>"VIM"</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>kola.background</span>, package = <span class='st'>"VIM"</span>)
+<span class='kw'>coo</span> <span class='op'>&lt;-</span> <span class='kw'>chorizonDL</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"XCOO"</span>, <span class='st'>"YCOO"</span>)]
 <span class='co'>## for missing values</span>
-<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='no'>chorizonDL</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"As"</span>, <span class='st'>"Bi"</span>)]
-<span class='fu'>mapMiss</span>(<span class='no'>x</span>, <span class='no'>coo</span>, <span class='no'>kola.background</span>)</div><div class='img'><img src='mapMiss-1.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; 
+<span class='kw'>x</span> <span class='op'>&lt;-</span> <span class='kw'>chorizonDL</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"As"</span>, <span class='st'>"Bi"</span>)]
+<span class='fu'>mapMiss</span>(<span class='kw'>x</span>, <span class='kw'>coo</span>, <span class='kw'>kola.background</span>)</div><div class='img'><img src='mapMiss-1.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; 
 #&gt; Click on a point to get more information.
 #&gt; To regain use of the VIM GUI and the R console, click in a region that does not contain any points.
 #&gt; </div><div class='input'>
 <span class='co'>## for imputed values</span>
-<span class='no'>x_imp</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='no'>chorizonDL</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"As"</span>, <span class='st'>"Bi"</span>)])
-<span class='fu'>mapMiss</span>(<span class='no'>x_imp</span>, <span class='no'>coo</span>, <span class='no'>kola.background</span>, <span class='kw'>delimiter</span> <span class='kw'>=</span> <span class='st'>"_imp"</span>)</div><div class='img'><img src='mapMiss-2.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; 
+<span class='kw'>x_imp</span> <span class='op'>&lt;-</span> <span class='fu'>kNN</span>(<span class='kw'>chorizonDL</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"As"</span>, <span class='st'>"Bi"</span>)])
+<span class='fu'>mapMiss</span>(<span class='kw'>x_imp</span>, <span class='kw'>coo</span>, <span class='kw'>kola.background</span>, delimiter = <span class='st'>"_imp"</span>)</div><div class='img'><img src='mapMiss-2.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; 
 #&gt; Click on a point to get more information.
 #&gt; To regain use of the VIM GUI and the R console, click in a region that does not contain any points.
-#&gt; </div><div class='input'>
-</div></pre>
+#&gt; </div><div class='input'></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

@@ -103,6 +103,9 @@ the RGB color space." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -144,39 +147,39 @@ the <em>RGB</em> color space.</p>
     </div>
 
     <pre class="usage"><span class='fu'>colormapMiss</span>(
-  <span class='no'>x</span>,
-  <span class='no'>region</span>,
-  <span class='no'>map</span>,
-  <span class='kw'>imp_index</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>prop</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>polysRegion</span> <span class='kw'>=</span> <span class='fl'>1</span>:<span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span>(<span class='no'>x</span>),
-  <span class='kw'>range</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>n</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>col</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"red"</span>, <span class='st'>"orange"</span>),
-  <span class='kw'>gamma</span> <span class='kw'>=</span> <span class='fl'>2.2</span>,
-  <span class='kw'>fixup</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>coords</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>numbers</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>2</span>,
-  <span class='kw'>cex.numbers</span> <span class='kw'>=</span> <span class='fl'>0.8</span>,
-  <span class='kw'>col.numbers</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"fg"</span>),
-  <span class='kw'>legend</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>interactive</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='no'>...</span>
+  <span class='kw'>x</span>,
+  <span class='kw'>region</span>,
+  <span class='kw'>map</span>,
+  imp_index = <span class='kw'>NULL</span>,
+  prop = <span class='fl'>TRUE</span>,
+  polysRegion = <span class='fl'>1</span><span class='op'>:</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span>(<span class='kw'>x</span>),
+  range = <span class='kw'>NULL</span>,
+  n = <span class='kw'>NULL</span>,
+  col = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"red"</span>, <span class='st'>"orange"</span>),
+  gamma = <span class='fl'>2.2</span>,
+  fixup = <span class='fl'>TRUE</span>,
+  coords = <span class='kw'>NULL</span>,
+  numbers = <span class='fl'>TRUE</span>,
+  digits = <span class='fl'>2</span>,
+  cex.numbers = <span class='fl'>0.8</span>,
+  col.numbers = <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"fg"</span>),
+  legend = <span class='fl'>TRUE</span>,
+  interactive = <span class='fl'>TRUE</span>,
+  <span class='kw'>...</span>
 )
 
 <span class='fu'>colormapMissLegend</span>(
-  <span class='no'>xleft</span>,
-  <span class='no'>ybottom</span>,
-  <span class='no'>xright</span>,
-  <span class='no'>ytop</span>,
-  <span class='no'>cmap</span>,
-  <span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>1000</span>,
-  <span class='kw'>horizontal</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>2</span>,
-  <span class='kw'>cex.numbers</span> <span class='kw'>=</span> <span class='fl'>0.8</span>,
-  <span class='kw'>col.numbers</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"fg"</span>),
-  <span class='no'>...</span>
+  <span class='kw'>xleft</span>,
+  <span class='kw'>ybottom</span>,
+  <span class='kw'>xright</span>,
+  <span class='kw'>ytop</span>,
+  <span class='kw'>cmap</span>,
+  n = <span class='fl'>1000</span>,
+  horizontal = <span class='fl'>TRUE</span>,
+  digits = <span class='fl'>2</span>,
+  cex.numbers = <span class='fl'>0.8</span>,
+  col.numbers = <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"fg"</span>),
+  <span class='kw'>...</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -362,8 +365,12 @@ data using visualization tools.  <em>Journal of Advances in Data Analysis
 and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='colSequence.html'>colSequence()</a></code>, <code><a href='growdotMiss.html'>growdotMiss()</a></code>,
-<code><a href='mapMiss.html'>mapMiss()</a></code></p></div>
+    <div class='dont-index'><p><code>colSequence()</code>, <code>growdotMiss()</code>,
+<code>mapMiss()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Andreas Alfons, modifications to show imputed values by Bernd
+Prantner</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

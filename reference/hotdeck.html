@@ -101,6 +101,9 @@ algorithm for imputation." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -140,16 +143,16 @@ algorithm for imputation.</p>
     </div>
 
     <pre class="usage"><span class='fu'>hotdeck</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>variable</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>ord_var</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>domain_var</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>makeNA</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>NAcond</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>impNA</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>donorcond</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>
+  <span class='kw'>data</span>,
+  variable = <span class='kw'>NULL</span>,
+  ord_var = <span class='kw'>NULL</span>,
+  domain_var = <span class='kw'>NULL</span>,
+  makeNA = <span class='kw'>NULL</span>,
+  NAcond = <span class='kw'>NULL</span>,
+  impNA = <span class='fl'>TRUE</span>,
+  donorcond = <span class='kw'>NULL</span>,
+  imp_var = <span class='fl'>TRUE</span>,
+  imp_suffix = <span class='st'>"imp"</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -215,35 +218,40 @@ Statistical Software</em>, 74(7), 1-16.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p>Other imputation methods: 
-<code><a href='irmi.html'>irmi</a>()</code>,
-<code><a href='kNN.html'>kNN</a>()</code>,
-<code><a href='matchImpute.html'>matchImpute</a>()</code>,
-<code><a href='rangerImpute.html'>rangerImpute</a>()</code>,
-<code><a href='regressionImp.html'>regressionImp</a>()</code></p></div>
+<code>irmi()</code>,
+<code>kNN()</code>,
+<code>matchImpute()</code>,
+<code>rangerImpute()</code>,
+<code>regressionImp()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Alexander Kowarik</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>)
-<span class='no'>sleepI</span> <span class='kw'>&lt;-</span> <span class='fu'>hotdeck</span>(<span class='no'>sleep</span>)
-<span class='no'>sleepI2</span> <span class='kw'>&lt;-</span> <span class='fu'>hotdeck</span>(<span class='no'>sleep</span>,<span class='kw'>ord_var</span><span class='kw'>=</span><span class='st'>"BodyWgt"</span>,<span class='kw'>domain_var</span><span class='kw'>=</span><span class='st'>"Pred"</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>)
+<span class='kw'>sleepI</span> <span class='op'>&lt;-</span> <span class='fu'>hotdeck</span>(<span class='kw'>sleep</span>)
+<span class='kw'>sleepI2</span> <span class='op'>&lt;-</span> <span class='fu'>hotdeck</span>(<span class='kw'>sleep</span>,ord_var=<span class='st'>"BodyWgt"</span>,domain_var=<span class='st'>"Pred"</span>)
 
 <span class='co'># Usage of donorcond in a simple example</span>
-<span class='no'>sleepI3</span> <span class='kw'>&lt;-</span> <span class='fu'>hotdeck</span>(<span class='no'>sleep</span>,<span class='kw'>variable</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"NonD"</span>,<span class='st'>"Dream"</span>,<span class='st'>"Sleep"</span>,<span class='st'>"Span"</span>,<span class='st'>"Gest"</span>),
-<span class='kw'>ord_var</span><span class='kw'>=</span><span class='st'>"BodyWgt"</span>,<span class='kw'>domain_var</span><span class='kw'>=</span><span class='st'>"Pred"</span>,
-<span class='kw'>donorcond</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='st'>"&gt;4"</span>,<span class='st'>"&lt;17"</span>,<span class='st'>"&gt;1.5"</span>,<span class='st'>"%between%c(8,13)"</span>,<span class='st'>"&gt;5"</span>))
+<span class='kw'>sleepI3</span> <span class='op'>&lt;-</span> <span class='fu'>hotdeck</span>(<span class='kw'>sleep</span>,variable=<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"NonD"</span>,<span class='st'>"Dream"</span>,<span class='st'>"Sleep"</span>,<span class='st'>"Span"</span>,<span class='st'>"Gest"</span>),
+ord_var=<span class='st'>"BodyWgt"</span>,domain_var=<span class='st'>"Pred"</span>,
+donorcond = <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='st'>"&gt;4"</span>,<span class='st'>"&lt;17"</span>,<span class='st'>"&gt;1.5"</span>,<span class='st'>"%between%c(8,13)"</span>,<span class='st'>"&gt;5"</span>))
 
 <span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span>(<span class='fl'>132</span>)
-<span class='no'>nRows</span> <span class='kw'>&lt;-</span> <span class='fl'>1e3</span>
+<span class='kw'>nRows</span> <span class='op'>&lt;-</span> <span class='fl'>1e3</span>
 <span class='co'># Generate a data set with nRows rows and several variables</span>
-<span class='no'>x</span><span class='kw'>&lt;-</span><span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>x</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>nRows</span>),<span class='kw'>y</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>nRows</span>),<span class='kw'>z</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='no'>LETTERS</span>,<span class='no'>nRows</span>,<span class='kw'>replace</span><span class='kw'>=</span><span class='fl'>TRUE</span>),
-    <span class='kw'>d1</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='no'>LETTERS</span>[<span class='fl'>1</span>:<span class='fl'>3</span>],<span class='no'>nRows</span>,<span class='kw'>replace</span><span class='kw'>=</span><span class='fl'>TRUE</span>),<span class='kw'>d2</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='no'>LETTERS</span>[<span class='fl'>1</span>:<span class='fl'>2</span>],<span class='no'>nRows</span>,<span class='kw'>replace</span><span class='kw'>=</span><span class='fl'>TRUE</span>),
-    <span class='kw'>o1</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>nRows</span>),<span class='kw'>o2</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='no'>nRows</span>),<span class='kw'>o3</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='fl'>100</span>))
-<span class='no'>origX</span> <span class='kw'>&lt;-</span> <span class='no'>x</span>
-<span class='no'>x</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span>:<span class='no'>nRows</span>,<span class='no'>nRows</span>/<span class='fl'>10</span>),<span class='fl'>1</span>] <span class='kw'>&lt;-</span> <span class='fl'>NA</span>
-<span class='no'>x</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span>:<span class='no'>nRows</span>,<span class='no'>nRows</span>/<span class='fl'>10</span>),<span class='fl'>2</span>] <span class='kw'>&lt;-</span> <span class='fl'>NA</span>
-<span class='no'>x</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span>:<span class='no'>nRows</span>,<span class='no'>nRows</span>/<span class='fl'>10</span>),<span class='fl'>3</span>] <span class='kw'>&lt;-</span> <span class='fl'>NA</span>
-<span class='no'>x</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span>:<span class='no'>nRows</span>,<span class='no'>nRows</span>/<span class='fl'>10</span>),<span class='fl'>4</span>] <span class='kw'>&lt;-</span> <span class='fl'>NA</span>
-<span class='no'>xImp</span> <span class='kw'>&lt;-</span> <span class='fu'>hotdeck</span>(<span class='no'>x</span>,<span class='kw'>ord_var</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"o1"</span>,<span class='st'>"o2"</span>,<span class='st'>"o3"</span>),<span class='kw'>domain_var</span><span class='kw'>=</span><span class='st'>"d2"</span>)</div></pre>
+<span class='kw'>x</span><span class='op'>&lt;-</span><span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(x=<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='kw'>nRows</span>),y=<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='kw'>nRows</span>),z=<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='kw'>LETTERS</span>,<span class='kw'>nRows</span>,replace=<span class='fl'>TRUE</span>),
+    d1=<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='kw'>LETTERS</span>[<span class='fl'>1</span><span class='op'>:</span><span class='fl'>3</span>],<span class='kw'>nRows</span>,replace=<span class='fl'>TRUE</span>),d2=<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='kw'>LETTERS</span>[<span class='fl'>1</span><span class='op'>:</span><span class='fl'>2</span>],<span class='kw'>nRows</span>,replace=<span class='fl'>TRUE</span>),
+    o1=<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='kw'>nRows</span>),o2=<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='kw'>nRows</span>),o3=<span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='fl'>100</span>))
+<span class='kw'>origX</span> <span class='op'>&lt;-</span> <span class='kw'>x</span>
+<span class='kw'>x</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span><span class='op'>:</span><span class='kw'>nRows</span>,<span class='kw'>nRows</span><span class='op'>/</span><span class='fl'>10</span>),<span class='fl'>1</span>] <span class='op'>&lt;-</span> <span class='fl'>NA</span>
+<span class='kw'>x</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span><span class='op'>:</span><span class='kw'>nRows</span>,<span class='kw'>nRows</span><span class='op'>/</span><span class='fl'>10</span>),<span class='fl'>2</span>] <span class='op'>&lt;-</span> <span class='fl'>NA</span>
+<span class='kw'>x</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span><span class='op'>:</span><span class='kw'>nRows</span>,<span class='kw'>nRows</span><span class='op'>/</span><span class='fl'>10</span>),<span class='fl'>3</span>] <span class='op'>&lt;-</span> <span class='fl'>NA</span>
+<span class='kw'>x</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span><span class='op'>:</span><span class='kw'>nRows</span>,<span class='kw'>nRows</span><span class='op'>/</span><span class='fl'>10</span>),<span class='fl'>4</span>] <span class='op'>&lt;-</span> <span class='fl'>NA</span>
+<span class='kw'>xImp</span> <span class='op'>&lt;-</span> <span class='fu'>hotdeck</span>(<span class='kw'>x</span>,ord_var = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"o1"</span>,<span class='st'>"o2"</span>,<span class='st'>"o3"</span>),domain_var=<span class='st'>"d2"</span>)
+
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

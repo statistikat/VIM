@@ -104,6 +104,9 @@ Print method for objects of class &quot;summary.aggr&quot;." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -145,39 +148,39 @@ the amount of missing/imputed values in certain combinations of variables.</p>
 <p>Print method for objects of class <code>"summary.aggr"</code>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>aggr</span>(<span class='no'>x</span>, <span class='kw'>delimiter</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>plot</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)
+    <pre class="usage"><span class='fu'>aggr</span>(<span class='kw'>x</span>, delimiter = <span class='kw'>NULL</span>, plot = <span class='fl'>TRUE</span>, <span class='kw'>...</span>)
 
 <span class='co'># S3 method for aggr</span>
-<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(
-  <span class='no'>x</span>,
-  <span class='kw'>col</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"orange"</span>),
-  <span class='kw'>bars</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>numbers</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>prop</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>combined</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>varheight</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>only.miss</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>border</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"fg"</span>),
-  <span class='kw'>sortVars</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>sortCombs</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>ylabs</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>axes</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>labels</span> <span class='kw'>=</span> <span class='no'>axes</span>,
-  <span class='kw'>cex.lab</span> <span class='kw'>=</span> <span class='fl'>1.2</span>,
-  <span class='kw'>cex.axis</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"cex"</span>),
-  <span class='kw'>cex.numbers</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"cex"</span>),
-  <span class='kw'>gap</span> <span class='kw'>=</span> <span class='fl'>4</span>,
-  <span class='no'>...</span>
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span>(
+  <span class='kw'>x</span>,
+  col = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"orange"</span>),
+  bars = <span class='fl'>TRUE</span>,
+  numbers = <span class='fl'>FALSE</span>,
+  prop = <span class='fl'>TRUE</span>,
+  combined = <span class='fl'>FALSE</span>,
+  varheight = <span class='fl'>FALSE</span>,
+  only.miss = <span class='fl'>FALSE</span>,
+  border = <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"fg"</span>),
+  sortVars = <span class='fl'>FALSE</span>,
+  sortCombs = <span class='fl'>TRUE</span>,
+  ylabs = <span class='kw'>NULL</span>,
+  axes = <span class='fl'>TRUE</span>,
+  labels = <span class='kw'>axes</span>,
+  cex.lab = <span class='fl'>1.2</span>,
+  cex.axis = <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"cex"</span>),
+  cex.numbers = <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"cex"</span>),
+  gap = <span class='fl'>4</span>,
+  <span class='kw'>...</span>
 )
 
 <span class='co'># S3 method for aggr</span>
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>x</span>, <span class='no'>...</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='kw'>x</span>, <span class='kw'>...</span>, digits = <span class='kw'>NULL</span>)
 
 <span class='co'># S3 method for aggr</span>
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>object</span>, <span class='no'>...</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='kw'>object</span>, <span class='kw'>...</span>)
 
 <span class='co'># S3 method for summary.aggr</span>
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>x</span>, <span class='no'>...</span>)</pre>
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='kw'>x</span>, <span class='kw'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -381,32 +384,39 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 <p><code>print.summary.aggr()</code>, <code>aggr()</code></p>
 <p><code>summary.aggr()</code>, <code>aggr()</code></p>
 <p>Other plotting functions: 
-<code><a href='barMiss.html'>barMiss</a>()</code>,
-<code><a href='histMiss.html'>histMiss</a>()</code>,
-<code><a href='marginmatrix.html'>marginmatrix</a>()</code>,
-<code><a href='marginplot.html'>marginplot</a>()</code>,
-<code><a href='matrixplot.html'>matrixplot</a>()</code>,
-<code><a href='mosaicMiss.html'>mosaicMiss</a>()</code>,
-<code><a href='pairsVIM.html'>pairsVIM</a>()</code>,
-<code><a href='parcoordMiss.html'>parcoordMiss</a>()</code>,
-<code><a href='pbox.html'>pbox</a>()</code>,
-<code><a href='scattJitt.html'>scattJitt</a>()</code>,
-<code><a href='scattMiss.html'>scattMiss</a>()</code>,
-<code><a href='scattmatrixMiss.html'>scattmatrixMiss</a>()</code>,
-<code><a href='spineMiss.html'>spineMiss</a>()</code></p></div>
+<code>barMiss()</code>,
+<code>histMiss()</code>,
+<code>marginmatrix()</code>,
+<code>marginplot()</code>,
+<code>matrixplot()</code>,
+<code>mosaicMiss()</code>,
+<code>pairsVIM()</code>,
+<code>parcoordMiss()</code>,
+<code>pbox()</code>,
+<code>scattJitt()</code>,
+<code>scattMiss()</code>,
+<code>scattmatrixMiss()</code>,
+<code>spineMiss()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Andreas Alfons, Matthias Templ, modifications for displaying imputed
+values by Bernd Prantner</p>
+<p>Matthias Templ, modifications by Andreas Alfons and Bernd Prantner</p>
+<p>Matthias Templ, modifications by Andreas Alfons</p>
+<p>Andreas Alfons, modifications by Bernd Prantner</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>, <span class='kw'>package</span><span class='kw'>=</span><span class='st'>"VIM"</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package=<span class='st'>"VIM"</span>)
 <span class='co'>## for missing values</span>
-<span class='no'>a</span> <span class='kw'>&lt;-</span> <span class='fu'>aggr</span>(<span class='no'>sleep</span>)</div><div class='img'><img src='aggr-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='no'>a</span></div><div class='output co'>#&gt; 
+<span class='kw'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span>(<span class='kw'>sleep</span>)</div><div class='img'><img src='aggr-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='kw'>a</span></div><div class='output co'>#&gt; 
 #&gt;  Missings in variables:
 #&gt;  Variable Count
 #&gt;      NonD    14
 #&gt;     Dream    12
 #&gt;     Sleep     4
 #&gt;      Span     4
-#&gt;      Gest     4</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>a</span>)</div><div class='output co'>#&gt; 
+#&gt;      Gest     4</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='kw'>a</span>)</div><div class='output co'>#&gt; 
 #&gt;  Missings per variable: 
 #&gt;  Variable Count
 #&gt;   BodyWgt     0
@@ -431,15 +441,15 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 #&gt;  0:0:1:1:0:1:0:0:0:0     1  1.612903
 #&gt;  0:0:1:1:1:0:0:0:0:0     2  3.225806</div><div class='input'>
 <span class='co'>## for imputed values</span>
-<span class='no'>sleep_IMPUTED</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='no'>sleep</span>)
-<span class='no'>a</span> <span class='kw'>&lt;-</span> <span class='fu'>aggr</span>(<span class='no'>sleep_IMPUTED</span>, <span class='kw'>delimiter</span><span class='kw'>=</span><span class='st'>"_imp"</span>)</div><div class='img'><img src='aggr-2.png' alt='' width='700' height='433' /></div><div class='input'><span class='no'>a</span></div><div class='output co'>#&gt; 
+<span class='kw'>sleep_IMPUTED</span> <span class='op'>&lt;-</span> <span class='fu'>kNN</span>(<span class='kw'>sleep</span>)
+<span class='kw'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span>(<span class='kw'>sleep_IMPUTED</span>, delimiter=<span class='st'>"_imp"</span>)</div><div class='img'><img src='aggr-2.png' alt='' width='700' height='433' /></div><div class='input'><span class='kw'>a</span></div><div class='output co'>#&gt; 
 #&gt;  Imputed missings in variables:
 #&gt;  Variable Count
 #&gt;      NonD    14
 #&gt;     Dream    12
 #&gt;     Sleep     4
 #&gt;      Span     4
-#&gt;      Gest     4</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>a</span>)</div><div class='output co'>#&gt; 
+#&gt;      Gest     4</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='kw'>a</span>)</div><div class='output co'>#&gt; 
 #&gt;  Imputed missings per variables:
 #&gt;  Variable Count
 #&gt;   BodyWgt     0
@@ -464,9 +474,9 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 #&gt;  0:0:2:2:0:2:0:0:0:0     1  1.612903
 #&gt;  0:0:2:2:2:0:0:0:0:0     2  3.225806</div><div class='input'>
 
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
-<span class='no'>a</span> <span class='kw'>&lt;-</span> <span class='fu'>aggr</span>(<span class='no'>sleep</span>, <span class='kw'>plot</span><span class='kw'>=</span><span class='fl'>FALSE</span>)
-<span class='no'>a</span></div><div class='output co'>#&gt; 
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
+<span class='kw'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span>(<span class='kw'>sleep</span>, plot=<span class='fl'>FALSE</span>)
+<span class='kw'>a</span></div><div class='output co'>#&gt; 
 #&gt;  Missings in variables:
 #&gt;  Variable Count
 #&gt;      NonD    14
@@ -475,8 +485,8 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 #&gt;      Span     4
 #&gt;      Gest     4</div><div class='input'>
 
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='fu'>aggr</span>(<span class='no'>sleep</span>, <span class='kw'>plot</span><span class='kw'>=</span><span class='fl'>FALSE</span>))</div><div class='output co'>#&gt; 
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='fu'>aggr</span>(<span class='kw'>sleep</span>, plot=<span class='fl'>FALSE</span>))</div><div class='output co'>#&gt; 
 #&gt;  Missings per variable: 
 #&gt;  Variable Count
 #&gt;   BodyWgt     0
@@ -501,9 +511,9 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 #&gt;  0:0:1:1:0:1:0:0:0:0     1  1.612903
 #&gt;  0:0:1:1:1:0:0:0:0:0     2  3.225806</div><div class='input'>
 
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
-<span class='no'>s</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='fu'>aggr</span>(<span class='no'>sleep</span>, <span class='kw'>plot</span><span class='kw'>=</span><span class='fl'>FALSE</span>))
-<span class='no'>s</span></div><div class='output co'>#&gt; 
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
+<span class='kw'>s</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='fu'>aggr</span>(<span class='kw'>sleep</span>, plot=<span class='fl'>FALSE</span>))
+<span class='kw'>s</span></div><div class='output co'>#&gt; 
 #&gt;  Missings per variable: 
 #&gt;  Variable Count
 #&gt;   BodyWgt     0
@@ -526,8 +536,7 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 #&gt;  0:0:1:0:1:0:0:0:0:0     2  3.225806
 #&gt;  0:0:1:1:0:0:0:0:0:0     9 14.516129
 #&gt;  0:0:1:1:0:1:0:0:0:0     1  1.612903
-#&gt;  0:0:1:1:1:0:0:0:0:0     2  3.225806</div><div class='input'>
-</div></pre>
+#&gt;  0:0:1:1:1:0:0:0:0:0     2  3.225806</div><div class='input'></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

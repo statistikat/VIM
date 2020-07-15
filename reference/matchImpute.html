@@ -102,6 +102,9 @@ The variables are dropped in reversed order, so that the last element of
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -142,11 +145,11 @@ The variables are dropped in reversed order, so that the last element of
     </div>
 
     <pre class="usage"><span class='fu'>matchImpute</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>variable</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>)[!<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>data</span>) <span class='kw'>%in%</span> <span class='no'>match_var</span>],
-  <span class='no'>match_var</span>,
-  <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>imp_suffix</span> <span class='kw'>=</span> <span class='st'>"imp"</span>
+  <span class='kw'>data</span>,
+  variable = <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='kw'>data</span>)[<span class='op'>!</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='kw'>data</span>) <span class='op'>%in%</span> <span class='kw'>match_var</span>],
+  <span class='kw'>match_var</span>,
+  imp_var = <span class='fl'>TRUE</span>,
+  imp_suffix = <span class='st'>"imp"</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -184,25 +187,28 @@ status</p></td>
     <p>The method works by sampling values from the suitable donors.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='hotdeck.html'>VIM::hotdeck()</a></code></p>
+    <div class='dont-index'><p><code><a href='https://rdrr.io/pkg/VIM/man/hotdeck.html'>VIM::hotdeck()</a></code></p>
 <p>Other imputation methods: 
-<code><a href='hotdeck.html'>hotdeck</a>()</code>,
-<code><a href='irmi.html'>irmi</a>()</code>,
-<code><a href='kNN.html'>kNN</a>()</code>,
-<code><a href='rangerImpute.html'>rangerImpute</a>()</code>,
-<code><a href='regressionImp.html'>regressionImp</a>()</code></p></div>
+<code>hotdeck()</code>,
+<code>irmi()</code>,
+<code>kNN()</code>,
+<code>rangerImpute()</code>,
+<code>regressionImp()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Johannes Gussenbauer, Alexander Kowarik</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>,<span class='kw'>package</span><span class='kw'>=</span><span class='st'>"VIM"</span>)
-<span class='no'>imp_data</span> <span class='kw'>&lt;-</span> <span class='fu'>matchImpute</span>(<span class='no'>sleep</span>,<span class='kw'>variable</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"NonD"</span>,<span class='st'>"Dream"</span>,<span class='st'>"Sleep"</span>,<span class='st'>"Span"</span>,<span class='st'>"Gest"</span>),
-  <span class='kw'>match_var</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Exp"</span>,<span class='st'>"Danger"</span>))
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>,package=<span class='st'>"VIM"</span>)
+<span class='kw'>imp_data</span> <span class='op'>&lt;-</span> <span class='fu'>matchImpute</span>(<span class='kw'>sleep</span>,variable=<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"NonD"</span>,<span class='st'>"Dream"</span>,<span class='st'>"Sleep"</span>,<span class='st'>"Span"</span>,<span class='st'>"Gest"</span>),
+  match_var=<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Exp"</span>,<span class='st'>"Danger"</span>))
 
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>testdata</span>,<span class='kw'>package</span><span class='kw'>=</span><span class='st'>"VIM"</span>)
-<span class='no'>imp_testdata1</span> <span class='kw'>&lt;-</span> <span class='fu'>matchImpute</span>(<span class='no'>testdata</span>$<span class='no'>wna</span>,<span class='kw'>match_var</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"c1"</span>,<span class='st'>"c2"</span>,<span class='st'>"b1"</span>,<span class='st'>"b2"</span>))
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>testdata</span>,package=<span class='st'>"VIM"</span>)
+<span class='kw'>imp_testdata1</span> <span class='op'>&lt;-</span> <span class='fu'>matchImpute</span>(<span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>wna</span>,match_var=<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"c1"</span>,<span class='st'>"c2"</span>,<span class='st'>"b1"</span>,<span class='st'>"b2"</span>))
 
-<span class='no'>dt</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>data.table</span><span class='kw ns'>::</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/data.table.html'>data.table</a></span>(<span class='no'>testdata</span>$<span class='no'>wna</span>)
-<span class='no'>imp_testdata2</span> <span class='kw'>&lt;-</span> <span class='fu'>matchImpute</span>(<span class='no'>dt</span>,<span class='kw'>match_var</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"c1"</span>,<span class='st'>"c2"</span>,<span class='st'>"b1"</span>,<span class='st'>"b2"</span>))</div></pre>
+<span class='kw'>dt</span> <span class='op'>&lt;-</span> <span class='kw'>data.table</span>::<span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/data.table.html'>data.table</a></span>(<span class='kw'>testdata</span><span class='op'>$</span><span class='kw'>wna</span>)
+<span class='kw'>imp_testdata2</span> <span class='op'>&lt;-</span> <span class='fu'>matchImpute</span>(<span class='kw'>dt</span>,match_var=<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"c1"</span>,<span class='st'>"c2"</span>,<span class='st'>"b1"</span>,<span class='st'>"b2"</span>))</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

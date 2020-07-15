@@ -100,6 +100,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -137,7 +140,7 @@
     <p>Count the number of infinite or missing values in a vector.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>countInf</span>(<span class='no'>x</span>)</pre>
+    <pre class="usage"><span class='fu'>countInf</span>(<span class='kw'>x</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -152,10 +155,13 @@
 
     <p><code>countInf</code> returns the number of infinite values in <code>x</code>.
 <code>countNA</code> returns the number of missing values in <code>x</code>.</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Andreas Alfons</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>, <span class='kw'>package</span><span class='kw'>=</span><span class='st'>"VIM"</span>)
-<span class='fu'>countInf</span>(<span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>sleep</span>$<span class='no'>Dream</span>))</div><div class='output co'>#&gt; [1] 1</div><div class='input'><span class='fu'>countNA</span>(<span class='no'>sleep</span>$<span class='no'>Dream</span>)</div><div class='output co'>#&gt; [1] 12</div></pre>
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package=<span class='st'>"VIM"</span>)
+<span class='fu'>countInf</span>(<span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='kw'>sleep</span><span class='op'>$</span><span class='kw'>Dream</span>))</div><div class='output co'>#&gt; [1] 1</div><div class='input'><span class='fu'>countNA</span>(<span class='kw'>sleep</span><span class='op'>$</span><span class='kw'>Dream</span>)</div><div class='output co'>#&gt; [1] 12</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

@@ -100,6 +100,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -137,15 +140,15 @@
     <p>Various error measures evaluating the quality of imputations</p>
     </div>
 
-    <pre class="usage"><span class='fu'>evaluation</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>m</span>, <span class='kw'>vartypes</span> <span class='kw'>=</span> <span class='st'>"guess"</span>)
+    <pre class="usage"><span class='fu'>evaluation</span>(<span class='kw'>x</span>, <span class='kw'>y</span>, <span class='kw'>m</span>, vartypes = <span class='st'>"guess"</span>)
 
-<span class='fu'>nrmse</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>m</span>)
+<span class='fu'>nrmse</span>(<span class='kw'>x</span>, <span class='kw'>y</span>, <span class='kw'>m</span>)
 
-<span class='fu'>pfc</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>m</span>)
+<span class='fu'>pfc</span>(<span class='kw'>x</span>, <span class='kw'>y</span>, <span class='kw'>m</span>)
 
-<span class='fu'>msecov</span>(<span class='no'>x</span>, <span class='no'>y</span>)
+<span class='fu'>msecov</span>(<span class='kw'>x</span>, <span class='kw'>y</span>)
 
-<span class='fu'>msecor</span>(<span class='no'>x</span>, <span class='no'>y</span>)</pre>
+<span class='fu'>msecor</span>(<span class='kw'>x</span>, <span class='kw'>y</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -181,16 +184,19 @@ used for expressing the number of rounded zeros.</p>
     <p>M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
 regression imputation using standard and robust methods.  <em>Journal of
 Computational Statistics and Data Analysis</em>, Vol. 55, pp. 2793-2806.</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Matthias Templ</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>iris</span>)
-<span class='no'>iris_orig</span> <span class='kw'>&lt;-</span> <span class='no'>iris_imp</span> <span class='kw'>&lt;-</span> <span class='no'>iris</span>
-<span class='no'>iris_imp</span>$<span class='no'>Sepal.Length</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span>:<span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='no'>iris</span>), <span class='fl'>10</span>)] <span class='kw'>&lt;-</span> <span class='fl'>NA</span>
-<span class='no'>iris_imp</span>$<span class='no'>Sepal.Width</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span>:<span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='no'>iris</span>), <span class='fl'>10</span>)] <span class='kw'>&lt;-</span> <span class='fl'>NA</span>
-<span class='no'>iris_imp</span>$<span class='no'>Species</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span>:<span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='no'>iris</span>), <span class='fl'>10</span>)] <span class='kw'>&lt;-</span> <span class='fl'>NA</span>
-<span class='no'>m</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/NA.html'>is.na</a></span>(<span class='no'>iris_imp</span>)
-<span class='no'>iris_imp</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='no'>iris_imp</span>, <span class='kw'>imp_var</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
-<span class='fu'>evaluation</span>(<span class='no'>iris_orig</span>, <span class='no'>iris_imp</span>, <span class='kw'>m</span> <span class='kw'>=</span> <span class='no'>m</span>, <span class='kw'>vartypes</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='st'>"numeric"</span>, <span class='fl'>4</span>), <span class='st'>"factor"</span>))</div><div class='output co'>#&gt; $err_num
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>iris</span>)
+<span class='kw'>iris_orig</span> <span class='op'>&lt;-</span> <span class='kw'>iris_imp</span> <span class='op'>&lt;-</span> <span class='kw'>iris</span>
+<span class='kw'>iris_imp</span><span class='op'>$</span><span class='kw'>Sepal.Length</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span><span class='op'>:</span><span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='kw'>iris</span>), <span class='fl'>10</span>)] <span class='op'>&lt;-</span> <span class='fl'>NA</span>
+<span class='kw'>iris_imp</span><span class='op'>$</span><span class='kw'>Sepal.Width</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span><span class='op'>:</span><span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='kw'>iris</span>), <span class='fl'>10</span>)] <span class='op'>&lt;-</span> <span class='fl'>NA</span>
+<span class='kw'>iris_imp</span><span class='op'>$</span><span class='kw'>Species</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span><span class='op'>:</span><span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='kw'>iris</span>), <span class='fl'>10</span>)] <span class='op'>&lt;-</span> <span class='fl'>NA</span>
+<span class='kw'>m</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/NA.html'>is.na</a></span>(<span class='kw'>iris_imp</span>)
+<span class='kw'>iris_imp</span> <span class='op'>&lt;-</span> <span class='fu'>kNN</span>(<span class='kw'>iris_imp</span>, imp_var = <span class='fl'>FALSE</span>)
+<span class='fu'>evaluation</span>(<span class='kw'>iris_orig</span>, <span class='kw'>iris_imp</span>, m = <span class='kw'>m</span>, vartypes = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='st'>"numeric"</span>, <span class='fl'>4</span>), <span class='st'>"factor"</span>))</div><div class='output co'>#&gt; $err_num
 #&gt; [1] 0.149
 #&gt; 
 #&gt; $err_cat
@@ -198,7 +204,7 @@ Computational Statistics and Data Analysis</em>, Vol. 55, pp. 2793-2806.</p>
 #&gt; 
 #&gt; $error
 #&gt; [1] 0.149
-#&gt; </div><div class='input'><span class='fu'>msecov</span>(<span class='no'>iris_orig</span>[, <span class='fl'>1</span>:<span class='fl'>4</span>], <span class='no'>iris_imp</span>[, <span class='fl'>1</span>:<span class='fl'>4</span>])</div><div class='output co'>#&gt; [1] 0.0001986385</div></pre>
+#&gt; </div><div class='input'><span class='fu'>msecov</span>(<span class='kw'>iris_orig</span>[, <span class='fl'>1</span><span class='op'>:</span><span class='fl'>4</span>], <span class='kw'>iris_imp</span>[, <span class='fl'>1</span><span class='op'>:</span><span class='fl'>4</span>])</div><div class='output co'>#&gt; [1] 0.0001986385</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

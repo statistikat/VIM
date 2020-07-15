@@ -101,6 +101,9 @@ certain variables are highlighted." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/irmi.html">Imputation Method IRMI</a>
+    </li>
+    <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
     </li>
   </ul>
@@ -140,18 +143,18 @@ certain variables are highlighted.</p>
     </div>
 
     <pre class="usage"><span class='fu'>scattmatrixMiss</span>(
-  <span class='no'>x</span>,
-  <span class='kw'>delimiter</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>highlight</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>selection</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"any"</span>, <span class='st'>"all"</span>),
-  <span class='kw'>plotvars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>col</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"orange"</span>),
-  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>pch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>3</span>),
-  <span class='kw'>lty</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"lty"</span>),
-  <span class='kw'>diagonal</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"density"</span>, <span class='st'>"none"</span>),
-  <span class='kw'>interactive</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='no'>...</span>
+  <span class='kw'>x</span>,
+  delimiter = <span class='kw'>NULL</span>,
+  highlight = <span class='kw'>NULL</span>,
+  selection = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"any"</span>, <span class='st'>"all"</span>),
+  plotvars = <span class='kw'>NULL</span>,
+  col = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"orange"</span>),
+  alpha = <span class='kw'>NULL</span>,
+  pch = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>3</span>),
+  lty = <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"lty"</span>),
+  diagonal = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"density"</span>, <span class='st'>"none"</span>),
+  interactive = <span class='fl'>TRUE</span>,
+  <span class='kw'>...</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -227,7 +230,7 @@ highlighting can be selected interactively (see &#8216;Details&#8217;).</p></td>
     <tr>
       <th>...</th>
       <td><p>for <code>scattmatrixMiss</code>, further arguments and graphical
-parameters to be passed to <code><a href='pairsVIM.html'>pairsVIM()</a></code>.  <code><a href='https://rdrr.io/r/graphics/par.html'>par("oma")</a></code> will
+parameters to be passed to <code>pairsVIM()</code>.  <code><a href='https://rdrr.io/r/graphics/par.html'>par("oma")</a></code> will
 be set appropriately unless supplied (see <code><a href='https://rdrr.io/r/graphics/par.html'>graphics::par()</a></code>).  For
 <code>TKRscattmatrixMiss</code>, further arguments to be passed to
 <code>scattmatrixMiss</code>.</p></td>
@@ -236,7 +239,7 @@ be set appropriately unless supplied (see <code><a href='https://rdrr.io/r/graph
 
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p><code>scattmatrixMiss</code> uses <code><a href='pairsVIM.html'>pairsVIM()</a></code> with a panel function
+    <p><code>scattmatrixMiss</code> uses <code>pairsVIM()</code> with a panel function
 that allows highlighting of missing/imputed values.</p>
 <p>If <code>interactive=TRUE</code>, the variables to be used for highlighting can be
 selected interactively.  Observations with missing/imputed values in any or
@@ -267,34 +270,36 @@ data using visualization tools.  <em>Journal of Advances in Data Analysis
 and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='pairsVIM.html'>pairsVIM()</a></code>, <code><a href='marginmatrix.html'>marginmatrix()</a></code></p>
+    <div class='dont-index'><p><code>pairsVIM()</code>, <code>marginmatrix()</code></p>
 <p>Other plotting functions: 
-<code><a href='aggr.html'>aggr</a>()</code>,
-<code><a href='barMiss.html'>barMiss</a>()</code>,
-<code><a href='histMiss.html'>histMiss</a>()</code>,
-<code><a href='marginmatrix.html'>marginmatrix</a>()</code>,
-<code><a href='marginplot.html'>marginplot</a>()</code>,
-<code><a href='matrixplot.html'>matrixplot</a>()</code>,
-<code><a href='mosaicMiss.html'>mosaicMiss</a>()</code>,
-<code><a href='pairsVIM.html'>pairsVIM</a>()</code>,
-<code><a href='parcoordMiss.html'>parcoordMiss</a>()</code>,
-<code><a href='pbox.html'>pbox</a>()</code>,
-<code><a href='scattJitt.html'>scattJitt</a>()</code>,
-<code><a href='scattMiss.html'>scattMiss</a>()</code>,
-<code><a href='spineMiss.html'>spineMiss</a>()</code></p></div>
+<code>aggr()</code>,
+<code>barMiss()</code>,
+<code>histMiss()</code>,
+<code>marginmatrix()</code>,
+<code>marginplot()</code>,
+<code>matrixplot()</code>,
+<code>mosaicMiss()</code>,
+<code>pairsVIM()</code>,
+<code>parcoordMiss()</code>,
+<code>pbox()</code>,
+<code>scattJitt()</code>,
+<code>scattMiss()</code>,
+<code>spineMiss()</code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Andreas Alfons, Matthias Templ, modifications by Bernd Prantner</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>sleep</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"VIM"</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
 <span class='co'>## for missing values</span>
-<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='no'>sleep</span>[, <span class='fl'>1</span>:<span class='fl'>5</span>]
-<span class='no'>x</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>4</span>)] <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log10</a></span>(<span class='no'>x</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>4</span>)])
-<span class='fu'>scattmatrixMiss</span>(<span class='no'>x</span>, <span class='kw'>highlight</span> <span class='kw'>=</span> <span class='st'>"Dream"</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: variable 'Dream' contains infinite values</span></div><div class='img'><img src='scattmatrixMiss-1.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='kw'>x</span> <span class='op'>&lt;-</span> <span class='kw'>sleep</span>[, <span class='fl'>1</span><span class='op'>:</span><span class='fl'>5</span>]
+<span class='kw'>x</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>4</span>)] <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log10</a></span>(<span class='kw'>x</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>4</span>)])
+<span class='fu'>scattmatrixMiss</span>(<span class='kw'>x</span>, highlight = <span class='st'>"Dream"</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: variable 'Dream' contains infinite values</span></div><div class='img'><img src='scattmatrixMiss-1.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'>## for imputed values</span>
-<span class='no'>x_imp</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='no'>sleep</span>[, <span class='fl'>1</span>:<span class='fl'>5</span>])
-<span class='no'>x_imp</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>4</span>)] <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log10</a></span>(<span class='no'>x_imp</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>4</span>)])
-<span class='fu'>scattmatrixMiss</span>(<span class='no'>x_imp</span>, <span class='kw'>delimiter</span> <span class='kw'>=</span> <span class='st'>"_imp"</span>, <span class='kw'>highlight</span> <span class='kw'>=</span> <span class='st'>"Dream"</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: variable 'Dream' contains infinite values</span></div><div class='img'><img src='scattmatrixMiss-2.png' alt='' width='700' height='433' /></div><div class='input'>
-</div></pre>
+<span class='kw'>x_imp</span> <span class='op'>&lt;-</span> <span class='fu'>kNN</span>(<span class='kw'>sleep</span>[, <span class='fl'>1</span><span class='op'>:</span><span class='fl'>5</span>])
+<span class='kw'>x_imp</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>4</span>)] <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log10</a></span>(<span class='kw'>x_imp</span>[,<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>4</span>)])
+<span class='fu'>scattmatrixMiss</span>(<span class='kw'>x_imp</span>, delimiter = <span class='st'>"_imp"</span>, highlight = <span class='st'>"Dream"</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: variable 'Dream' contains infinite values</span></div><div class='img'><img src='scattmatrixMiss-2.png' alt='' width='700' height='433' /></div><div class='input'></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
