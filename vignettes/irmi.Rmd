@@ -25,7 +25,6 @@ This vignette showcases the function `irmi()`. **IRMI** is short for **I**terati
   
 Basically `irmi()` mimics the functionality of IVEWARE (Raghunathan et al., 2001), but there are several improvements with respect to the stability of the initialized values, or the robustness of the imputed values. In contrast to other imputation methods, the IRMI algorithm does not require at least one fully observed variable. In each step of the iteration, one variable is used as a response variable and the remaining variables serve as the regressors. Thus the "whole" multivariate information will be used for imputation in the response variable. For more details, please see [IRMI Imputation](https://www.sciencedirect.com/science/article/abs/pii/S0167947311001411).
 
-
 ### Data
 
 The following example demonstrates the functionality of `irmi()` using a subset of `sleep`. The columns have been selected deliberately to include some interactions between the missing values.
@@ -59,14 +58,14 @@ We can see that `irmi()` imputed all missing values for all variables in our dat
 
 ### Diagnosing the results
 
-As we can see in the next plot, for imputing missing values in `NonD` `Bodygt` plays an important role. The correlation structure of `NonD` and `BodyWgt` is preserved by the `irmi()` imputation method.
+As we can see in the next plot, for imputing missing values in `NonD` `Bodygt` plays an important role. The original data structure of `NonD` and `BodyWgt` is preserved by the `irmi()` imputation method.
 
 ```{r, fig.height=5}
 imp_irmi[, c("NonD", "BodyWgt", "NonD_imp")] %>% 
   marginplot(delimiter = "_imp")
 ```
 
-The same is true for the correlation structure of `Span` and `BodyWgt`.
+The same is true for the data structure of `Span` and `BodyWgt`.
 
 ```{r, fig.height=5}
 imp_irmi[, c("Span", "BodyWgt", "Span_imp")] %>% 

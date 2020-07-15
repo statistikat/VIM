@@ -1,0 +1,141 @@
+---
+title: "Donor based Imputation Methods"
+author: Wolfgang Rannetbauer
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Donor based Imputation Methods}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.align = "center"
+)
+```
+
+### Overview
+
+In addition to [Model based Imputation Methods](http://statistikat.github.io/VIM/articles/modelImp.html) the `VIM` package also presents donor based imputation methods, namely Hot-Deck Imputation and k-Nearest Neighbour Imputation.
+  
+This vignette showcases the functions `hotdeck()` and `kNN()`, which can both be used to generate imputations for several variables in a
+dataset.
+
+
+### Data
+
+The following example demonstrates the functionality of `hodeck()` and `kNN()` using a subset of `sleep`. The columns have been selected deliberately to include some interactions between the missing values. 
+
+```{r setup, message=F}
+library(VIM)
+library(magrittr)
+dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")]
+dataset$BodyWgt <- log(dataset$BodyWgt)
+dataset$Span <- log(dataset$Span)
+aggr(dataset)
+```
+
+The plot indicates several missing values in `Dream`, `NonD`, and `Span. `
+
+```{r}
+sapply(dataset, function(x)sum(is.na(x)))
+```
+
+### Imputation
+
+The call of the functions is straightforward. We will start by just imputing `NonD` based on the other variables. Besides imputing missing variables for a single variable, these functions also support imputation of multiple variables.
+
+
+```{r}
+imp_hotdeck <- hotdeck(dataset, variable = "NonD")  # hotdeck imputation
+imp_knn <- kNN(dataset, variable = "NonD") # kNN imputation
+aggr(imp_knn, delimiter = "_imp")
+```
+
+We can see that `kNN()` imputed all missing values for `NonD` in our dataset. The same is true for the values imputed via `hotdeck()`.
+
+### Diagnosing the results
+
+As we can see in the next two plots, the origninal data structure of `NonD` and `Span` is preserved by `hotdeck()`. `kNN()` reveals the typically procedure of methods, which are based on similar data points weighted by the distance. 
+
+```{r, fig.height=5}
+imp_hotdeck[, c("NonD", "Span", "NonD_imp")] %>% 
+  marginplot(delimiter = "_imp")
+imp_knn[, c("NonD", "Span", "NonD_imp")] %>% 
+  marginplot(delimiter = "_imp")
+```
+
+
+### Performance of method
+
+In order to validate the performance of `kNN()` and to highlight the ability to impute different datatypes the `iris` dataset is used. Firstly, some values are randomly set to `NA`. 
+
+```{r}
+library(reactable)
+
+data(iris)
+df <- iris
+colnames(df) <- c("S.Length","S.Width","P.Length","P.Width","Species")
+# randomly produce some missing values in the data
+set.seed(1)
+nbr_missing <- 50
+y <- data.frame(row=sample(nrow(iris),size = nbr_missing,replace = T),
+                col=sample(ncol(iris),size = nbr_missing,replace = T))
+y<-y[!duplicated(y),]
+df[as.matrix(y)]<-NA
+
+aggr(df)
+sapply(df, function(x)sum(is.na(x)))
+```
+
+We can see that there are missings in all variables and some observations reveal missing values on several points. 
+
+```{r}
+imp_knn <- kNN(df)
+aggr(imp_knn, delimiter = "imp")
+```
+
+The plot indicates that all missing values have been imputed by the kNN algorithm. The following table displays the rounded first five results of the imputation for all variables.  
+
+```{r echo=F,warning=F}
+results <- cbind("TRUE1" = as.numeric(iris[as.matrix(y[which(y$col==1),])]),
+                 "IMPUTED1" = round(as.numeric(imp_knn[as.matrix(y[which(y$col==1),])]),2),
+                 "TRUE2" = as.numeric(iris[as.matrix(y[which(y$col==2),])]),
+                 "IMPUTED2" = round(as.numeric(imp_knn[as.matrix(y[which(y$col==2),])]),2),
+                 "TRUE3" = as.numeric(iris[as.matrix(y[which(y$col==3),])]),
+                 "IMPUTED3" = round(as.numeric(imp_knn[as.matrix(y[which(y$col==3),])]),2),
+                 "TRUE4" = as.numeric(iris[as.matrix(y[which(y$col==4),])]),
+                 "IMPUTED4" = round(as.numeric(imp_knn[as.matrix(y[which(y$col==4),])]),2),
+                 "TRUE5" = (iris[as.matrix(y[which(y$col==5),])]),
+                 "IMPUTED5" = (imp_knn[as.matrix(y[which(y$col==5),])]))[1:5,]
+
+reactable(results, columns = list(
+    TRUE1 = colDef(name = "True"),
+    IMPUTED1 = colDef(name = "Imputed"),
+    TRUE2 = colDef(name = "True"),
+    IMPUTED2 = colDef(name = "Imputed"),
+    TRUE3 = colDef(name = "True"),
+    IMPUTED3 = colDef(name = "Imputed"),
+    TRUE4 = colDef(name = "True"),
+    IMPUTED4 = colDef(name = "Imputed"),
+    TRUE5 = colDef(name = "True"),
+    IMPUTED5 = colDef(name = "Imputed")
+  ),
+    columnGroups = list(
+    colGroup(name = "S.Length", columns = c("TRUE1", "IMPUTED1")),
+    colGroup(name = "S.Width", columns = c("TRUE2", "IMPUTED2")),
+    colGroup(name = "P.Length", columns = c("TRUE3", "IMPUTED3")),
+    colGroup(name = "P.Width", columns = c("TRUE4", "IMPUTED4")),
+    colGroup(name = "Species", columns = c("TRUE5", "IMPUTED5"))
+  ),
+  striped = TRUE,
+  highlight = TRUE,
+  bordered = TRUE
+)
+
+```
+
+  
