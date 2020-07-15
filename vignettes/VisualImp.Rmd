@@ -1,0 +1,114 @@
+---
+title: "Supportive Graphic Methods"
+author: Wolfgang Rannetbauer
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Imputation Method IRMI}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.align = "center"
+)
+```
+
+### Overview
+
+In addition to imputation methods, `VIM` provides a number of functions, which can be used to plot results in sophisticated ways.  
+  
+This vignette showcases selected plotting function, which are very supportive in context with visualizing missing and imputed values.
+
+### Data
+
+The following example demonstrates the functionality of the plotting functions using a subset of `sleep`. In order to emphasize the features of the methods, the missing values in the dataset are imputed via `kNN()`. `kNN()` is a powerful donor-based imputation function and also included in the `VIM` package. (see [Donor based Imputation Methods](http://statistikat.github.io/VIM/articles/donorImp.html))
+
+```{r setup, message=F}
+library(VIM)
+library(magrittr)
+dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")] # dataset with missings
+dataset$BodyWgt <- log(dataset$BodyWgt)
+dataset$Span <- log(dataset$Span)
+imp_knn <- kNN(dataset) # dataset with imputed values
+```
+
+To keep things as simple as possible, the plotting functions in `VIM` uses three main colors. Each color represents a property:
+
+* BLUE:     observed values are highlighted in color blue
+* RED:      missing values are highlighted in color red
+* ORANGE:   imputed values are highlighted in color orange
+
+
+### Function aggr()
+
+The `aggr()` function calculates or plots the amount of missing/imputed values in each variable and the amount of missing/imputed values in certain combinations of variables.
+
+```{r}
+aggr(dataset) 
+aggr(imp_knn, delimiter = "_imp") 
+```
+
+The plots indicate that all missing values in the dataset are imputed via `knn()`. 
+
+### Function barMiss()
+
+The `barMiss()` function provides a barplot with highlighting of missing/imputed values in other variables by splitting each bar into two parts. Additionally, information about missing/imputed values in the variable of interest is shown on the right hand side.  
+  
+If `only.miss=TRUE`, the missing/imputed values in the variable of interest are visualized by one bar on the right hand side. If additional variables are supplied, this bar is again split into two parts according to missingness/number of imputed missings in the additional variables.
+
+```{r}
+x <- sleep[, c("Exp", "Dream")]
+# for missing values
+barMiss(x, only.miss = FALSE)
+## for imputed values
+x_IMPUTED  <- kNN(sleep[, c("Exp", "Sleep")])
+barMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
+```
+
+
+### Function scattMiss()
+
+In addition to a standard scatterplot, lines are plotted in `scattMiss()` for the missing values in one variable. If there are imputed values, they will be highlighted.  
+  
+Information about missing values in one variable is included as vertical or horizontal lines, as determined by the `side` argument. The lines are thereby drawn at the observed x- or y-value. In case of imputed values, they will additionally be highlighted in the scatterplot. Supplementary, percentage coverage ellipses can be drawn to give a clue about the shape of the bivariate data distribution.
+
+
+```{r}
+x <- sleep[, c("BodyWgt", "NonD")]
+x$BodyWgt <- log(x$BodyWgt)
+# for missing values
+scattMiss(x)
+## for imputed values
+x_IMPUTED  <- kNN(x)
+scattMiss(x_IMPUTED, delimiter = "_imp")
+```
+
+### Function parcoordMiss()
+
+The `parcoordMiss()` function provides parallel coordinate plots with adjustments for missing/imputed values. Missing values in the plotted variables may be represented by a point above the corresponding coordinate axis to prevent disconnected lines. In addition, observations with missing/imputed values in selected variables may be highlighted.  
+  
+In parallel coordinate plots, the variables are represented by parallel axes. Each observation of the scaled data is shown as a line. Observations with missing/imputed values in selected variables may thereby be highlighted. However, plotting variables with missing values results in disconnected lines, making it impossible to trace the respective observations across the graph. As a remedy, missing values may be represented by a point above the corresponding coordinate axis, which is separated from the main plot by a small gap and a horizontal line, as determined by `plotNA`. Connected lines can then be drawn for all observations. Nevertheless, a caveat of this display is that it may draw attention away from the main relationships between the variables.
+
+
+```{r}
+dataset <- sleep[, c( "NonD", "BodyWgt", "BrainWgt", "Exp")] # dataset with missings
+dataset$BodyWgt <- log(dataset$BodyWgt)
+dataset$BrainWgt <- log(dataset$BrainWgt)
+imp_knn <- kNN(dataset) # dataset with imputed values
+## for missing values
+parcoordMiss(dataset, plotvars = 2:4, interactive = FALSE)
+## for imputed values
+parcoordMiss(imp_knn, delimiter = "_imp",
+             plotvars=2:4, interactive = FALSE)
+```
+
+The blue lines in the plots represent the observed values in `NonD`. The red and orange lines indicate missing and imputed values respectively in `NonD`.
+
+
+
+
+
