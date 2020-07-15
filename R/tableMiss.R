@@ -22,6 +22,7 @@ colored_column <- function(x, colname, delimiter = "_imp") {
 #' x_IMPUTED[105, 1] <- NA
 #' x_IMPUTED[107, "Humidity_imp"] <- TRUE
 #' tableMiss(x_IMPUTED[105:114, ])
+#' @export
 tableMiss <- function(x, delimiter = "_imp") {
   names <- names(x)
   imputed_cols <- names[grepl("imp", names)]
