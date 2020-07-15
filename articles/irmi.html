@@ -58,6 +58,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/donorImp.html">Donor based Imputation Methods</a>
+    </li>
+    <li>
       <a href="../articles/irmi.html">Imputation Method IRMI</a>
     </li>
     <li>
@@ -86,7 +89,7 @@
 
       
 
-      </header><div class="row">
+      </header><script src="irmi_files/core-js-2.5.3/shim.min.js"></script><script src="irmi_files/react-16.12.0/react.min.js"></script><script src="irmi_files/react-16.12.0/react-dom.min.js"></script><script src="irmi_files/reactwidget-1.0.0/react-tools.js"></script><script src="irmi_files/htmlwidgets-1.5.1/htmlwidgets.js"></script><script src="irmi_files/reactable-binding-0.2.0/reactable.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Imputation Method IRMI</h1>
@@ -122,17 +125,14 @@
 <p><img src="irmi_files/figure-html/setup-1.png" width="576" style="display: block; margin: auto;"></p>
 <p>The plot indicates several missing values in <code>Dream</code>, <code>NonD</code>, and <code>Span.</code></p>
 <div class="sourceCode" id="cb2"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/utils/str.html">str</a></span>(<span class="kw">dataset</span>)
-<span class="co">#&gt; 'data.frame':    62 obs. of  4 variables:</span>
-<span class="co">#&gt;  $ Dream  : num  NA 2 NA NA 1.8 0.7 3.9 1 3.6 1.4 ...</span>
-<span class="co">#&gt;  $ NonD   : num  NA 6.3 NA NA 2.1 9.1 15.8 5.2 10.9 8.3 ...</span>
-<span class="co">#&gt;  $ BodyWgt: num  8.803 0 1.2194 -0.0834 7.8427 ...</span>
-<span class="co">#&gt;  $ Span   : num  3.65 1.5 2.64 NA 4.23 ...</span>
+<span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="kw">dataset</span>, <span class="fu">function</span>(<span class="kw">x</span>)<span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span>(<span class="kw">x</span>)))
+<span class="co">#&gt;   Dream    NonD BodyWgt    Span </span>
+<span class="co">#&gt;      12      14       0       4</span>
 </pre></div>
 </div>
-<div id="imputation" class="section level3">
+<div id="imputing-multiple-variables" class="section level3">
 <h3 class="hasAnchor">
-<a href="#imputation" class="anchor"></a>Imputation</h3>
+<a href="#imputing-multiple-variables" class="anchor"></a>Imputing multiple variables</h3>
 <p>The call of the function is straightforward and the algorithm usually converges in a few iterations.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit">
 <span class="kw">imp_irmi</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/irmi.html">irmi</a></span>(<span class="kw">dataset</span>)
@@ -140,6 +140,58 @@
 </pre></div>
 <p><img src="irmi_files/figure-html/unnamed-chunk-3-1.png" width="576" style="display: block; margin: auto;"></p>
 <p>We can see that <code><a href="../reference/irmi.html">irmi()</a></code> imputed all missing values for all variables in our dataset.</p>
+</div>
+<div id="diagnosing-the-results" class="section level3">
+<h3 class="hasAnchor">
+<a href="#diagnosing-the-results" class="anchor"></a>Diagnosing the results</h3>
+<p>As we can see in the next plot, for imputing missing values in <code>NonD</code> <code>Bodygt</code> plays an important role. The original data structure of <code>NonD</code> and <code>BodyWgt</code> is preserved by the <code><a href="../reference/irmi.html">irmi()</a></code> imputation method.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit">
+<span class="kw">imp_irmi</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"NonD_imp"</span>)] <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(delimiter = <span class="st">"_imp"</span>)
+</pre></div>
+<p><img src="irmi_files/figure-html/unnamed-chunk-4-1.png" width="576" style="display: block; margin: auto;"></p>
+<p>The same is true for the data structure of <code>Span</code> and <code>BodyWgt</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit">
+<span class="kw">imp_irmi</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Span"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span_imp"</span>)] <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(delimiter = <span class="st">"_imp"</span>)
+</pre></div>
+<p><img src="irmi_files/figure-html/unnamed-chunk-5-1.png" width="576" style="display: block; margin: auto;"></p>
+</div>
+<div id="performance-of-method" class="section level3">
+<h3 class="hasAnchor">
+<a href="#performance-of-method" class="anchor"></a>Performance of method</h3>
+<p>In order to validate the performance of <code><a href="../reference/irmi.html">irmi()</a></code> and to highlight the ability to impute different datatypes the <code>iris</code> dataset is used. Firstly, some values are randomly set to <code>NA</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit">
+<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="kw"><a href="https://glin.github.io/reactable">reactable</a></span>)
+
+<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="kw">iris</span>)
+<span class="kw">df</span> <span class="op">&lt;-</span> <span class="kw">iris</span>
+<span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span>(<span class="kw">df</span>) <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"S.Length"</span>,<span class="st">"S.Width"</span>,<span class="st">"P.Length"</span>,<span class="st">"P.Width"</span>,<span class="st">"Species"</span>)
+<span class="co"># randomly produce some missing values in the data</span>
+<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="fl">1</span>)
+<span class="kw">nbr_missing</span> <span class="op">&lt;-</span> <span class="fl">50</span>
+<span class="kw">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(row=<span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/nrow.html">nrow</a></span>(<span class="kw">iris</span>),size = <span class="kw">nbr_missing</span>,replace = <span class="kw">T</span>),
+                col=<span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span>(<span class="kw">iris</span>),size = <span class="kw">nbr_missing</span>,replace = <span class="kw">T</span>))
+<span class="kw">y</span><span class="op">&lt;-</span><span class="kw">y</span>[<span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html">duplicated</a></span>(<span class="kw">y</span>),]
+<span class="kw">df</span>[<span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span>(<span class="kw">y</span>)]<span class="op">&lt;-</span><span class="fl">NA</span>
+
+<span class="fu"><a href="../reference/aggr.html">aggr</a></span>(<span class="kw">df</span>)
+</pre></div>
+<p><img src="irmi_files/figure-html/unnamed-chunk-6-1.png" width="576" style="display: block; margin: auto;"></p>
+<div class="sourceCode" id="cb7"><pre class="downlit">
+<span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="kw">df</span>, <span class="fu">function</span>(<span class="kw">x</span>)<span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span>(<span class="kw">x</span>)))
+<span class="co">#&gt; S.Length  S.Width P.Length  P.Width  Species </span>
+<span class="co">#&gt;       10        9        8       10       12</span>
+</pre></div>
+<p>We can see that there are missings in all variables and some observations reveal missing values on several points.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit">
+<span class="kw">imp_irmi</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/irmi.html">irmi</a></span>(<span class="kw">df</span>)
+<span class="fu"><a href="../reference/aggr.html">aggr</a></span>(<span class="kw">imp_irmi</span>, delimiter = <span class="st">"imp"</span>)
+</pre></div>
+<p><img src="irmi_files/figure-html/unnamed-chunk-7-1.png" width="576" style="display: block; margin: auto;"></p>
+<p>The plot indicates that all missing values have been imputed by the IRMI algorithm. The following table displays the rounded first five results of the imputation for all variables.</p>
+<div id="htmlwidget-c86510d37e8428da6b9e" class="reactable html-widget" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-c86510d37e8428da6b9e">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"TRUE1":["6.4","7","5.4","6.5","7.6"],"IMPUTED1":["6.95","6.41","6.27","6.55","7.77"],"TRUE2":["4.1","2.7","2.8","3.8","3.5"],"IMPUTED2":["3.04","2.7","2.53","3.62","3.35"],"TRUE3":["4.1","4.1","3.9","5.1","4.7"],"IMPUTED3":["4.17","4.42","4.52","5.27","4.87"],"TRUE4":["0.2","0.2","0.3","1.5","0.2"],"IMPUTED4":["0.16","0.15","0.5","1.38","0.15"],"TRUE5":["setosa","virginica","versicolor","versicolor","virginica"],"IMPUTED5":["setosa","virginica","versicolor","versicolor","virginica"]},"columns":[{"accessor":"TRUE1","name":"True","type":"character"},{"accessor":"IMPUTED1","name":"Imputed","type":"character"},{"accessor":"TRUE2","name":"True","type":"character"},{"accessor":"IMPUTED2","name":"Imputed","type":"character"},{"accessor":"TRUE3","name":"True","type":"character"},{"accessor":"IMPUTED3","name":"Imputed","type":"character"},{"accessor":"TRUE4","name":"True","type":"character"},{"accessor":"IMPUTED4","name":"Imputed","type":"character"},{"accessor":"TRUE5","name":"True","type":"character"},{"accessor":"IMPUTED5","name":"Imputed","type":"character"}],"columnGroups":[{"name":"S.Length","columns":["TRUE1","IMPUTED1"]},{"name":"S.Width","columns":["TRUE2","IMPUTED2"]},{"name":"P.Length","columns":["TRUE3","IMPUTED3"]},{"name":"P.Width","columns":["TRUE4","IMPUTED4"]},{"name":"Species","columns":["TRUE5","IMPUTED5"]}],"defaultPageSize":10,"paginationType":"numbers","showPageInfo":true,"minRows":1,"highlight":true,"bordered":true,"striped":true,"dataKey":"2f94cb7c4a7473f8ea317dc99c8ba877"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
   </div>
 

@@ -58,6 +58,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/donorImp.html">Donor based Imputation Methods</a>
+    </li>
+    <li>
       <a href="../articles/irmi.html">Imputation Method IRMI</a>
     </li>
     <li>
@@ -100,7 +103,7 @@
 
     
     
-<p>This vignette showcases the functions <code><a href="../reference/regressionImp.html">regressionImp()</a></code> and <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code>, which can both be used to generate imputations for several variables in a dataset using a formua interface.</p>
+<p>This vignette showcases the functions <code><a href="../reference/regressionImp.html">regressionImp()</a></code> and <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code>, which can both be used to generate imputations for several variables in a dataset using a formula interface.</p>
 <div id="data" class="section level3">
 <h3 class="hasAnchor">
 <a href="#data" class="anchor"></a>Data</h3>
@@ -134,7 +137,7 @@
 <span class="fu"><a href="../reference/aggr.html">aggr</a></span>(<span class="kw">imp_regression</span>, delimiter = <span class="st">"_imp"</span>)
 </pre></div>
 <p><img src="modelImp_files/figure-html/unnamed-chunk-2-1.png" width="576" style="display: block; margin: auto;"></p>
-<p>We can see that there are still missings in <code>NonD</code> for all observations where <code>Span</code> is unobserved. This is because the regression model could not be applied to those observations. The same is true for the values imputed via <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code>.</p>
+<p>We can see that for <code>regrssionImp()</code> there are still missings in <code>NonD</code> for all observations where <code>Span</code> is unobserved. This is because the regression model could not be applied to those observations. The same is true for the values imputed via <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code>.</p>
 </div>
 <div id="diagnosing-the-results" class="section level3">
 <h3 class="hasAnchor">
