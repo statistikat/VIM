@@ -1,5 +1,5 @@
 ---
-title: "Imputation Method IRMI algorithm"
+title: "Imputation Method IRMI"
 author: Wolfgang Rannetbauer
 output: rmarkdown::html_vignette
 vignette: >
@@ -13,64 +13,46 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 6,
-  fig.height = 4,
   fig.align = "center"
 )
 ```
 
+### Overview
 
-This vignette showcases the functions `irmi()`. **IRMI** is short for **I**terative **R**obust **M**odel-based **I**mputation. This method can be used to generate imputations for several variables in a dataset. In contrast to other imputation methods, the IRMI algorithm does not require at least one fully observed variable. For more details, please see [CSDA11TKF.pdf](http://file.statistik.tuwien.ac.at/filz/papers/CSDA11TKF.pdf)
+In addition to [Model based Imputation Methods](http://statistikat.github.io/VIM/articles/modelImp.html) the `VIM` package also presents an iterative imputation method.  
+  
+This vignette showcases the function `irmi()`. **IRMI** is short for **I**terative **R**obust **M**odel-based **I**mputation. This method can be used to generate imputations for several variables in a dataset.  
+  
+Basically `irmi()` mimics the functionality of IVEWARE (Raghunathan et al., 2001), but there are several improvements with respect to the stability of the initialized values, or the robustness of the imputed values. In contrast to other imputation methods, the IRMI algorithm does not require at least one fully observed variable. In each step of the iteration, one variable is used as a response variable and the remaining variables serve as the regressors. Thus the "whole" multivariate information will be used for imputation in the response variable. For more details, please see [IRMI Imputation](https://www.sciencedirect.com/science/article/abs/pii/S0167947311001411).
 
 
 ### Data
 
-To highlight the functionality of `irmi()` the `iris` dataset is used. Firstly, some values are randomly set to `NA`. 
+The following example demonstrates the functionality of `irmi()` using a subset of `sleep`. The columns have been selected deliberately to include some interactions between the missing values.
+
 ```{r setup, message=F}
 library(VIM)
 library(magrittr)
-library(knitr)
-library(kableExtra)
-
-data(iris)
-df <- iris
-colnames(df) <- c("S.Length","S.Width","P.Length","P.Width","Species")
-# randomly produce some missing values in the data
-set.seed(1)
-nbr_missing <- 50
-y <- data.frame(row=sample(nrow(iris),size = nbr_missing,replace = T),
-              col=sample(ncol(iris),size = nbr_missing,replace = T))
-y<-y[!duplicated(y),]
-df[as.matrix(y)]<-NA
-
-aggr(df)
+dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")]
+dataset$BodyWgt <- log(dataset$BodyWgt)
+dataset$Span <- log(dataset$Span)
+aggr(dataset)
 ```
 
-We can see that there are missings in all variables and some observations reveal missing values on several points. 
+The plot indicates several missing values in `Dream`, `NonD`, and `Span. `
+
+```{r}
+str(dataset)
+```
+
 
 ### Imputation
 
-In each step of the iteration, one variable is used as a response variable and the remaining variables serve as the regressors. Thus the "whole" multivariate information will be used for imputation in the response variable.
+The call of the function is straightforward and the algorithm usually converges in a few iterations. 
 
 ```{r}
-imp_df <- irmi(df)
-aggr(imp_df, delimiter = "imp")
+imp_irmi <- irmi(dataset)
+aggr(imp_irmi, delimiter = "_imp")
 ```
 
-The plot indicates that all missing values have been imputed by the IRMI algorithm. The following table displays the first five results of the imputation for all variables.
-
-```{r echo=F,warning=F}
-results <- cbind("TRUE" = as.numeric(iris[as.matrix(y[which(y$col==1),])]),
-      "IMPUTED" = as.numeric(imp_df[as.matrix(y[which(y$col==1),])]),
-      "TRUE" = as.numeric(iris[as.matrix(y[which(y$col==2),])]),
-      "IMPUTED" = as.numeric(imp_df[as.matrix(y[which(y$col==2),])]),
-      "TRUE" = as.numeric(iris[as.matrix(y[which(y$col==3),])]),
-      "IMPUTED" = as.numeric(imp_df[as.matrix(y[which(y$col==3),])]),
-      "TRUE" = as.numeric(iris[as.matrix(y[which(y$col==4),])]),
-      "IMPUTED" = as.numeric(imp_df[as.matrix(y[which(y$col==4),])]),
-      "TRUE" = (iris[as.matrix(y[which(y$col==5),])]),
-      "IMPUTED" = (imp_df[as.matrix(y[which(y$col==5),])]))[1:5,]
-kable(results,align = "r") %>%
-  kable_styling("striped", full_width = F)  %>%
-  add_header_above(c("S.Length"=2,"S.Width"=2,"P.Length"=2,"P.Width"=2,"Species"=2))
-```
-
+We can see that `irmi()` imputed all missing values for all variables in our dataset.
