@@ -1,3 +1,12 @@
+# VIM 6.0.1
+
+- add new vignettes explaining all remaining imputation methods (`irmi()`,
+  `kNN()`, `hotdeck()` and `regressionImp()`). Thanks @wolfgangrannetbauer
+  (#44, #45)
+- Add vignette about visualization methods (#46)
+- Add `tableMiss()`: A table that highlights missing and imputed values via
+  colors (#47).
+
 # VIM 6.0.0
 
 - extend documentation with new vignettes and pkgdown

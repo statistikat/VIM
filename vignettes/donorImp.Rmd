@@ -17,14 +17,14 @@ knitr::opts_chunk$set(
 )
 ```
 
-### Overview
+## Overview
 
 In addition to Model based Imputation Methods (see `vignette("modelImp")`) the `VIM` package also presents donor based imputation methods, namely Hot-Deck Imputation, k-Nearest Neighbour Imputation and fast matching/imputation based on categorical variable.
   
 This vignette showcases the functions `hotdeck()` and `kNN()`, which can both be used to generate imputations for several variables in a
 dataset. Moreover, the function `matchImpute()` is presented, which is in contrast a imputation method based on categorical variables.
 
-### Data
+## Data
 
 The following example demonstrates the functionality of `hodeck()` and `kNN()` using a subset of `sleep`. The columns have been selected deliberately to include some interactions between the missing values. 
 
@@ -43,7 +43,7 @@ The plot indicates several missing values in `Dream`, `NonD`, and `Span. `
 sapply(dataset, function(x)sum(is.na(x)))
 ```
 
-### Imputation
+## Imputation
 
 The call of the functions is straightforward. We will start by just imputing `NonD` based on the other variables. Besides imputing missing variables for a single variable, these functions also support imputation of multiple variables.
 For `matchImpute()` suitable donars are searched based on matching of the categorical variables. 
@@ -78,7 +78,7 @@ imp_match[, c("NonD", "Span", "NonD_imp")] %>%
 ```
 
 
-### Performance of method
+## Performance of method
 
 In order to validate the performance of `kNN()` and to highlight the ability to impute different datatypes the `iris` dataset is used. Firstly, some values are randomly set to `NA`. 
 

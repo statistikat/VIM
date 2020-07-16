@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-### Overview
+## Overview
 
 In addition to imputation methods, `VIM` provides a number of functions, which can be used to plot results in sophisticated ways.  
   
@@ -43,7 +43,7 @@ To keep things as simple as possible, the plotting functions in `VIM` uses three
 * __<font color="#ffa500">ORANGE</font>__   imputed values are highlighted in orange
 
 
-### Function aggr()
+## Function aggr()
 
 The `aggr()` function calculates or plots the amount of missing/imputed values in each variable and the amount of missing/imputed values in certain combinations of variables.
 
@@ -70,7 +70,7 @@ barMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
 ```
 
 
-### Function scattMiss()
+## Function scattMiss()
 
 In addition to a standard scatterplot, lines are plotted in `scattMiss()` for the missing values in one variable. If there are imputed values, they will be highlighted.  
   
@@ -109,7 +109,7 @@ parcoordMiss(imp_knn, delimiter = "_imp",
 The blue lines in the plots represent the observed values in `NonD`. The red and orange lines indicate missing and imputed values respectively in `NonD`.
 
 
-### Function matrixplot()
+## Function matrixplot()
 
 The `matrixplot()` function creats a matrix plot, in which all cells of a data matrix are visualized by rectangles. Available data is coded according to a continuous color scheme, while missing/imputed data is visualized by a clearly distinguishable color.  
   
@@ -125,7 +125,7 @@ matrixplot(x_imp, delimiter = "_imp", sortby = "BrainWgt")
 ```
 
 
-### Function marginplot()
+## Function marginplot()
 
 In addition to a standard scatterplot, information about missing/imputed values is shown in the plot margins. Furthermore, imputed values are highlighted in the scatterplot.  
   
@@ -145,7 +145,7 @@ imp_knn[, c("NonD", "Span", "NonD_imp")] %>%
 ```
 
 
-### Function marginmatrix()
+## Function marginmatrix()
 
 The `marginmatrix()` function creates a scatterplot matrix with information about missing/imputed values in the plot margins of each panel.
 

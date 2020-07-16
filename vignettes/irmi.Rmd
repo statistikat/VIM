@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-### Overview
+## Overview
 
 In addition to Model based Imputation Methods (see `vignette("modelImp")`) the `VIM` package also presents an iterative imputation method.  
   
@@ -25,7 +25,7 @@ This vignette showcases the function `irmi()`. **IRMI** is short for **I**terati
   
 Basically `irmi()` mimics the functionality of IVEWARE (Raghunathan et al., 2001), but there are several improvements with respect to the stability of the initialized values, or the robustness of the imputed values. In contrast to other imputation methods, the IRMI algorithm does not require at least one fully observed variable. In each step of the iteration, one variable is used as a response variable and the remaining variables serve as the regressors. Thus the "whole" multivariate information will be used for imputation in the response variable. For more details, please see [IRMI Imputation](http://file.statistik.tuwien.ac.at/filz/papers/CSDA11TKF.pdf).
 
-### Data
+## Data
 
 The following example demonstrates the functionality of `irmi()` using a subset of `sleep`. The columns have been selected deliberately to include some interactions between the missing values.
 
@@ -45,7 +45,7 @@ sapply(dataset, function(x)sum(is.na(x)))
 ```
 
 
-### Imputing multiple variables
+## Imputing multiple variables
 
 The call of the function is straightforward and the algorithm usually converges in a few iterations. 
 
@@ -73,7 +73,7 @@ imp_irmi[, c("Span", "BodyWgt", "Span_imp")] %>%
 ```
 
 
-### Performance of method
+## Performance of method
 
 In order to validate the performance of `irmi()` and to highlight the ability to impute different datatypes the `iris` dataset is used. Firstly, some values are randomly set to `NA`. 
 
