@@ -65,7 +65,7 @@ x <- sleep[, c("Exp", "Dream")]
 # for missing values
 barMiss(x, only.miss = FALSE)
 ## for imputed values
-x_IMPUTED  <- kNN(sleep[, c("Exp", "Sleep")])
+x_IMPUTED  <- kNN(sleep[, c("Exp", "Dream")])
 barMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
 ```
 
