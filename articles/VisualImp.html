@@ -115,7 +115,7 @@
 <div id="data" class="section level3">
 <h3 class="hasAnchor">
 <a href="#data" class="anchor"></a>Data</h3>
-<p>The following example demonstrates the functionality of the plotting functions using a subset of <code>sleep</code>. In order to emphasize the features of the methods, the missing values in the dataset are imputed via <code><a href="../reference/kNN.html">kNN()</a></code>. <code><a href="../reference/kNN.html">kNN()</a></code> is a powerful donor-based imputation function and also included in the <code>VIM</code> package. (see <a href="http://statistikat.github.io/VIM/articles/donorImp.html">Donor based Imputation Methods</a>)</p>
+<p>The following example demonstrates the functionality of the plotting functions using a subset of <code>sleep</code>. In order to emphasize the features of the methods, the missing values in the dataset are imputed via <code><a href="../reference/kNN.html">kNN()</a></code>. <code><a href="../reference/kNN.html">kNN()</a></code> is a powerful donor-based imputation function and also included in the <code>VIM</code> package. (see <code><a href="../articles/donorImp.html">vignette("donorImp")</a></code>)</p>
 <div class="sourceCode" id="cb1"><pre class="downlit">
 <span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="kw"><a href="https://github.com/statistikat/VIM">VIM</a></span>)
 <span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="kw">magrittr</span>)
@@ -203,6 +203,66 @@
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-5-2.png" width="576" style="display: block; margin: auto;"></p>
 <p>The blue lines in the plots represent the observed values in <code>NonD</code>. The red and orange lines indicate missing and imputed values respectively in <code>NonD</code>.</p>
+</div>
+<div id="function-matrixplot" class="section level3">
+<h3 class="hasAnchor">
+<a href="#function-matrixplot" class="anchor"></a>Function matrixplot()</h3>
+<p>The <code><a href="../reference/matrixplot.html">matrixplot()</a></code> function creats a matrix plot, in which all cells of a data matrix are visualized by rectangles. Available data is coded according to a continuous color scheme, while missing/imputed data is visualized by a clearly distinguishable color.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit">
+<span class="co">## for missing values</span>
+<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="op">-</span>(<span class="fl">8</span><span class="op">:</span><span class="fl">10</span>)]
+<span class="kw">x</span>[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span>)] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span>(<span class="kw">x</span>[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span>)])
+<span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span>(<span class="kw">x</span>, sortby = <span class="st">"BrainWgt"</span>)
+</pre></div>
+<p><img src="VisualImp_files/figure-html/unnamed-chunk-6-1.png" width="576" style="display: block; margin: auto;"></p>
+<div class="sourceCode" id="cb11"><pre class="downlit">
+<span class="co">## for imputed values</span>
+<span class="kw">x_imp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="kw">sleep</span>[, <span class="op">-</span>(<span class="fl">8</span><span class="op">:</span><span class="fl">10</span>)])
+<span class="kw">x_imp</span>[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span>)] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span>(<span class="kw">x_imp</span>[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span>)])
+<span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span>(<span class="kw">x_imp</span>, delimiter = <span class="st">"_imp"</span>, sortby = <span class="st">"BrainWgt"</span>)
+</pre></div>
+<p><img src="VisualImp_files/figure-html/unnamed-chunk-6-2.png" width="576" style="display: block; margin: auto;"></p>
+</div>
+<div id="function-marginplot" class="section level3">
+<h3 class="hasAnchor">
+<a href="#function-marginplot" class="anchor"></a>Function marginplot()</h3>
+<p>In addition to a standard scatterplot, information about missing/imputed values is shown in the plot margins. Furthermore, imputed values are highlighted in the scatterplot.</p>
+<p>Boxplots for available and missing/imputed data, as well as univariate scatterplots for missing/imputed values in one variable are shown in the plot margins.Imputed values in either of the variables are highlighted in the scatterplot.</p>
+<p>Furthermore, the frequencies of the missing/imputed values can be displayed by a number (lower left of the plot). The number in the lower left corner is the number of observations that are missing/imputed in both variables.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit">
+<span class="kw">dataset</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Dream"</span>, <span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span"</span>)]
+<span class="kw">dataset</span><span class="op">$</span><span class="kw">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span>(<span class="kw">dataset</span><span class="op">$</span><span class="kw">BodyWgt</span>)
+<span class="kw">dataset</span><span class="op">$</span><span class="kw">Span</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span>(<span class="kw">dataset</span><span class="op">$</span><span class="kw">Span</span>)
+<span class="kw">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="kw">dataset</span>, variable = <span class="st">"NonD"</span>) 
+<span class="kw">dataset</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"NonD"</span>, <span class="st">"Span"</span>)] <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>()
+</pre></div>
+<p><img src="VisualImp_files/figure-html/unnamed-chunk-7-1.png" width="576" style="display: block; margin: auto;"></p>
+<div class="sourceCode" id="cb13"><pre class="downlit">
+<span class="kw">imp_knn</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span>)] <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(delimiter = <span class="st">"_imp"</span>)
+</pre></div>
+<p><img src="VisualImp_files/figure-html/unnamed-chunk-7-2.png" width="576" style="display: block; margin: auto;"></p>
+</div>
+<div id="function-marginmatrix" class="section level3">
+<h3 class="hasAnchor">
+<a href="#function-marginmatrix" class="anchor"></a>Function marginmatrix()</h3>
+<p>The <code><a href="../reference/marginmatrix.html">marginmatrix()</a></code> function creates a scatterplot matrix with information about missing/imputed values in the plot margins of each panel.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit">
+<span class="co">## for missing values</span>
+<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>]
+<span class="kw">x</span>[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>)] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span>(<span class="kw">x</span>[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>)])
+<span class="fu"><a href="../reference/marginmatrix.html">marginmatrix</a></span>(<span class="kw">x</span>)
+</pre></div>
+<p><img src="VisualImp_files/figure-html/unnamed-chunk-8-1.png" width="576" style="display: block; margin: auto;"></p>
+<div class="sourceCode" id="cb15"><pre class="downlit">
+
+<span class="co">## for imputed values</span>
+<span class="kw">x_imp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="kw">sleep</span>[, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>])
+<span class="kw">x_imp</span>[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>)] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span>(<span class="kw">x_imp</span>[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>)])
+<span class="fu"><a href="../reference/marginmatrix.html">marginmatrix</a></span>(<span class="kw">x_imp</span>, delimiter = <span class="st">"_imp"</span>)
+</pre></div>
+<p><img src="VisualImp_files/figure-html/unnamed-chunk-8-2.png" width="576" style="display: block; margin: auto;"></p>
 </div>
   </div>
 
