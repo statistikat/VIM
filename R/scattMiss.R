@@ -242,13 +242,33 @@ scattMiss <- function(x, delimiter = NULL, side = 1, col = c("skyblue","red","or
             }
         } else {
             localPlot <- function(..., type, plot.first, plot.last) plot(...)
+            rugNA(x[,1], x[, 2], miss = miss, side=s, col=ifelse(!imputed,col[2],col[3]))
         }
         localPlot(x, col=col[1], xlim=xlim, ylim=ylim, 
             main=main, sub=sub, xlab=xlab, ylab=ylab, ...)
 		# plot points instead of lines when imputed values exist	
 		if(!imputed) miss <- NULL
-		else points(x[miss[,sm],], col=col[3])
-		rugNA(x[,1], x[, 2], miss = miss, side=s, col=ifelse(!imputed,col[2],col[3]))
+		else {
+		  points(x[miss[,sm],], col=col[3])
+		  # fix bug - in case there are still some NA after imputation
+		  indices <- which(!is.na(x[miss[,sm],2]))
+		  if(s == 1) {
+		    abline(v=xsmiss[-indices], col=col[2], 
+		           lty=lty[1], lwd=lwd[1])
+		  } else {
+		    abline(h=xsmiss[-indices], col=col[2], 
+		           lty=lty[1], lwd=lwd[1])
+		  }
+		  indices1 <- which(miss[,2]==TRUE & is.na(x[,2]))
+		  indices2 <- which(miss[,2]==TRUE & !is.na(x[,2]))
+		  miss1 <- miss2 <- miss
+		  miss1[indices1,2] <- FALSE
+		  miss2[indices2,2] <- FALSE
+		  rugNA(x[, 1], x[, 2], miss = miss1, side=s, col=col[3])
+		  rugNA(x[, 1], x[, 2], miss = miss2, side=s, col=col[2])
+		}
+    #####
+		#rugNA(x[,1], x[, 2], miss = miss, side=s, col=ifelse(!imputed,col[2],col[3]))
     }
     createPlot()
     dev <- names(dev.cur())

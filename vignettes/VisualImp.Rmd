@@ -74,18 +74,23 @@ barMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
 
 In addition to a standard scatterplot, lines are plotted in `scattMiss()` for the missing values in one variable. If there are imputed values, they will be highlighted.  
   
-Information about missing values in one variable is included as vertical or horizontal lines, as determined by the `side` argument. The lines are thereby drawn at the observed x- or y-value. In case of imputed values, they will additionally be highlighted in the scatterplot. Supplementary, percentage coverage ellipses can be drawn to give a clue about the shape of the bivariate data distribution.
+Information about missing values in one variable is included as vertical or horizontal lines, as determined by the `side` argument. The lines are thereby drawn at the observed x- or y-value. In case of imputed values, they will additionally be highlighted in the scatterplot. Supplementary, percentage coverage ellipses can be drawn to give a clue about the shape of the bivariate data distribution.  
+  
+In contrast to the other examples, `regressionImp()` is used for imputing missing values. This has been done deliberately to highlight the functionality of `scattMiss()`. The following plots makes it easy to indentify missing/imputed values.
 
 
 ```{r}
-x <- sleep[, c("BodyWgt", "NonD")]
-x$BodyWgt <- log(x$BodyWgt)
+library(VIM)
+aggr(sleep)
+dataset <- sleep[, c("Span", "NonD","Sleep")]
 # for missing values
-scattMiss(x)
-## for imputed values
-x_IMPUTED  <- kNN(x)
-scattMiss(x_IMPUTED, delimiter = "_imp")
+scattMiss(dataset[,-3])
+# for imputed values
+imp_regression <- regressionImp(NonD ~ Sleep, dataset)
+scattMiss(imp_regression[,-3], delimiter = "_imp")
 ```
+
+The plot indicates that there are still some missings in `NonD`. This is because the regression model could not be applied to observations, where `Sleep` is unobserved. 
 
 ### Function parcoordMiss()
 
