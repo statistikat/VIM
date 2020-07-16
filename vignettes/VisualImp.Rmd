@@ -38,9 +38,9 @@ imp_knn <- kNN(dataset) # dataset with imputed values
 
 To keep things as simple as possible, the plotting functions in `VIM` uses three main colors. Each color represents a property:
 
-* BLUE:     observed values are highlighted in color blue
-* RED:      missing values are highlighted in color red
-* ORANGE:   imputed values are highlighted in color orange
+* __<font color="#00a2ff">BLUE</font>__     observed values are highlighted in blue
+* __<font color="#ff0000">RED</font>__      missing values are highlighted in red
+* __<font color="#ffa500">ORANGE</font>__   imputed values are highlighted in orange
 
 
 ### Function aggr()
