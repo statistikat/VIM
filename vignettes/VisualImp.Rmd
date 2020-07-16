@@ -3,7 +3,7 @@ title: "Supportive Graphic Methods"
 author: Wolfgang Rannetbauer
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Imputation Method IRMI}
+  %\VignetteIndexEntry{Supportive Graphic Methods}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
