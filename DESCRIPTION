@@ -6,7 +6,8 @@ Authors@R: c(
   person("Alexander", "Kowarik", email = "alexander.kowarik@statistik.gv.at", role = c("aut"), comment=c(ORCID="0000-0001-8598-4130")),
   person("Andreas", "Alfons", role = c("aut")),
   person("Gregor", "de Cillia", email = "gregor.decillia@statistik.gv.at", role = c("aut")),
-  person("Bernd", "Prantner", role = c("ctb")))
+  person("Bernd", "Prantner", role = c("ctb")),
+  person("Wolfgang", "Rannetbauer", role = c("aut")))
 Depends:
     R (>= 3.5.0),colorspace,grid
 Imports:
