@@ -25,7 +25,7 @@ This vignette showcases selected plotting function, which are very supportive in
 
 ### Data
 
-The following example demonstrates the functionality of the plotting functions using a subset of `sleep`. In order to emphasize the features of the methods, the missing values in the dataset are imputed via `kNN()`. `kNN()` is a powerful donor-based imputation function and also included in the `VIM` package. (see [Donor based Imputation Methods](http://statistikat.github.io/VIM/articles/donorImp.html))
+The following example demonstrates the functionality of the plotting functions using a subset of `sleep`. In order to emphasize the features of the methods, the missing values in the dataset are imputed via `kNN()`. `kNN()` is a powerful donor-based imputation function and also included in the `VIM` package. (see `vignette("donorImp")`)
 
 ```{r setup, message=F}
 library(VIM)
@@ -109,6 +109,57 @@ parcoordMiss(imp_knn, delimiter = "_imp",
 The blue lines in the plots represent the observed values in `NonD`. The red and orange lines indicate missing and imputed values respectively in `NonD`.
 
 
+### Function matrixplot()
 
+The `matrixplot()` function creats a matrix plot, in which all cells of a data matrix are visualized by rectangles. Available data is coded according to a continuous color scheme, while missing/imputed data is visualized by a clearly distinguishable color.  
+  
+```{r warning=FALSE}
+## for missing values
+x <- sleep[, -(8:10)]
+x[,c(1,2,4,6,7)] <- log10(x[,c(1,2,4,6,7)])
+matrixplot(x, sortby = "BrainWgt")
+## for imputed values
+x_imp <- kNN(sleep[, -(8:10)])
+x_imp[,c(1,2,4,6,7)] <- log10(x_imp[,c(1,2,4,6,7)])
+matrixplot(x_imp, delimiter = "_imp", sortby = "BrainWgt")
+```
+
+
+### Function marginplot()
+
+In addition to a standard scatterplot, information about missing/imputed values is shown in the plot margins. Furthermore, imputed values are highlighted in the scatterplot.  
+  
+Boxplots for available and missing/imputed data, as well as univariate scatterplots for missing/imputed values in one variable are shown in the plot margins.Imputed values in either of the variables are highlighted in the scatterplot.  
+  
+Furthermore, the frequencies of the missing/imputed values can be displayed by a number (lower left of the plot). The number in the lower left corner is the number of observations that are missing/imputed in both variables.
+
+```{r}
+dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")]
+dataset$BodyWgt <- log(dataset$BodyWgt)
+dataset$Span <- log(dataset$Span)
+imp_knn <- kNN(dataset, variable = "NonD") 
+dataset[, c("NonD", "Span")] %>% 
+  marginplot()
+imp_knn[, c("NonD", "Span", "NonD_imp")] %>% 
+  marginplot(delimiter = "_imp")
+```
+
+
+### Function marginmatrix()
+
+The `marginmatrix()` function creates a scatterplot matrix with information about missing/imputed values in the plot margins of each panel.
+
+
+```{r warning=FALSE}
+## for missing values
+x <- sleep[, 1:5]
+x[,c(1,2,4)] <- log10(x[,c(1,2,4)])
+marginmatrix(x)
+
+## for imputed values
+x_imp <- kNN(sleep[, 1:5])
+x_imp[,c(1,2,4)] <- log10(x_imp[,c(1,2,4)])
+marginmatrix(x_imp, delimiter = "_imp")
+```
 
 
