@@ -106,12 +106,11 @@
 
     
     
-<div id="overview" class="section level3">
-<h3 class="hasAnchor">
-<a href="#overview" class="anchor"></a>Overview</h3>
+<div id="overview" class="section level2">
+<h2 class="hasAnchor">
+<a href="#overview" class="anchor"></a>Overview</h2>
 <p>In addition to imputation methods, <code>VIM</code> provides a number of functions, which can be used to plot results in sophisticated ways.</p>
 <p>This vignette showcases selected plotting function, which are very supportive in context with visualizing missing and imputed values.</p>
-</div>
 <div id="data" class="section level3">
 <h3 class="hasAnchor">
 <a href="#data" class="anchor"></a>Data</h3>
@@ -134,9 +133,10 @@
 <strong><font color="#ffa500">ORANGE</font></strong> imputed values are highlighted in orange</li>
 </ul>
 </div>
-<div id="function-aggr" class="section level3">
-<h3 class="hasAnchor">
-<a href="#function-aggr" class="anchor"></a>Function aggr()</h3>
+</div>
+<div id="function-aggr" class="section level2">
+<h2 class="hasAnchor">
+<a href="#function-aggr" class="anchor"></a>Function aggr()</h2>
 <p>The <code><a href="../reference/aggr.html">aggr()</a></code> function calculates or plots the amount of missing/imputed values in each variable and the amount of missing/imputed values in certain combinations of variables.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit">
 <span class="fu"><a href="../reference/aggr.html">aggr</a></span>(<span class="kw">dataset</span>) 
@@ -147,7 +147,6 @@
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-2-2.png" width="576" style="display: block; margin: auto;"></p>
 <p>The plots indicate that all missing values in the dataset are imputed via <code>knn()</code>.</p>
-</div>
 <div id="function-barmiss" class="section level3">
 <h3 class="hasAnchor">
 <a href="#function-barmiss" class="anchor"></a>Function barMiss()</h3>
@@ -166,9 +165,10 @@
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-3-2.png" width="576" style="display: block; margin: auto;"></p>
 </div>
-<div id="function-scattmiss" class="section level3">
-<h3 class="hasAnchor">
-<a href="#function-scattmiss" class="anchor"></a>Function scattMiss()</h3>
+</div>
+<div id="function-scattmiss" class="section level2">
+<h2 class="hasAnchor">
+<a href="#function-scattmiss" class="anchor"></a>Function scattMiss()</h2>
 <p>In addition to a standard scatterplot, lines are plotted in <code><a href="../reference/scattMiss.html">scattMiss()</a></code> for the missing values in one variable. If there are imputed values, they will be highlighted.</p>
 <p>Information about missing values in one variable is included as vertical or horizontal lines, as determined by the <code>side</code> argument. The lines are thereby drawn at the observed x- or y-value. In case of imputed values, they will additionally be highlighted in the scatterplot. Supplementary, percentage coverage ellipses can be drawn to give a clue about the shape of the bivariate data distribution.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit">
@@ -184,7 +184,6 @@
 <span class="fu"><a href="../reference/scattMiss.html">scattMiss</a></span>(<span class="kw">x_IMPUTED</span>, delimiter = <span class="st">"_imp"</span>)
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-4-2.png" width="576" style="display: block; margin: auto;"></p>
-</div>
 <div id="function-parcoordmiss" class="section level3">
 <h3 class="hasAnchor">
 <a href="#function-parcoordmiss" class="anchor"></a>Function parcoordMiss()</h3>
@@ -207,9 +206,10 @@
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-5-2.png" width="576" style="display: block; margin: auto;"></p>
 <p>The blue lines in the plots represent the observed values in <code>NonD</code>. The red and orange lines indicate missing and imputed values respectively in <code>NonD</code>.</p>
 </div>
-<div id="function-matrixplot" class="section level3">
-<h3 class="hasAnchor">
-<a href="#function-matrixplot" class="anchor"></a>Function matrixplot()</h3>
+</div>
+<div id="function-matrixplot" class="section level2">
+<h2 class="hasAnchor">
+<a href="#function-matrixplot" class="anchor"></a>Function matrixplot()</h2>
 <p>The <code><a href="../reference/matrixplot.html">matrixplot()</a></code> function creats a matrix plot, in which all cells of a data matrix are visualized by rectangles. Available data is coded according to a continuous color scheme, while missing/imputed data is visualized by a clearly distinguishable color.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit">
 <span class="co">## for missing values</span>
@@ -226,9 +226,9 @@
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-6-2.png" width="576" style="display: block; margin: auto;"></p>
 </div>
-<div id="function-marginplot" class="section level3">
-<h3 class="hasAnchor">
-<a href="#function-marginplot" class="anchor"></a>Function marginplot()</h3>
+<div id="function-marginplot" class="section level2">
+<h2 class="hasAnchor">
+<a href="#function-marginplot" class="anchor"></a>Function marginplot()</h2>
 <p>In addition to a standard scatterplot, information about missing/imputed values is shown in the plot margins. Furthermore, imputed values are highlighted in the scatterplot.</p>
 <p>Boxplots for available and missing/imputed data, as well as univariate scatterplots for missing/imputed values in one variable are shown in the plot margins.Imputed values in either of the variables are highlighted in the scatterplot.</p>
 <p>Furthermore, the frequencies of the missing/imputed values can be displayed by a number (lower left of the plot). The number in the lower left corner is the number of observations that are missing/imputed in both variables.</p>
@@ -247,9 +247,9 @@
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-7-2.png" width="576" style="display: block; margin: auto;"></p>
 </div>
-<div id="function-marginmatrix" class="section level3">
-<h3 class="hasAnchor">
-<a href="#function-marginmatrix" class="anchor"></a>Function marginmatrix()</h3>
+<div id="function-marginmatrix" class="section level2">
+<h2 class="hasAnchor">
+<a href="#function-marginmatrix" class="anchor"></a>Function marginmatrix()</h2>
 <p>The <code><a href="../reference/marginmatrix.html">marginmatrix()</a></code> function creates a scatterplot matrix with information about missing/imputed values in the plot margins of each panel.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit">
 <span class="co">## for missing values</span>
@@ -271,7 +271,9 @@
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-      </div>
+        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
+    </nav>
+</div>
 
 </div>
 

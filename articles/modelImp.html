@@ -107,9 +107,9 @@
     
     
 <p>This vignette showcases the functions <code><a href="../reference/regressionImp.html">regressionImp()</a></code> and <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code>, which can both be used to generate imputations for several variables in a dataset using a formula interface.</p>
-<div id="data" class="section level3">
-<h3 class="hasAnchor">
-<a href="#data" class="anchor"></a>Data</h3>
+<div id="data" class="section level2">
+<h2 class="hasAnchor">
+<a href="#data" class="anchor"></a>Data</h2>
 <p>For data, a subset of <code>sleep</code> is used. The columns have been selected deliberately to include some interactions between the missing values.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit">
 <span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="kw"><a href="https://github.com/statistikat/VIM">VIM</a></span>)
@@ -129,9 +129,9 @@
 <span class="co">#&gt;  $ Span   : num  3.65 1.5 2.64 NA 4.23 ...</span>
 </pre></div>
 </div>
-<div id="imputation" class="section level3">
-<h3 class="hasAnchor">
-<a href="#imputation" class="anchor"></a>Imputation</h3>
+<div id="imputation" class="section level2">
+<h2 class="hasAnchor">
+<a href="#imputation" class="anchor"></a>Imputation</h2>
 <p>In order to invoke the imputation methods, a formula is used to specify which variables are to be estimated and which variables should be used as regressors. We will start by imputing <code>NonD</code> based in <code>BodyWgt</code> and <code>Span</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit">
 <span class="kw">imp_regression</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span>(<span class="kw">NonD</span> <span class="op">~</span> <span class="kw">BodyWgt</span> <span class="op">+</span> <span class="kw">Span</span>, <span class="kw">dataset</span>)
@@ -142,9 +142,9 @@
 <p><img src="modelImp_files/figure-html/unnamed-chunk-2-1.png" width="576" style="display: block; margin: auto;"></p>
 <p>We can see that for <code>regrssionImp()</code> there are still missings in <code>NonD</code> for all observations where <code>Span</code> is unobserved. This is because the regression model could not be applied to those observations. The same is true for the values imputed via <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code>.</p>
 </div>
-<div id="diagnosing-the-results" class="section level3">
-<h3 class="hasAnchor">
-<a href="#diagnosing-the-results" class="anchor"></a>Diagnosing the results</h3>
+<div id="diagnosing-the-results" class="section level2">
+<h2 class="hasAnchor">
+<a href="#diagnosing-the-results" class="anchor"></a>Diagnosing the results</h2>
 <p>As we can see in the next two plots, the correlation structure of <code>NonD</code> and <code>BodyWgt</code> is preserved by both imputation methods. In the case of <code><a href="../reference/regressionImp.html">regressionImp()</a></code> all imputed values almost follow a straight line. This suggests that the variable <code>Span</code> had little to no effect on the model.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit">
 <span class="kw">imp_regression</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"NonD_imp"</span>)] <span class="op">%&gt;%</span> 
@@ -163,9 +163,9 @@
 </pre></div>
 <p><img src="modelImp_files/figure-html/unnamed-chunk-4-2.png" width="576" style="display: block; margin: auto;"></p>
 </div>
-<div id="imputing-multiple-variables" class="section level3">
-<h3 class="hasAnchor">
-<a href="#imputing-multiple-variables" class="anchor"></a>Imputing multiple variables</h3>
+<div id="imputing-multiple-variables" class="section level2">
+<h2 class="hasAnchor">
+<a href="#imputing-multiple-variables" class="anchor"></a>Imputing multiple variables</h2>
 <p>To impute several variables at once, the formula in <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code> and <code><a href="../reference/regressionImp.html">regressionImp()</a></code> can be specified with more than one column name in the left hand side.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit">
 <span class="kw">imp_regression</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span>(<span class="kw">Dream</span> <span class="op">+</span> <span class="kw">NonD</span> <span class="op">~</span> <span class="kw">BodyWgt</span> <span class="op">+</span> <span class="kw">Span</span>, <span class="kw">dataset</span>)
@@ -181,7 +181,9 @@
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-      </div>
+        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
+    </nav>
+</div>
 
 </div>
 
