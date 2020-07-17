@@ -3,7 +3,9 @@
 - add new vignettes explaining all remaining imputation methods (`irmi()`,
   `kNN()`, `hotdeck()` and `regressionImp()`). Thanks @wolfgangrannetbauer
   (#44, #45)
-- Add vignette about visualization methods (#46)
+- Allow missing and imputed values in several visualization functions.
+    - The new functionalities are showcased in the new [visualization vignette](http://statistikat.github.io/VIM/articles/VisualImp.html) (#46). Thanks
+  @wolfgangrannetbauer!
 - Add `tableMiss()`: A table that highlights missing and imputed values via
   colors (#47).
 

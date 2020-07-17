@@ -13,7 +13,7 @@ This vignette will give a brief look at a common imputation scenario and
 showcase how VIM can be used to both impute the data and also interpret
 the results visually.
 
-### Visualize missing values
+## Visualize missing values
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -51,10 +51,10 @@ The __<font color="red">red</font>__ boxplot on the left shows the distrubution 
 where `Dream` contains a missing value. The __<font color="#87ceeb">blue</font>__ boxplot on the left shows
 the distribution of the values of `Sleep` where `Dream` is observed.
 
-### Impute missing values
+## Impute missing values
 
 In order to impute missing values, `VIM` offers a spectrum of imputation methods
-like `kNN()` (k nearest neighbor), `hotdeck()` and so forth. Those functions
+like `kNN()` (k nearest neighbour), `hotdeck()` and so forth. Those functions
 can be applied to a `data.frame` and return another `data.frame` where missings
 are replaced by imputed values.
 
@@ -62,10 +62,16 @@ are replaced by imputed values.
 x_imputed <- kNN(x)
 ```
 
-Note however, that in certain circumstances, there will be missings left in
-the returned dataset depending on the method used. 
+To learn more about all implemented imputation methods, three vignettes are
+available
 
-### Visualize imputed values
+- `vignette("donorImp")` explains the donor-based imputation methods `hotdeck()`
+  and `kNN()`
+- `vignette("modelImp")` gives insight into the model-based imputation methods
+  `regressionImp()` and `matchImpute()`
+- `vignette("irmi")` showcases the `irmi()` method.
+
+## Visualize imputed values
 
 The same functions that visualize missing values can also visualize the
 imputed dataset.

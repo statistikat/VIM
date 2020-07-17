@@ -14,7 +14,7 @@ reference:
   - maxCat
   - sampleCat
 - title: Plotting functions
-  desc: Functions to visualize missing and imputed values. See `vignette("VisualImp")` for an overview.
+  desc: Functions to visualize missing and imputed values. See [the visualization vignette](http://statistikat.github.io/VIM/articles/VisualImp.html) for an overview.
   contents:
   - has_concept("plotting functions")
   - colSequence
@@ -27,6 +27,7 @@ reference:
   - bgmap
   - growdotMiss
 - title: Datasets
+  desc: Datasets to showcase several functionalities of VIM.
   contents: has_keyword("datasets")
 - title: Other
   contents:
@@ -35,6 +36,5 @@ reference:
   - evaluation
   - gowerD
   - prepare
-  - vmGUIenvir
   - gapMiss
   - tableMiss

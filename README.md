@@ -34,7 +34,8 @@ of spatial data.
 
 ### Further reading
 
-* A hands-on guide for VIM can be found in the [get started vignette](http://statistikat.github.io/VIM/articles/VIM.html).
+* A hands-on guide for VIM can be found in the [get started vignette](http://statistikat.github.io/VIM/articles/VIM.html). Additional
+  vignettes can be found in the [articles section](http://statistikat.github.io/VIM/articles/).
 * The [reference documentation](http://statistikat.github.io/VIM/reference)
   provides detailed documentation about all exposed functons from the package.
   

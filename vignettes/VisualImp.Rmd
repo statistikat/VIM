@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 
 In addition to imputation methods, `VIM` provides a number of functions, which can be used to plot results in sophisticated ways.  
   
-This vignette showcases selected plotting function, which are very supportive in context with visualizing missing and imputed values.
+This vignette showcases selected plotting functions, which are very supportive in context with visualizing missing and imputed values.
 
 ### Data
 
