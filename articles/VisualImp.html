@@ -147,9 +147,10 @@
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-2-2.png" width="576" style="display: block; margin: auto;"></p>
 <p>The plots indicate that all missing values in the dataset are imputed via <code>knn()</code>.</p>
-<div id="function-barmiss" class="section level3">
-<h3 class="hasAnchor">
-<a href="#function-barmiss" class="anchor"></a>Function barMiss()</h3>
+</div>
+<div id="function-barmiss" class="section level2">
+<h2 class="hasAnchor">
+<a href="#function-barmiss" class="anchor"></a>Function barMiss()</h2>
 <p>The <code><a href="../reference/barMiss.html">barMiss()</a></code> function provides a barplot with highlighting of missing/imputed values in other variables by splitting each bar into two parts. Additionally, information about missing/imputed values in the variable of interest is shown on the right hand side.</p>
 <p>If <code>only.miss=TRUE</code>, the missing/imputed values in the variable of interest are visualized by one bar on the right hand side. If additional variables are supplied, this bar is again split into two parts according to missingness/number of imputed missings in the additional variables.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit">
@@ -165,7 +166,6 @@
 <span class="fu"><a href="../reference/barMiss.html">barMiss</a></span>(<span class="kw">x_IMPUTED</span>, delimiter = <span class="st">"_imp"</span>, only.miss = <span class="fl">FALSE</span>)
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-3-2.png" width="576" style="display: block; margin: auto;"> The plot indicates that there are still some missings in NonD. This is because the regression model could not be applied to observations, where Sleep is unobserved.</p>
-</div>
 </div>
 <div id="function-scattmiss" class="section level2">
 <h2 class="hasAnchor">
@@ -187,9 +187,10 @@
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-4-2.png" width="576" style="display: block; margin: auto;"></p>
 <p>The plot indicates that there are still some missings in <code>NonD</code>. This is because the regression model could not be applied to observations, where <code>Sleep</code> is unobserved.</p>
-<div id="function-parcoordmiss" class="section level3">
-<h3 class="hasAnchor">
-<a href="#function-parcoordmiss" class="anchor"></a>Function parcoordMiss()</h3>
+</div>
+<div id="function-parcoordmiss" class="section level2">
+<h2 class="hasAnchor">
+<a href="#function-parcoordmiss" class="anchor"></a>Function parcoordMiss()</h2>
 <p>The <code><a href="../reference/parcoordMiss.html">parcoordMiss()</a></code> function provides parallel coordinate plots with adjustments for missing/imputed values. Missing values in the plotted variables may be represented by a point above the corresponding coordinate axis to prevent disconnected lines. In addition, observations with missing/imputed values in selected variables may be highlighted.</p>
 <p>In parallel coordinate plots, the variables are represented by parallel axes. Each observation of the scaled data is shown as a line. Observations with missing/imputed values in selected variables may thereby be highlighted. However, plotting variables with missing values results in disconnected lines, making it impossible to trace the respective observations across the graph. As a remedy, missing values may be represented by a point above the corresponding coordinate axis, which is separated from the main plot by a small gap and a horizontal line, as determined by <code>plotNA</code>. Connected lines can then be drawn for all observations. Nevertheless, a caveat of this display is that it may draw attention away from the main relationships between the variables.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit">
@@ -208,7 +209,6 @@
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-5-2.png" width="576" style="display: block; margin: auto;"></p>
 <p>The blue lines in the plots represent the observed values in <code>NonD</code>. The red and orange lines indicate missing and imputed values respectively in <code>NonD</code>.</p>
-</div>
 </div>
 <div id="function-matrixplot" class="section level2">
 <h2 class="hasAnchor">
