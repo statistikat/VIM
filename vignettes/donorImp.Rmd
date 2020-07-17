@@ -71,7 +71,7 @@ imp_knn[, c("NonD", "Span", "NonD_imp")] %>%
   marginplot(delimiter = "_imp")
 ```
 
-`matchImpute()` works by sampling values from the suitable donors and also provide reasonable results.
+`matchImpute()` works by sampling values from the suitable donors and also provides reasonable results.
 ```{r, fig.height=5}
 imp_match[, c("NonD", "Span", "NonD_imp")] %>% 
   marginplot(delimiter = "_imp")
@@ -107,7 +107,7 @@ imp_knn <- kNN(df)
 aggr(imp_knn, delimiter = "imp")
 ```
 
-The plot indicates that all missing values have been imputed by the kNN algorithm. The following table displays the rounded first five results of the imputation for all variables.  
+The plot indicates that all missing values have been imputed by `kNN()`. The following table displays the rounded first five results of the imputation for all variables.  
 
 ```{r echo=F,warning=F}
 results <- cbind("TRUE1" = as.numeric(iris[as.matrix(y[which(y$col==1),])]),
