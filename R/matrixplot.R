@@ -229,8 +229,11 @@ matrixplot <- function(x, delimiter = NULL, sortby = NULL,
 			}
 			if(any(indexp)) {
 				iOK <- !imp_var[,indexp]
+				# still some missings
+				indices <- which(is.na(x))
 				if(!is.null(ord)) iOK <- iOK[ord]
 				cols <- rep.int(col[2], n)
+				cols[indices] <- col[1]
 			}
 		}
         if(any(iOK)) {
