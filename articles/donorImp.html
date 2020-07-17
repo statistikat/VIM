@@ -135,7 +135,7 @@
 <div id="imputation" class="section level2">
 <h2 class="hasAnchor">
 <a href="#imputation" class="anchor"></a>Imputation</h2>
-<p>The call of the functions is straightforward. We will start by just imputing <code>NonD</code> based on the other variables. Besides imputing missing variables for a single variable, these functions also support imputation of multiple variables. For <code><a href="../reference/matchImpute.html">matchImpute()</a></code> suitable donars are searched based on matching of the categorical variables.</p>
+<p>The call of the functions is straightforward. We will start by just imputing <code>NonD</code> based on the other variables. Besides imputing missing variables for a single variable, these functions also support imputation of multiple variables. For <code><a href="../reference/matchImpute.html">matchImpute()</a></code> suitable donors are searched based on matching of the categorical variables.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit">
 <span class="kw">imp_hotdeck</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hotdeck.html">hotdeck</a></span>(<span class="kw">dataset</span>, variable = <span class="st">"NonD"</span>)  <span class="co"># hotdeck imputation</span>
 <span class="kw">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="kw">dataset</span>, variable = <span class="st">"NonD"</span>) <span class="co"># kNN imputation</span>
@@ -144,7 +144,7 @@
 <span class="fu"><a href="../reference/aggr.html">aggr</a></span>(<span class="kw">imp_match</span>, delimiter = <span class="st">"_imp"</span>)
 </pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-3-1.png" width="576" style="display: block; margin: auto;"></p>
-<p>We can see that <code><a href="../reference/kNN.html">kNN()</a></code> imputed all missing values for <code>NonD</code> in our dataset. The same is true for the values imputed via <code><a href="../reference/hotdeck.html">hotdeck()</a></code>. The specified variables in <code><a href="../reference/matchImpute.html">matchImpute()</a></code> serve as a donar and enable imputation for <code>NonD</code>.</p>
+<p>We can see that <code><a href="../reference/kNN.html">kNN()</a></code> imputed all missing values for <code>NonD</code> in our dataset. The same is true for the values imputed via <code><a href="../reference/hotdeck.html">hotdeck()</a></code>. The specified variables in <code><a href="../reference/matchImpute.html">matchImpute()</a></code> serve as a donor and enable imputation for <code>NonD</code>.</p>
 <div id="diagnosing-the-results" class="section level3">
 <h3 class="hasAnchor">
 <a href="#diagnosing-the-results" class="anchor"></a>Diagnosing the results</h3>
@@ -159,7 +159,7 @@
   <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(delimiter = <span class="st">"_imp"</span>)
 </pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-4-2.png" width="576" style="display: block; margin: auto;"></p>
-<p><code><a href="../reference/matchImpute.html">matchImpute()</a></code> works by sampling values from the suitable donars and also provide reasonable results.</p>
+<p><code><a href="../reference/matchImpute.html">matchImpute()</a></code> works by sampling values from the suitable donors and also provide reasonable results.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit">
 <span class="kw">imp_match</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span>)] <span class="op">%&gt;%</span> 
   <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(delimiter = <span class="st">"_imp"</span>)
