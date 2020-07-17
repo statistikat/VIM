@@ -88,3 +88,76 @@ aggr(imp_regression, delimiter = "_imp")
 ```
 
 Again, there are missings left for both `Dream` and `NonD`.
+
+
+
+## Performance of method
+
+In order to validate the performance of `regressionImp()` the `iris` dataset is used. Firstly, some values are randomly set to `NA`. 
+
+```{r}
+library(reactable)
+
+data(iris)
+df <- iris
+colnames(df) <- c("S.Length","S.Width","P.Length","P.Width","Species")
+# randomly produce some missing values in the data
+set.seed(1)
+nbr_missing <- 50
+y <- data.frame(row=sample(nrow(iris),size = nbr_missing,replace = T),
+                col=sample(ncol(iris)-1,size = nbr_missing,replace = T))
+y<-y[!duplicated(y),]
+df[as.matrix(y)]<-NA
+
+aggr(df)
+sapply(df, function(x)sum(is.na(x)))
+```
+
+We can see that there are missings in all variables and some observations reveal missing values on several points. In the next step we perform a multiple variable imputation and `Species` serves as a regressor.
+
+```{r}
+imp_regression <- regressionImp(S.Length + S.Width + P.Length + P.Width ~ Species, df)
+aggr(imp_regression, delimiter = "imp")
+```
+  
+The plot indicates that all missing values have been imputed by the `regressionImp()` algorithm. The following table displays the rounded first five results of the imputation for all variables.  
+
+
+
+```{r echo=F,warning=F}
+results <- cbind("TRUE1" = as.numeric(iris[as.matrix(y[which(y$col==1),])]),
+                 "IMPUTED1" = round(as.numeric(imp_regression[as.matrix(y[which(y$col==1),])]),2),
+                 "TRUE2" = as.numeric(iris[as.matrix(y[which(y$col==2),])]),
+                 "IMPUTED2" = round(as.numeric(imp_regression[as.matrix(y[which(y$col==2),])]),2),
+                 "TRUE3" = as.numeric(iris[as.matrix(y[which(y$col==3),])]),
+                 "IMPUTED3" = round(as.numeric(imp_regression[as.matrix(y[which(y$col==3),])]),2),
+                 "TRUE4" = as.numeric(iris[as.matrix(y[which(y$col==4),])]),
+                 "IMPUTED4" = round(as.numeric(imp_regression[as.matrix(y[which(y$col==4),])]),2))[1:5,]
+
+reactable(results, columns = list(
+    TRUE1 = colDef(name = "True"),
+    IMPUTED1 = colDef(name = "Imputed"),
+    TRUE2 = colDef(name = "True"),
+    IMPUTED2 = colDef(name = "Imputed"),
+    TRUE3 = colDef(name = "True"),
+    IMPUTED3 = colDef(name = "Imputed"),
+    TRUE4 = colDef(name = "True"),
+    IMPUTED4 = colDef(name = "Imputed")
+  ),
+    columnGroups = list(
+    colGroup(name = "S.Length", columns = c("TRUE1", "IMPUTED1")),
+    colGroup(name = "S.Width", columns = c("TRUE2", "IMPUTED2")),
+    colGroup(name = "P.Length", columns = c("TRUE3", "IMPUTED3")),
+    colGroup(name = "P.Width", columns = c("TRUE4", "IMPUTED4"))
+  ),
+  striped = TRUE,
+  highlight = TRUE,
+  bordered = TRUE
+)
+
+```
+
+
+
+
+
