@@ -46,7 +46,7 @@ sapply(dataset, function(x)sum(is.na(x)))
 ## Imputation
 
 The call of the functions is straightforward. We will start by just imputing `NonD` based on the other variables. Besides imputing missing variables for a single variable, these functions also support imputation of multiple variables.
-For `matchImpute()` suitable donars are searched based on matching of the categorical variables. 
+For `matchImpute()` suitable donors are searched based on matching of the categorical variables. 
 
 
 ```{r}
@@ -58,7 +58,7 @@ aggr(imp_match, delimiter = "_imp")
 ```
 
 We can see that `kNN()` imputed all missing values for `NonD` in our dataset. The same is true for the values imputed via `hotdeck()`.
-The specified variables in `matchImpute()` serve as a donar and enable imputation for `NonD`.
+The specified variables in `matchImpute()` serve as a donor and enable imputation for `NonD`.
 
 ### Diagnosing the results
 
@@ -71,7 +71,7 @@ imp_knn[, c("NonD", "Span", "NonD_imp")] %>%
   marginplot(delimiter = "_imp")
 ```
 
-`matchImpute()` works by sampling values from the suitable donars and also provide reasonable results.
+`matchImpute()` works by sampling values from the suitable donors and also provide reasonable results.
 ```{r, fig.height=5}
 imp_match[, c("NonD", "Span", "NonD_imp")] %>% 
   marginplot(delimiter = "_imp")
