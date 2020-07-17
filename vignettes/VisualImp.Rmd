@@ -25,7 +25,7 @@ This vignette showcases selected plotting function, which are very supportive in
 
 ### Data
 
-The following example demonstrates the functionality of the plotting functions using a subset of `sleep`. In order to emphasize the features of the methods, the missing values in the dataset are imputed via `kNN()`. `kNN()` is a powerful donor-based imputation function and also included in the `VIM` package. (see `vignette("donorImp")`)
+The following example demonstrates the functionality of the plotting functions using a subset of `sleep`. In order to emphasize the features of the methods, the missing values in the dataset are imputed via `kNN()` or `regrssionImp()`. Both are powerful donor-based imputation methods and also included in the `VIM` package. (see `vignette("donorImp")`)
 
 ```{r setup, message=F}
 library(VIM)
@@ -61,11 +61,11 @@ The `barMiss()` function provides a barplot with highlighting of missing/imputed
 If `only.miss=TRUE`, the missing/imputed values in the variable of interest are visualized by one bar on the right hand side. If additional variables are supplied, this bar is again split into two parts according to missingness/number of imputed missings in the additional variables.
 
 ```{r}
-x <- sleep[, c("Exp", "Dream")]
 # for missing values
+x <- sleep[, c("Exp","NonD","Sleep")]
 barMiss(x, only.miss = FALSE)
-## for imputed values
-x_IMPUTED  <- kNN(sleep[, c("Exp", "Dream")])
+# for imputed values
+x_IMPUTED <- regressionImp(NonD ~ Sleep, data = x)
 barMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
 ```
 
