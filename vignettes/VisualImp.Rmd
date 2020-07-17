@@ -62,7 +62,7 @@ If `only.miss=TRUE`, the missing/imputed values in the variable of interest are 
 
 ```{r}
 # for missing values
-x <- sleep[, c("Exp","NonD","Sleep")]
+x <- sleep[, c("Exp", "NonD", "Sleep")]
 barMiss(x, only.miss = FALSE)
 # for imputed values
 x_IMPUTED <- regressionImp(NonD ~ Sleep, data = x)
@@ -122,8 +122,8 @@ x$BodyWgt <- log(x$BodyWgt)
 # for missing values
 matrixplot(x, sortby="BodyWgt")
 # for imputed values - multiple variable imputation with regrssionImp()
-x_IMPUTED  <- regressionImp(NonD+Dream ~ Sleep, data = x)
-matrixplot(x_IMPUTED, delimiter = "_imp", sortby="BodyWgt")
+x_IMPUTED  <- regressionImp(NonD + Dream ~ Sleep, data = x)
+matrixplot(x_IMPUTED, delimiter = "_imp", sortby = "BodyWgt")
 ```
 
 
@@ -155,12 +155,12 @@ The `marginmatrix()` function creates a scatterplot matrix with information abou
 ```{r warning=FALSE}
 ## for missing values
 x <- sleep[, 2:4]
-x[,1] <- log10(x[,1])
+x[, 1] <- log10(x[, 1])
 marginmatrix(x)
 
 ## for imputed values
 x_imp <- irmi(sleep[, 2:4])
-x_imp[,1] <- log10(x_imp[,1])
+x_imp[,1] <- log10(x_imp[, 1])
 marginmatrix(x_imp, delimiter = "_imp")
 ```
 

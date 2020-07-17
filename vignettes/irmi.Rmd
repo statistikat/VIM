@@ -41,7 +41,7 @@ aggr(dataset)
 The plot indicates several missing values in `Dream`, `NonD`, and `Span. `
 
 ```{r}
-sapply(dataset, function(x)sum(is.na(x)))
+sapply(dataset, function(x) sum(is.na(x)))
 ```
 
 
@@ -78,21 +78,19 @@ imp_irmi[, c("Span", "BodyWgt", "Span_imp")] %>%
 In order to validate the performance of `irmi()` and to highlight the ability to impute different datatypes the `iris` dataset is used. Firstly, some values are randomly set to `NA`. 
 
 ```{r}
-library(reactable)
-
 data(iris)
 df <- iris
-colnames(df) <- c("S.Length","S.Width","P.Length","P.Width","Species")
+colnames(df) <- c("S.Length", "S.Width", "P.Length", "P.Width", "Species")
 # randomly produce some missing values in the data
 set.seed(1)
 nbr_missing <- 50
-y <- data.frame(row=sample(nrow(iris),size = nbr_missing,replace = T),
-                col=sample(ncol(iris),size = nbr_missing,replace = T))
-y<-y[!duplicated(y),]
-df[as.matrix(y)]<-NA
+y <- data.frame(row = sample(nrow(iris), size = nbr_missing, replace = TRUE),
+                col = sample(ncol(iris), size = nbr_missing, replace = TRUE))
+y <- y[!duplicated(y), ]
+df[as.matrix(y)] <- NA
 
 aggr(df)
-sapply(df, function(x)sum(is.na(x)))
+sapply(df, function(x) sum(is.na(x)))
 ```
 
 We can see that there are missings in all variables and some observations reveal missing values on several points. 
@@ -107,6 +105,8 @@ The plot indicates that all missing values have been imputed by the IRMI algorit
   
 
 ```{r echo=F,warning=F}
+library(reactable)
+
 results <- cbind("TRUE1" = as.numeric(iris[as.matrix(y[which(y$col==1),])]),
                  "IMPUTED1" = round(as.numeric(imp_irmi[as.matrix(y[which(y$col==1),])]),2),
                  "TRUE2" = as.numeric(iris[as.matrix(y[which(y$col==2),])]),
