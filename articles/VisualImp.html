@@ -214,17 +214,18 @@
 <a href="#function-matrixplot" class="anchor"></a>Function matrixplot()</h2>
 <p>The <code><a href="../reference/matrixplot.html">matrixplot()</a></code> function creats a matrix plot, in which all cells of a data matrix are visualized by rectangles. Available data is coded according to a continuous color scheme, while missing/imputed data is visualized by a clearly distinguishable color.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit">
-<span class="co">## for missing values</span>
-<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="op">-</span>(<span class="fl">8</span><span class="op">:</span><span class="fl">10</span>)]
-<span class="kw">x</span>[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span>)] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span>(<span class="kw">x</span>[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span>)])
-<span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span>(<span class="kw">x</span>, sortby = <span class="st">"BrainWgt"</span>)
+<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Dream"</span>, <span class="st">"NonD"</span>,<span class="st">"Sleep"</span>, <span class="st">"BodyWgt"</span>)]
+<span class="kw">x</span><span class="op">$</span><span class="kw">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span>(<span class="kw">x</span><span class="op">$</span><span class="kw">BodyWgt</span>)
+<span class="co"># for missing values</span>
+<span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span>(<span class="kw">x</span>, sortby=<span class="st">"BodyWgt"</span>)
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-6-1.png" width="576" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb11"><pre class="downlit">
-<span class="co">## for imputed values</span>
-<span class="kw">x_imp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="kw">sleep</span>[, <span class="op">-</span>(<span class="fl">8</span><span class="op">:</span><span class="fl">10</span>)])
-<span class="kw">x_imp</span>[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span>)] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span>(<span class="kw">x_imp</span>[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span>)])
-<span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span>(<span class="kw">x_imp</span>, delimiter = <span class="st">"_imp"</span>, sortby = <span class="st">"BrainWgt"</span>)
+<span class="co"># for imputed values - multiple variable imputation with regrssionImp()</span>
+<span class="kw">x_IMPUTED</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span>(<span class="kw">NonD</span><span class="op">+</span><span class="kw">Dream</span> <span class="op">~</span> <span class="kw">Sleep</span>, data = <span class="kw">x</span>)
+<span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span>
+<span class="co">#&gt; There still missing values in variable Dream . Probably due to missing values in the regressors.</span>
+<span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span>(<span class="kw">x_IMPUTED</span>, delimiter = <span class="st">"_imp"</span>, sortby=<span class="st">"BodyWgt"</span>)
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-6-2.png" width="576" style="display: block; margin: auto;"></p>
 </div>
