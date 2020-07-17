@@ -114,7 +114,7 @@
 <div id="data" class="section level3">
 <h3 class="hasAnchor">
 <a href="#data" class="anchor"></a>Data</h3>
-<p>The following example demonstrates the functionality of the plotting functions using a subset of <code>sleep</code>. In order to emphasize the features of the methods, the missing values in the dataset are imputed via <code><a href="../reference/kNN.html">kNN()</a></code>. <code><a href="../reference/kNN.html">kNN()</a></code> is a powerful donor-based imputation function and also included in the <code>VIM</code> package. (see <code><a href="../articles/donorImp.html">vignette("donorImp")</a></code>)</p>
+<p>The following example demonstrates the functionality of the plotting functions using a subset of <code>sleep</code>. In order to emphasize the features of the methods, the missing values in the dataset are imputed via <code><a href="../reference/kNN.html">kNN()</a></code> or <code>regrssionImp()</code>. Both are powerful donor-based imputation methods and also included in the <code>VIM</code> package. (see <code><a href="../articles/donorImp.html">vignette("donorImp")</a></code>)</p>
 <div class="sourceCode" id="cb1"><pre class="downlit">
 <span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="kw"><a href="https://github.com/statistikat/VIM">VIM</a></span>)
 <span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="kw">magrittr</span>)
@@ -153,14 +153,15 @@
 <p>The <code><a href="../reference/barMiss.html">barMiss()</a></code> function provides a barplot with highlighting of missing/imputed values in other variables by splitting each bar into two parts. Additionally, information about missing/imputed values in the variable of interest is shown on the right hand side.</p>
 <p>If <code>only.miss=TRUE</code>, the missing/imputed values in the variable of interest are visualized by one bar on the right hand side. If additional variables are supplied, this bar is again split into two parts according to missingness/number of imputed missings in the additional variables.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit">
-<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Exp"</span>, <span class="st">"Dream"</span>)]
 <span class="co"># for missing values</span>
+<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Exp"</span>,<span class="st">"NonD"</span>,<span class="st">"Sleep"</span>)]
 <span class="fu"><a href="../reference/barMiss.html">barMiss</a></span>(<span class="kw">x</span>, only.miss = <span class="fl">FALSE</span>)
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-3-1.png" width="576" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb5"><pre class="downlit">
-<span class="co">## for imputed values</span>
-<span class="kw">x_IMPUTED</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Exp"</span>, <span class="st">"Dream"</span>)])
+<span class="co"># for imputed values</span>
+<span class="kw">x_IMPUTED</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span>(<span class="kw">NonD</span> <span class="op">~</span> <span class="kw">Sleep</span>, data = <span class="kw">x</span>)
+<span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span>
 <span class="fu"><a href="../reference/barMiss.html">barMiss</a></span>(<span class="kw">x_IMPUTED</span>, delimiter = <span class="st">"_imp"</span>, only.miss = <span class="fl">FALSE</span>)
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-3-2.png" width="576" style="display: block; margin: auto;"></p>
