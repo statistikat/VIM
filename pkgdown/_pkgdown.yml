@@ -14,7 +14,7 @@ reference:
   - maxCat
   - sampleCat
 - title: Plotting functions
-  desc: Functions to visualize missing and imputed values.
+  desc: Functions to visualize missing and imputed values. See `vignette("VisualImp")` for an overview.
   contents:
   - has_concept("plotting functions")
   - colSequence

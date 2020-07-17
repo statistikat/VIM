@@ -26,7 +26,7 @@ The core functionality of VIM can be categorized into two groups
    to replace missing values with imputed values.
 2. Visualization functions such as `histMiss()` or `barMiss()` provide extensions
    of common base graphics which use a special way of highlighting missing
-   and imputed values.
+   and imputed values. For more details, see the [visualization vignette](http://statistikat.github.io/VIM/articles/VisualImp.html).
 
 Additionaly, datasets are included to showcase the functions mentioned above.
 Other functions provide tabular aggregations of missings and visualization
