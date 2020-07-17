@@ -172,24 +172,22 @@
 <a href="#performance-of-method" class="anchor"></a>Performance of method</h2>
 <p>In order to validate the performance of <code><a href="../reference/kNN.html">kNN()</a></code> and to highlight the ability to impute different datatypes the <code>iris</code> dataset is used. Firstly, some values are randomly set to <code>NA</code>.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="kw"><a href="https://glin.github.io/reactable">reactable</a></span>)
-
 <span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="kw">iris</span>)
 <span class="kw">df</span> <span class="op">&lt;-</span> <span class="kw">iris</span>
 <span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span>(<span class="kw">df</span>) <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"S.Length"</span>,<span class="st">"S.Width"</span>,<span class="st">"P.Length"</span>,<span class="st">"P.Width"</span>,<span class="st">"Species"</span>)
 <span class="co"># randomly produce some missing values in the data</span>
 <span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="fl">1</span>)
 <span class="kw">nbr_missing</span> <span class="op">&lt;-</span> <span class="fl">50</span>
-<span class="kw">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(row=<span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/nrow.html">nrow</a></span>(<span class="kw">iris</span>),size = <span class="kw">nbr_missing</span>,replace = <span class="kw">T</span>),
-                col=<span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span>(<span class="kw">iris</span>),size = <span class="kw">nbr_missing</span>,replace = <span class="kw">T</span>))
-<span class="kw">y</span><span class="op">&lt;-</span><span class="kw">y</span>[<span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html">duplicated</a></span>(<span class="kw">y</span>),]
-<span class="kw">df</span>[<span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span>(<span class="kw">y</span>)]<span class="op">&lt;-</span><span class="fl">NA</span>
+<span class="kw">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(row = <span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/nrow.html">nrow</a></span>(<span class="kw">iris</span>), size = <span class="kw">nbr_missing</span>, replace = <span class="fl">TRUE</span>),
+                col = <span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span>(<span class="kw">iris</span>), size = <span class="kw">nbr_missing</span>, replace = <span class="fl">TRUE</span>))
+<span class="kw">y</span><span class="op">&lt;-</span><span class="kw">y</span>[<span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html">duplicated</a></span>(<span class="kw">y</span>), ]
+<span class="kw">df</span>[<span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span>(<span class="kw">y</span>)] <span class="op">&lt;-</span> <span class="fl">NA</span>
 
 <span class="fu"><a href="../reference/aggr.html">aggr</a></span>(<span class="kw">df</span>)
 </pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-6-1.png" width="576" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb8"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="kw">df</span>, <span class="fu">function</span>(<span class="kw">x</span>)<span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span>(<span class="kw">x</span>)))
+<span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="kw">df</span>, <span class="fu">function</span>(<span class="kw">x</span>) <span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span>(<span class="kw">x</span>)))
 <span class="co">#&gt; S.Length  S.Width P.Length  P.Width  Species </span>
 <span class="co">#&gt;       10        9        8       10       12</span>
 </pre></div>

@@ -155,7 +155,7 @@
 <p>If <code>only.miss=TRUE</code>, the missing/imputed values in the variable of interest are visualized by one bar on the right hand side. If additional variables are supplied, this bar is again split into two parts according to missingness/number of imputed missings in the additional variables.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit">
 <span class="co"># for missing values</span>
-<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Exp"</span>,<span class="st">"NonD"</span>,<span class="st">"Sleep"</span>)]
+<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Exp"</span>, <span class="st">"NonD"</span>, <span class="st">"Sleep"</span>)]
 <span class="fu"><a href="../reference/barMiss.html">barMiss</a></span>(<span class="kw">x</span>, only.miss = <span class="fl">FALSE</span>)
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-3-1.png" width="576" style="display: block; margin: auto;"></p>
@@ -221,10 +221,10 @@
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-6-1.png" width="576" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb11"><pre class="downlit">
 <span class="co"># for imputed values - multiple variable imputation with regrssionImp()</span>
-<span class="kw">x_IMPUTED</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span>(<span class="kw">NonD</span><span class="op">+</span><span class="kw">Dream</span> <span class="op">~</span> <span class="kw">Sleep</span>, data = <span class="kw">x</span>)
+<span class="kw">x_IMPUTED</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span>(<span class="kw">NonD</span> <span class="op">+</span> <span class="kw">Dream</span> <span class="op">~</span> <span class="kw">Sleep</span>, data = <span class="kw">x</span>)
 <span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span>
 <span class="co">#&gt; There still missing values in variable Dream . Probably due to missing values in the regressors.</span>
-<span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span>(<span class="kw">x_IMPUTED</span>, delimiter = <span class="st">"_imp"</span>, sortby=<span class="st">"BodyWgt"</span>)
+<span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span>(<span class="kw">x_IMPUTED</span>, delimiter = <span class="st">"_imp"</span>, sortby = <span class="st">"BodyWgt"</span>)
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-6-2.png" width="576" style="display: block; margin: auto;"></p>
 </div>
@@ -256,7 +256,7 @@
 <div class="sourceCode" id="cb14"><pre class="downlit">
 <span class="co">## for missing values</span>
 <span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fl">2</span><span class="op">:</span><span class="fl">4</span>]
-<span class="kw">x</span>[,<span class="fl">1</span>] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span>(<span class="kw">x</span>[,<span class="fl">1</span>])
+<span class="kw">x</span>[, <span class="fl">1</span>] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span>(<span class="kw">x</span>[, <span class="fl">1</span>])
 <span class="fu"><a href="../reference/marginmatrix.html">marginmatrix</a></span>(<span class="kw">x</span>)
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-8-1.png" width="576" style="display: block; margin: auto;"></p>
@@ -264,7 +264,7 @@
 
 <span class="co">## for imputed values</span>
 <span class="kw">x_imp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/irmi.html">irmi</a></span>(<span class="kw">sleep</span>[, <span class="fl">2</span><span class="op">:</span><span class="fl">4</span>])
-<span class="kw">x_imp</span>[,<span class="fl">1</span>] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span>(<span class="kw">x_imp</span>[,<span class="fl">1</span>])
+<span class="kw">x_imp</span>[,<span class="fl">1</span>] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span>(<span class="kw">x_imp</span>[, <span class="fl">1</span>])
 <span class="fu"><a href="../reference/marginmatrix.html">marginmatrix</a></span>(<span class="kw">x_imp</span>, delimiter = <span class="st">"_imp"</span>)
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-8-2.png" width="576" style="display: block; margin: auto;"></p>
