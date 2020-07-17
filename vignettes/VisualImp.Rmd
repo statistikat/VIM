@@ -117,14 +117,13 @@ The blue lines in the plots represent the observed values in `NonD`. The red and
 The `matrixplot()` function creats a matrix plot, in which all cells of a data matrix are visualized by rectangles. Available data is coded according to a continuous color scheme, while missing/imputed data is visualized by a clearly distinguishable color.  
   
 ```{r warning=FALSE}
-## for missing values
-x <- sleep[, -(8:10)]
-x[,c(1,2,4,6,7)] <- log10(x[,c(1,2,4,6,7)])
-matrixplot(x, sortby = "BrainWgt")
-## for imputed values
-x_imp <- kNN(sleep[, -(8:10)])
-x_imp[,c(1,2,4,6,7)] <- log10(x_imp[,c(1,2,4,6,7)])
-matrixplot(x_imp, delimiter = "_imp", sortby = "BrainWgt")
+x <- sleep[, c("Dream", "NonD","Sleep", "BodyWgt")]
+x$BodyWgt <- log(x$BodyWgt)
+# for missing values
+matrixplot(x, sortby="BodyWgt")
+# for imputed values - multiple variable imputation with regrssionImp()
+x_IMPUTED  <- regressionImp(NonD+Dream ~ Sleep, data = x)
+matrixplot(x_IMPUTED, delimiter = "_imp", sortby="BodyWgt")
 ```
 
 
