@@ -25,7 +25,7 @@ This vignette showcases selected plotting function, which are very supportive in
 
 ### Data
 
-The following example demonstrates the functionality of the plotting functions using a subset of `sleep`. In order to emphasize the features of the methods, the missing values in the dataset are imputed via `kNN()` or `regrssionImp()`. Both are powerful donor-based imputation methods and also included in the `VIM` package. (see `vignette("donorImp")`)
+The following example demonstrates the functionality of the plotting functions using a subset of `sleep`. In order to emphasize the features of the methods, the missing values in the dataset are imputed via `kNN()` or `regressionImp()`. Both are powerful donor-based imputation methods and also included in the `VIM` package. (see `vignette("donorImp")`)
 
 ```{r setup, message=F}
 library(VIM)
@@ -68,6 +68,7 @@ barMiss(x, only.miss = FALSE)
 x_IMPUTED <- regressionImp(NonD ~ Sleep, data = x)
 barMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
 ```
+The plot indicates that there are still some missings in NonD. This is because the regression model could not be applied to observations, where Sleep is unobserved.
 
 
 ## Function scattMiss()
@@ -154,13 +155,13 @@ The `marginmatrix()` function creates a scatterplot matrix with information abou
 
 ```{r warning=FALSE}
 ## for missing values
-x <- sleep[, 1:5]
-x[,c(1,2,4)] <- log10(x[,c(1,2,4)])
+x <- sleep[, 2:4]
+x[,1] <- log10(x[,1])
 marginmatrix(x)
 
 ## for imputed values
-x_imp <- kNN(sleep[, 1:5])
-x_imp[,c(1,2,4)] <- log10(x_imp[,c(1,2,4)])
+x_imp <- irmi(sleep[, 2:4])
+x_imp[,1] <- log10(x_imp[,1])
 marginmatrix(x_imp, delimiter = "_imp")
 ```
 
