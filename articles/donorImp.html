@@ -159,7 +159,7 @@
   <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(delimiter = <span class="st">"_imp"</span>)
 </pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-4-2.png" width="576" style="display: block; margin: auto;"></p>
-<p><code><a href="../reference/matchImpute.html">matchImpute()</a></code> works by sampling values from the suitable donors and also provide reasonable results.</p>
+<p><code><a href="../reference/matchImpute.html">matchImpute()</a></code> works by sampling values from the suitable donors and also provides reasonable results.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit">
 <span class="kw">imp_match</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span>)] <span class="op">%&gt;%</span> 
   <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(delimiter = <span class="st">"_imp"</span>)
@@ -199,7 +199,7 @@
 <span class="fu"><a href="../reference/aggr.html">aggr</a></span>(<span class="kw">imp_knn</span>, delimiter = <span class="st">"imp"</span>)
 </pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-7-1.png" width="576" style="display: block; margin: auto;"></p>
-<p>The plot indicates that all missing values have been imputed by the kNN algorithm. The following table displays the rounded first five results of the imputation for all variables.</p>
+<p>The plot indicates that all missing values have been imputed by <code><a href="../reference/kNN.html">kNN()</a></code>. The following table displays the rounded first five results of the imputation for all variables.</p>
 <div id="htmlwidget-70c255e2466d62322b30" class="reactable html-widget" style="width:auto;height:auto;"></div>
 <script type="application/json" data-for="htmlwidget-70c255e2466d62322b30">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"TRUE1":["6.4","7","5.4","6.5","7.6"],"IMPUTED1":["6.9","6.4","6.1","6.8","6.3"],"TRUE2":["4.1","2.7","2.8","3.8","3.5"],"IMPUTED2":["3.5","3.2","2.8","3.5","3.4"],"TRUE3":["4.1","4.1","3.9","5.1","4.7"],"IMPUTED3":["4","4.2","4.5","5.5","4.5"],"TRUE4":["0.2","0.2","0.3","1.5","0.2"],"IMPUTED4":["0.2","0.4","0.2","1.4","0.2"],"TRUE5":["setosa","virginica","versicolor","versicolor","virginica"],"IMPUTED5":["setosa","virginica","versicolor","virginica","virginica"]},"columns":[{"accessor":"TRUE1","name":"True","type":"character"},{"accessor":"IMPUTED1","name":"Imputed","type":"character"},{"accessor":"TRUE2","name":"True","type":"character"},{"accessor":"IMPUTED2","name":"Imputed","type":"character"},{"accessor":"TRUE3","name":"True","type":"character"},{"accessor":"IMPUTED3","name":"Imputed","type":"character"},{"accessor":"TRUE4","name":"True","type":"character"},{"accessor":"IMPUTED4","name":"Imputed","type":"character"},{"accessor":"TRUE5","name":"True","type":"character"},{"accessor":"IMPUTED5","name":"Imputed","type":"character"}],"columnGroups":[{"name":"S.Length","columns":["TRUE1","IMPUTED1"]},{"name":"S.Width","columns":["TRUE2","IMPUTED2"]},{"name":"P.Length","columns":["TRUE3","IMPUTED3"]},{"name":"P.Width","columns":["TRUE4","IMPUTED4"]},{"name":"Species","columns":["TRUE5","IMPUTED5"]}],"defaultPageSize":10,"paginationType":"numbers","showPageInfo":true,"minRows":1,"highlight":true,"bordered":true,"striped":true,"dataKey":"b83bd5db72f71b2e4f0be3be91bee8ff"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
