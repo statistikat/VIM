@@ -91,26 +91,25 @@ scattMiss(imp_regression[,-3], delimiter = "_imp")
 
 The plot indicates that there are still some missings in `NonD`. This is because the regression model could not be applied to observations, where `Sleep` is unobserved. 
 
-## Function parcoordMiss()
+## Function histMiss()
 
-The `parcoordMiss()` function provides parallel coordinate plots with adjustments for missing/imputed values. Missing values in the plotted variables may be represented by a point above the corresponding coordinate axis to prevent disconnected lines. In addition, observations with missing/imputed values in selected variables may be highlighted.  
-  
-In parallel coordinate plots, the variables are represented by parallel axes. Each observation of the scaled data is shown as a line. Observations with missing/imputed values in selected variables may thereby be highlighted. However, plotting variables with missing values results in disconnected lines, making it impossible to trace the respective observations across the graph. As a remedy, missing values may be represented by a point above the corresponding coordinate axis, which is separated from the main plot by a small gap and a horizontal line, as determined by `plotNA`. Connected lines can then be drawn for all observations. Nevertheless, a caveat of this display is that it may draw attention away from the main relationships between the variables.
+The `histMiss()` function visualizes data in a histogram with highlighting the missing/imputed values in other variables by splitting each bin into two parts. Additionally, information about missing/imputed values in the variable of interest is shown on the right hand side.
+
+If `only.miss=TRUE`, the missing/imputed values in the variable of interest are visualized by one bar on the right hand side. If additional variables are supplied, this bar is again split into two parts according to missingness/number of imputed missings in the additional variables.
 
 
 ```{r}
-dataset <- sleep[, c( "NonD", "BodyWgt", "BrainWgt", "Exp")] # dataset with missings
-dataset$BodyWgt <- log(dataset$BodyWgt)
-dataset$BrainWgt <- log(dataset$BrainWgt)
-imp_knn <- kNN(dataset) # dataset with imputed values
+
 ## for missing values
-parcoordMiss(dataset, plotvars = 2:4, interactive = FALSE)
-## for imputed values
-parcoordMiss(imp_knn, delimiter = "_imp",
-             plotvars=2:4, interactive = FALSE)
+x <- sleep[, c("Span", "NonD","Sleep")]
+histMiss(x, only.miss = FALSE)
+# for imputed values
+x_IMPUTED  <- regressionImp(NonD ~ Sleep, data = x)
+histMiss(x_IMPUTED, delimiter = "_imp", only.miss = FALSE)
+
 ```
 
-The blue lines in the plots represent the observed values in `NonD`. The red and orange lines indicate missing and imputed values respectively in `NonD`.
+
 
 
 ## Function matrixplot()
