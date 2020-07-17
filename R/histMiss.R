@@ -224,7 +224,7 @@ histMiss <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"),
 			xh <- x[, -pos, drop=FALSE]  # highlight variables
 			if(is.null(xlab)) xlab <- colnames(x)[pos]  # default x-axis label
 		}
-		
+
 		if(p == 2 && is.null(ylab)) {  # default y-axis label
 			if(!imputed) ylab <- paste("missing/observed in", colnames(x)[-pos])
 			else ylab <- paste("imputed/observed in", colnames(x)[-pos])
@@ -293,6 +293,11 @@ histMiss <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"),
 				else color <- col[2]
 				rr <- hist(xpos[missh], breaks=r$breaks, 
 						right=right, col=color, border=border, add=TRUE)
+				if(imputed) {
+				  indices <- which(is.na(x[,2]) & imp_var == TRUE)
+				  rr1 <- hist(xpos[indices], breaks=r$breaks, 
+				             right=right, col=col[2], border=border, add=TRUE)
+				}
 			}
 			else if(p == 1 && impp == TRUE && any(misspos)) {
 				rr <- hist(xpos[misspos], breaks=r$breaks, 
@@ -353,8 +358,21 @@ histMiss <- function(x, delimiter = NULL, pos = 1, selection = c("any","all"),
 			ytop <- ct
 			if(!imputed) color <- col[c(2,1,4,3)]
 			else color <- col[c(5,1,6,3)]
+			########################################################
+			
 			rect(xleft, ybottom, xright, ytop, 
-					col=color, border=border, xpd=TRUE)
+			     col=color, border=border, xpd=TRUE)
+			## still missings
+			if(length(indices) > 0 & imputed) {
+			  sum_miss <- length(indices)
+			  xleft1 <- xleft[1]
+			  ybottom1 <- ybottom[1]
+			  xright1 <- xright[1]
+			  ytop1 <- sum_miss
+			  color1 <- col[2]
+			  rect(xleft1,ybottom1,xright1,ytop1,col=color1,border=border,xpd=TRUE)
+			}
+			########################################################
 			if(miss.axes) {
 				dots$at <- zero + c(0.5,2)*0.03*h
 				if(is.null(miss.labels)) {
