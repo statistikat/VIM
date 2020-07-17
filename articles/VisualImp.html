@@ -188,27 +188,25 @@
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-4-2.png" width="576" style="display: block; margin: auto;"></p>
 <p>The plot indicates that there are still some missings in <code>NonD</code>. This is because the regression model could not be applied to observations, where <code>Sleep</code> is unobserved.</p>
 </div>
-<div id="function-parcoordmiss" class="section level2">
+<div id="function-histmiss" class="section level2">
 <h2 class="hasAnchor">
-<a href="#function-parcoordmiss" class="anchor"></a>Function parcoordMiss()</h2>
-<p>The <code><a href="../reference/parcoordMiss.html">parcoordMiss()</a></code> function provides parallel coordinate plots with adjustments for missing/imputed values. Missing values in the plotted variables may be represented by a point above the corresponding coordinate axis to prevent disconnected lines. In addition, observations with missing/imputed values in selected variables may be highlighted.</p>
-<p>In parallel coordinate plots, the variables are represented by parallel axes. Each observation of the scaled data is shown as a line. Observations with missing/imputed values in selected variables may thereby be highlighted. However, plotting variables with missing values results in disconnected lines, making it impossible to trace the respective observations across the graph. As a remedy, missing values may be represented by a point above the corresponding coordinate axis, which is separated from the main plot by a small gap and a horizontal line, as determined by <code>plotNA</code>. Connected lines can then be drawn for all observations. Nevertheless, a caveat of this display is that it may draw attention away from the main relationships between the variables.</p>
+<a href="#function-histmiss" class="anchor"></a>Function histMiss()</h2>
+<p>The <code><a href="../reference/histMiss.html">histMiss()</a></code> function visualizes data in a histogram with highlighting the missing/imputed values in other variables by splitting each bin into two parts. Additionally, information about missing/imputed values in the variable of interest is shown on the right hand side.</p>
+<p>If <code>only.miss=TRUE</code>, the missing/imputed values in the variable of interest are visualized by one bar on the right hand side. If additional variables are supplied, this bar is again split into two parts according to missingness/number of imputed missings in the additional variables.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit">
-<span class="kw">dataset</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>( <span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"BrainWgt"</span>, <span class="st">"Exp"</span>)] <span class="co"># dataset with missings</span>
-<span class="kw">dataset</span><span class="op">$</span><span class="kw">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span>(<span class="kw">dataset</span><span class="op">$</span><span class="kw">BodyWgt</span>)
-<span class="kw">dataset</span><span class="op">$</span><span class="kw">BrainWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span>(<span class="kw">dataset</span><span class="op">$</span><span class="kw">BrainWgt</span>)
-<span class="kw">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="kw">dataset</span>) <span class="co"># dataset with imputed values</span>
+
 <span class="co">## for missing values</span>
-<span class="fu"><a href="../reference/parcoordMiss.html">parcoordMiss</a></span>(<span class="kw">dataset</span>, plotvars = <span class="fl">2</span><span class="op">:</span><span class="fl">4</span>, interactive = <span class="fl">FALSE</span>)
+<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Span"</span>, <span class="st">"NonD"</span>,<span class="st">"Sleep"</span>)]
+<span class="fu"><a href="../reference/histMiss.html">histMiss</a></span>(<span class="kw">x</span>, only.miss = <span class="fl">FALSE</span>)
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-5-1.png" width="576" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb9"><pre class="downlit">
-<span class="co">## for imputed values</span>
-<span class="fu"><a href="../reference/parcoordMiss.html">parcoordMiss</a></span>(<span class="kw">imp_knn</span>, delimiter = <span class="st">"_imp"</span>,
-             plotvars=<span class="fl">2</span><span class="op">:</span><span class="fl">4</span>, interactive = <span class="fl">FALSE</span>)
+<span class="co"># for imputed values</span>
+<span class="kw">x_IMPUTED</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span>(<span class="kw">NonD</span> <span class="op">~</span> <span class="kw">Sleep</span>, data = <span class="kw">x</span>)
+<span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span>
+<span class="fu"><a href="../reference/histMiss.html">histMiss</a></span>(<span class="kw">x_IMPUTED</span>, delimiter = <span class="st">"_imp"</span>, only.miss = <span class="fl">FALSE</span>)
 </pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-5-2.png" width="576" style="display: block; margin: auto;"></p>
-<p>The blue lines in the plots represent the observed values in <code>NonD</code>. The red and orange lines indicate missing and imputed values respectively in <code>NonD</code>.</p>
 </div>
 <div id="function-matrixplot" class="section level2">
 <h2 class="hasAnchor">
