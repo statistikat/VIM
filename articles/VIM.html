@@ -106,9 +106,9 @@
     
     
 <p>VIM introduces tools for visualization of missing and imputed values. Forthermore, methods to impute missing values are featured. This vignette will give a brief look at a common imputation scenario and showcase how VIM can be used to both impute the data and also interpret the results visually.</p>
-<div id="visualize-missing-values" class="section level3">
-<h3 class="hasAnchor">
-<a href="#visualize-missing-values" class="anchor"></a>Visualize missing values</h3>
+<div id="visualize-missing-values" class="section level2">
+<h2 class="hasAnchor">
+<a href="#visualize-missing-values" class="anchor"></a>Visualize missing values</h2>
 <div class="sourceCode" id="cb1"><pre class="downlit">
 <span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="kw"><a href="https://github.com/statistikat/VIM">VIM</a></span>)
 <span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="kw">sleep</span>)
@@ -125,18 +125,28 @@
 <p><img src="VIM_files/figure-html/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;"></p>
 <p>The <strong><font color="red">red</font></strong> boxplot on the left shows the distrubution of all values of <code>Sleep</code> where <code>Dream</code> contains a missing value. The <strong><font color="#87ceeb">blue</font></strong> boxplot on the left shows the distribution of the values of <code>Sleep</code> where <code>Dream</code> is observed.</p>
 </div>
-<div id="impute-missing-values" class="section level3">
-<h3 class="hasAnchor">
-<a href="#impute-missing-values" class="anchor"></a>Impute missing values</h3>
-<p>In order to impute missing values, <code>VIM</code> offers a spectrum of imputation methods like <code><a href="../reference/kNN.html">kNN()</a></code> (k nearest neighbor), <code><a href="../reference/hotdeck.html">hotdeck()</a></code> and so forth. Those functions can be applied to a <code>data.frame</code> and return another <code>data.frame</code> where missings are replaced by imputed values.</p>
+<div id="impute-missing-values" class="section level2">
+<h2 class="hasAnchor">
+<a href="#impute-missing-values" class="anchor"></a>Impute missing values</h2>
+<p>In order to impute missing values, <code>VIM</code> offers a spectrum of imputation methods like <code><a href="../reference/kNN.html">kNN()</a></code> (k nearest neighbour), <code><a href="../reference/hotdeck.html">hotdeck()</a></code> and so forth. Those functions can be applied to a <code>data.frame</code> and return another <code>data.frame</code> where missings are replaced by imputed values.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit">
 <span class="kw">x_imputed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="kw">x</span>)
 </pre></div>
-<p>Note however, that in certain circumstances, there will be missings left in the returned dataset depending on the method used.</p>
+<p>To learn more about all implemented imputation methods, three vignettes are available</p>
+<ul>
+<li>
+<code><a href="../articles/donorImp.html">vignette("donorImp")</a></code> explains the donor-based imputation methods <code><a href="../reference/hotdeck.html">hotdeck()</a></code> and <code><a href="../reference/kNN.html">kNN()</a></code>
+</li>
+<li>
+<code><a href="../articles/modelImp.html">vignette("modelImp")</a></code> gives insight into the model-based imputation methods <code><a href="../reference/regressionImp.html">regressionImp()</a></code> and <code><a href="../reference/matchImpute.html">matchImpute()</a></code>
+</li>
+<li>
+<code><a href="../articles/irmi.html">vignette("irmi")</a></code> showcases the <code><a href="../reference/irmi.html">irmi()</a></code> method.</li>
+</ul>
 </div>
-<div id="visualize-imputed-values" class="section level3">
-<h3 class="hasAnchor">
-<a href="#visualize-imputed-values" class="anchor"></a>Visualize imputed values</h3>
+<div id="visualize-imputed-values" class="section level2">
+<h2 class="hasAnchor">
+<a href="#visualize-imputed-values" class="anchor"></a>Visualize imputed values</h2>
 <p>The same functions that visualize missing values can also visualize the imputed dataset.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit">
 <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(<span class="kw">x_imputed</span>, delimiter = <span class="st">"_imp"</span>)
@@ -157,7 +167,9 @@
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-      </div>
+        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
+    </nav>
+</div>
 
 </div>
 
