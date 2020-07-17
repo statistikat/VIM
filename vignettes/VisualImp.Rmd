@@ -54,7 +54,7 @@ aggr(imp_knn, delimiter = "_imp")
 
 The plots indicate that all missing values in the dataset are imputed via `knn()`. 
 
-### Function barMiss()
+## Function barMiss()
 
 The `barMiss()` function provides a barplot with highlighting of missing/imputed values in other variables by splitting each bar into two parts. Additionally, information about missing/imputed values in the variable of interest is shown on the right hand side.  
   
@@ -91,7 +91,7 @@ scattMiss(imp_regression[,-3], delimiter = "_imp")
 
 The plot indicates that there are still some missings in `NonD`. This is because the regression model could not be applied to observations, where `Sleep` is unobserved. 
 
-### Function parcoordMiss()
+## Function parcoordMiss()
 
 The `parcoordMiss()` function provides parallel coordinate plots with adjustments for missing/imputed values. Missing values in the plotted variables may be represented by a point above the corresponding coordinate axis to prevent disconnected lines. In addition, observations with missing/imputed values in selected variables may be highlighted.  
   
