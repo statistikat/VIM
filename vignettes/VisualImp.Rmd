@@ -52,7 +52,7 @@ aggr(dataset)
 aggr(imp_knn, delimiter = "_imp") 
 ```
 
-The plots indicate that all missing values in the dataset are imputed via `knn()`. 
+The plots indicate that all missing values in the dataset are imputed via `knn()`. (All the previously red bars changed their color to orange)
 
 ## Function barMiss()
 
