@@ -80,8 +80,6 @@ In contrast to the other examples, `regressionImp()` is used for imputing missin
 
 
 ```{r}
-library(VIM)
-aggr(sleep)
 dataset <- sleep[, c("Span", "NonD","Sleep")]
 # for missing values
 scattMiss(dataset[,-3])
