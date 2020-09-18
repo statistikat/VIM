@@ -115,6 +115,10 @@ kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnam
                 imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE,addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
   check_data(data)
   data_df <- !is.data.table(data)
+  # check for colnames before forcing variable
+  if (is.null(colnames(data))) { 
+    colnames(data) <- colnames(data, do.NULL = FALSE)
+  }
   force(variable)
   force(dist_var)
   if (data_df) {
