@@ -212,3 +212,15 @@ test_that("kNN Tests - randomForest list - StringsAsFactors",{
   expect_equal(sum(dd$y_imp),6)
   
 })
+
+## Test for NULL colnames
+test_that("kNN Test - matrix, data frame and data table with NULL colnames", {
+  ds_matrix <- matrix(c(NA, 2:6), ncol = 3)
+  expect_equal(kNN(ds_matrix, imp_var = FALSE)[1, 1], 2)
+  ds_df <- as.data.frame(ds_matrix)
+  colnames(ds_df) <- NULL # as.data.frame() creates column names
+  expect_equal(kNN(ds_df, imp_var = FALSE)[1, 1], 2)
+  ds_dt <- as.data.table(ds_matrix)
+  colnames(ds_dt) <- NULL
+  expect_equal(as.numeric(kNN(ds_dt, imp_var = FALSE)[1, 1]), 2)
+})
