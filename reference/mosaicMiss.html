@@ -242,21 +242,21 @@ visualization tools.  <em>Journal of Advances in Data Analysis and
 Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code>spineMiss()</code>, <code><a href='https://rdrr.io/pkg/vcd/man/mosaic.html'>vcd::mosaic()</a></code></p>
+    <div class='dont-index'><p><code><a href='spineMiss.html'>spineMiss()</a></code>, <code><a href='https://rdrr.io/pkg/vcd/man/mosaic.html'>vcd::mosaic()</a></code></p>
 <p>Other plotting functions: 
-<code>aggr()</code>,
-<code>barMiss()</code>,
-<code>histMiss()</code>,
-<code>marginmatrix()</code>,
-<code>marginplot()</code>,
-<code>matrixplot()</code>,
-<code>pairsVIM()</code>,
-<code>parcoordMiss()</code>,
-<code>pbox()</code>,
-<code>scattJitt()</code>,
-<code>scattMiss()</code>,
-<code>scattmatrixMiss()</code>,
-<code>spineMiss()</code></p></div>
+<code><a href='aggr.html'>aggr</a>()</code>,
+<code><a href='barMiss.html'>barMiss</a>()</code>,
+<code><a href='histMiss.html'>histMiss</a>()</code>,
+<code><a href='marginmatrix.html'>marginmatrix</a>()</code>,
+<code><a href='marginplot.html'>marginplot</a>()</code>,
+<code><a href='matrixplot.html'>matrixplot</a>()</code>,
+<code><a href='pairsVIM.html'>pairsVIM</a>()</code>,
+<code><a href='parcoordMiss.html'>parcoordMiss</a>()</code>,
+<code><a href='pbox.html'>pbox</a>()</code>,
+<code><a href='scattJitt.html'>scattJitt</a>()</code>,
+<code><a href='scattMiss.html'>scattMiss</a>()</code>,
+<code><a href='scattmatrixMiss.html'>scattmatrixMiss</a>()</code>,
+<code><a href='spineMiss.html'>spineMiss</a>()</code></p></div>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
     <p>Andreas Alfons, modifications by Bernd Prantner</p>
@@ -266,10 +266,13 @@ Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
 <span class='co'>## for missing values</span>
 <span class='fu'>mosaicMiss</span>(<span class='kw'>sleep</span>, highlight = <span class='fl'>4</span>, 
-    plotvars = <span class='fl'>8</span><span class='op'>:</span><span class='fl'>10</span>, miss.labels = <span class='fl'>FALSE</span>)</div><div class='img'><img src='mosaicMiss-1.png' alt='' width='700' height='433' /></div><div class='input'>
+    plotvars = <span class='fl'>8</span><span class='op'>:</span><span class='fl'>10</span>, miss.labels = <span class='fl'>FALSE</span>)
+</div><div class='img'><img src='mosaicMiss-1.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'>## for imputed values</span>
-<span class='fu'>mosaicMiss</span>(<span class='fu'>kNN</span>(<span class='kw'>sleep</span>), highlight = <span class='fl'>4</span>, 
-    plotvars = <span class='fl'>8</span><span class='op'>:</span><span class='fl'>10</span>, delimiter = <span class='st'>"_imp"</span>, miss.labels = <span class='fl'>FALSE</span>)</div><div class='img'><img src='mosaicMiss-2.png' alt='' width='700' height='433' /></div><div class='input'></div></pre>
+<span class='fu'>mosaicMiss</span>(<span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='kw'>sleep</span>), highlight = <span class='fl'>4</span>, 
+    plotvars = <span class='fl'>8</span><span class='op'>:</span><span class='fl'>10</span>, delimiter = <span class='st'>"_imp"</span>, miss.labels = <span class='fl'>FALSE</span>)
+</div><div class='img'><img src='mosaicMiss-2.png' alt='' width='700' height='433' /></div><div class='input'>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -285,7 +288,7 @@ Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
 </div>
 
       </footer>

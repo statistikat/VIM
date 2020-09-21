@@ -390,19 +390,19 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 <p><code>print.summary.aggr()</code>, <code>aggr()</code></p>
 <p><code>summary.aggr()</code>, <code>aggr()</code></p>
 <p>Other plotting functions: 
-<code>barMiss()</code>,
-<code>histMiss()</code>,
-<code>marginmatrix()</code>,
-<code>marginplot()</code>,
-<code>matrixplot()</code>,
-<code>mosaicMiss()</code>,
-<code>pairsVIM()</code>,
-<code>parcoordMiss()</code>,
-<code>pbox()</code>,
-<code>scattJitt()</code>,
-<code>scattMiss()</code>,
-<code>scattmatrixMiss()</code>,
-<code>spineMiss()</code></p></div>
+<code><a href='barMiss.html'>barMiss</a>()</code>,
+<code><a href='histMiss.html'>histMiss</a>()</code>,
+<code><a href='marginmatrix.html'>marginmatrix</a>()</code>,
+<code><a href='marginplot.html'>marginplot</a>()</code>,
+<code><a href='matrixplot.html'>matrixplot</a>()</code>,
+<code><a href='mosaicMiss.html'>mosaicMiss</a>()</code>,
+<code><a href='pairsVIM.html'>pairsVIM</a>()</code>,
+<code><a href='parcoordMiss.html'>parcoordMiss</a>()</code>,
+<code><a href='pbox.html'>pbox</a>()</code>,
+<code><a href='scattJitt.html'>scattJitt</a>()</code>,
+<code><a href='scattMiss.html'>scattMiss</a>()</code>,
+<code><a href='scattmatrixMiss.html'>scattmatrixMiss</a>()</code>,
+<code><a href='spineMiss.html'>spineMiss</a>()</code></p></div>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
     <p>Andreas Alfons, Matthias Templ, modifications for displaying imputed
@@ -415,14 +415,17 @@ values by Bernd Prantner</p>
     <pre class="examples"><div class='input'>
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package=<span class='st'>"VIM"</span>)
 <span class='co'>## for missing values</span>
-<span class='kw'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span>(<span class='kw'>sleep</span>)</div><div class='img'><img src='aggr-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='kw'>a</span></div><div class='output co'>#&gt; 
+<span class='kw'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span>(<span class='kw'>sleep</span>)
+</div><div class='img'><img src='aggr-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='kw'>a</span>
+</div><div class='output co'>#&gt; 
 #&gt;  Missings in variables:
 #&gt;  Variable Count
 #&gt;      NonD    14
 #&gt;     Dream    12
 #&gt;     Sleep     4
 #&gt;      Span     4
-#&gt;      Gest     4</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='kw'>a</span>)</div><div class='output co'>#&gt; 
+#&gt;      Gest     4</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='kw'>a</span>)
+</div><div class='output co'>#&gt; 
 #&gt;  Missings per variable: 
 #&gt;  Variable Count
 #&gt;   BodyWgt     0
@@ -447,15 +450,18 @@ values by Bernd Prantner</p>
 #&gt;  0:0:1:1:0:1:0:0:0:0     1  1.612903
 #&gt;  0:0:1:1:1:0:0:0:0:0     2  3.225806</div><div class='input'>
 <span class='co'>## for imputed values</span>
-<span class='kw'>sleep_IMPUTED</span> <span class='op'>&lt;-</span> <span class='fu'>kNN</span>(<span class='kw'>sleep</span>)
-<span class='kw'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span>(<span class='kw'>sleep_IMPUTED</span>, delimiter=<span class='st'>"_imp"</span>)</div><div class='img'><img src='aggr-2.png' alt='' width='700' height='433' /></div><div class='input'><span class='kw'>a</span></div><div class='output co'>#&gt; 
+<span class='kw'>sleep_IMPUTED</span> <span class='op'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='kw'>sleep</span>)
+<span class='kw'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span>(<span class='kw'>sleep_IMPUTED</span>, delimiter=<span class='st'>"_imp"</span>)
+</div><div class='img'><img src='aggr-2.png' alt='' width='700' height='433' /></div><div class='input'><span class='kw'>a</span>
+</div><div class='output co'>#&gt; 
 #&gt;  Imputed missings in variables:
 #&gt;  Variable Count
 #&gt;      NonD    14
 #&gt;     Dream    12
 #&gt;     Sleep     4
 #&gt;      Span     4
-#&gt;      Gest     4</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='kw'>a</span>)</div><div class='output co'>#&gt; 
+#&gt;      Gest     4</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='kw'>a</span>)
+</div><div class='output co'>#&gt; 
 #&gt;  Imputed missings per variables:
 #&gt;  Variable Count
 #&gt;   BodyWgt     0
@@ -482,7 +488,8 @@ values by Bernd Prantner</p>
 
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
 <span class='kw'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span>(<span class='kw'>sleep</span>, plot=<span class='fl'>FALSE</span>)
-<span class='kw'>a</span></div><div class='output co'>#&gt; 
+<span class='kw'>a</span>
+</div><div class='output co'>#&gt; 
 #&gt;  Missings in variables:
 #&gt;  Variable Count
 #&gt;      NonD    14
@@ -492,7 +499,8 @@ values by Bernd Prantner</p>
 #&gt;      Gest     4</div><div class='input'>
 
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='fu'>aggr</span>(<span class='kw'>sleep</span>, plot=<span class='fl'>FALSE</span>))</div><div class='output co'>#&gt; 
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='fu'>aggr</span>(<span class='kw'>sleep</span>, plot=<span class='fl'>FALSE</span>))
+</div><div class='output co'>#&gt; 
 #&gt;  Missings per variable: 
 #&gt;  Variable Count
 #&gt;   BodyWgt     0
@@ -519,7 +527,8 @@ values by Bernd Prantner</p>
 
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
 <span class='kw'>s</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='fu'>aggr</span>(<span class='kw'>sleep</span>, plot=<span class='fl'>FALSE</span>))
-<span class='kw'>s</span></div><div class='output co'>#&gt; 
+<span class='kw'>s</span>
+</div><div class='output co'>#&gt; 
 #&gt;  Missings per variable: 
 #&gt;  Variable Count
 #&gt;   BodyWgt     0
@@ -542,7 +551,8 @@ values by Bernd Prantner</p>
 #&gt;  0:0:1:0:1:0:0:0:0:0     2  3.225806
 #&gt;  0:0:1:1:0:0:0:0:0:0     9 14.516129
 #&gt;  0:0:1:1:0:1:0:0:0:0     1  1.612903
-#&gt;  0:0:1:1:1:0:0:0:0:0     2  3.225806</div><div class='input'></div></pre>
+#&gt;  0:0:1:1:1:0:0:0:0:0     2  3.225806</div><div class='input'>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -558,7 +568,7 @@ values by Bernd Prantner</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
 </div>
 
       </footer>

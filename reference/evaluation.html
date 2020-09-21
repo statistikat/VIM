@@ -201,8 +201,9 @@ Computational Statistics and Data Analysis</em>, Vol. 55, pp. 2793-2806.</p>
 <span class='kw'>iris_imp</span><span class='op'>$</span><span class='kw'>Sepal.Width</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span><span class='op'>:</span><span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='kw'>iris</span>), <span class='fl'>10</span>)] <span class='op'>&lt;-</span> <span class='fl'>NA</span>
 <span class='kw'>iris_imp</span><span class='op'>$</span><span class='kw'>Species</span>[<span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fl'>1</span><span class='op'>:</span><span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='kw'>iris</span>), <span class='fl'>10</span>)] <span class='op'>&lt;-</span> <span class='fl'>NA</span>
 <span class='kw'>m</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/NA.html'>is.na</a></span>(<span class='kw'>iris_imp</span>)
-<span class='kw'>iris_imp</span> <span class='op'>&lt;-</span> <span class='fu'>kNN</span>(<span class='kw'>iris_imp</span>, imp_var = <span class='fl'>FALSE</span>)
-<span class='fu'>evaluation</span>(<span class='kw'>iris_orig</span>, <span class='kw'>iris_imp</span>, m = <span class='kw'>m</span>, vartypes = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='st'>"numeric"</span>, <span class='fl'>4</span>), <span class='st'>"factor"</span>))</div><div class='output co'>#&gt; $err_num
+<span class='kw'>iris_imp</span> <span class='op'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='kw'>iris_imp</span>, imp_var = <span class='fl'>FALSE</span>)
+<span class='fu'>evaluation</span>(<span class='kw'>iris_orig</span>, <span class='kw'>iris_imp</span>, m = <span class='kw'>m</span>, vartypes = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='st'>"numeric"</span>, <span class='fl'>4</span>), <span class='st'>"factor"</span>))
+</div><div class='output co'>#&gt; $err_num
 #&gt; [1] 0.149
 #&gt; 
 #&gt; $err_cat
@@ -210,7 +211,8 @@ Computational Statistics and Data Analysis</em>, Vol. 55, pp. 2793-2806.</p>
 #&gt; 
 #&gt; $error
 #&gt; [1] 0.149
-#&gt; </div><div class='input'><span class='fu'>msecov</span>(<span class='kw'>iris_orig</span>[, <span class='fl'>1</span><span class='op'>:</span><span class='fl'>4</span>], <span class='kw'>iris_imp</span>[, <span class='fl'>1</span><span class='op'>:</span><span class='fl'>4</span>])</div><div class='output co'>#&gt; [1] 0.0001986385</div></pre>
+#&gt; </div><div class='input'><span class='fu'>msecov</span>(<span class='kw'>iris_orig</span>[, <span class='fl'>1</span><span class='op'>:</span><span class='fl'>4</span>], <span class='kw'>iris_imp</span>[, <span class='fl'>1</span><span class='op'>:</span><span class='fl'>4</span>])
+</div><div class='output co'>#&gt; [1] 0.0001986385</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -226,7 +228,7 @@ Computational Statistics and Data Analysis</em>, Vol. 55, pp. 2793-2806.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
 </div>
 
       </footer>

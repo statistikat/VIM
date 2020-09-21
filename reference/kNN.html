@@ -289,11 +289,11 @@ Statistical Software</em>, 74(7), 1-16.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p>Other imputation methods: 
-<code>hotdeck()</code>,
-<code>irmi()</code>,
-<code>matchImpute()</code>,
-<code>rangerImpute()</code>,
-<code>regressionImp()</code></p></div>
+<code><a href='hotdeck.html'>hotdeck</a>()</code>,
+<code><a href='irmi.html'>irmi</a>()</code>,
+<code><a href='matchImpute.html'>matchImpute</a>()</code>,
+<code><a href='rangerImpute.html'>rangerImpute</a>()</code>,
+<code><a href='regressionImp.html'>regressionImp</a>()</code></p></div>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
     <p>Alexander Kowarik, Statistik Austria</p>
@@ -301,7 +301,8 @@ Statistical Software</em>, 74(7), 1-16.</p>
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>)
-<span class='fu'>kNN</span>(<span class='kw'>sleep</span>)</div><div class='output co'>#&gt;     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger BodyWgt_imp
+<span class='fu'>kNN</span>(<span class='kw'>sleep</span>)
+</div><div class='output co'>#&gt;     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger BodyWgt_imp
 #&gt; 1  6654.000  5712.00  3.2   0.8   3.3  38.6 645.0    3   5      3       FALSE
 #&gt; 2     1.000     6.60  6.3   2.0   8.3   4.5  42.0    3   1      3       FALSE
 #&gt; 3     3.385    44.50 12.8   2.4  12.5  14.0  60.0    1   1      1       FALSE
@@ -490,7 +491,8 @@ Statistical Software</em>, 74(7), 1-16.</p>
 #&gt; 60      FALSE
 #&gt; 61      FALSE
 #&gt; 62      FALSE</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='kw'>laeken</span>)
-<span class='fu'>kNN</span>(<span class='kw'>sleep</span>, numFun = <span class='kw'>weightedMean</span>, weightDist=<span class='fl'>TRUE</span>)</div><div class='output co'>#&gt;     BodyWgt BrainWgt      NonD     Dream     Sleep       Span      Gest Pred
+<span class='fu'>kNN</span>(<span class='kw'>sleep</span>, numFun = <span class='kw'>weightedMean</span>, weightDist=<span class='fl'>TRUE</span>)
+</div><div class='output co'>#&gt;     BodyWgt BrainWgt      NonD     Dream     Sleep       Span      Gest Pred
 #&gt; 1  6654.000  5712.00  3.621115 1.0244651  3.300000  38.600000 645.00000    3
 #&gt; 2     1.000     6.60  6.300000 2.0000000  8.300000   4.500000  42.00000    3
 #&gt; 3     3.385    44.50 12.130785 2.7984870 12.500000  14.000000  60.00000    1
@@ -678,7 +680,8 @@ Statistical Software</em>, 74(7), 1-16.</p>
 #&gt; 59    FALSE    FALSE   FALSE      FALSE
 #&gt; 60    FALSE    FALSE   FALSE      FALSE
 #&gt; 61    FALSE    FALSE   FALSE      FALSE
-#&gt; 62    FALSE    FALSE   FALSE      FALSE</div><div class='input'></div></pre>
+#&gt; 62    FALSE    FALSE   FALSE      FALSE</div><div class='input'>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -694,7 +697,7 @@ Statistical Software</em>, 74(7), 1-16.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
 </div>
 
       </footer>

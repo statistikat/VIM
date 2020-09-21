@@ -224,7 +224,8 @@ returnIndex=TRUE: a named list with "ind" containing the requested indices and "
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>)
 <span class='co'># all variables used as numerical</span>
-<span class='fu'>gowerD</span>(<span class='kw'>sleep</span>)</div><div class='output co'>#&gt;            [,1]       [,2]        [,3]      [,4]      [,5]       [,6]
+<span class='fu'>gowerD</span>(<span class='kw'>sleep</span>)
+</div><div class='output co'>#&gt;            [,1]       [,2]        [,3]      [,4]      [,5]       [,6]
 #&gt;  [1,] 0.0000000 0.80194496 0.569870867 0.6617888 0.5166715 0.73966024
 #&gt;  [2,] 0.8019450 0.00000000 0.480629002 0.6656651 0.4565394 0.21901970
 #&gt;  [3,] 0.5698709 0.48062900 0.000000000 0.3921220 0.9106947 0.62039091
@@ -856,7 +857,8 @@ returnIndex=TRUE: a named list with "ind" containing the requested indices and "
 #&gt; [62,] 0.50942112 0.63983551 0.47654767 0.68741575 0.37440182 0.0000000</div><div class='input'>
 <span class='co'># split in numerical an</span>
 <span class='fu'>gowerD</span>(<span class='kw'>sleep</span>, numerical = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>, <span class='st'>"BrainWgt"</span>, <span class='st'>"NonD"</span>, <span class='st'>"Dream"</span>, <span class='st'>"Sleep"</span>, <span class='st'>"Span"</span>, <span class='st'>"Gest"</span>),
-  orders = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Pred"</span>,<span class='st'>"Exp"</span>,<span class='st'>"Danger"</span>), levOrders = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>5</span>,<span class='fl'>5</span>,<span class='fl'>5</span>))</div><div class='output co'>#&gt;            [,1]       [,2]        [,3]      [,4]      [,5]       [,6]
+  orders = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Pred"</span>,<span class='st'>"Exp"</span>,<span class='st'>"Danger"</span>), levOrders = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>5</span>,<span class='fl'>5</span>,<span class='fl'>5</span>))
+</div><div class='output co'>#&gt;            [,1]       [,2]        [,3]      [,4]      [,5]       [,6]
 #&gt;  [1,] 0.0000000 0.80194496 0.569870867 0.6617888 0.5166715 0.73966024
 #&gt;  [2,] 0.8019450 0.00000000 0.480629002 0.6656651 0.4565394 0.21901970
 #&gt;  [3,] 0.5698709 0.48062900 0.000000000 0.3921220 0.9106947 0.62039091
@@ -1488,7 +1490,8 @@ returnIndex=TRUE: a named list with "ind" containing the requested indices and "
 #&gt; [62,] 0.50942112 0.63983551 0.47654767 0.68741575 0.37440182 0.0000000</div><div class='input'>
 <span class='co'># as before but only returning the index of the closest observation</span>
 <span class='fu'>gowerD</span>(<span class='kw'>sleep</span>, numerical = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"BodyWgt"</span>, <span class='st'>"BrainWgt"</span>, <span class='st'>"NonD"</span>, <span class='st'>"Dream"</span>, <span class='st'>"Sleep"</span>, <span class='st'>"Span"</span>, <span class='st'>"Gest"</span>),
-  orders = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Pred"</span>,<span class='st'>"Exp"</span>,<span class='st'>"Danger"</span>), levOrders = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>5</span>,<span class='fl'>5</span>,<span class='fl'>5</span>), returnIndex = <span class='fl'>TRUE</span>)</div><div class='output co'>#&gt; $ind
+  orders = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Pred"</span>,<span class='st'>"Exp"</span>,<span class='st'>"Danger"</span>), levOrders = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>5</span>,<span class='fl'>5</span>,<span class='fl'>5</span>), returnIndex = <span class='fl'>TRUE</span>)
+</div><div class='output co'>#&gt; $ind
 #&gt;      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10] [,11] [,12] [,13] [,14]
 #&gt; [1,]    1    2    3    4    5    6    7    8    9    10    11    12    13    14
 #&gt;      [,15] [,16] [,17] [,18] [,19] [,20] [,21] [,22] [,23] [,24] [,25] [,26]
@@ -1518,7 +1521,7 @@ returnIndex=TRUE: a named list with "ind" containing the requested indices and "
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
 </div>
 
       </footer>

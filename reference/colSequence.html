@@ -216,9 +216,14 @@ Data Analysis</em>, <strong>53 (9)</strong>, 1259--1270.</p>
 <span class='kw'>p</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>0.3</span>, <span class='fl'>0.55</span>, <span class='fl'>0.8</span>, <span class='fl'>1</span>)
 
 <span class='co'>## HCL colors</span>
-<span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>0</span>, <span class='fl'>100</span>), <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>100</span>, <span class='fl'>50</span>))</div><div class='output co'>#&gt; [1] "#FFFFFF" "#FAC8D1" "#F09AAB" "#E16A86" "#D33F6A"</div><div class='input'><span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='fu'>polarLUV</span>(L=<span class='fl'>90</span>, C=<span class='fl'>30</span>, H=<span class='fl'>90</span>), <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>100</span>, <span class='fl'>50</span>))</div><div class='output co'>#&gt; [1] "#E2E6BD" "#DBBD80" "#DB975E" "#D86B5B" "#D33F6A"</div><div class='input'>
+<span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>0</span>, <span class='fl'>100</span>), <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>100</span>, <span class='fl'>50</span>))
+</div><div class='output co'>#&gt; [1] "#FFFFFF" "#FAC8D1" "#F09AAB" "#E16A86" "#D33F6A"</div><div class='input'><span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='fu'>polarLUV</span>(L=<span class='fl'>90</span>, C=<span class='fl'>30</span>, H=<span class='fl'>90</span>), <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>100</span>, <span class='fl'>50</span>))
+</div><div class='output co'>#&gt; [1] "#E2E6BD" "#DBBD80" "#DB975E" "#D86B5B" "#D33F6A"</div><div class='input'>
 <span class='co'>## RGB colors</span>
-<span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>1</span>, <span class='fl'>1</span>), <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>0</span>, <span class='fl'>0</span>), space=<span class='st'>"rgb"</span>)</div><div class='output co'>#&gt; [1] "#FFFFFF" "#FFDADA" "#FFB3B3" "#FF7C7C" "#FF0000"</div><div class='input'><span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='fu'>RGB</span>(<span class='fl'>1</span>, <span class='fl'>1</span>, <span class='fl'>0</span>), <span class='st'>"red"</span>)</div><div class='output co'>#&gt; [1] "#FFFF00" "#FFDA00" "#FFB300" "#FF7C00" "#FF0000"</div><div class='input'></div></pre>
+<span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>1</span>, <span class='fl'>1</span>), <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>0</span>, <span class='fl'>0</span>), space=<span class='st'>"rgb"</span>)
+</div><div class='output co'>#&gt; [1] "#FFFFFF" "#FFDADA" "#FFB3B3" "#FF7C7C" "#FF0000"</div><div class='input'><span class='fu'>colSequence</span>(<span class='kw'>p</span>, <span class='fu'>RGB</span>(<span class='fl'>1</span>, <span class='fl'>1</span>, <span class='fl'>0</span>), <span class='st'>"red"</span>)
+</div><div class='output co'>#&gt; [1] "#FFFF00" "#FFDA00" "#FFB300" "#FF7C00" "#FF0000"</div><div class='input'>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -234,7 +239,7 @@ Data Analysis</em>, <strong>53 (9)</strong>, 1259--1270.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
 </div>
 
       </footer>

@@ -175,7 +175,7 @@ spatial coordinates of the observations.</p></td>
     </tr>
     <tr>
       <th>map</th>
-      <td><p>a background map to be passed to <code>bgmap()</code>.</p></td>
+      <td><p>a background map to be passed to <code><a href='bgmap.html'>bgmap()</a></code>.</p></td>
     </tr>
     <tr>
       <th>delimiter</th>
@@ -228,7 +228,7 @@ observations can be displayed interactively (see &#8216;Details&#8217;).</p></td
     <tr>
       <th>...</th>
       <td><p>further graphical parameters to be passed to
-<code>bgmap()</code> and <code><a href='https://rdrr.io/r/graphics/points.html'>graphics::points()</a></code>.</p></td>
+<code><a href='bgmap.html'>bgmap()</a></code> and <code><a href='https://rdrr.io/r/graphics/points.html'>graphics::points()</a></code>.</p></td>
     </tr>
     </table>
 
@@ -244,8 +244,8 @@ data using visualization tools.  <em>Journal of Advances in Data Analysis
 and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code>bgmap()</code>, <code>bubbleMiss()</code>,
-<code>colormapMiss()</code></p></div>
+    <div class='dont-index'><p><code><a href='bgmap.html'>bgmap()</a></code>, <code><a href='growdotMiss.html'>bubbleMiss()</a></code>,
+<code><a href='colormapMiss.html'>colormapMiss()</a></code></p></div>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
     <p>Matthias Templ, Andreas Alfons, modifications by Bernd Prantner</p>
@@ -257,16 +257,19 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 <span class='kw'>coo</span> <span class='op'>&lt;-</span> <span class='kw'>chorizonDL</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"XCOO"</span>, <span class='st'>"YCOO"</span>)]
 <span class='co'>## for missing values</span>
 <span class='kw'>x</span> <span class='op'>&lt;-</span> <span class='kw'>chorizonDL</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"As"</span>, <span class='st'>"Bi"</span>)]
-<span class='fu'>mapMiss</span>(<span class='kw'>x</span>, <span class='kw'>coo</span>, <span class='kw'>kola.background</span>)</div><div class='img'><img src='mapMiss-1.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; 
+<span class='fu'>mapMiss</span>(<span class='kw'>x</span>, <span class='kw'>coo</span>, <span class='kw'>kola.background</span>)
+</div><div class='img'><img src='mapMiss-1.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; 
 #&gt; Click on a point to get more information.
 #&gt; To regain use of the VIM GUI and the R console, click in a region that does not contain any points.
 #&gt; </div><div class='input'>
 <span class='co'>## for imputed values</span>
-<span class='kw'>x_imp</span> <span class='op'>&lt;-</span> <span class='fu'>kNN</span>(<span class='kw'>chorizonDL</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"As"</span>, <span class='st'>"Bi"</span>)])
-<span class='fu'>mapMiss</span>(<span class='kw'>x_imp</span>, <span class='kw'>coo</span>, <span class='kw'>kola.background</span>, delimiter = <span class='st'>"_imp"</span>)</div><div class='img'><img src='mapMiss-2.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; 
+<span class='kw'>x_imp</span> <span class='op'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='kw'>chorizonDL</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"As"</span>, <span class='st'>"Bi"</span>)])
+<span class='fu'>mapMiss</span>(<span class='kw'>x_imp</span>, <span class='kw'>coo</span>, <span class='kw'>kola.background</span>, delimiter = <span class='st'>"_imp"</span>)
+</div><div class='img'><img src='mapMiss-2.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; 
 #&gt; Click on a point to get more information.
 #&gt; To regain use of the VIM GUI and the R console, click in a region that does not contain any points.
-#&gt; </div><div class='input'></div></pre>
+#&gt; </div><div class='input'>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -282,7 +285,7 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
 </div>
 
       </footer>
