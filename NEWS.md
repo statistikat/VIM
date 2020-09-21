@@ -8,6 +8,7 @@
   @wolfgangrannetbauer!
 - Add `tableMiss()`: A table that highlights missing and imputed values via
   colors (#47).
+- Bug fix for kNN (#48) Thanks @torockel
 
 # VIM 6.0.0
 
