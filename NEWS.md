@@ -1,5 +1,6 @@
 # VIM 6.0.2
 - error message in `hotdeck()` when ord_var and variable overlap
+- family argument of class 'family' now work in regressionImp
 
 # VIM 6.0.1
 

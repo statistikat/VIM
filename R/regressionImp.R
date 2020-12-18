@@ -57,7 +57,7 @@ regressionImp <- function(formula, data, family = "AUTO", robust = FALSE, imp_va
     if (!any(is.na(lhs_vector))) {
       cat(paste0("No missings in ", lhsV, ".\n"))
     } else {
-      if (!inherits(family, "function") &!inherits(family, "family")){
+      if (!inherits(family, "function") & !inherits(family, "family")){
         if (family == "AUTO") {
           TFna <- TFna2 & !is.na(lhs_vector)
           if (is.numeric(lhs_vector)) {
