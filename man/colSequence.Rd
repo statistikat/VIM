@@ -65,7 +65,7 @@ Data Analysis}, \strong{53 (9)}, 1259--1270.
 }
 \seealso{
 \code{\link[colorspace:hex]{colorspace::hex()}},
-\code{\link[colorspace:sequential_hcl]{colorspace::sequential_hcl()}}
+\code{\link[colorspace:hcl_palettes]{colorspace::sequential_hcl()}}
 }
 \author{
 Andreas Alfons

@@ -20,9 +20,9 @@ hotdeck(
 \arguments{
 \item{data}{data.frame or matrix}
 
-\item{variable}{variables where missing values should be imputed}
+\item{variable}{variables where missing values should be imputed (not overlapping with ord_var)}
 
-\item{ord_var}{variables for sorting the data set before imputation}
+\item{ord_var}{variables for sorting the data set before imputation (not overlapping with variable)}
 
 \item{domain_var}{variables for building domains and impute within these
 domains}

@@ -151,7 +151,7 @@ R package VIM.  \emph{Journal of
 Statistical Software}, 74(7), 1-16.
 }
 \seealso{
-\code{\link[mi:mi]{mi::mi()}}
+\code{\link[mi:04mi]{mi::mi()}}
 
 Other imputation methods: 
 \code{\link{hotdeck}()},

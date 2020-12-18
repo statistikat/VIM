@@ -49,7 +49,7 @@ dt <- data.table::data.table(testdata$wna)
 imp_testdata2 <- matchImpute(dt,match_var=c("c1","c2","b1","b2"))
 }
 \seealso{
-\code{\link[VIM:hotdeck]{VIM::hotdeck()}}
+\code{\link[=hotdeck]{hotdeck()}}
 
 Other imputation methods: 
 \code{\link{hotdeck}()},
