@@ -4,6 +4,10 @@ r:
   - devel
 cache: packages
 
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y install libharfbuzz-dev libfribidi-dev
+  
 r_packages:
   - kableExtra
   - covr
