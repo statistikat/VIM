@@ -60,7 +60,7 @@ regressionImp <- function(formula, data, family = "AUTO", robust = FALSE, imp_va
       if (!inherits(family, "function")) {
         if (family == "AUTO") {
           TFna <- TFna2 & !is.na(lhs_vector)
-          if (inherits(lhs_vector, "numeric")) {
+          if (is.numeric(lhs_vector)) {
             nLev <- 0
             if (robust) {
               fn <- lmrob
