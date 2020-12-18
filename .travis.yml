@@ -3,12 +3,10 @@ r:
   - release
 cache: packages
 
-r_github_packages:
-  - r-lib/covr
-  - r-lib/pkgdown
-
 r_packages:
   - kableExtra
+  - covr
+  - pkgdown
 
 after_success:
   - Rscript -e 'covr::coveralls(function_exclusions="irmi*")'
