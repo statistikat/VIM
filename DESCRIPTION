@@ -1,5 +1,5 @@
 Package: VIM
-Version: 6.0.2
+Version: 6.1.0
 Title: Visualization and Imputation of Missing Values
 Authors@R: c(
   person("Matthias", "Templ", email = "matthias.templ@gmail.com", role = c("aut","cre")),
@@ -40,7 +40,7 @@ License: GPL (>= 2)
 URL: https://github.com/statistikat/VIM
 Repository: CRAN
 LinkingTo: Rcpp
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
