@@ -10,3 +10,12 @@ test_that("regressionImp works with integer and double columns", {
   imp_val_int <- imp_col_int[2, "col_int"]
   expect_true(1 < imp_val_int && imp_val_int < 3)
 })
+
+test_that("regressionImp works with link function", {
+  dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")]
+  dataset$BodyWgt <- log(dataset$BodyWgt)
+  lapply(dataset, class)
+  imp_regression <- regressionImp(Span ~ BodyWgt, dataset,family=Gamma(link="log"))
+  expect_false(any(is.na(imp_regression$Span)))
+
+})
