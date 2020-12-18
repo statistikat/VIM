@@ -1,3 +1,6 @@
+# VIM 6.0.2
+- error message in `hotdeck()` when ord_var and variable overlap
+
 # VIM 6.0.1
 
 - add new vignettes explaining all remaining imputation methods (`irmi()`,
