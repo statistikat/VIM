@@ -77,7 +77,7 @@ hand side." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.0.1</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.1.0</span>
       </span>
     </div>
 
@@ -85,7 +85,7 @@ hand side." />
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -123,7 +123,7 @@ hand side." />
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/statistikat/VIM/">
-    <span class="fab fa fab fa-github fa-lg"></span>
+    <span class="fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -152,25 +152,25 @@ missing/imputed values in the variable of interest is shown on the right
 hand side.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>histMiss</span>(
-  <span class='kw'>x</span>,
-  delimiter = <span class='kw'>NULL</span>,
-  pos = <span class='fl'>1</span>,
-  selection = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"any"</span>, <span class='st'>"all"</span>),
-  breaks = <span class='st'>"Sturges"</span>,
-  right = <span class='fl'>TRUE</span>,
-  col = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"skyblue4"</span>, <span class='st'>"red4"</span>, <span class='st'>"orange"</span>, <span class='st'>"orange4"</span>),
-  border = <span class='kw'>NULL</span>,
-  main = <span class='kw'>NULL</span>,
-  sub = <span class='kw'>NULL</span>,
-  xlab = <span class='kw'>NULL</span>,
-  ylab = <span class='kw'>NULL</span>,
-  axes = <span class='fl'>TRUE</span>,
-  only.miss = <span class='fl'>TRUE</span>,
-  miss.labels = <span class='kw'>axes</span>,
-  interactive = <span class='fl'>TRUE</span>,
-  <span class='kw'>...</span>
-)</pre>
+    <pre class="usage"><span class='fu'>histMiss</span><span class='op'>(</span>
+  <span class='va'>x</span>,
+  delimiter <span class='op'>=</span> <span class='cn'>NULL</span>,
+  pos <span class='op'>=</span> <span class='fl'>1</span>,
+  selection <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"any"</span>, <span class='st'>"all"</span><span class='op'>)</span>,
+  breaks <span class='op'>=</span> <span class='st'>"Sturges"</span>,
+  right <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  col <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"skyblue4"</span>, <span class='st'>"red4"</span>, <span class='st'>"orange"</span>, <span class='st'>"orange4"</span><span class='op'>)</span>,
+  border <span class='op'>=</span> <span class='cn'>NULL</span>,
+  main <span class='op'>=</span> <span class='cn'>NULL</span>,
+  sub <span class='op'>=</span> <span class='cn'>NULL</span>,
+  xlab <span class='op'>=</span> <span class='cn'>NULL</span>,
+  ylab <span class='op'>=</span> <span class='cn'>NULL</span>,
+  axes <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  only.miss <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  miss.labels <span class='op'>=</span> <span class='va'>axes</span>,
+  interactive <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  <span class='va'>...</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -329,16 +329,16 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>tao</span>, package = <span class='st'>"VIM"</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>tao</span>, package <span class='op'>=</span> <span class='st'>"VIM"</span><span class='op'>)</span>
 <span class='co'>## for missing values</span>
-<span class='kw'>x</span> <span class='op'>&lt;-</span> <span class='kw'>tao</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Air.Temp"</span>, <span class='st'>"Humidity"</span>)]
-<span class='fu'>histMiss</span>(<span class='kw'>x</span>)
-</div><div class='img'><img src='histMiss-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>histMiss</span>(<span class='kw'>x</span>, only.miss = <span class='fl'>FALSE</span>)
+<span class='va'>x</span> <span class='op'>&lt;-</span> <span class='va'>tao</span><span class='op'>[</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Air.Temp"</span>, <span class='st'>"Humidity"</span><span class='op'>)</span><span class='op'>]</span>
+<span class='fu'>histMiss</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span>
+</div><div class='img'><img src='histMiss-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>histMiss</span><span class='op'>(</span><span class='va'>x</span>, only.miss <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
 </div><div class='img'><img src='histMiss-2.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'>## for imputed values</span>
-<span class='kw'>x_IMPUTED</span> <span class='op'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='kw'>tao</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Air.Temp"</span>, <span class='st'>"Humidity"</span>)])
-<span class='fu'>histMiss</span>(<span class='kw'>x_IMPUTED</span>, delimiter = <span class='st'>"_imp"</span>)
-</div><div class='img'><img src='histMiss-3.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>histMiss</span>(<span class='kw'>x_IMPUTED</span>, delimiter = <span class='st'>"_imp"</span>, only.miss = <span class='fl'>FALSE</span>)
+<span class='va'>x_IMPUTED</span> <span class='op'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span><span class='op'>(</span><span class='va'>tao</span><span class='op'>[</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Air.Temp"</span>, <span class='st'>"Humidity"</span><span class='op'>)</span><span class='op'>]</span><span class='op'>)</span>
+<span class='fu'>histMiss</span><span class='op'>(</span><span class='va'>x_IMPUTED</span>, delimiter <span class='op'>=</span> <span class='st'>"_imp"</span><span class='op'>)</span>
+</div><div class='img'><img src='histMiss-3.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>histMiss</span><span class='op'>(</span><span class='va'>x_IMPUTED</span>, delimiter <span class='op'>=</span> <span class='st'>"_imp"</span>, only.miss <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
 </div><div class='img'><img src='histMiss-4.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
@@ -356,7 +356,7 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

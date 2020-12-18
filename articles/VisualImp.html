@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.0.1</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.1.0</span>
       </span>
     </div>
 
@@ -40,7 +40,7 @@
       <ul class="nav navbar-nav">
 <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -78,7 +78,7 @@
 <ul class="nav navbar-nav navbar-right">
 <li>
   <a href="https://github.com/statistikat/VIM/">
-    <span class="fab fa fab fa-github fa-lg"></span>
+    <span class="fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -115,14 +115,13 @@
 <h3 class="hasAnchor">
 <a href="#data" class="anchor"></a>Data</h3>
 <p>The following example demonstrates the functionality of the plotting functions using a subset of <code>sleep</code>. In order to emphasize the features of the methods, the missing values in the dataset are imputed via <code><a href="../reference/kNN.html">kNN()</a></code> or <code><a href="../reference/regressionImp.html">regressionImp()</a></code>. Both are powerful donor-based imputation methods and also included in the <code>VIM</code> package. (see <code><a href="../articles/donorImp.html">vignette("donorImp")</a></code>)</p>
-<div class="sourceCode" id="cb1"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="kw"><a href="https://github.com/statistikat/VIM">VIM</a></span>)
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="kw">magrittr</span>)
-<span class="kw">dataset</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Dream"</span>, <span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span"</span>)] <span class="co"># dataset with missings</span>
-<span class="kw">dataset</span><span class="op">$</span><span class="kw">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span>(<span class="kw">dataset</span><span class="op">$</span><span class="kw">BodyWgt</span>)
-<span class="kw">dataset</span><span class="op">$</span><span class="kw">Span</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span>(<span class="kw">dataset</span><span class="op">$</span><span class="kw">Span</span>)
-<span class="kw">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="kw">dataset</span>) <span class="co"># dataset with imputed values</span>
-</pre></div>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/statistikat/VIM">VIM</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://magrittr.tidyverse.org">magrittr</a></span><span class="op">)</span>
+<span class="va">dataset</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Dream"</span>, <span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span"</span><span class="op">)</span><span class="op">]</span> <span class="co"># dataset with missings</span>
+<span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span><span class="op">)</span>
+<span class="va">dataset</span><span class="op">$</span><span class="va">Span</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">Span</span><span class="op">)</span>
+<span class="va">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">)</span> <span class="co"># dataset with imputed values</span></code></pre></div>
 <p>To keep things as simple as possible, the plotting functions in <code>VIM</code> uses three main colors. Each color represents a property:</p>
 <ul>
 <li>
@@ -138,13 +137,11 @@
 <h2 class="hasAnchor">
 <a href="#function-aggr" class="anchor"></a>Function aggr()</h2>
 <p>The <code><a href="../reference/aggr.html">aggr()</a></code> function calculates or plots the amount of missing/imputed values in each variable and the amount of missing/imputed values in certain combinations of variables.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit">
-<span class="fu"><a href="../reference/aggr.html">aggr</a></span>(<span class="kw">dataset</span>) 
-</pre></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">)</span> </code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-2-1.png" width="576" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb3"><pre class="downlit">
-<span class="fu"><a href="../reference/aggr.html">aggr</a></span>(<span class="kw">imp_knn</span>, delimiter = <span class="st">"_imp"</span>) 
-</pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_knn</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span> </code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-2-2.png" width="576" style="display: block; margin: auto;"></p>
 <p>The plots indicate that all missing values in the dataset are imputed via <code>knn()</code>. (All the previously red bars changed their color to orange)</p>
 </div>
@@ -153,18 +150,16 @@
 <a href="#function-barmiss" class="anchor"></a>Function barMiss()</h2>
 <p>The <code><a href="../reference/barMiss.html">barMiss()</a></code> function provides a barplot with highlighting of missing/imputed values in other variables by splitting each bar into two parts. Additionally, information about missing/imputed values in the variable of interest is shown on the right hand side.</p>
 <p>If <code>only.miss=TRUE</code>, the missing/imputed values in the variable of interest are visualized by one bar on the right hand side. If additional variables are supplied, this bar is again split into two parts according to missingness/number of imputed missings in the additional variables.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit">
-<span class="co"># for missing values</span>
-<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Exp"</span>, <span class="st">"NonD"</span>, <span class="st">"Sleep"</span>)]
-<span class="fu"><a href="../reference/barMiss.html">barMiss</a></span>(<span class="kw">x</span>, only.miss = <span class="fl">FALSE</span>)
-</pre></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># for missing values</span>
+<span class="va">x</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Exp"</span>, <span class="st">"NonD"</span>, <span class="st">"Sleep"</span><span class="op">)</span><span class="op">]</span>
+<span class="fu"><a href="../reference/barMiss.html">barMiss</a></span><span class="op">(</span><span class="va">x</span>, only.miss <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-3-1.png" width="576" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb5"><pre class="downlit">
-<span class="co"># for imputed values</span>
-<span class="kw">x_IMPUTED</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span>(<span class="kw">NonD</span> <span class="op">~</span> <span class="kw">Sleep</span>, data = <span class="kw">x</span>)
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># for imputed values</span>
+<span class="va">x_IMPUTED</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">NonD</span> <span class="op">~</span> <span class="va">Sleep</span>, data <span class="op">=</span> <span class="va">x</span><span class="op">)</span>
 <span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span>
-<span class="fu"><a href="../reference/barMiss.html">barMiss</a></span>(<span class="kw">x_IMPUTED</span>, delimiter = <span class="st">"_imp"</span>, only.miss = <span class="fl">FALSE</span>)
-</pre></div>
+<span class="fu"><a href="../reference/barMiss.html">barMiss</a></span><span class="op">(</span><span class="va">x_IMPUTED</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span>, only.miss <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-3-2.png" width="576" style="display: block; margin: auto;"> The plot indicates that there are still some missings in NonD. This is because the regression model could not be applied to observations, where Sleep is unobserved.</p>
 </div>
 <div id="function-scattmiss" class="section level2">
@@ -173,18 +168,16 @@
 <p>In addition to a standard scatterplot, lines are plotted in <code><a href="../reference/scattMiss.html">scattMiss()</a></code> for the missing values in one variable. If there are imputed values, they will be highlighted.</p>
 <p>Information about missing values in one variable is included as vertical or horizontal lines, as determined by the <code>side</code> argument. The lines are thereby drawn at the observed x- or y-value. In case of imputed values, they will additionally be highlighted in the scatterplot. Supplementary, percentage coverage ellipses can be drawn to give a clue about the shape of the bivariate data distribution.</p>
 <p>In contrast to the other examples, <code><a href="../reference/regressionImp.html">regressionImp()</a></code> is used for imputing missing values. This has been done deliberately to highlight the functionality of <code><a href="../reference/scattMiss.html">scattMiss()</a></code>. The following plots makes it easy to indentify missing/imputed values.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit">
-<span class="kw">dataset</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Span"</span>, <span class="st">"NonD"</span>,<span class="st">"Sleep"</span>)]
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">dataset</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Span"</span>, <span class="st">"NonD"</span>,<span class="st">"Sleep"</span><span class="op">)</span><span class="op">]</span>
 <span class="co"># for missing values</span>
-<span class="fu"><a href="../reference/scattMiss.html">scattMiss</a></span>(<span class="kw">dataset</span>[,<span class="op">-</span><span class="fl">3</span>])
-</pre></div>
+<span class="fu"><a href="../reference/scattMiss.html">scattMiss</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">[</span>,<span class="op">-</span><span class="fl">3</span><span class="op">]</span><span class="op">)</span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-4-1.png" width="576" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb7"><pre class="downlit">
-<span class="co"># for imputed values</span>
-<span class="kw">imp_regression</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span>(<span class="kw">NonD</span> <span class="op">~</span> <span class="kw">Sleep</span>, <span class="kw">dataset</span>)
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># for imputed values</span>
+<span class="va">imp_regression</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">NonD</span> <span class="op">~</span> <span class="va">Sleep</span>, <span class="va">dataset</span><span class="op">)</span>
 <span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span>
-<span class="fu"><a href="../reference/scattMiss.html">scattMiss</a></span>(<span class="kw">imp_regression</span>[,<span class="op">-</span><span class="fl">3</span>], delimiter = <span class="st">"_imp"</span>)
-</pre></div>
+<span class="fu"><a href="../reference/scattMiss.html">scattMiss</a></span><span class="op">(</span><span class="va">imp_regression</span><span class="op">[</span>,<span class="op">-</span><span class="fl">3</span><span class="op">]</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-4-2.png" width="576" style="display: block; margin: auto;"></p>
 <p>The plot indicates that there are still some missings in <code>NonD</code>. This is because the regression model could not be applied to observations, where <code>Sleep</code> is unobserved.</p>
 </div>
@@ -193,39 +186,35 @@
 <a href="#function-histmiss" class="anchor"></a>Function histMiss()</h2>
 <p>The <code><a href="../reference/histMiss.html">histMiss()</a></code> function visualizes data in a histogram with highlighting the missing/imputed values in other variables by splitting each bin into two parts. Additionally, information about missing/imputed values in the variable of interest is shown on the right hand side.</p>
 <p>If <code>only.miss=TRUE</code>, the missing/imputed values in the variable of interest are visualized by one bar on the right hand side. If additional variables are supplied, this bar is again split into two parts according to missingness/number of imputed missings in the additional variables.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit">
-
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
 <span class="co">## for missing values</span>
-<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Span"</span>, <span class="st">"NonD"</span>,<span class="st">"Sleep"</span>)]
-<span class="fu"><a href="../reference/histMiss.html">histMiss</a></span>(<span class="kw">x</span>, only.miss = <span class="fl">FALSE</span>)
-</pre></div>
+<span class="va">x</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Span"</span>, <span class="st">"NonD"</span>,<span class="st">"Sleep"</span><span class="op">)</span><span class="op">]</span>
+<span class="fu"><a href="../reference/histMiss.html">histMiss</a></span><span class="op">(</span><span class="va">x</span>, only.miss <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-5-1.png" width="576" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb9"><pre class="downlit">
-<span class="co"># for imputed values</span>
-<span class="kw">x_IMPUTED</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span>(<span class="kw">NonD</span> <span class="op">~</span> <span class="kw">Sleep</span>, data = <span class="kw">x</span>)
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># for imputed values</span>
+<span class="va">x_IMPUTED</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">NonD</span> <span class="op">~</span> <span class="va">Sleep</span>, data <span class="op">=</span> <span class="va">x</span><span class="op">)</span>
 <span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span>
-<span class="fu"><a href="../reference/histMiss.html">histMiss</a></span>(<span class="kw">x_IMPUTED</span>, delimiter = <span class="st">"_imp"</span>, only.miss = <span class="fl">FALSE</span>)
-</pre></div>
+<span class="fu"><a href="../reference/histMiss.html">histMiss</a></span><span class="op">(</span><span class="va">x_IMPUTED</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span>, only.miss <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-5-2.png" width="576" style="display: block; margin: auto;"></p>
 </div>
 <div id="function-matrixplot" class="section level2">
 <h2 class="hasAnchor">
 <a href="#function-matrixplot" class="anchor"></a>Function matrixplot()</h2>
 <p>The <code><a href="../reference/matrixplot.html">matrixplot()</a></code> function creats a matrix plot, in which all cells of a data matrix are visualized by rectangles. Available data is coded according to a continuous color scheme, while missing/imputed data is visualized by a clearly distinguishable color.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit">
-<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Dream"</span>, <span class="st">"NonD"</span>,<span class="st">"Sleep"</span>, <span class="st">"BodyWgt"</span>)]
-<span class="kw">x</span><span class="op">$</span><span class="kw">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span>(<span class="kw">x</span><span class="op">$</span><span class="kw">BodyWgt</span>)
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Dream"</span>, <span class="st">"NonD"</span>,<span class="st">"Sleep"</span>, <span class="st">"BodyWgt"</span><span class="op">)</span><span class="op">]</span>
+<span class="va">x</span><span class="op">$</span><span class="va">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">BodyWgt</span><span class="op">)</span>
 <span class="co"># for missing values</span>
-<span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span>(<span class="kw">x</span>, sortby=<span class="st">"BodyWgt"</span>)
-</pre></div>
+<span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span><span class="op">(</span><span class="va">x</span>, sortby<span class="op">=</span><span class="st">"BodyWgt"</span><span class="op">)</span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-6-1.png" width="576" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb11"><pre class="downlit">
-<span class="co"># for imputed values - multiple variable imputation with regrssionImp()</span>
-<span class="kw">x_IMPUTED</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span>(<span class="kw">NonD</span> <span class="op">+</span> <span class="kw">Dream</span> <span class="op">~</span> <span class="kw">Sleep</span>, data = <span class="kw">x</span>)
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># for imputed values - multiple variable imputation with regrssionImp()</span>
+<span class="va">x_IMPUTED</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">NonD</span> <span class="op">+</span> <span class="va">Dream</span> <span class="op">~</span> <span class="va">Sleep</span>, data <span class="op">=</span> <span class="va">x</span><span class="op">)</span>
 <span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span>
 <span class="co">#&gt; There still missing values in variable Dream . Probably due to missing values in the regressors.</span>
-<span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span>(<span class="kw">x_IMPUTED</span>, delimiter = <span class="st">"_imp"</span>, sortby = <span class="st">"BodyWgt"</span>)
-</pre></div>
+<span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span><span class="op">(</span><span class="va">x_IMPUTED</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span>, sortby <span class="op">=</span> <span class="st">"BodyWgt"</span><span class="op">)</span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-6-2.png" width="576" style="display: block; margin: auto;"></p>
 </div>
 <div id="function-marginplot" class="section level2">
@@ -234,39 +223,35 @@
 <p>In addition to a standard scatterplot, information about missing/imputed values is shown in the plot margins. Furthermore, imputed values are highlighted in the scatterplot.</p>
 <p>Boxplots for available and missing/imputed data, as well as univariate scatterplots for missing/imputed values in one variable are shown in the plot margins.Imputed values in either of the variables are highlighted in the scatterplot.</p>
 <p>Furthermore, the frequencies of the missing/imputed values can be displayed by a number (lower left of the plot). The number in the lower left corner is the number of observations that are missing/imputed in both variables.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit">
-<span class="kw">dataset</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"Dream"</span>, <span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span"</span>)]
-<span class="kw">dataset</span><span class="op">$</span><span class="kw">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span>(<span class="kw">dataset</span><span class="op">$</span><span class="kw">BodyWgt</span>)
-<span class="kw">dataset</span><span class="op">$</span><span class="kw">Span</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span>(<span class="kw">dataset</span><span class="op">$</span><span class="kw">Span</span>)
-<span class="kw">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span>(<span class="kw">dataset</span>, variable = <span class="st">"NonD"</span>) 
-<span class="kw">dataset</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"NonD"</span>, <span class="st">"Span"</span>)] <span class="op">%&gt;%</span> 
-  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>()
-</pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">dataset</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Dream"</span>, <span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span"</span><span class="op">)</span><span class="op">]</span>
+<span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span><span class="op">)</span>
+<span class="va">dataset</span><span class="op">$</span><span class="va">Span</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">Span</span><span class="op">)</span>
+<span class="va">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span><span class="op">(</span><span class="va">dataset</span>, variable <span class="op">=</span> <span class="st">"NonD"</span><span class="op">)</span> 
+<span class="va">dataset</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span><span class="op">)</span><span class="op">]</span> <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-7-1.png" width="576" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb13"><pre class="downlit">
-<span class="kw">imp_knn</span>[, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span>)] <span class="op">%&gt;%</span> 
-  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span>(delimiter = <span class="st">"_imp"</span>)
-</pre></div>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">imp_knn</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op">%&gt;%</span> 
+  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span>delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-7-2.png" width="576" style="display: block; margin: auto;"></p>
 </div>
 <div id="function-marginmatrix" class="section level2">
 <h2 class="hasAnchor">
 <a href="#function-marginmatrix" class="anchor"></a>Function marginmatrix()</h2>
 <p>The <code><a href="../reference/marginmatrix.html">marginmatrix()</a></code> function creates a scatterplot matrix with information about missing/imputed values in the plot margins of each panel.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit">
-<span class="co">## for missing values</span>
-<span class="kw">x</span> <span class="op">&lt;-</span> <span class="kw">sleep</span>[, <span class="fl">2</span><span class="op">:</span><span class="fl">4</span>]
-<span class="kw">x</span>[, <span class="fl">1</span>] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span>(<span class="kw">x</span>[, <span class="fl">1</span>])
-<span class="fu"><a href="../reference/marginmatrix.html">marginmatrix</a></span>(<span class="kw">x</span>)
-</pre></div>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co">## for missing values</span>
+<span class="va">x</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>
+<span class="va">x</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span><span class="op">(</span><span class="va">x</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span>
+<span class="fu"><a href="../reference/marginmatrix.html">marginmatrix</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-8-1.png" width="576" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb15"><pre class="downlit">
-
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
 <span class="co">## for imputed values</span>
-<span class="kw">x_imp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/irmi.html">irmi</a></span>(<span class="kw">sleep</span>[, <span class="fl">2</span><span class="op">:</span><span class="fl">4</span>])
-<span class="kw">x_imp</span>[,<span class="fl">1</span>] <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span>(<span class="kw">x_imp</span>[, <span class="fl">1</span>])
-<span class="fu"><a href="../reference/marginmatrix.html">marginmatrix</a></span>(<span class="kw">x_imp</span>, delimiter = <span class="st">"_imp"</span>)
-</pre></div>
+<span class="va">x_imp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/irmi.html">irmi</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">[</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span>
+<span class="va">x_imp</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log10</a></span><span class="op">(</span><span class="va">x_imp</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span>
+<span class="fu"><a href="../reference/marginmatrix.html">marginmatrix</a></span><span class="op">(</span><span class="va">x_imp</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-8-2.png" width="576" style="display: block; margin: auto;"></p>
 </div>
   </div>
@@ -286,7 +271,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

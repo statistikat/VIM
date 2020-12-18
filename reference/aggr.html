@@ -78,7 +78,7 @@ Print method for objects of class &quot;summary.aggr&quot;." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.0.1</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.1.0</span>
       </span>
     </div>
 
@@ -86,7 +86,7 @@ Print method for objects of class &quot;summary.aggr&quot;." />
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -124,7 +124,7 @@ Print method for objects of class &quot;summary.aggr&quot;." />
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/statistikat/VIM/">
-    <span class="fab fa fab fa-github fa-lg"></span>
+    <span class="fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -154,39 +154,39 @@ the amount of missing/imputed values in certain combinations of variables.</p>
 <p>Print method for objects of class <code>"summary.aggr"</code>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>aggr</span>(<span class='kw'>x</span>, delimiter = <span class='kw'>NULL</span>, plot = <span class='fl'>TRUE</span>, <span class='kw'>...</span>)
+    <pre class="usage"><span class='fu'>aggr</span><span class='op'>(</span><span class='va'>x</span>, delimiter <span class='op'>=</span> <span class='cn'>NULL</span>, plot <span class='op'>=</span> <span class='cn'>TRUE</span>, <span class='va'>...</span><span class='op'>)</span>
 
 <span class='co'># S3 method for aggr</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span>(
-  <span class='kw'>x</span>,
-  col = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"orange"</span>),
-  bars = <span class='fl'>TRUE</span>,
-  numbers = <span class='fl'>FALSE</span>,
-  prop = <span class='fl'>TRUE</span>,
-  combined = <span class='fl'>FALSE</span>,
-  varheight = <span class='fl'>FALSE</span>,
-  only.miss = <span class='fl'>FALSE</span>,
-  border = <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"fg"</span>),
-  sortVars = <span class='fl'>FALSE</span>,
-  sortCombs = <span class='fl'>TRUE</span>,
-  ylabs = <span class='kw'>NULL</span>,
-  axes = <span class='fl'>TRUE</span>,
-  labels = <span class='kw'>axes</span>,
-  cex.lab = <span class='fl'>1.2</span>,
-  cex.axis = <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"cex"</span>),
-  cex.numbers = <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span>(<span class='st'>"cex"</span>),
-  gap = <span class='fl'>4</span>,
-  <span class='kw'>...</span>
-)
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span>
+  <span class='va'>x</span>,
+  col <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"skyblue"</span>, <span class='st'>"red"</span>, <span class='st'>"orange"</span><span class='op'>)</span>,
+  bars <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  numbers <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  prop <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  combined <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  varheight <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  only.miss <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  border <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span><span class='op'>(</span><span class='st'>"fg"</span><span class='op'>)</span>,
+  sortVars <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  sortCombs <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  ylabs <span class='op'>=</span> <span class='cn'>NULL</span>,
+  axes <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  labels <span class='op'>=</span> <span class='va'>axes</span>,
+  cex.lab <span class='op'>=</span> <span class='fl'>1.2</span>,
+  cex.axis <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span><span class='op'>(</span><span class='st'>"cex"</span><span class='op'>)</span>,
+  cex.numbers <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span><span class='op'>(</span><span class='st'>"cex"</span><span class='op'>)</span>,
+  gap <span class='op'>=</span> <span class='fl'>4</span>,
+  <span class='va'>...</span>
+<span class='op'>)</span>
 
 <span class='co'># S3 method for aggr</span>
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='kw'>x</span>, <span class='kw'>...</span>, digits = <span class='kw'>NULL</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>...</span>, digits <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span>
 
 <span class='co'># S3 method for aggr</span>
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='kw'>object</span>, <span class='kw'>...</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>object</span>, <span class='va'>...</span><span class='op'>)</span>
 
 <span class='co'># S3 method for summary.aggr</span>
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='kw'>x</span>, <span class='kw'>...</span>)</pre>
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>...</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -413,10 +413,10 @@ values by Bernd Prantner</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package=<span class='st'>"VIM"</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>sleep</span>, package<span class='op'>=</span><span class='st'>"VIM"</span><span class='op'>)</span>
 <span class='co'>## for missing values</span>
-<span class='kw'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span>(<span class='kw'>sleep</span>)
-</div><div class='img'><img src='aggr-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='kw'>a</span>
+<span class='va'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span><span class='op'>(</span><span class='va'>sleep</span><span class='op'>)</span>
+</div><div class='img'><img src='aggr-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='va'>a</span>
 </div><div class='output co'>#&gt; 
 #&gt;  Missings in variables:
 #&gt;  Variable Count
@@ -424,7 +424,7 @@ values by Bernd Prantner</p>
 #&gt;     Dream    12
 #&gt;     Sleep     4
 #&gt;      Span     4
-#&gt;      Gest     4</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='kw'>a</span>)
+#&gt;      Gest     4</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>a</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; 
 #&gt;  Missings per variable: 
 #&gt;  Variable Count
@@ -450,9 +450,9 @@ values by Bernd Prantner</p>
 #&gt;  0:0:1:1:0:1:0:0:0:0     1  1.612903
 #&gt;  0:0:1:1:1:0:0:0:0:0     2  3.225806</div><div class='input'>
 <span class='co'>## for imputed values</span>
-<span class='kw'>sleep_IMPUTED</span> <span class='op'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='kw'>sleep</span>)
-<span class='kw'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span>(<span class='kw'>sleep_IMPUTED</span>, delimiter=<span class='st'>"_imp"</span>)
-</div><div class='img'><img src='aggr-2.png' alt='' width='700' height='433' /></div><div class='input'><span class='kw'>a</span>
+<span class='va'>sleep_IMPUTED</span> <span class='op'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span><span class='op'>(</span><span class='va'>sleep</span><span class='op'>)</span>
+<span class='va'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span><span class='op'>(</span><span class='va'>sleep_IMPUTED</span>, delimiter<span class='op'>=</span><span class='st'>"_imp"</span><span class='op'>)</span>
+</div><div class='img'><img src='aggr-2.png' alt='' width='700' height='433' /></div><div class='input'><span class='va'>a</span>
 </div><div class='output co'>#&gt; 
 #&gt;  Imputed missings in variables:
 #&gt;  Variable Count
@@ -460,7 +460,7 @@ values by Bernd Prantner</p>
 #&gt;     Dream    12
 #&gt;     Sleep     4
 #&gt;      Span     4
-#&gt;      Gest     4</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='kw'>a</span>)
+#&gt;      Gest     4</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>a</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; 
 #&gt;  Imputed missings per variables:
 #&gt;  Variable Count
@@ -486,9 +486,9 @@ values by Bernd Prantner</p>
 #&gt;  0:0:2:2:0:2:0:0:0:0     1  1.612903
 #&gt;  0:0:2:2:2:0:0:0:0:0     2  3.225806</div><div class='input'>
 
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
-<span class='kw'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span>(<span class='kw'>sleep</span>, plot=<span class='fl'>FALSE</span>)
-<span class='kw'>a</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>sleep</span>, package <span class='op'>=</span> <span class='st'>"VIM"</span><span class='op'>)</span>
+<span class='va'>a</span> <span class='op'>&lt;-</span> <span class='fu'>aggr</span><span class='op'>(</span><span class='va'>sleep</span>, plot<span class='op'>=</span><span class='cn'>FALSE</span><span class='op'>)</span>
+<span class='va'>a</span>
 </div><div class='output co'>#&gt; 
 #&gt;  Missings in variables:
 #&gt;  Variable Count
@@ -498,8 +498,8 @@ values by Bernd Prantner</p>
 #&gt;      Span     4
 #&gt;      Gest     4</div><div class='input'>
 
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='fu'>aggr</span>(<span class='kw'>sleep</span>, plot=<span class='fl'>FALSE</span>))
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>sleep</span>, package <span class='op'>=</span> <span class='st'>"VIM"</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='fu'>aggr</span><span class='op'>(</span><span class='va'>sleep</span>, plot<span class='op'>=</span><span class='cn'>FALSE</span><span class='op'>)</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; 
 #&gt;  Missings per variable: 
 #&gt;  Variable Count
@@ -525,9 +525,9 @@ values by Bernd Prantner</p>
 #&gt;  0:0:1:1:0:1:0:0:0:0     1  1.612903
 #&gt;  0:0:1:1:1:0:0:0:0:0     2  3.225806</div><div class='input'>
 
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>sleep</span>, package = <span class='st'>"VIM"</span>)
-<span class='kw'>s</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='fu'>aggr</span>(<span class='kw'>sleep</span>, plot=<span class='fl'>FALSE</span>))
-<span class='kw'>s</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>sleep</span>, package <span class='op'>=</span> <span class='st'>"VIM"</span><span class='op'>)</span>
+<span class='va'>s</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='fu'>aggr</span><span class='op'>(</span><span class='va'>sleep</span>, plot<span class='op'>=</span><span class='cn'>FALSE</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>s</span>
 </div><div class='output co'>#&gt; 
 #&gt;  Missings per variable: 
 #&gt;  Variable Count
@@ -568,7 +568,7 @@ values by Bernd Prantner</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

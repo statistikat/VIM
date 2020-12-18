@@ -1,11 +1,11 @@
 pandoc: '2.2'
-pkgdown: 1.6.1.9000
-pkgdown_sha: cc9c7b1be8573f8af3453f6e5d0422d86c916701
+pkgdown: 1.6.1
+pkgdown_sha: ~
 articles:
   VIM: VIM.html
   VisualImp: VisualImp.html
   donorImp: donorImp.html
   irmi: irmi.html
   modelImp: modelImp.html
-last_built: 2020-09-21T06:46Z
+last_built: 2020-12-18T13:50Z
 

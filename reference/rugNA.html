@@ -75,7 +75,7 @@ variables to scatterplots." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.0.1</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.1.0</span>
       </span>
     </div>
 
@@ -83,7 +83,7 @@ variables to scatterplots." />
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -121,7 +121,7 @@ variables to scatterplots." />
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/statistikat/VIM/">
-    <span class="fab fa fab fa-github fa-lg"></span>
+    <span class="fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -148,17 +148,17 @@ variables to scatterplots." />
 variables to scatterplots.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>rugNA</span>(
-  <span class='kw'>x</span>,
-  <span class='kw'>y</span>,
-  ticksize = <span class='kw'>NULL</span>,
-  side = <span class='fl'>1</span>,
-  col = <span class='st'>"red"</span>,
-  alpha = <span class='kw'>NULL</span>,
-  miss = <span class='kw'>NULL</span>,
-  lwd = <span class='fl'>0.5</span>,
-  <span class='kw'>...</span>
-)</pre>
+    <pre class="usage"><span class='fu'>rugNA</span><span class='op'>(</span>
+  <span class='va'>x</span>,
+  <span class='va'>y</span>,
+  ticksize <span class='op'>=</span> <span class='cn'>NULL</span>,
+  side <span class='op'>=</span> <span class='fl'>1</span>,
+  col <span class='op'>=</span> <span class='st'>"red"</span>,
+  alpha <span class='op'>=</span> <span class='cn'>NULL</span>,
+  miss <span class='op'>=</span> <span class='cn'>NULL</span>,
+  lwd <span class='op'>=</span> <span class='fl'>0.5</span>,
+  <span class='va'>...</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -215,22 +215,22 @@ in <code>x</code>.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='kw'>tao</span>, package = <span class='st'>"VIM"</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>tao</span>, package <span class='op'>=</span> <span class='st'>"VIM"</span><span class='op'>)</span>
 <span class='co'>## for missing values</span>
-<span class='kw'>x</span> <span class='op'>&lt;-</span> <span class='kw'>tao</span>[, <span class='st'>"Air.Temp"</span>]
-<span class='kw'>y</span> <span class='op'>&lt;-</span> <span class='kw'>tao</span>[, <span class='st'>"Humidity"</span>]
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span>(<span class='kw'>x</span>, <span class='kw'>y</span>)
-</div><div class='input'><span class='fu'>rugNA</span>(<span class='kw'>x</span>, <span class='kw'>y</span>, side = <span class='fl'>1</span>)
-</div><div class='input'><span class='fu'>rugNA</span>(<span class='kw'>x</span>, <span class='kw'>y</span>, side = <span class='fl'>2</span>)
+<span class='va'>x</span> <span class='op'>&lt;-</span> <span class='va'>tao</span><span class='op'>[</span>, <span class='st'>"Air.Temp"</span><span class='op'>]</span>
+<span class='va'>y</span> <span class='op'>&lt;-</span> <span class='va'>tao</span><span class='op'>[</span>, <span class='st'>"Humidity"</span><span class='op'>]</span>
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>y</span><span class='op'>)</span>
+</div><div class='input'><span class='fu'>rugNA</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>y</span>, side <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span>
+</div><div class='input'><span class='fu'>rugNA</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>y</span>, side <span class='op'>=</span> <span class='fl'>2</span><span class='op'>)</span>
 </div><div class='img'><img src='rugNA-1.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'>## for imputed values</span>
-<span class='kw'>x_imp</span> <span class='op'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span>(<span class='kw'>tao</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Air.Temp"</span>,<span class='st'>"Humidity"</span>)])
-<span class='kw'>x</span> <span class='op'>&lt;-</span> <span class='kw'>x_imp</span>[, <span class='st'>"Air.Temp"</span>]
-<span class='kw'>y</span> <span class='op'>&lt;-</span> <span class='kw'>x_imp</span>[, <span class='st'>"Humidity"</span>]
-<span class='kw'>miss</span> <span class='op'>&lt;-</span> <span class='kw'>x_imp</span>[, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Air.Temp_imp"</span>,<span class='st'>"Humidity_imp"</span>)]
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span>(<span class='kw'>x</span>, <span class='kw'>y</span>)
-</div><div class='input'><span class='fu'>rugNA</span>(<span class='kw'>x</span>, <span class='kw'>y</span>, side = <span class='fl'>1</span>, col = <span class='st'>"orange"</span>, miss = <span class='kw'>miss</span>)
-</div><div class='input'><span class='fu'>rugNA</span>(<span class='kw'>x</span>, <span class='kw'>y</span>, side = <span class='fl'>2</span>, col = <span class='st'>"orange"</span>, miss = <span class='kw'>miss</span>)
+<span class='va'>x_imp</span> <span class='op'>&lt;-</span> <span class='fu'><a href='kNN.html'>kNN</a></span><span class='op'>(</span><span class='va'>tao</span><span class='op'>[</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Air.Temp"</span>,<span class='st'>"Humidity"</span><span class='op'>)</span><span class='op'>]</span><span class='op'>)</span>
+<span class='va'>x</span> <span class='op'>&lt;-</span> <span class='va'>x_imp</span><span class='op'>[</span>, <span class='st'>"Air.Temp"</span><span class='op'>]</span>
+<span class='va'>y</span> <span class='op'>&lt;-</span> <span class='va'>x_imp</span><span class='op'>[</span>, <span class='st'>"Humidity"</span><span class='op'>]</span>
+<span class='va'>miss</span> <span class='op'>&lt;-</span> <span class='va'>x_imp</span><span class='op'>[</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Air.Temp_imp"</span>,<span class='st'>"Humidity_imp"</span><span class='op'>)</span><span class='op'>]</span>
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>y</span><span class='op'>)</span>
+</div><div class='input'><span class='fu'>rugNA</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>y</span>, side <span class='op'>=</span> <span class='fl'>1</span>, col <span class='op'>=</span> <span class='st'>"orange"</span>, miss <span class='op'>=</span> <span class='va'>miss</span><span class='op'>)</span>
+</div><div class='input'><span class='fu'>rugNA</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>y</span>, side <span class='op'>=</span> <span class='fl'>2</span>, col <span class='op'>=</span> <span class='st'>"orange"</span>, miss <span class='op'>=</span> <span class='va'>miss</span><span class='op'>)</span>
 </div><div class='img'><img src='rugNA-2.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
@@ -248,7 +248,7 @@ in <code>x</code>.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>
