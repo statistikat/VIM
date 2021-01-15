@@ -124,12 +124,12 @@ hotdeck <- function(data , variable=NULL, ord_var=NULL,domain_var=NULL,
   # whole data set
   data <- data[,imputeHD(.SD,variableX=variable,varTypeX=varType,
     imp_varX=imp_var,imp_suffixX=imp_suffix,impNAX=impNA,makeNAX=makeNA,
-    ord_varX = ord_var), by = domain_var]
+    ord_varX = ord_var, donorcond = donorcond), by = domain_var]
   if(any(ord_var=="RandomVariableForImputationWithHotdeck")){
     data[,RandomVariableForImputationWithHotdeck:=NULL]
     ord_var <- NULL
   }
-  
+
   setkey(data,OriginalSortingVariable)
   data[,OriginalSortingVariable:=NULL]
   if(all(classx!="data.table"))
@@ -140,7 +140,7 @@ hotdeck <- function(data , variable=NULL, ord_var=NULL,domain_var=NULL,
 
 ## xx should be a data.table and ord_var the name of variables to sort
 imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
-                     impNAX,makeNAX, ord_varX){
+                     impNAX,makeNAX, ord_varX, donorcond){
   #xxx <<- copy(xx)
   #variableX <<- variableX
   #varTypeX <<- varTypeX
@@ -153,7 +153,12 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
   #xxb <- copy(xx)
   #xx <- copy(xxb)
   for(v in variableX){
-    
+    xx[, donor_applicable := !is.na(xx[[v]])]
+    if (!is.null(donorcond)) {
+      condition_string <- paste0("xx[[v]]", donorcond[match(v,variableX)])
+      TF <- eval(parse(text=condition_string))
+      xx[, donor_applicable := donor_applicable & TF]
+    }
     if(!impNAX){
       setkeyv(xx,v)
       if(is.null(makeNAX))
@@ -191,7 +196,6 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
       impPart <- xx[J(NA_character_),UniqueIdForImputation,nomatch=FALSE]#$UniqueIdForImputation
       setnames(xx,"VariableWhichIsCurrentlyImputed",v)
     }
-    
     if((length(impPart)>0)&&(length(impPart)<nrow(xx))){
       if(imp_varX){
         impvarname <- paste(v,"_",imp_suffixX,sep="")
@@ -201,22 +205,22 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
       impDon[impDon<1] <- impPart[impDon<1]+1
       setkey(xx,UniqueIdForImputation)
       Don <- data.frame(xx[impDon,v,with=FALSE])[,1]
-      
-      TFindex <- is.na(Don)
+
+      TFindex <- xx[impDon, !donor_applicable]
       TF <- any(TFindex)
       if(TF){
         add <- 2
         while(TF){
           impDon[TFindex] <- impPart[TFindex]-add
-          impDon[TFindex][impDon[TFindex]<1] <- impPart[TFindex][impDon[TFindex]<1]+add
+          impDon[TFindex][impDon[TFindex]<1] <- impPart[TFindex][impDon[TFindex]<1]-add+nrow(xx)
           impDon2 <- impDon[TFindex]
           Don[TFindex] <- data.frame(xx[impDon2,v,with=FALSE])[,1]
-          TFindex[TFindex] <- is.na(Don[TFindex])
+          TFindex[TFindex] <- xx[impDon2, !donor_applicable]
           TF <- any(TFindex)
           if(add>50){
             TF <- FALSE
             # remaining missing values will be set to a random value from the group
-            
+
             Don[TFindex] <- Don[!TFindex][sample(sum(!TFindex),1)]
             if(!identical(ord_varX, "RandomVariableForImputationWithHotdeck")){
               warning(paste("For variable",v,"the ordering is ignored for at least one imputation."))
