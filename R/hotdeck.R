@@ -15,15 +15,15 @@
 
 
 #' Hot-Deck Imputation
-#' 
+#'
 #' Implementation of the popular Sequential, Random (within a domain) hot-deck
 #' algorithm for imputation.
-#' 
-#' 
+#'
+#'
 #' @param data data.frame or matrix
 #' @param variable variables where missing values should be imputed (not overlapping with ord_var)
 #' @param ord_var variables for sorting the data set before imputation (not overlapping with variable)
-#' @param domain_var variables for building domains and impute within these 
+#' @param domain_var variables for building domains and impute within these
 #' domains
 #' @param makeNA list of length equal to the number of variables, with values, that should be converted to NA for each variable
 #' @param NAcond list of length equal to the number of variables, with a condition for imputing a NA
@@ -43,30 +43,37 @@
 #' @keywords manip
 #' @family imputation methods
 #' @examples
-#' 
+#'
 #' data(sleep)
 #' sleepI <- hotdeck(sleep)
 #' sleepI2 <- hotdeck(sleep,ord_var="BodyWgt",domain_var="Pred")
-#' 
+#'
 #' # Usage of donorcond in a simple example
-#' sleepI3 <- hotdeck(sleep,variable=c("NonD","Dream","Sleep","Span","Gest"),
-#' ord_var="BodyWgt",domain_var="Pred",
-#' donorcond = list(">4","<17",">1.5","%between%c(8,13)",">5"))
-#' 
+#' sleepI3 <- hotdeck(
+#'   sleep,
+#'   variable = c("NonD", "Dream", "Sleep", "Span", "Gest"),
+#'   ord_var = "BodyWgt", domain_var = "Pred",
+#'   donorcond = list(">4", "<17", ">1.5", "%between%c(8,13)", ">5")
+#' )
+#'
 #' set.seed(132)
 #' nRows <- 1e3
 #' # Generate a data set with nRows rows and several variables
-#' x<-data.frame(x=rnorm(nRows),y=rnorm(nRows),z=sample(LETTERS,nRows,replace=TRUE),
-#'     d1=sample(LETTERS[1:3],nRows,replace=TRUE),d2=sample(LETTERS[1:2],nRows,replace=TRUE),
-#'     o1=rnorm(nRows),o2=rnorm(nRows),o3=rnorm(100))
+#' x <- data.frame(
+#'   x = rnorm(nRows), y = rnorm(nRows),
+#'   z = sample(LETTERS, nRows, replace = TRUE),
+#'   d1 = sample(LETTERS[1:3], nRows, replace = TRUE),
+#'   d2 = sample(LETTERS[1:2], nRows, replace = TRUE),
+#'   o1 = rnorm(nRows), o2 = rnorm(nRows), o3 = rnorm(100)
+#' )
 #' origX <- x
-#' x[sample(1:nRows,nRows/10),1] <- NA
-#' x[sample(1:nRows,nRows/10),2] <- NA
-#' x[sample(1:nRows,nRows/10),3] <- NA
-#' x[sample(1:nRows,nRows/10),4] <- NA
-#' xImp <- hotdeck(x,ord_var = c("o1","o2","o3"),domain_var="d2")
-#' 
-#' 
+#' x[sample(1:nRows,nRows/10), 1] <- NA
+#' x[sample(1:nRows,nRows/10), 2] <- NA
+#' x[sample(1:nRows,nRows/10), 3] <- NA
+#' x[sample(1:nRows,nRows/10), 4] <- NA
+#' xImp <- hotdeck(x,ord_var = c("o1", "o2", "o3"), domain_var = "d2")
+#'
+#'
 #' @export
 hotdeck <- function(data , variable=NULL, ord_var=NULL,domain_var=NULL,
     makeNA=NULL,NAcond=NULL,impNA=TRUE,donorcond=NULL,
@@ -179,7 +186,7 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
       setkeyv(xx,prevKey)
       xx$UniqueIdForImputation <- 1:nrow(xx)
     }
-    
+
     if(!is.null(makeNAX)){
       # eval(parse(text="xx[xx>1]"))
       setnames(xx,v,"weirdandlongname")
@@ -188,13 +195,9 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
     }
     setkeyv(xx,v)
     if(varTypeX[v]%in%c("numeric","integer")){
-      setnames(xx,v,"VariableWhichIsCurrentlyImputed")
       impPart <- xx[J(NA_real_),UniqueIdForImputation,nomatch=FALSE]#$UniqueIdForImputation
-      setnames(xx,"VariableWhichIsCurrentlyImputed",v)
     }else{
-      setnames(xx,v,"VariableWhichIsCurrentlyImputed")
       impPart <- xx[J(NA_character_),UniqueIdForImputation,nomatch=FALSE]#$UniqueIdForImputation
-      setnames(xx,"VariableWhichIsCurrentlyImputed",v)
     }
     if((length(impPart)>0)&&(length(impPart)<nrow(xx))){
       if(imp_varX){
@@ -217,7 +220,7 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
           Don[TFindex] <- data.frame(xx[impDon2,v,with=FALSE])[,1]
           TFindex[TFindex] <- xx[impDon2, !donor_applicable]
           TF <- any(TFindex)
-          if(add>50){
+          if(add>min(50, nrow(xx))){
             TF <- FALSE
             # remaining missing values will be set to a random value from the group
 
@@ -263,9 +266,9 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
 #  print(v)
 #  print(identical(xImp[,v],xImp1[,v]))
 #}
-#  
-#  
-#  
+#
+#
+#
 #require(microbenchmark)
 #res <- microbenchmark(xImp <- hd(x,ord_var = c("o1","o2","o3"),domain_var="d2"),times=10)
 
