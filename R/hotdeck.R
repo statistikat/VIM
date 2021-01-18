@@ -148,17 +148,10 @@ hotdeck <- function(data , variable=NULL, ord_var=NULL,domain_var=NULL,
 ## xx should be a data.table and ord_var the name of variables to sort
 imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
                      impNAX,makeNAX, ord_varX, donorcond){
-  #xxx <<- copy(xx)
-  #variableX <<- variableX
-  #varTypeX <<- varTypeX
-  #imp_varX <<- imp_varX
-  #imp_suffixX <<- imp_suffixX
-  OriginalSortingVariable <- weirdandlongname <- UniqueIdForImputation <- NULL#empty init
+  donor_applicable <- OriginalSortingVariable <- weirdandlongname <- UniqueIdForImputation <- NULL#empty init
   J <- function()NULL#empty init
   xx$UniqueIdForImputation <- 1:nrow(xx)
   prevKey <- key(xx)
-  #xxb <- copy(xx)
-  #xx <- copy(xxb)
   for(v in variableX){
     xx[, donor_applicable := !is.na(xx[[v]])]
     if (!is.null(donorcond)) {
@@ -215,6 +208,10 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
         add <- 2
         while(TF){
           impDon[TFindex] <- impPart[TFindex]-add
+          if(any(impDon[TFindex][impDon[TFindex]<1]<=-nrow(xx))){
+            impDon[TFindex][impDon[TFindex]<1][impDon[TFindex][impDon[TFindex]<1]<=-nrow(xx)] <- 
+              - impDon[TFindex][impDon[TFindex]<1][impDon[TFindex][impDon[TFindex]<1]<=-nrow(xx)]
+          }
           impDon[TFindex][impDon[TFindex]<1] <- impPart[TFindex][impDon[TFindex]<1]-add+nrow(xx)
           impDon2 <- impDon[TFindex]
           Don[TFindex] <- data.frame(xx[impDon2,v,with=FALSE])[,1]
