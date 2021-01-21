@@ -160,7 +160,8 @@ factor ordered and semi-continous variables.</p>
   mixed.constant <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fl'>0</span>, <span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>mixed</span><span class='op'>)</span><span class='op'>)</span>,
   returnIndex <span class='op'>=</span> <span class='cn'>FALSE</span>,
   nMin <span class='op'>=</span> <span class='fl'>1L</span>,
-  returnMin <span class='op'>=</span> <span class='cn'>FALSE</span>
+  returnMin <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  methodStand <span class='op'>=</span> <span class='st'>"range"</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -213,6 +214,10 @@ factor ordered and semi-continous variables.</p>
     <tr>
       <th>returnMin</th>
       <td><p>logical if the computed distances for the indices should be returned</p></td>
+    </tr>
+    <tr>
+      <th>methodStand</th>
+      <td><p>character either "range" or "iqr", iqr is more robust for outliers</p></td>
     </tr>
     </table>
 
