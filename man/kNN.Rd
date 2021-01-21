@@ -26,7 +26,8 @@ kNN(
   onlyRF = FALSE,
   addRandom = FALSE,
   useImputedDist = TRUE,
-  weightDist = FALSE
+  weightDist = FALSE,
+  methodStand = "range"
 )
 }
 \arguments{
@@ -85,6 +86,8 @@ Be aware that this results in a dependency on the ordering of the variables.}
 
 \item{weightDist}{TRUE/FALSE if the distances of the k nearest neighbours should be used as weights in the
 aggregation step}
+
+\item{methodStand}{either "range" or "iqr" to be used in the standardization of numeric vaiables in the gower distance}
 }
 \value{
 the imputed data set.

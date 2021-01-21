@@ -16,7 +16,8 @@ gowerD(
   mixed.constant = rep(0, length(mixed)),
   returnIndex = FALSE,
   nMin = 1L,
-  returnMin = FALSE
+  returnMin = FALSE,
+  methodStand = "range"
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ gowerD(
 \item{nMin}{integer number of values with smallest distance to be returned}
 
 \item{returnMin}{logical if the computed distances for the indices should be returned}
+
+\item{methodStand}{character either "range" or "iqr", iqr is more robust for outliers}
 }
 \description{
 The function gowerD is used by kNN to compute the distances for numerical,

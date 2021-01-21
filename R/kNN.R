@@ -7,7 +7,8 @@ lengthL <- function(x){
 }
 
 dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,
-                        don_index,imp_index,weightsx,k,mixed.constant,provideMins=TRUE){
+                        don_index,imp_index,weightsx,k,mixed.constant,provideMins=TRUE,
+                        methodStand){
   #gd <- distance(don_dist_var,imp_dist_var,weights=weightsx)
   if(is.null(mixed.constant))
     mixed.constant <- rep(0,length(mixedX))
@@ -15,13 +16,13 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mi
   if(provideMins){
     gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
                  factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,
-                 nMin=as.integer(k),returnMin=TRUE);
+                 nMin=as.integer(k),returnMin=TRUE,methodStand = methodStand)
     colnames(gd$mins) <- imp_index
     erg2 <- as.matrix(gd$mins)
   }else{
     gd <- gowerD(don_dist_var,imp_dist_var,weights=weightsx,numericalX,
                  factorsX,ordersX,mixedX,levOrdersX,mixed.constant=mixed.constant,returnIndex=TRUE,
-                 nMin=as.integer(k));
+                 nMin=as.integer(k), methodStand=methodStand)
     erg2 <- NA
   }
   colnames(gd$ind) <- imp_index
@@ -94,6 +95,7 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mi
 #' Be aware that this results in a dependency on the ordering of the variables.
 #' @param weightDist TRUE/FALSE if the distances of the k nearest neighbours should be used as weights in the
 #' aggregation step
+#' @param methodStand either "range" or "iqr" to be used in the standardization of numeric vaiables in the gower distance
 #' @return the imputed data set.
 #' @author Alexander Kowarik, Statistik Austria
 #' @references A. Kowarik, M. Templ (2016) Imputation with
@@ -112,7 +114,9 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mi
 kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
                 numFun = median, catFun=maxCat,
                 makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
-                imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE,addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE) {
+                imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE,
+                addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE,
+                methodStand = "range") {
   check_data(data)
   data_df <- !is.data.table(data)
   # check for colnames before forcing variable
@@ -398,7 +402,8 @@ kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnam
       mixedX <-mixed[mixed%in%dist_varx]
       #dist_single provide the rows of the k nearest neighbours and the corresponding distances
       mindi <- dist_single(as.data.frame(don_dist_var),as.data.frame(imp_dist_var),numericalX,factorsX,ordersX,mixedX,levOrdersX,
-          don_index,imp_index,weightsx,k,mixed.constant,provideMins=weightDist)
+          don_index,imp_index,weightsx,k,mixed.constant,provideMins=weightDist,
+          methodStand = methodStand)
       getI <- function(x)data[x,variable[j],with=FALSE]
       if(trace)
         message(sum(indexNA2s[,variable[j]]),"items of","variable:",variable[j]," imputed\n")
