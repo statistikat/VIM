@@ -15,6 +15,7 @@
 #' @param returnIndex logical if TRUE return the index of the minimum distance
 #' @param nMin integer number of values with smallest distance to be returned
 #' @param returnMin logical if the computed distances for the indices should be returned
+#' @param methodStand character either "range" or "iqr", iqr is more robust for outliers
 #' @details returnIndex=FALSE: a numerical matrix n x m with the computed distances
 #' returnIndex=TRUE: a named list with "ind" containing the requested indices and "mins" the computed distances
 #' @examples
@@ -41,7 +42,11 @@ gowerD <- function(data.x, data.y = data.x,
                    mixed = vector(),
                    levOrders  = vector(),
                    mixed.constant = rep(0, length(mixed)),
-    returnIndex=FALSE,nMin=1L,returnMin=FALSE) {
+                   returnIndex=FALSE,
+                   nMin=1L,
+                   returnMin=FALSE,
+                   methodStand="range") {
+  stopifnot(length(methodStand)==1&&methodStand%in%c("range", "iqr"))
   maxplus1 <- function(x){
     if(all(is.na(x)))
       return(1)
@@ -76,9 +81,19 @@ gowerD <- function(data.x, data.y = data.x,
   data.y <- data.y[,c(numerical,factors,orders,mixed),drop=FALSE]
   if(length(numerical)>0){
     ##Datensatz durch Range dividieren
-    rmin <- apply(rbind(apply(data.x[,numerical,drop=FALSE],2,min,na.rm=TRUE),apply(data.y[,numerical,drop=FALSE],2,min0,na.rm=TRUE)),2,min,na.rm=TRUE)
-    rmax <- apply(rbind(apply(data.x[,numerical,drop=FALSE],2,max,na.rm=TRUE),apply(data.y[,numerical,drop=FALSE],2,max1,na.rm=TRUE)),2,max,na.rm=TRUE)
+    if(methodStand == "range"){
+      rmin <- apply(rbind(data.x[,numerical,drop=FALSE],data.y[,numerical,drop=FALSE]),
+                        2,min0,na.rm=TRUE)
+      rmax <- apply(rbind(data.x[,numerical,drop=FALSE],
+                        data.y[,numerical,drop=FALSE]),2,max1,na.rm=TRUE)
+    }else if(methodStand == "iqr"){
+      rmin <- apply(rbind(data.x[,numerical,drop=FALSE],data.y[,numerical,drop=FALSE]),2,quantile,na.rm=TRUE,
+                    probs=.25)
+      rmax <- apply(rbind(data.x[,numerical,drop=FALSE],data.y[,numerical,drop=FALSE]),2,quantile,na.rm=TRUE,
+                    probs=.75)
+    }
     r <- rmax-rmin
+    r[is.na(r)] <- 1
     r[r==0] <- 1
     for(i in seq_along(numerical)){
       data.x[,numerical[i]] <- data.x[,numerical[i]]/r[i]
