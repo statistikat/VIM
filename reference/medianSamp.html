@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Mammal sleep data — sleep • VIM</title>
+<title>Aggregation function for a ordinal variable — medianSamp • VIM</title>
 
 
 <!-- jquery -->
@@ -41,8 +41,9 @@
   <link href="../extra.css" rel="stylesheet">
   
 
-<meta property="og:title" content="Mammal sleep data — sleep" />
-<meta property="og:description" content="Sleep data with missing values." />
+<meta property="og:title" content="Aggregation function for a ordinal variable — medianSamp" />
+<meta property="og:description" content="The function medianSamp chooses the level as the median or randomly between
+two levels." />
 
 
 
@@ -137,64 +138,32 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Mammal sleep data</h1>
-    <small class="dont-index">Source: <a href='https://github.com/statistikat/VIM/blob/master/R/VIM-package.R'><code>R/VIM-package.R</code></a></small>
-    <div class="hidden name"><code>sleep.Rd</code></div>
+    <h1>Aggregation function for a ordinal variable</h1>
+    <small class="dont-index">Source: <a href='https://github.com/statistikat/VIM/blob/master/R/medianSamp.R'><code>R/medianSamp.R</code></a></small>
+    <div class="hidden name"><code>medianSamp.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Sleep data with missing values.</p>
+    <p>The function medianSamp chooses the level as the median or randomly between
+two levels.</p>
     </div>
 
+    <pre class="usage"><span class='fu'>medianSamp</span><span class='op'>(</span><span class='va'>x</span>, weights <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre>
+
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>x</th>
+      <td><p>ordered factor vector</p></td>
+    </tr>
+    <tr>
+      <th>weights</th>
+      <td><p>numeric vector providing weights for the observations in x</p></td>
+    </tr>
+    </table>
 
 
-    <h2 class="hasAnchor" id="format"><a class="anchor" href="#format"></a>Format</h2>
-
-    <p>A data frame with 62 observations on the following 10 variables.</p><dl>
-<dt>BodyWgt</dt><dd><p>a numeric vector</p></dd>
-<dt>BrainWgt</dt><dd><p>a numeric vector</p></dd> <dt>NonD</dt><dd><p>a numeric
-vector</p></dd> <dt>Dream</dt><dd><p>a numeric vector</p></dd> <dt>Sleep</dt><dd><p>a
-numeric vector</p></dd> <dt>Span</dt><dd><p>a numeric vector</p></dd> <dt>Gest</dt><dd><p>a
-numeric vector</p></dd> <dt>Pred</dt><dd><p>a numeric vector</p></dd> <dt>Exp</dt><dd><p>a
-numeric vector</p></dd> <dt>Danger</dt><dd><p>a numeric vector</p></dd> 
-</dl>
-
-    <h2 class="hasAnchor" id="source"><a class="anchor" href="#source"></a>Source</h2>
-
-    <p>Allison, T. and Chichetti, D. (1976) Sleep in mammals: ecological
-and constitutional correlates. <em>Science</em> <strong>194 (4266)</strong>, 732--734.</p>
-<p>The data set was imported from <code>GGobi</code>.</p>
-
-    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>sleep</span>, package <span class='op'>=</span> <span class='st'>"VIM"</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>sleep</span><span class='op'>)</span>
-</div><div class='output co'>#&gt;     BodyWgt            BrainWgt            NonD            Dream      
-#&gt;  Min.   :   0.005   Min.   :   0.14   Min.   : 2.100   Min.   :0.000  
-#&gt;  1st Qu.:   0.600   1st Qu.:   4.25   1st Qu.: 6.250   1st Qu.:0.900  
-#&gt;  Median :   3.342   Median :  17.25   Median : 8.350   Median :1.800  
-#&gt;  Mean   : 198.790   Mean   : 283.13   Mean   : 8.673   Mean   :1.972  
-#&gt;  3rd Qu.:  48.202   3rd Qu.: 166.00   3rd Qu.:11.000   3rd Qu.:2.550  
-#&gt;  Max.   :6654.000   Max.   :5712.00   Max.   :17.900   Max.   :6.600  
-#&gt;                                       NA's   :14       NA's   :12     
-#&gt;      Sleep            Span              Gest             Pred      
-#&gt;  Min.   : 2.60   Min.   :  2.000   Min.   : 12.00   Min.   :1.000  
-#&gt;  1st Qu.: 8.05   1st Qu.:  6.625   1st Qu.: 35.75   1st Qu.:2.000  
-#&gt;  Median :10.45   Median : 15.100   Median : 79.00   Median :3.000  
-#&gt;  Mean   :10.53   Mean   : 19.878   Mean   :142.35   Mean   :2.871  
-#&gt;  3rd Qu.:13.20   3rd Qu.: 27.750   3rd Qu.:207.50   3rd Qu.:4.000  
-#&gt;  Max.   :19.90   Max.   :100.000   Max.   :645.00   Max.   :5.000  
-#&gt;  NA's   :4       NA's   :4         NA's   :4                       
-#&gt;       Exp            Danger     
-#&gt;  Min.   :1.000   Min.   :1.000  
-#&gt;  1st Qu.:1.000   1st Qu.:1.000  
-#&gt;  Median :2.000   Median :2.000  
-#&gt;  Mean   :2.419   Mean   :2.613  
-#&gt;  3rd Qu.:4.000   3rd Qu.:4.000  
-#&gt;  Max.   :5.000   Max.   :5.000  
-#&gt;                                 </div><div class='input'><span class='fu'><a href='aggr.html'>aggr</a></span><span class='op'>(</span><span class='va'>sleep</span><span class='op'>)</span>
-</div><div class='img'><img src='sleep-1.png' alt='' width='700' height='433' /></div><div class='input'>
-</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
