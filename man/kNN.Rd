@@ -27,7 +27,8 @@ kNN(
   addRandom = FALSE,
   useImputedDist = TRUE,
   weightDist = FALSE,
-  methodStand = "range"
+  methodStand = "range",
+  ordFun = medianSamp
 )
 }
 \arguments{
@@ -88,6 +89,9 @@ Be aware that this results in a dependency on the ordering of the variables.}
 aggregation step}
 
 \item{methodStand}{either "range" or "iqr" to be used in the standardization of numeric vaiables in the gower distance}
+
+\item{ordFun}{function for aggregating the k Nearest Neighbours in the case
+of a ordered factor variable}
 }
 \value{
 the imputed data set.
