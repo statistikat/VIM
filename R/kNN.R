@@ -6,9 +6,10 @@ lengthL <- function(x){
   }
 }
 
-dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mixedX,levOrdersX,
-                        don_index,imp_index,weightsx,k,mixed.constant,provideMins=TRUE,
-                        methodStand){
+dist_single <- function(don_dist_var,imp_dist_var,numericalX,
+                        factorsX,ordersX,mixedX,levOrdersX,
+                        don_index,imp_index,weightsx,k,mixed.constant,
+                        provideMins=TRUE,methodStand){
   #gd <- distance(don_dist_var,imp_dist_var,weights=weightsx)
   if(is.null(mixed.constant))
     mixed.constant <- rep(0,length(mixedX))
@@ -96,6 +97,8 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,factorsX,ordersX,mi
 #' @param weightDist TRUE/FALSE if the distances of the k nearest neighbours should be used as weights in the
 #' aggregation step
 #' @param methodStand either "range" or "iqr" to be used in the standardization of numeric vaiables in the gower distance
+#' @param ordFun function for aggregating the k Nearest Neighbours in the case
+#' of a ordered factor variable
 #' @return the imputed data set.
 #' @author Alexander Kowarik, Statistik Austria
 #' @references A. Kowarik, M. Templ (2016) Imputation with
@@ -116,7 +119,8 @@ kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnam
                 makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
                 imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE,
                 addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE,
-                methodStand = "range") {
+                methodStand = "range",
+                ordFun = medianSamp) {
   check_data(data)
   data_df <- !is.data.table(data)
   # check for colnames before forcing variable
@@ -424,16 +428,20 @@ kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnam
         #1-dist because dist is between 0 and 1
         mindi[[2]] <- 1-mindi[[2]]
         ### warning if there is no argument named weights
-        if(variable[j]%in%factors)
+        if(variable[j]%in%factors){
           data[indexNA2s[,variable[j]],variable[j]] <- sapply(1:ncol(kNNs),function(x)do.call("catFun",list(unlist(kNNs[,x,with=FALSE]),mindi[[2]][,x])))
-        else if(is.integer(data[,variable[j]])){
+        }else if(variable[j]%in%orders){
+          data[indexNA2s[,variable[j]],variable[j]] <- sapply(1:ncol(kNNs),function(x)do.call("ordFun",list(unlist(kNNs[,x,with=FALSE]),mindi[[2]][,x])))
+        }else if(is.integer(data[,variable[j]])){
           data[indexNA2s[,variable[j]],variable[j]] <- round(sapply(1:ncol(kNNs),function(x)do.call("numFun",list(unlist(kNNs[,x,with=FALSE]),mindi[[2]][,x]))))
         }else
           data[indexNA2s[,variable[j]],variable[j]] <- sapply(1:ncol(kNNs),function(x)do.call("numFun",list(unlist(kNNs[,x,with=FALSE]),mindi[[2]][,x])))
       }else{
-        if(variable[j]%in%factors)
+        if(variable[j]%in%factors){
           data[indexNA2s[,variable[j]],variable[j]] <- apply(kNNs,2,catFun)
-        else if(is.integer(data[,variable[j]])){
+        }else if(variable[j]%in%orders){
+          data[indexNA2s[,variable[j]],variable[j]] <- sapply(kNNs, ordFun)
+        }else if(is.integer(data[,variable[j]])){
           data[indexNA2s[,variable[j]],variable[j]] <- round(apply(kNNs,2,numFun))
         }else
           data[indexNA2s[,variable[j]],variable[j]] <- apply(kNNs,2,numFun)
