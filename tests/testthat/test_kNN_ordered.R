@@ -8,11 +8,7 @@ setna <- function(d,i,col=2){
   d
 }
 
-## Test for medianSamp
-test_that("medianSamp as expected",{
-  expect_true(medianSamp(d$w)%in%c("C","D"))
-  expect_true(medianSamp(d$w, weights = d$y)=="E")
-})
+
 
 
 test_that("kNN ordered Tests for k==1",{
