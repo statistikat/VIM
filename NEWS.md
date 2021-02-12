@@ -1,5 +1,6 @@
 # VIM 6.1.1
 - ordFun as parameter of kNN to control the function applied to ordinal variables
+- methodStand option in gowerD and kNN to switch between range and interquartile range for the standardization of numerical variables
 # VIM 6.0.2
 - error message in `hotdeck()` when ord_var and variable overlap
 - family argument of class 'family' now work in regressionImp
