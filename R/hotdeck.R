@@ -28,7 +28,8 @@
 #' @param makeNA list of length equal to the number of variables, with values, that should be converted to NA for each variable
 #' @param NAcond list of length equal to the number of variables, with a condition for imputing a NA
 #' @param impNA TRUE/FALSE whether NA should be imputed
-#' @param donorcond list of length equal to the number of variables, with a donorcond condition for the donors e.g. ">5"
+#' @param donorcond list of length equal to the number of variables, with a donorcond condition as character string.
+#' e.g. ">5" or c(">5","<10). If the list element for a variable is NULL no condition will be applied for this variable.
 #' @param imp_var TRUE/FALSE if a TRUE/FALSE variables for each imputed
 #' variable should be created show the imputation status
 #' @param imp_suffix suffix for the TRUE/FALSE variables showing the imputation
@@ -155,9 +156,11 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
   for(v in variableX){
     xx[, donor_applicable := !is.na(xx[[v]])]
     if (!is.null(donorcond)) {
-      condition_string <- paste0("xx[[v]]", donorcond[match(v,variableX)])
-      TF <- eval(parse(text=condition_string))
-      xx[, donor_applicable := donor_applicable & TF]
+      if(!is.null(donorcond[[match(v,variableX)]])){
+        condition_string <- paste0("xx[[v]]", donorcond[[match(v,variableX)]],collapse="&")
+        TF <- eval(parse(text=condition_string))
+        xx[, donor_applicable := donor_applicable & TF]  
+      }
     }
     if(!impNAX){
       setkeyv(xx,v)

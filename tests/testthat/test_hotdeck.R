@@ -60,4 +60,31 @@ test_that("hotdeck should fill all values including the first one - ord_var", {
 test_that("hotdeck returns an error when ord_var and variable overlap", {
   expect_error(hotdeck(df2, variable=c("fac","r"), ord_var="r"))
 })
+test_that("donorcond exclude the correct observations",{
+  data(sleep)
+  sleepI3 <- hotdeck(
+   sleep,
+   variable = c("NonD", "Dream", "Sleep", "Span", "Gest"),
+   ord_var = "BodyWgt", domain_var = "Pred",
+   donorcond = list(">4", "<6", ">8.5", "%between%c(8,13)", ">15"))
+   expect_true(all(sleepI3[,"NonD"][sleepI3$NonD_imp]>4))
+   expect_true(all(sleepI3[,"Dream"][sleepI3$Dream_imp]<6))
+   expect_true(all(sleepI3[,"Sleep"][sleepI3$Sleep_imp]>8.5))
+   expect_true(all(sleepI3[,"Span"][sleepI3$Span_imp]%between%c(8,13)))
+   expect_true(all(sleepI3[,"Gest"][sleepI3$Gest_imp]>15))
+   
+})
 
+
+test_that("multiple donorcond per variable exclude the correct observations",{
+  data(sleep)
+  sleepI3 <- hotdeck(
+    sleep,
+    variable = c("NonD", "Dream", "Sleep", "Span", "Gest"),
+    ord_var = "BodyWgt", domain_var = "Pred",
+    donorcond = list(c(">4","<48"), c("<6",">1"), NULL, NULL, NULL))
+  expect_true(all(sleepI3[,"NonD"][sleepI3$NonD_imp]>4))
+  expect_true(all(sleepI3[,"NonD"][sleepI3$NonD_imp]<48))
+  expect_true(all(sleepI3[,"Dream"][sleepI3$Dream_imp]<6))
+  expect_true(all(sleepI3[,"Dream"][sleepI3$Dream_imp]>1))
+})

@@ -59,6 +59,12 @@ test_that("kNN Tests donorcond",{
   expect_true(all(d2[d2$y_imp,"y"]>3))
 })
 
+test_that("kNN Tests donorcond multiple",{
+  d <- setna(d,7:12,2)
+  d2 <- kNN(d,k=5,donorcond = list(c(">3","<6")),variable = "y")
+  expect_true(all(d2[d2$y_imp,"y"]>3))
+  expect_true(all(d2[d2$y_imp,"y"]<6))
+})
 
 test_that("kNN All values NAs",{
   d <- setna(d,1:nrow(d),2)
@@ -66,6 +72,18 @@ test_that("kNN All values NAs",{
   expect_identical(d,d2[1:ncol(d)])
 })
 
+test_that("kNN Tests donorcond for one var out of two",{
+  d <- setna(d,7:12,2)
+  d <- setna(d,1:3,3)
+  d2 <- kNN(d,k=5,donorcond = list(c(">3","<6"), NULL),variable = c("y","z"))
+  expect_true(all(d2[d2$y_imp,"y"]>3))
+  expect_true(all(d2[d2$y_imp,"y"]<6))
+  
+  d2 <- kNN(d,k=5,donorcond = list(NULL, c(">3","<6")),variable = c("y","z"))
+  expect_true(all(d2[d2$z_imp,"z"]>3))
+  expect_true(all(d2[d2$z_imp,"z"]<6))
+  
+})
 
 ## Tests for random forest as distance variable
 test_that("kNN Tests - randomForest",{

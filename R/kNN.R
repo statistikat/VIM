@@ -77,7 +77,8 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,
 #' @param makeNA list of length equal to the number of variables, with values, that should be converted to NA for each variable
 #' @param NAcond list of length equal to the number of variables, with a condition for imputing a NA
 #' @param impNA TRUE/FALSE whether NA should be imputed
-#' @param donorcond condition for the donors e.g. list(">5"), must be NULL or a list of same length as variable
+#' @param donorcond list of length equal to the number of variables, with a donorcond condition as character string.
+#' e.g. a list element can be ">5" or c(">5","<10). If the list element for a variable is NULL no condition will be applied for this variable.
 #' @param trace TRUE/FALSE if additional information about the imputation
 #' process should be printed
 #' @param imp_var TRUE/FALSE if a TRUE/FALSE variables for each imputed
@@ -375,11 +376,13 @@ kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnam
         dist_varx <- dist_var[dist_var!=variable[j]]
         weightsx <- weights[dist_var%in%dist_varx]
       }
-      if(!is.null(donorcond)){
-        cmd <- paste0("TF <- data[,sapply(.SD,function(x)!is.na(x)&x",donorcond[[j]],"),.SDcols=variable[j]][,1]")
+      if(!is.null(donorcond) && !is.null(donorcond[[j]])){
+        cmd <- paste0("TF <- data[,sapply(.SD,function(x)!is.na(x)&",
+                      paste("x", donorcond[[j]], collapse="&"),
+                      "),.SDcols=variable[j]][,1]")
         eval(parse(text=cmd))
         don_dist_var <- data[TF,dist_varx,with=FALSE]
-        don_index <- INDEX[TF]
+        don_index <- INDEX[TF]  
       }else{
         TF <- data[,sapply(.SD,function(x)!is.na(x)),.SDcols=variable[j]][,1]
         don_dist_var <- data[TF,dist_varx,with=FALSE]
