@@ -222,9 +222,12 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
           TF <- any(TFindex)
           if(add>min(50, nrow(xx))){
             TF <- FALSE
+            
             # remaining missing values will be set to a random value from the group
-
-            Don[TFindex] <- Don[!TFindex][sample(sum(!TFindex),1)]
+            if(length(Don)>0){
+              Don[TFindex] <- Don[!TFindex][sample(sum(!TFindex),1)]    
+            }
+            
             if(!identical(ord_varX, "RandomVariableForImputationWithHotdeck")){
               warning(paste("For variable",v,"the ordering is ignored for at least one imputation."))
             }
