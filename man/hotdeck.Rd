@@ -33,7 +33,8 @@ domains}
 
 \item{impNA}{TRUE/FALSE whether NA should be imputed}
 
-\item{donorcond}{list of length equal to the number of variables, with a donorcond condition for the donors e.g. ">5"}
+\item{donorcond}{list of length equal to the number of variables, with a donorcond condition as character string.
+e.g. ">5" or c(">5","<10). If the list element for a variable is NULL no condition will be applied for this variable.}
 
 \item{imp_var}{TRUE/FALSE if a TRUE/FALSE variables for each imputed
 variable should be created show the imputation status}

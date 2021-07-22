@@ -58,7 +58,8 @@ of a categorical variable}
 
 \item{impNA}{TRUE/FALSE whether NA should be imputed}
 
-\item{donorcond}{condition for the donors e.g. list(">5"), must be NULL or a list of same length as variable}
+\item{donorcond}{list of length equal to the number of variables, with a donorcond condition as character string.
+e.g. a list element can be ">5" or c(">5","<10). If the list element for a variable is NULL no condition will be applied for this variable.}
 
 \item{mixed}{names of mixed variables}
 

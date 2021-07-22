@@ -164,7 +164,7 @@ NULL
 
 #' C-horizon of the Kola data with missing values
 #'
-#' This data set is the same as the [mvoutlier::chorizon()] data set
+#' This data set is the same as 
 #' in package `mvoutlier`, except that values below the detection limit
 #' are coded as `NA`.
 #'
@@ -231,9 +231,8 @@ NULL
 #' vector} \item{Na_XRF}{a numeric vector} \item{P_XRF}{a
 #' numeric vector} \item{Si_XRF}{a numeric vector}
 #' \item{Ti_XRF}{a numeric vector} }
-#' @note For a more detailed description of this data set, see
-#' [mvoutlier::chorizon()] in package `mvoutlier`.
-#' @seealso [mvoutlier::chorizon()]
+#' @note For a more detailed description of this data set, see the help file
+#' `chorizon` in package `mvoutlier`.
 #' @references Reimann, C., Filzmoser, P., Garrett, R.G. and Dutter, R. (2008)
 #' *Statistical Data Analysis Explained: Applied Environmental Statistics
 #' with R*. Wiley.
