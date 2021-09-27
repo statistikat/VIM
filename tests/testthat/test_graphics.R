@@ -7,6 +7,8 @@ data(chorizonDL, package = "VIM")
 data(kola.background, package = "VIM")
 data(tao, package = "VIM")
 test_that("aggr missing failed", {
+  # switch to a tempdir() to ensure writeability
+  withr::local_dir(withr::local_tempdir())
   a <- aggr(sleep, numbers=TRUE)
   summary(a)
   print(a)
@@ -14,6 +16,7 @@ test_that("aggr missing failed", {
 })
 
 test_that("aggr imputed failed", {
+  
   sleep_IMPUTED <- kNN(sleep)
   a <- aggr(sleep_IMPUTED, delimiter="_imp")
   summary(a)
