@@ -16,7 +16,6 @@ test_that("aggr missing failed", {
 })
 
 test_that("aggr imputed failed", {
-  
   sleep_IMPUTED <- kNN(sleep)
   a <- aggr(sleep_IMPUTED, delimiter="_imp")
   summary(a)
