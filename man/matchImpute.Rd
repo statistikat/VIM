@@ -53,6 +53,7 @@ imp_testdata2 <- matchImpute(dt,match_var=c("c1","c2","b1","b2"))
 
 Other imputation methods: 
 \code{\link{hotdeck}()},
+\code{\link{impPCA}()},
 \code{\link{irmi}()},
 \code{\link{kNN}()},
 \code{\link{rangerImpute}()},

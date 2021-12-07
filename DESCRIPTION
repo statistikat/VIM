@@ -40,7 +40,7 @@ License: GPL (>= 2)
 URL: https://github.com/statistikat/VIM
 Repository: CRAN
 LinkingTo: Rcpp
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr

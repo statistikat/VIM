@@ -117,6 +117,7 @@ Statistical Software}, 74(7), 1-16.
 \seealso{
 Other imputation methods: 
 \code{\link{hotdeck}()},
+\code{\link{impPCA}()},
 \code{\link{irmi}()},
 \code{\link{matchImpute}()},
 \code{\link{rangerImpute}()},

@@ -46,6 +46,7 @@ rangerImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
 \seealso{
 Other imputation methods: 
 \code{\link{hotdeck}()},
+\code{\link{impPCA}()},
 \code{\link{irmi}()},
 \code{\link{kNN}()},
 \code{\link{matchImpute}()},
