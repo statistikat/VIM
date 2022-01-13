@@ -4,7 +4,8 @@
 ###############################################################################
 test_df = data.frame(ord = ordered(sample(c(letters[1:2], NA), size = 1000, replace = T)), v1 = rnorm(1000), v2 = rnorm(1000), m=rnorm(1000),
                      b=sample(LETTERS[1:2],1000,replace=TRUE),
-                     c=sample(LETTERS[1:5],1000,replace=TRUE),co=rpois(1000,10))
+                     c=sample(LETTERS[1:5],1000,replace=TRUE),co=rpois(1000,10),
+                     stringsAsFactors=FALSE)
 test_df[sample(1000,100),"m"] <- 0
 test_that("irmi base",{
   expect_warning(ir <- irmi(test_df, mixed = "m", count="co"))
