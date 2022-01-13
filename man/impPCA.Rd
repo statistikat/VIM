@@ -10,8 +10,9 @@ impPCA(
   m = 1,
   eps = 0.5,
   k = ncol(x) - 1,
-  maxit = 10,
-  boot = FALSE
+  maxit = 100,
+  boot = FALSE,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -48,9 +49,25 @@ probs <- rep(0.5, nrow(Animals))
 probs[c(6,16,26)] <- 0
 set.seed(1234)
 Animals_na[sample(1:nrow(Animals), 10, prob = probs), "log(brain)"] <- NA
+w <- is.na(Animals_na$`log(brain)`)
 impPCA(Animals_na)
-impPCA(Animals_na, boot = TRUE, mi = 10)
-
+impPCA(Animals_na, method = "mcd")
+impPCA(Animals_na, boot = TRUE, m = 10)
+impPCA(Animals_na, method = "mcd", boot = TRUE)[[1]]
+plot(`log(brain)` ~ `log(body)`, data = Animals, type = "n", ylab = "", xlab="")
+mtext(text = "impPCA robust", side = 3)
+points(Animals$`log(body)`[!w], Animals$`log(brain)`[!w])
+points(Animals$`log(body)`[w], Animals$`log(brain)`[w], col = "grey", pch = 17)
+imputed <- impPCA(Animals_na, method = "mcd", boot = TRUE)[[1]]
+colnames(imputed) <- c("log(body)", "log(brain)")
+points(imputed$`log(body)`[w], imputed$`log(brain)`[w], col = "red", pch = 20, cex = 1.4)
+segments(x0 = Animals$`log(body)`[w], x1 = imputed$`log(body)`[w], y0 = Animals$`log(brain)`[w], y1 = imputed$`log(brain)`[w], lty = 2, col = "grey")
+legend("topleft", legend = c("non-missings", "set to missing", "imputed values"), pch = c(1,17,20), col = c("black","grey","red"), cex = 0.7)
+mape <- round(100* 1/sum(is.na(Animals_na$`log(brain)`)) * sum(abs((Animals$`log(brain)` - imputed$`log(brain)`) / Animals$`log(brain)`)), 2)
+s2 <- var(Animals$`log(brain)`)
+nrmse <- round(sqrt(1/sum(is.na(Animals_na$`log(brain)`)) * sum(abs((Animals$`log(brain)` - imputed$`log(brain)`) / s2))), 2)
+text(x = 8, y = 1.5, labels = paste("MAPE =", mape))
+text(x = 8, y = 0.5, labels = paste("NRMSE =", nrmse))
 
 }
 \references{
