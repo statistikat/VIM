@@ -1,7 +1,7 @@
 # VIM
 
 [![R-CMD-check](https://github.com/statistikat/VIM/workflows/R-CMD-check/badge.svg)](https://github.com/statistikat/VIM/actions)
-[![Coveralls test coverage](https://coveralls.io/repos/github/statistikat/VIM/badge.svg)](https://coveralls.io/r/statistikat/VIM?branch=master)
+[![Codecov test coverage](https://codecov.io/gh/statistikat/VIM/branch/master/graph/badge.svg)](https://app.codecov.io/gh/statistikat/VIM?branch=master)
 [![CRAN status](https://www.r-pkg.org/badges/version/VIM)](https://CRAN.R-project.org/package=VIM)
 [![Downloads](http://cranlogs.r-pkg.org/badges/VIM)](https://CRAN.R-project.org/package=VIM)
 [![Mentioned in Awesome Official Statistics ](https://awesome.re/mentioned-badge.svg)](http://www.awesomeofficialstatistics.org)
