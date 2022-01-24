@@ -1,4 +1,5 @@
 message("hotdeck")
+library(data.table)
 # some basic tests for hotdeck
 # 
 # Author: alex
