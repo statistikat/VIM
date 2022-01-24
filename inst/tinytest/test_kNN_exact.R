@@ -1,5 +1,5 @@
 library(VIM)
-context("kNN exact results")
+message("kNN exact results")
 df <- data.frame(Class=c(rep("A",5),rep("B",5)),
                  X1=1L,X2=rep(c(2L,3L),each=5),
                  ClassNum=rep(c(1L,2L),each=5),
@@ -7,7 +7,7 @@ df <- data.frame(Class=c(rep("A",5),rep("B",5)),
                  ord=ordered(c(rep("A",5),rep("B",5))),
                  stringsAsFactors = FALSE)
 
-test_that("kNN Tests - exact1",{
+# kNN Tests - exact1",{
   df[3,3] <- NA
   df[8,3] <- NA
   dfImp <- kNN(df 
@@ -28,9 +28,9 @@ test_that("kNN Tests - exact1",{
                 ,dist_var = c("X1", "ClassNum")) 
   expect_true(dfImp3$X2[3]==2)
   expect_true(dfImp3$X2[8]==3)
-})
+# 
 
-test_that("kNN Tests - exact2",{
+# kNN Tests - exact2",{
   df[3,5] <- NA
   df[8,5] <- NA
   dfImp <- kNN(df 
@@ -53,10 +53,10 @@ test_that("kNN Tests - exact2",{
   expect_true(dfImp$Row[3]==2)
   expect_true(dfImp$Row[8]==7)
   
-})
+# 
 
 
-test_that("kNN Tests - exact3",{
+# kNN Tests - exact3",{
   df[3,5] <- NA
   df[8,5] <- NA
   dfImp <- kNN(df 
@@ -79,7 +79,7 @@ test_that("kNN Tests - exact3",{
   expect_true(dfImp$Row[3]==2)
   expect_true(dfImp$Row[8]==7)
   
-})
+# 
 
 df <- data.frame(Class=c(rep("A",5),rep("B",5)),
                  X1=1L,X2=rep(c(2L,3L),each=5),
@@ -88,7 +88,7 @@ df <- data.frame(Class=c(rep("A",5),rep("B",5)),
                  ord=ordered(c(rep("A",5),rep("B",5))),
                  stringsAsFactors = TRUE)
 
-test_that("kNN Tests - exact1 - stringsAsFactors",{
+# kNN Tests - exact1 - stringsAsFactors",{
   df[3,3] <- NA
   df[8,3] <- NA
   dfImp <- kNN(df 
@@ -109,9 +109,9 @@ test_that("kNN Tests - exact1 - stringsAsFactors",{
                 ,dist_var = c("X1", "ClassNum")) 
   expect_true(dfImp3$X2[3]==2)
   expect_true(dfImp3$X2[8]==3)
-})
+# 
 
-test_that("kNN Tests - exact2 - stringsAsFactors",{
+# kNN Tests - exact2 - stringsAsFactors",{
   df[3,5] <- NA
   df[8,5] <- NA
   dfImp <- kNN(df 
@@ -134,10 +134,10 @@ test_that("kNN Tests - exact2 - stringsAsFactors",{
   expect_true(dfImp$Row[3]==2)
   expect_true(dfImp$Row[8]==7)
   
-})
+# 
 
 
-test_that("kNN Tests - exact3",{
+# kNN Tests - exact3",{
   df[3,5] <- NA
   df[8,5] <- NA
   dfImp <- kNN(df 
@@ -160,4 +160,4 @@ test_that("kNN Tests - exact3",{
   expect_true(dfImp$Row[3]==2)
   expect_true(dfImp$Row[8]==7)
   
-})
+# 

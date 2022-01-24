@@ -21,7 +21,7 @@ Imports:
     data.table(>= 1.9.4)
 Suggests: 
     dplyr,
-    testthat (>= 2.1.0),
+    tinytest,
     knitr,
     rmarkdown,
     reactable,
