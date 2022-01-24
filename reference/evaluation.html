@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.1.2</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.2.0</span>
       </span>
     </div>
 
@@ -129,16 +129,16 @@ Computational Statistics and Data Analysis</em>, Vol. 55, pp. 2793-2806.</p>
 <span class="r-in"><span class="va">iris_imp</span> <span class="op">&lt;-</span> <span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="va">iris_imp</span>, imp_var <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span class="r-in"><span class="fu">evaluation</span><span class="op">(</span><span class="va">iris_orig</span>, <span class="va">iris_imp</span>, m <span class="op">=</span> <span class="va">m</span>, vartypes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"numeric"</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"factor"</span><span class="op">)</span><span class="op">)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $err_num</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.107</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.1395</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $err_cat</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $error</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.107</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.2395</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span class="fu">msecov</span><span class="op">(</span><span class="va">iris_orig</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, <span class="va">iris_imp</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.808132e-05</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.0002708542</span>
 </code></pre></div>
     </div>
   </div>
