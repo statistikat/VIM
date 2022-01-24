@@ -13,6 +13,7 @@ reference:
   - initialise
   - maxCat
   - sampleCat
+  - medianSamp
 - title: Plotting functions
   desc: Functions to visualize missing and imputed values. See [the visualization vignette](http://statistikat.github.io/VIM/articles/VisualImp.html) for an overview.
   contents:
