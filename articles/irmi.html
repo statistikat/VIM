@@ -20,6 +20,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -32,18 +34,12 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.1.1</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.1.2</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
-<li>
-  <a href="../index.html">
-    <span class="fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
 <li>
   <a href="../articles/VIM.html">Get started</a>
 </li>
@@ -77,7 +73,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/statistikat/VIM/">
+  <a href="https://github.com/statistikat/VIM/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
      
   </a>
@@ -92,89 +88,89 @@
 
       
 
-      </header><script src="irmi_files/core-js-2.5.3/shim.min.js"></script><script src="irmi_files/react-17.0.0/react.min.js"></script><script src="irmi_files/react-17.0.0/react-dom.min.js"></script><script src="irmi_files/reactwidget-1.0.0/react-tools.js"></script><script src="irmi_files/htmlwidgets-1.5.3/htmlwidgets.js"></script><script src="irmi_files/reactable-binding-0.2.3/reactable.js"></script><div class="row">
+      </header><script src="irmi_files/core-js-2.5.3/shim.min.js"></script><script src="irmi_files/react-17.0.0/react.min.js"></script><script src="irmi_files/react-17.0.0/react-dom.min.js"></script><script src="irmi_files/reactwidget-1.0.0/react-tools.js"></script><script src="irmi_files/htmlwidgets-1.5.4/htmlwidgets.js"></script><script src="irmi_files/reactable-binding-0.2.3/reactable.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Imputation Method IRMI</h1>
-                        <h4 class="author">Wolfgang Rannetbauer</h4>
+                        <h4 data-toc-skip class="author">Wolfgang Rannetbauer</h4>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/statistikat/VIM/blob/master/vignettes/irmi.Rmd"><code>vignettes/irmi.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/statistikat/VIM/blob/HEAD/vignettes/irmi.Rmd" class="external-link"><code>vignettes/irmi.Rmd</code></a></small>
       <div class="hidden name"><code>irmi.Rmd</code></div>
 
     </div>
 
     
     
-<div id="overview" class="section level2">
-<h2 class="hasAnchor">
-<a href="#overview" class="anchor"></a>Overview</h2>
+<div class="section level2">
+<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+</h2>
 <p>In addition to Model based Imputation Methods (see <code><a href="../articles/modelImp.html">vignette("modelImp")</a></code>) the <code>VIM</code> package also presents an iterative imputation method.</p>
 <p>This vignette showcases the function <code><a href="../reference/irmi.html">irmi()</a></code>. <strong>IRMI</strong> is short for <strong>I</strong>terative <strong>R</strong>obust <strong>M</strong>odel-based <strong>I</strong>mputation. This method can be used to generate imputations for several variables in a dataset.</p>
-<p>Basically <code><a href="../reference/irmi.html">irmi()</a></code> mimics the functionality of IVEWARE <a href="https://www.semanticscholar.org/paper/A-multivariate-technique-for-multiply-imputing-a-of-Raghunathan-Lepkowski/13b30e35b9a54dad07094cfe4f50d40ff15d8370?p2df">(Raghunathan et al., 2001)</a>, but there are several improvements with respect to the stability of the initialized values, or the robustness of the imputed values. In contrast to other imputation methods, the IRMI algorithm does not require at least one fully observed variable. In each step of the iteration, one variable is used as a response variable and the remaining variables serve as the regressors. Thus the “whole” multivariate information will be used for imputation in the response variable. For more details, please see <a href="http://file.statistik.tuwien.ac.at/filz/papers/CSDA11TKF.pdf">IRMI Imputation</a>.</p>
+<p>Basically <code><a href="../reference/irmi.html">irmi()</a></code> mimics the functionality of IVEWARE <a href="https://www.semanticscholar.org/paper/A-multivariate-technique-for-multiply-imputing-a-of-Raghunathan-Lepkowski/13b30e35b9a54dad07094cfe4f50d40ff15d8370?p2df" class="external-link">(Raghunathan et al., 2001)</a>, but there are several improvements with respect to the stability of the initialized values, or the robustness of the imputed values. In contrast to other imputation methods, the IRMI algorithm does not require at least one fully observed variable. In each step of the iteration, one variable is used as a response variable and the remaining variables serve as the regressors. Thus the “whole” multivariate information will be used for imputation in the response variable. For more details, please see <a href="http://file.statistik.tuwien.ac.at/filz/papers/CSDA11TKF.pdf" class="external-link">IRMI Imputation</a>.</p>
 </div>
-<div id="data" class="section level2">
-<h2 class="hasAnchor">
-<a href="#data" class="anchor"></a>Data</h2>
+<div class="section level2">
+<h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
+</h2>
 <p>The following example demonstrates the functionality of <code><a href="../reference/irmi.html">irmi()</a></code> using a subset of <code>sleep</code>. The columns have been selected deliberately to include some interactions between the missing values.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/statistikat/VIM">VIM</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://magrittr.tidyverse.org">magrittr</a></span><span class="op">)</span>
-<span class="va">dataset</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Dream"</span>, <span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span"</span><span class="op">)</span><span class="op">]</span>
-<span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span><span class="op">)</span>
-<span class="va">dataset</span><span class="op">$</span><span class="va">Span</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">Span</span><span class="op">)</span>
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/statistikat/VIM" class="external-link">VIM</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://magrittr.tidyverse.org" class="external-link">magrittr</a></span><span class="op">)</span>
+<span class="va">dataset</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Dream"</span>, <span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span"</span><span class="op">)</span><span class="op">]</span>
+<span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span><span class="op">)</span>
+<span class="va">dataset</span><span class="op">$</span><span class="va">Span</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">Span</span><span class="op">)</span>
 <span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">)</span></code></pre></div>
 <p><img src="irmi_files/figure-html/setup-1.png" width="576" style="display: block; margin: auto;"></p>
 <p>The plot indicates several missing values in <code>Dream</code>, <code>NonD</code>, and <code>Span.</code></p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span><span class="op">(</span><span class="va">dataset</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">dataset</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
 <span class="co">#&gt;   Dream    NonD BodyWgt    Span </span>
 <span class="co">#&gt;      12      14       0       4</span></code></pre></div>
 </div>
-<div id="imputing-multiple-variables" class="section level2">
-<h2 class="hasAnchor">
-<a href="#imputing-multiple-variables" class="anchor"></a>Imputing multiple variables</h2>
+<div class="section level2">
+<h2 id="imputing-multiple-variables">Imputing multiple variables<a class="anchor" aria-label="anchor" href="#imputing-multiple-variables"></a>
+</h2>
 <p>The call of the function is straightforward and the algorithm usually converges in a few iterations.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">imp_irmi</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/irmi.html">irmi</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">)</span>
 <span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_irmi</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></code></pre></div>
 <p><img src="irmi_files/figure-html/unnamed-chunk-3-1.png" width="576" style="display: block; margin: auto;"></p>
 <p>We can see that <code><a href="../reference/irmi.html">irmi()</a></code> imputed all missing values for all variables in our dataset.</p>
-<div id="diagnosing-the-results" class="section level3">
-<h3 class="hasAnchor">
-<a href="#diagnosing-the-results" class="anchor"></a>Diagnosing the results</h3>
+<div class="section level3">
+<h3 id="diagnosing-the-results">Diagnosing the results<a class="anchor" aria-label="anchor" href="#diagnosing-the-results"></a>
+</h3>
 <p>As we can see in the next plot, for imputing missing values in <code>NonD</code> <code>Bodygt</code> plays an important role. The original data structure of <code>NonD</code> and <code>BodyWgt</code> is preserved by the <code><a href="../reference/irmi.html">irmi()</a></code> imputation method.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">imp_irmi</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op">%&gt;%</span> 
+<code class="sourceCode R"><span class="va">imp_irmi</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> 
   <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span>delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></code></pre></div>
 <p><img src="irmi_files/figure-html/unnamed-chunk-4-1.png" width="576" style="display: block; margin: auto;"></p>
 <p>The same is true for the data structure of <code>Span</code> and <code>BodyWgt</code>.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">imp_irmi</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Span"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op">%&gt;%</span> 
+<code class="sourceCode R"><span class="va">imp_irmi</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Span"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> 
   <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span>delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></code></pre></div>
 <p><img src="irmi_files/figure-html/unnamed-chunk-5-1.png" width="576" style="display: block; margin: auto;"></p>
 </div>
 </div>
-<div id="performance-of-method" class="section level2">
-<h2 class="hasAnchor">
-<a href="#performance-of-method" class="anchor"></a>Performance of method</h2>
+<div class="section level2">
+<h2 id="performance-of-method">Performance of method<a class="anchor" aria-label="anchor" href="#performance-of-method"></a>
+</h2>
 <p>In order to validate the performance of <code><a href="../reference/irmi.html">irmi()</a></code> and to highlight the ability to impute different datatypes the <code>iris</code> dataset is used. Firstly, some values are randomly set to <code>NA</code>.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span>
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span>
 <span class="va">df</span> <span class="op">&lt;-</span> <span class="va">iris</span>
-<span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"S.Length"</span>, <span class="st">"S.Width"</span>, <span class="st">"P.Length"</span>, <span class="st">"P.Width"</span>, <span class="st">"Species"</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"S.Length"</span>, <span class="st">"S.Width"</span>, <span class="st">"P.Length"</span>, <span class="st">"P.Width"</span>, <span class="st">"Species"</span><span class="op">)</span>
 <span class="co"># randomly produce some missing values in the data</span>
-<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>
 <span class="va">nbr_missing</span> <span class="op">&lt;-</span> <span class="fl">50</span>
-<span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span>row <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html">nrow</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span>, size <span class="op">=</span> <span class="va">nbr_missing</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,
-                col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span>, size <span class="op">=</span> <span class="va">nbr_missing</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>
-<span class="va">y</span> <span class="op">&lt;-</span> <span class="va">y</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html">duplicated</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span>, <span class="op">]</span>
-<span class="va">df</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span>
+<span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>row <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span>, size <span class="op">=</span> <span class="va">nbr_missing</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,
+                col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span>, size <span class="op">=</span> <span class="va">nbr_missing</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>
+<span class="va">y</span> <span class="op">&lt;-</span> <span class="va">y</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html" class="external-link">duplicated</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span>, <span class="op">]</span>
+<span class="va">df</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span>
 
 <span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></code></pre></div>
 <p><img src="irmi_files/figure-html/unnamed-chunk-6-1.png" width="576" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span><span class="op">(</span><span class="va">df</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">df</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
 <span class="co">#&gt; S.Length  S.Width P.Length  P.Width  Species </span>
 <span class="co">#&gt;       10        9        8       10       12</span></code></pre></div>
 <p>We can see that there are missings in all variables and some observations reveal missing values on several points.</p>
@@ -199,11 +195,13 @@
 
 
       <footer><div class="copyright">
-  <p>Developed by Matthias Templ, Alexander Kowarik, Andreas Alfons, Gregor de Cillia, Wolfgang Rannetbauer.</p>
+  <p></p>
+<p>Developed by Matthias Templ, Alexander Kowarik, Andreas Alfons, Gregor de Cillia, Wolfgang Rannetbauer.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
 </div>
 
       </footer>
@@ -211,6 +209,8 @@
 
   
 
+
+  
 
   </body>
 </html>

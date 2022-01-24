@@ -1,5 +1,5 @@
-pandoc: '2.2'
-pkgdown: 1.6.1
+pandoc: 2.14.2
+pkgdown: 2.0.2
 pkgdown_sha: ~
 articles:
   VIM: VIM.html
@@ -7,5 +7,5 @@ articles:
   donorImp: donorImp.html
   irmi: irmi.html
   modelImp: modelImp.html
-last_built: 2021-04-28T09:07Z
+last_built: 2022-01-24T11:30Z
 
