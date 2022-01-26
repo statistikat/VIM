@@ -15,3 +15,15 @@ medianSamp(x, weights = NULL)
 The function medianSamp chooses the level as the median or randomly between
 two levels.
 }
+\seealso{
+Other imputation methods: 
+\code{\link{hotdeck}()},
+\code{\link{impPCA}()},
+\code{\link{irmi}()},
+\code{\link{kNN}()},
+\code{\link{matchImpute}()},
+\code{\link{rangerImpute}()},
+\code{\link{regressionImp}()},
+\code{\link{sampleCat}()}
+}
+\concept{imputation methods}

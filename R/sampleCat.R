@@ -5,6 +5,7 @@
 #' 
 #' @param x factor vector 
 #' @param weights numeric vector providing weights for the observations in x
+#' @family imputation methods
 #' @export 
 
 

@@ -120,8 +120,10 @@ Other imputation methods:
 \code{\link{impPCA}()},
 \code{\link{irmi}()},
 \code{\link{matchImpute}()},
+\code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
-\code{\link{regressionImp}()}
+\code{\link{regressionImp}()},
+\code{\link{sampleCat}()}
 }
 \author{
 Alexander Kowarik, Statistik Austria

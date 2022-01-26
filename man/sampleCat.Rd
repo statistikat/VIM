@@ -15,3 +15,15 @@ sampleCat(x, weights = NULL)
 The function sampleCat samples with probabilites corresponding to the
 occurrence of the level in the NNs.
 }
+\seealso{
+Other imputation methods: 
+\code{\link{hotdeck}()},
+\code{\link{impPCA}()},
+\code{\link{irmi}()},
+\code{\link{kNN}()},
+\code{\link{matchImpute}()},
+\code{\link{medianSamp}()},
+\code{\link{rangerImpute}()},
+\code{\link{regressionImp}()}
+}
+\concept{imputation methods}
