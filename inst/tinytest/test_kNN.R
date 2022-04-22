@@ -242,3 +242,30 @@ d[13:18,2] <- d[13:18,2]*2
   colnames(ds_dt) <- NULL
   expect_equal(as.numeric(kNN(ds_dt, imp_var = FALSE)[1, 1]), 2)
 # 
+
+  message("weighted catFun without missings in the distance variables")
+  df <- data.frame(x=1:10, y=10:1,
+                   f=sample(LETTERS[1:2],10, replace = TRUE))
+  df[2:3, 3] <- NA
+  df_imp <- kNN(df,
+                     variable = "f",
+                     dist_var = c("x","y"),
+                     useImputedDist = FALSE,
+                     weightDist = TRUE,
+                     catFun = VIM::sampleCat)
+  message("weighted catFun with missings in the distance variables")
+  df[4:8, 1] <- NA
+  df_imp <- kNN(df,k = 6,
+                variable = "f",
+                dist_var = c("x","y"),
+                useImputedDist = FALSE,
+                weightDist = TRUE,
+                catFun = VIM::sampleCat)
+  
+  df_imp <- kNN(df,k = 6,
+                variable = "f",
+                dist_var = c("x","y"),
+                useImputedDist = TRUE,
+                weightDist = TRUE,
+                catFun = VIM::sampleCat)
+  

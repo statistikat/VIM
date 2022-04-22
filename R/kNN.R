@@ -429,10 +429,9 @@ kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnam
           warning("There is no explicit 'weights' argument in your categorical aggregation function.")
         }
         #1-dist because dist is between 0 and 1
-        mindi[[2]] <- mindi[[2]] / apply(mindi[[2]],2,max)
-        mindi[[2]] <- 1-mindi[[2]]
+        mindi[[2]] <- apply(1-mindi[[2]], 2, function(x)
+          pmax(min(x[x>0])/10,x))
         ### warning if there is no argument named weights
-        
         if(variable[j]%in%factors){
           data[indexNA2s[,variable[j]],variable[j]] <- sapply(1:ncol(kNNs),function(x)do.call("catFun",list(unlist(kNNs[,x,with=FALSE]),mindi[[2]][,x])))
         }else if(variable[j]%in%orders){
