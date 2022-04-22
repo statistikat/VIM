@@ -30,7 +30,7 @@ for numerical, categorical, ordered and semi-continous variables."><!-- mathjax 
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -393,69 +393,94 @@ Statistical Software</em>, 74(7), 1-16.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 62      FALSE</span>
 <span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">laeken</span><span class="op">)</span></span>
 <span class="r-in"><span class="fu">kNN</span><span class="op">(</span><span class="va">sleep</span>, numFun <span class="op">=</span> <span class="va">weightedMean</span>, weightDist<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt      NonD     Dream     Sleep       Span      Gest Pred</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  3.621115 1.0244651  3.300000  38.600000 645.00000    3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.300000 2.0000000  8.300000   4.500000  42.00000    3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50 12.130785 2.7984870 12.500000  14.000000  60.00000    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70 10.011620 2.4135093 16.500000   4.337617  25.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  2547.000  4603.00  2.100000 1.8000000  3.900000  69.000000 624.00000    3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6    10.550   179.50  9.100000 0.7000000  9.800000  27.000000 180.00000    4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7     0.023     0.30 15.800000 3.9000000 19.700000  19.000000  35.00000    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8   160.000   169.00  5.200000 1.0000000  6.200000  30.400000 392.00000    4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9     3.300    25.60 10.900000 3.6000000 14.500000  28.000000  63.00000    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10   52.160   440.00  8.300000 1.4000000  9.700000  50.000000 230.00000    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11    0.425     6.40 11.000000 1.5000000 12.500000   7.000000 112.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12  465.000   423.00  3.200000 0.7000000  3.900000  30.000000 281.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13    0.550     2.40  7.600000 2.7000000 10.300000  12.348960  47.75702    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14  187.100   419.00  3.370754 0.7184306  3.100000  40.000000 365.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15    0.075     1.20  6.300000 2.1000000  8.400000   3.500000  42.00000    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16    3.000    25.00  8.600000 0.0000000  8.600000  50.000000  28.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17    0.785     3.50  6.600000 4.1000000 10.700000   6.000000  42.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18    0.200     5.00  9.500000 1.2000000 10.700000  10.400000 120.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19    1.410    17.50  4.800000 1.3000000  6.100000  34.000000 173.78512    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20   60.000    81.00 12.000000 6.1000000 18.100000   7.000000  48.10889    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21  529.000   680.00  3.389039 0.3000000  3.496601  28.000000 400.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22   27.660   115.00  3.300000 0.5000000  3.800000  20.000000 148.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23    0.120     1.00 11.000000 3.4000000 14.400000   3.900000  16.00000    3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24  207.000   406.00  7.930240 2.0051906 12.000000  39.300000 252.00000    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 25   85.000   325.00  4.700000 1.5000000  6.200000  41.000000 310.00000    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26   36.330   119.50 12.140941 2.8012782 13.000000  16.200000  63.00000    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 27    0.101     4.00 10.400000 3.4000000 13.800000   9.000000  28.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 28    1.040     5.50  7.400000 0.8000000  8.200000   7.600000  68.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 29  521.000   655.00  2.100000 0.8000000  2.900000  46.000000 336.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30  100.000   157.00 10.628498 2.3640501 10.800000  22.400000 100.00000    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 31   35.000    56.00 10.683888 0.8764794 10.005650  16.300000  33.00000    3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    0.005     0.14  7.700000 1.4000000  9.100000   2.600000  21.50000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 33    0.010     0.25 17.900000 2.0000000 19.900000  24.000000  50.00000    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 34   62.000  1320.00  6.100000 1.9000000  8.000000 100.000000 267.00000    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 35    0.122     3.00  8.200000 2.4000000 10.600000  10.833181  30.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 36    1.350     8.10  8.400000 2.8000000 11.200000   3.673929  45.00000    3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 37    0.023     0.40 11.900000 1.3000000 13.200000   3.200000  19.00000    4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 38    0.048     0.33 10.800000 2.0000000 12.800000   2.000000  30.00000    4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 39    1.700     6.30 13.800000 5.6000000 19.400000   5.000000  12.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 40    3.500    10.80 14.300000 3.1000000 17.400000   6.500000 120.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 41  250.000   490.00  4.234588 1.0000000  3.261678  23.600000 440.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 42    0.480    15.50 15.200000 1.8000000 17.000000  12.000000 140.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 43   10.000   115.00 10.000000 0.9000000 10.900000  20.200000 170.00000    4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 44    1.620    11.40 11.900000 1.8000000 13.700000  13.000000  17.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 45  192.000   180.00  6.500000 1.9000000  8.400000  27.000000 115.00000    4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 46    2.500    12.10  7.500000 0.9000000  8.400000  18.000000  31.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 47    4.288    39.20 10.951784 2.2373985 12.500000  13.700000  63.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 48    0.280     1.90 10.600000 2.6000000 13.200000   4.700000  21.00000    3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 49    4.235    50.40  7.400000 2.4000000  9.800000   9.800000  52.00000    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 50    6.800   179.00  8.400000 1.2000000  9.600000  29.000000 164.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 51    0.750    12.30  5.700000 0.9000000  6.600000   7.000000 225.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 52    3.600    21.00  4.900000 0.5000000  5.400000   6.000000 225.00000    3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 53   14.830    98.20  3.859326 0.6952781  2.600000  17.000000 150.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 54   55.500   175.00  3.200000 0.6000000  3.800000  20.000000 151.00000    5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 55    1.400    12.50 10.928583 2.2379005 11.000000  12.700000  90.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 56    0.060     1.00  8.100000 2.2000000 10.300000   3.500000  38.62720    3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 57    0.900     2.60 11.000000 2.3000000 13.300000   4.500000  60.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 58    2.000    12.30  4.900000 0.5000000  5.400000   7.500000 200.00000    3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 59    0.104     2.50 13.200000 2.6000000 15.800000   2.300000  46.00000    3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 60    4.190    58.00  9.700000 0.6000000 10.300000  24.000000 210.00000    4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 61    3.500     3.90 12.800000 6.6000000 19.400000   3.000000  14.00000    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 62    4.050    17.00 13.542726 4.5441878 18.060387  13.000000  38.00000    3</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative weights</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt      NonD      Dream     Sleep       Span      Gest Pred</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  5.278905  0.7255666  3.300000  38.600000 645.00000    3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.300000  2.0000000  8.300000   4.500000  42.00000    3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50 12.169917  2.4565413 12.500000  14.000000  60.00000    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70  9.284282  1.4929252 16.500000   7.760321  25.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  2547.000  4603.00  2.100000  1.8000000  3.900000  69.000000 624.00000    3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6    10.550   179.50  9.100000  0.7000000  9.800000  27.000000 180.00000    4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7     0.023     0.30 15.800000  3.9000000 19.700000  19.000000  35.00000    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8   160.000   169.00  5.200000  1.0000000  6.200000  30.400000 392.00000    4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9     3.300    25.60 10.900000  3.6000000 14.500000  28.000000  63.00000    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10   52.160   440.00  8.300000  1.4000000  9.700000  50.000000 230.00000    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11    0.425     6.40 11.000000  1.5000000 12.500000   7.000000 112.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12  465.000   423.00  3.200000  0.7000000  3.900000  30.000000 281.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13    0.550     2.40  7.600000  2.7000000 10.300000  17.863982  32.43759    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14  187.100   419.00  3.767164  0.7900187  3.100000  40.000000 365.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 15    0.075     1.20  6.300000  2.1000000  8.400000   3.500000  42.00000    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 16    3.000    25.00  8.600000  0.0000000  8.600000  50.000000  28.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 17    0.785     3.50  6.600000  4.1000000 10.700000   6.000000  42.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 18    0.200     5.00  9.500000  1.2000000 10.700000  10.400000 120.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 19    1.410    17.50  4.800000  1.3000000  6.100000  34.000000 -68.38783    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 20   60.000    81.00 12.000000  6.1000000 18.100000   7.000000  18.77411    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21  529.000   680.00 -9.208744  0.3000000  2.630597  28.000000 400.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 22   27.660   115.00  3.300000  0.5000000  3.800000  20.000000 148.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 23    0.120     1.00 11.000000  3.4000000 14.400000   3.900000  16.00000    3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 24  207.000   406.00  8.721074 -0.5210473 12.000000  39.300000 252.00000    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 25   85.000   325.00  4.700000  1.5000000  6.200000  41.000000 310.00000    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 26   36.330   119.50 11.968595  3.0242104 13.000000  16.200000  63.00000    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 27    0.101     4.00 10.400000  3.4000000 13.800000   9.000000  28.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 28    1.040     5.50  7.400000  0.8000000  8.200000   7.600000  68.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 29  521.000   655.00  2.100000  0.8000000  2.900000  46.000000 336.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 30  100.000   157.00 10.556212  1.5648057 10.800000  22.400000 100.00000    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 31   35.000    56.00 10.849003  0.4205016 51.038130  16.300000  33.00000    3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 32    0.005     0.14  7.700000  1.4000000  9.100000   2.600000  21.50000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 33    0.010     0.25 17.900000  2.0000000 19.900000  24.000000  50.00000    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 34   62.000  1320.00  6.100000  1.9000000  8.000000 100.000000 267.00000    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 35    0.122     3.00  8.200000  2.4000000 10.600000   9.016676  30.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 36    1.350     8.10  8.400000  2.8000000 11.200000   3.691323  45.00000    3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 37    0.023     0.40 11.900000  1.3000000 13.200000   3.200000  19.00000    4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 38    0.048     0.33 10.800000  2.0000000 12.800000   2.000000  30.00000    4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 39    1.700     6.30 13.800000  5.6000000 19.400000   5.000000  12.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 40    3.500    10.80 14.300000  3.1000000 17.400000   6.500000 120.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 41  250.000   490.00 -7.185469  1.0000000  3.090718  23.600000 440.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 42    0.480    15.50 15.200000  1.8000000 17.000000  12.000000 140.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 43   10.000   115.00 10.000000  0.9000000 10.900000  20.200000 170.00000    4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 44    1.620    11.40 11.900000  1.8000000 13.700000  13.000000  17.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 45  192.000   180.00  6.500000  1.9000000  8.400000  27.000000 115.00000    4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 46    2.500    12.10  7.500000  0.9000000  8.400000  18.000000  31.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 47    4.288    39.20  8.726320  2.1766788 12.500000  13.700000  63.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 48    0.280     1.90 10.600000  2.6000000 13.200000   4.700000  21.00000    3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 49    4.235    50.40  7.400000  2.4000000  9.800000   9.800000  52.00000    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 50    6.800   179.00  8.400000  1.2000000  9.600000  29.000000 164.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 51    0.750    12.30  5.700000  0.9000000  6.600000   7.000000 225.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 52    3.600    21.00  4.900000  0.5000000  5.400000   6.000000 225.00000    3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 53   14.830    98.20  2.469146  0.6654173  2.600000  17.000000 150.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 54   55.500   175.00  3.200000  0.6000000  3.800000  20.000000 151.00000    5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 55    1.400    12.50  9.422152  2.3135373 11.000000  12.700000  90.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 56    0.060     1.00  8.100000  2.2000000 10.300000   3.500000  43.25020    3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 57    0.900     2.60 11.000000  2.3000000 13.300000   4.500000  60.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 58    2.000    12.30  4.900000  0.5000000  5.400000   7.500000 200.00000    3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 59    0.104     2.50 13.200000  2.6000000 15.800000   2.300000  46.00000    3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 60    4.190    58.00  9.700000  0.6000000 10.300000  24.000000 210.00000    4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 61    3.500     3.90 12.800000  6.6000000 19.400000   3.000000  14.00000    2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 62    4.050    17.00 14.554422  4.4855661 17.394953  13.000000  38.00000    3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Exp Danger BodyWgt_imp BrainWgt_imp NonD_imp Dream_imp Sleep_imp Span_imp</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1    5      3       FALSE        FALSE     TRUE      TRUE     FALSE    FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2    1      3       FALSE        FALSE    FALSE     FALSE     FALSE    FALSE</span>
