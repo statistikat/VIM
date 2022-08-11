@@ -23,6 +23,30 @@
 #' @useDynLib VIM
 NULL
 
+#' Animals_na
+#'
+#' @description Average log brain and log body weights for 28 Species
+#' @details The original data can be found in package MASS. 
+#' 10 values on brain weight are set to be missing.
+#'
+#' @name Animals_na
+#' @docType data
+#' @source P. J. Rousseeuw and A. M. Leroy (1987) Robust Regression and Outlier Detection. Wiley, p. 57.
+#' @references Venables, W. N. and Ripley, B. D. (1999) Modern Applied Statistics with S-PLUS. Third Edition. Springer.
+#' 
+#' Templ, M. (2022) Visualization and Imputation of Missing Values. Springer Publishing. Upcoming book.
+#' @keywords datasets
+#' @format A data frame with 28 observations on the following 2 variables.
+#' \describe{
+#' \item{lbody}{log body weight}
+#' \item{lbrain}{log brain weight}
+#' }
+#' @examples
+#'
+#' data(Animals_na)
+#' aggr(Animals_na)
+#'
+NULL
 
 #' Breast cancer Wisconsin data set
 #'
@@ -448,8 +472,7 @@ NULL
 #' numeric vector} \item{Longitude}{a numeric vector}
 #' \item{Sea.Surface.Temp}{a numeric vector} \item{Air.Temp}{a
 #' numeric vector} \item{Humidity}{a numeric vector}
-#' \item{UWind}{a numeric vector} \item{VWind}{a numeric
-#' vector} }
+#' \item{UWind}{zonal wind, i.e. latitude-parallel wind} \item{VWind}{meridional wind, i.e. longitude-parallel wind} }
 #' @source <http://www.pmel.noaa.gov/tao/>
 #' @keywords datasets
 #' @examples
