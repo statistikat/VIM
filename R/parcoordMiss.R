@@ -356,7 +356,7 @@ parcoordMiss <- function(x, delimiter = NULL, highlight = NULL, selection = c("a
             }
             pt <- locatorVIM(error=TRUE)
         }
-        if(class(pt) == "try-error") on.exit()
+        if(inherits(pt, "try-error")) on.exit()
     }
     invisible()
 }

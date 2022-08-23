@@ -321,7 +321,7 @@ scattmatrixMiss <- function(x, delimiter = NULL, highlight = NULL,
             }
             else pt <- NULL
         }
-        if(class(pt) == "try-error") on.exit()
+        if(inherits(pt, "try-error")) on.exit()
     }
     
     invisible()

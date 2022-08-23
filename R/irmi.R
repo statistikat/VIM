@@ -527,9 +527,9 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
         }
         colnames(data_for_reg)[1] <- "y"
         new.dat <- data.frame(cbind(rep(1, length(wy)), x_part[wy,, drop = FALSE]))
-        if (class(data_for_reg$y) == "numeric")
+        if (inherits(data_for_reg$y, "numeric"))
           meth <- "numeric"
-        else if (class(data_for_reg$y) == "factor" & length(levels(data_for_reg$y)) == 2)
+        else if (inherits(data_for_reg$y, "factor") & length(levels(data_for_reg$y)) == 2)
           meth <- "bin"
         else
           meth <- "factor"
@@ -697,7 +697,7 @@ useLM <- function(x_reg, ndata, wy, mixed_tf, mixed_constant, factors, step,
     x_reg1$y[x_reg$y == mixed_constant] <- 0
     x_reg1$y[x_reg$y != mixed_constant] <- 1
     form <- form[form %in% names(x_reg1)]
-    if (class(form) != "formula")
+    if (!inherits(form, "formula"))
       form <- as.formula(paste("y ~", paste(form, collapse = "+")))
     else
       form <- y ~ .
@@ -742,7 +742,7 @@ useLM <- function(x_reg, ndata, wy, mixed_tf, mixed_constant, factors, step,
     imp <- rep(1, nrow(ndata))
   }
   ##Two-Step
-  if (class(form) != "formula") {
+  if (!inherits(form, "formula")) {
     form <- form[form %in% names(x_reg)]
     if (length(form) > 0)
       form <- as.formula(paste("y ~", paste(form, collapse = "+")))
