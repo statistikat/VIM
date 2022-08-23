@@ -56,8 +56,10 @@ Other imputation methods:
 \code{\link{impPCA}()},
 \code{\link{irmi}()},
 \code{\link{kNN}()},
+\code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
-\code{\link{regressionImp}()}
+\code{\link{regressionImp}()},
+\code{\link{sampleCat}()}
 }
 \author{
 Johannes Gussenbauer, Alexander Kowarik

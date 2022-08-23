@@ -66,7 +66,9 @@ Other imputation methods:
 \code{\link{irmi}()},
 \code{\link{kNN}()},
 \code{\link{matchImpute}()},
-\code{\link{rangerImpute}()}
+\code{\link{medianSamp}()},
+\code{\link{rangerImpute}()},
+\code{\link{sampleCat}()}
 }
 \author{
 Alexander Kowarik

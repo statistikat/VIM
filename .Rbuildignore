@@ -10,3 +10,5 @@ README.md$
 pkgdown
 ^docs$
 ^revdep$
+^\.github$
+^codecov\.yml$

@@ -1,12 +1,4 @@
-vignettes/VIM_files/
-vignettes/VIM_files/*
-# History files
-.Rhistory
-# Example code in package build process
-*-Ex.R
 .Rproj.user
-VIM.Rproj
 *.Rproj
+.Rhistory
 docs
-inst/doc
-revdep

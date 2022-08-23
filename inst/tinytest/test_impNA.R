@@ -13,19 +13,18 @@ newsamp[is.na(newsamp)] <- 999999
 
 ## checking kNN
 
-test_that("checking kNN if NAs are imputed if impNA==FALSE",{
+# checking kNN if NAs are imputed if impNA==FALSE",{
   sI <- kNN(rbind(newsamp,sleep),impNA = FALSE,variable=colnames(sleep),makeNA = rep(999999,ncol(sleep)))
   expect_false(any(unlist(sI[-c(1:10),grep("_imp",colnames(sI))])),info=
                  "NAs should not be computed by kNN if impNA is set to FALSE")
   expect_false(any(is.na(unlist(sI[1:10,]))),info=
                  "999999 should be imputed if it is set as makeNA in kNN")
-})
+
 
 ### checking hotdeck
-test_that("checking hotdeck if NAs are imputed if impNA==FALSE",{
+# checking hotdeck if NAs are imputed if impNA==FALSE",{
   sI2 <- hotdeck(rbind(newsamp,sleep),impNA = FALSE,variable=colnames(sleep),makeNA = as.list(rep(999999,ncol(sleep))))
   expect_false(any(unlist(sI2[-c(1:10),grep("_imp",colnames(sI2))])), info=
                  "NAs should not be computed by hotdeck if impNA is set to FALSE")
   expect_false(any(is.na(unlist(sI2[1:10,])))||any(unlist(sI2[1:10,])==999999),info=
                  "999999 should be imputed if it is set as makeNA in hotdeck")
-})

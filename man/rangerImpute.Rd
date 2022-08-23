@@ -50,6 +50,8 @@ Other imputation methods:
 \code{\link{irmi}()},
 \code{\link{kNN}()},
 \code{\link{matchImpute}()},
-\code{\link{regressionImp}()}
+\code{\link{medianSamp}()},
+\code{\link{regressionImp}()},
+\code{\link{sampleCat}()}
 }
 \concept{imputation methods}

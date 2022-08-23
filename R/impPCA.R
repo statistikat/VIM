@@ -9,6 +9,8 @@
 #' @param k number of principal components for reconstruction of `x`
 #' @param maxit maximum number of iterations
 #' @param boot residual bootstrap (if `TRUE`)
+#' @param verbose TRUE/FALSE if additional information about the imputation
+#' process should be printed
 #' @return the imputed data set. If `boot = FALSE` this is a data.frame. 
 #' If `boot = TRUE` this is a list where each list element contains a data.frame. 
 #' @author Matthias Templ
@@ -41,11 +43,15 @@
 #' imputed <- impPCA(Animals_na, method = "mcd", boot = TRUE)[[1]]
 #' colnames(imputed) <- c("log(body)", "log(brain)")
 #' points(imputed$`log(body)`[w], imputed$`log(brain)`[w], col = "red", pch = 20, cex = 1.4)
-#' segments(x0 = Animals$`log(body)`[w], x1 = imputed$`log(body)`[w], y0 = Animals$`log(brain)`[w], y1 = imputed$`log(brain)`[w], lty = 2, col = "grey")
-#' legend("topleft", legend = c("non-missings", "set to missing", "imputed values"), pch = c(1,17,20), col = c("black","grey","red"), cex = 0.7)
-#' mape <- round(100* 1/sum(is.na(Animals_na$`log(brain)`)) * sum(abs((Animals$`log(brain)` - imputed$`log(brain)`) / Animals$`log(brain)`)), 2)
+#' segments(x0 = Animals$`log(body)`[w], x1 = imputed$`log(body)`[w], y0 = Animals$`log(brain)`[w],
+#' y1 = imputed$`log(brain)`[w], lty = 2, col = "grey")
+#' legend("topleft", legend = c("non-missings", "set to missing", "imputed values"),
+#' pch = c(1,17,20), col = c("black","grey","red"), cex = 0.7)
+#' mape <- round(100* 1/sum(is.na(Animals_na$`log(brain)`)) * sum(abs((Animals$`log(brain)` -
+#' imputed$`log(brain)`) / Animals$`log(brain)`)), 2)
 #' s2 <- var(Animals$`log(brain)`)
-#' nrmse <- round(sqrt(1/sum(is.na(Animals_na$`log(brain)`)) * sum(abs((Animals$`log(brain)` - imputed$`log(brain)`) / s2))), 2)
+#' nrmse <- round(sqrt(1/sum(is.na(Animals_na$`log(brain)`)) * sum(abs((Animals$`log(brain)` -
+#' imputed$`log(brain)`) / s2))), 2)
 #' text(x = 8, y = 1.5, labels = paste("MAPE =", mape))
 #' text(x = 8, y = 0.5, labels = paste("NRMSE =", nrmse))
 #'
@@ -135,7 +141,7 @@ impPCA <- function(x, method = "classical", m = 1, eps = 0.5,
     #     x[,i] <- (x[,i] * csdrob[i]) + cmed[i]
     #   }
     # }
-    if(verbose) cat("\nIterations: ", it)
+    if(verbose) message("\nIterations: ", it)
     return(data.frame(x))
   } else { # boot
     # create bootstrap samples
@@ -195,7 +201,7 @@ impPCA <- function(x, method = "classical", m = 1, eps = 0.5,
     for(r in 1:m){
       res[[r]] <- residualboot()    
     }
-    if(verbose) cat("\nIterations: ", it)
+    if(verbose) message("\nIterations: ", it)
     return(res)
   }
 }

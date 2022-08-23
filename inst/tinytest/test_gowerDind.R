@@ -5,7 +5,7 @@
 x <- data.frame(x=rnorm(100),y=rnorm(100),z=rnorm(100))
 y <- data.frame(x=rnorm(100),y=rnorm(100),z=rnorm(100))
 
-test_that("gowerD and gowerDind should give the same result", {
+# gowerD and gowerDind should give the same result"
   d1 <- gowerD(x,y,weights=rep(1,3),numerical=c(1,2),factors = vector(),orders=vector(),
                mixed=vector(),levOrders=vector(),mixed.constant=0)
   minind <- apply(d1,2,which.min)
@@ -15,9 +15,9 @@ test_that("gowerD and gowerDind should give the same result", {
   indM <- cbind(minind,as.vector(minind2$ind))
   
   expect_equal(indM[,1],indM[,2])
-})
 
-test_that("gowerD and gowerDind should give the same result - iqr", {
+
+# gowerD and gowerDind should give the same result - iqr"
   d1 <- gowerD(x,y,weights=rep(1,3),numerical=c(1,2),factors = vector(),orders=vector(),
                mixed=vector(),levOrders=vector(),mixed.constant=0, methodStand = "iqr")
   minind <- apply(d1,2,which.min)
@@ -28,4 +28,4 @@ test_that("gowerD and gowerDind should give the same result - iqr", {
   indM <- cbind(minind,as.vector(minind2$ind))
   
   expect_equal(indM[,1],indM[,2])
-})
+
