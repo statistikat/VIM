@@ -174,7 +174,7 @@ initializePlot <- function(xlim, ylim) {
 # locator with error catching
 locatorVIM <- function(error = FALSE) {
   pt <- try(locator(1), silent=TRUE)
-  if(class(pt) == "try-error" && !error) pt <- NULL
+  if(inherits(pt, "try-error") && !error) pt <- NULL
   pt
 }
 
