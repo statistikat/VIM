@@ -697,11 +697,7 @@ useLM <- function(x_reg, ndata, wy, mixed_tf, mixed_constant, factors, step,
     x_reg1$y[x_reg$y == mixed_constant] <- 0
     x_reg1$y[x_reg$y != mixed_constant] <- 1
     form <- form[form %in% names(x_reg1)]
-<<<<<<< HEAD
     if (!inherits(form, "formula"))
-=======
-    if (inherits(form, "formula"))
->>>>>>> 272a9ce39a588acc1fcfa36af6dcaf725cf123e9
       form <- as.formula(paste("y ~", paste(form, collapse = "+")))
     else
       form <- y ~ .
