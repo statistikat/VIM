@@ -14,7 +14,7 @@
 #'
 #' @rdname colSequence 
 #' @aliases colSequence colSequenceRGB colSequenceHCL
-#' @param p a numeric vector in \eqn{$[0,1]$}{[0,1]} giving values to be used
+#' @param p a numeric vector with values between 0 and 1 giving values to be used
 #' for interpolation between the start and end color (0 corresponds to the
 #' start color, 1 to the end color).
 #' @param start,end the start and end color, respectively.  For HCL colors,

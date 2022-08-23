@@ -15,7 +15,7 @@
 #' In a *matrix plot*, all cells of a data matrix are visualized by
 #' rectangles.  Available data is coded according to a continuous color scheme.
 #' To compute the colors via interpolation, the variables are first scaled to
-#' the interval \eqn{$[0,1]$}{[0,1]}. Missing/imputed values can then be
+#' the interval between 0 and 1. Missing/imputed values can then be
 #' visualized by a clearly distinguishable color. It is thereby possible to use
 #' colors in the *HCL* or *RGB* color space. A simple way of
 #' visualizing the magnitude of the available data is to apply a greyscale,

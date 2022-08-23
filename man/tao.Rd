@@ -10,8 +10,7 @@ A data frame with 736 observations on the following 8 variables.
 numeric vector} \item{Longitude}{a numeric vector}
 \item{Sea.Surface.Temp}{a numeric vector} \item{Air.Temp}{a
 numeric vector} \item{Humidity}{a numeric vector}
-\item{UWind}{a numeric vector} \item{VWind}{a numeric
-vector} }
+\item{UWind}{zonal wind, i.e. latitude-parallel wind} \item{VWind}{meridional wind, i.e. longitude-parallel wind} }
 }
 \source{
 \url{http://www.pmel.noaa.gov/tao/}
