@@ -77,32 +77,34 @@ values in other variables.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">pbox</span><span class="op">(</span>
-  <span class="va">x</span>,
-  delimiter <span class="op">=</span> <span class="cn">NULL</span>,
-  pos <span class="op">=</span> <span class="fl">1</span>,
-  selection <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"any"</span>, <span class="st">"all"</span><span class="op">)</span>,
-  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"red"</span>, <span class="st">"red4"</span>, <span class="st">"orange"</span>, <span class="st">"orange4"</span><span class="op">)</span>,
-  numbers <span class="op">=</span> <span class="cn">TRUE</span>,
-  cex.numbers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,
-  xlim <span class="op">=</span> <span class="cn">NULL</span>,
-  ylim <span class="op">=</span> <span class="cn">NULL</span>,
-  main <span class="op">=</span> <span class="cn">NULL</span>,
-  sub <span class="op">=</span> <span class="cn">NULL</span>,
-  xlab <span class="op">=</span> <span class="cn">NULL</span>,
-  ylab <span class="op">=</span> <span class="cn">NULL</span>,
-  axes <span class="op">=</span> <span class="cn">TRUE</span>,
-  frame.plot <span class="op">=</span> <span class="va">axes</span>,
-  labels <span class="op">=</span> <span class="va">axes</span>,
-  interactive <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">pbox</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  delimiter <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pos <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  selection <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"any"</span>, <span class="st">"all"</span><span class="op">)</span>,</span>
+<span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"red"</span>, <span class="st">"red4"</span>, <span class="st">"orange"</span>, <span class="st">"orange4"</span><span class="op">)</span>,</span>
+<span>  numbers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  cex.numbers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,</span>
+<span>  xlim <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ylim <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sub <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  xlab <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ylab <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  axes <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  frame.plot <span class="op">=</span> <span class="va">axes</span>,</span>
+<span>  labels <span class="op">=</span> <span class="va">axes</span>,</span>
+<span>  interactive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>x</dt>
 <dd><p>a vector, matrix or <code>data.frame</code>.</p></dd>
+
+
 <dt>delimiter</dt>
 <dd><p>a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, <code>x</code> needs to have
@@ -111,10 +113,14 @@ imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
 to the given colors for imputed variables (see <code>col</code>).</p></dd>
+
+
 <dt>pos</dt>
 <dd><p>a numeric value giving the index of the variable of interest.
 Additional variables in <code>x</code> are used for grouping according to
 missingness/number of imputed missings.</p></dd>
+
+
 <dt>selection</dt>
 <dd><p>the selection method for grouping according to
 missingness/number of imputed missings in multiple additional variables.
@@ -124,6 +130,8 @@ values), <code>"any"</code> (grouping according to missingness/number of imputed
 missings in <em>any</em> of the additional variables) and <code>"all"</code>
 (grouping according to missingness/number of imputed missings in <em>all</em>
 of the additional variables).</p></dd>
+
+
 <dt>col</dt>
 <dd><p>a vector of length five giving the colors to be used in the plot.
 The first color is used for the boxplots of the available data, the
@@ -133,37 +141,60 @@ variables (see ‘Details’).  If only one color is supplied, it is used
 for the boxplots for missing/imputed data, whereas the boxplots for the
 available data are transparent.  Else if two colors are supplied, the second
 one is recycled.</p></dd>
+
+
 <dt>numbers</dt>
 <dd><p>a logical indicating whether the frequencies of
 missing/imputed values should be displayed (see ‘Details’).</p></dd>
+
+
 <dt>cex.numbers</dt>
 <dd><p>the character expansion factor to be used for the
 frequencies of the missing/imputed values.</p></dd>
+
+
 <dt>xlim, ylim</dt>
 <dd><p>axis limits.</p></dd>
+
+
 <dt>main, sub</dt>
 <dd><p>main and sub title.</p></dd>
+
+
 <dt>xlab, ylab</dt>
 <dd><p>axis labels.</p></dd>
+
+
 <dt>axes</dt>
 <dd><p>a logical indicating whether axes should be drawn on the plot.</p></dd>
+
+
 <dt>frame.plot</dt>
 <dd><p>a logical indicating whether a box should be drawn around
 the plot.</p></dd>
+
+
 <dt>labels</dt>
 <dd><p>either a logical indicating whether labels should be plotted
 below each box, or a character vector giving the labels.</p></dd>
+
+
 <dt>interactive</dt>
 <dd><p>a logical indicating whether variables can be switched
 interactively (see ‘Details’).</p></dd>
+
+
 <dt>...</dt>
 <dd><p>for <code>pbox</code>, further arguments and graphical parameters to
 be passed to <code><a href="https://rdrr.io/r/graphics/boxplot.html" class="external-link">graphics::boxplot()</a></code> and other functions.  For
 <code>TKRpbox</code>, further arguments to be passed to <code>pbox</code>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>a list as returned by <code><a href="https://rdrr.io/r/graphics/boxplot.html" class="external-link">graphics::boxplot()</a></code>.</p>
+    
+
+<p>a list as returned by <code><a href="https://rdrr.io/r/graphics/boxplot.html" class="external-link">graphics::boxplot()</a></code>.</p>
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -220,17 +251,17 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">chorizonDL</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span>
-<span class="r-in"><span class="co">## for missing values</span></span>
-<span class="r-in"><span class="fu">pbox</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">chorizonDL</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">5</span>,<span class="fl">8</span>,<span class="fl">10</span>,<span class="fl">11</span>,<span class="fl">16</span><span class="op">:</span><span class="fl">17</span>,<span class="fl">19</span>,<span class="fl">25</span>,<span class="fl">29</span>,<span class="fl">37</span>,<span class="fl">38</span>,<span class="fl">40</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">chorizonDL</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## for missing values</span></span></span>
+<span class="r-in"><span><span class="fu">pbox</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">chorizonDL</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">5</span>,<span class="fl">8</span>,<span class="fl">10</span>,<span class="fl">11</span>,<span class="fl">16</span><span class="op">:</span><span class="fl">17</span>,<span class="fl">19</span>,<span class="fl">25</span>,<span class="fl">29</span>,<span class="fl">37</span>,<span class="fl">38</span>,<span class="fl">40</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="pbox-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">## for imputed values</span></span>
-<span class="r-in"><span class="fu">pbox</span><span class="op">(</span><span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">chorizonDL</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">8</span>,<span class="fl">10</span>,<span class="fl">11</span>,<span class="fl">17</span>,<span class="fl">19</span>,<span class="fl">25</span>,<span class="fl">29</span>,<span class="fl">37</span>,<span class="fl">38</span>,<span class="fl">40</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>,</span>
-<span class="r-in">     delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## for imputed values</span></span></span>
+<span class="r-in"><span><span class="fu">pbox</span><span class="op">(</span><span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">chorizonDL</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">8</span>,<span class="fl">10</span>,<span class="fl">11</span>,<span class="fl">17</span>,<span class="fl">19</span>,<span class="fl">25</span>,<span class="fl">29</span>,<span class="fl">37</span>,<span class="fl">38</span>,<span class="fl">40</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>     delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="pbox-2.png" alt="" width="700" height="433"></span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -245,7 +276,7 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

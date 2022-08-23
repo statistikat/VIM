@@ -81,68 +81,82 @@ the <em>RGB</em> color space.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">colormapMiss</span><span class="op">(</span>
-  <span class="va">x</span>,
-  <span class="va">region</span>,
-  <span class="va">map</span>,
-  imp_index <span class="op">=</span> <span class="cn">NULL</span>,
-  prop <span class="op">=</span> <span class="cn">TRUE</span>,
-  polysRegion <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>,
-  range <span class="op">=</span> <span class="cn">NULL</span>,
-  n <span class="op">=</span> <span class="cn">NULL</span>,
-  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>, <span class="st">"orange"</span><span class="op">)</span>,
-  gamma <span class="op">=</span> <span class="fl">2.2</span>,
-  fixup <span class="op">=</span> <span class="cn">TRUE</span>,
-  coords <span class="op">=</span> <span class="cn">NULL</span>,
-  numbers <span class="op">=</span> <span class="cn">TRUE</span>,
-  digits <span class="op">=</span> <span class="fl">2</span>,
-  cex.numbers <span class="op">=</span> <span class="fl">0.8</span>,
-  col.numbers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"fg"</span><span class="op">)</span>,
-  legend <span class="op">=</span> <span class="cn">TRUE</span>,
-  interactive <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">...</span>
-<span class="op">)</span>
-
-<span class="fu">colormapMissLegend</span><span class="op">(</span>
-  <span class="va">xleft</span>,
-  <span class="va">ybottom</span>,
-  <span class="va">xright</span>,
-  <span class="va">ytop</span>,
-  <span class="va">cmap</span>,
-  n <span class="op">=</span> <span class="fl">1000</span>,
-  horizontal <span class="op">=</span> <span class="cn">TRUE</span>,
-  digits <span class="op">=</span> <span class="fl">2</span>,
-  cex.numbers <span class="op">=</span> <span class="fl">0.8</span>,
-  col.numbers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"fg"</span><span class="op">)</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">colormapMiss</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">region</span>,</span>
+<span>  <span class="va">map</span>,</span>
+<span>  imp_index <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  prop <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  polysRegion <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>,</span>
+<span>  range <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>, <span class="st">"orange"</span><span class="op">)</span>,</span>
+<span>  gamma <span class="op">=</span> <span class="fl">2.2</span>,</span>
+<span>  fixup <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  coords <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  numbers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  digits <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  cex.numbers <span class="op">=</span> <span class="fl">0.8</span>,</span>
+<span>  col.numbers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"fg"</span><span class="op">)</span>,</span>
+<span>  legend <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  interactive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">colormapMissLegend</span><span class="op">(</span></span>
+<span>  <span class="va">xleft</span>,</span>
+<span>  <span class="va">ybottom</span>,</span>
+<span>  <span class="va">xright</span>,</span>
+<span>  <span class="va">ytop</span>,</span>
+<span>  <span class="va">cmap</span>,</span>
+<span>  n <span class="op">=</span> <span class="fl">1000</span>,</span>
+<span>  horizontal <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  digits <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  cex.numbers <span class="op">=</span> <span class="fl">0.8</span>,</span>
+<span>  col.numbers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"fg"</span><span class="op">)</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>x</dt>
 <dd><p>a numeric vector.</p></dd>
+
+
 <dt>region</dt>
 <dd><p>a vector or factor of the same length as <code>x</code> giving the
 regions.</p></dd>
+
+
 <dt>map</dt>
 <dd><p>an object of any class that contains polygons and provides its
 own plot method (e.g., <code>"SpatialPolygons"</code> from package <code>sp</code>).</p></dd>
+
+
 <dt>imp_index</dt>
 <dd><p>a logical-vector indicating which values of ‘x’ have
 been imputed. If given, it is used for highlighting and the colors are
 adjusted according to the given colors for imputed variables (see
 <code>col</code>).</p></dd>
+
+
 <dt>prop</dt>
 <dd><p>a logical indicating whether the proportion of missing/imputed
 values should be used rather than the total amount.</p></dd>
+
+
 <dt>polysRegion</dt>
 <dd><p>a numeric vector specifying the region that each polygon
 belongs to.</p></dd>
+
+
 <dt>range</dt>
 <dd><p>a numeric vector of length two specifying the range (minimum
 and maximum) of the proportion or amount of missing/imputed values to be
 used for the color scheme.</p></dd>
+
+
 <dt>n</dt>
 <dd><p>for <code>colormapMiss</code>, the number of equally spaced cut-off
 points for a discretized color scheme.  If this is not a positive integer, a
@@ -150,58 +164,95 @@ continuous color scheme is used (the default).  In the latter case, the
 number of rectangles to be drawn in the legend can be specified in
 <code>colormapMissLegend</code>.  A reasonably large number makes it appear
 continuously.</p></dd>
+
+
 <dt>col</dt>
 <dd><p>the color range (start end end) to be used.  RGB colors may be
 specified as character strings or as objects of class
-"<code><a href="https://colorspace.R-Forge.R-project.org//reference/RGB.html" class="external-link">colorspace::RGB()</a></code>".  HCL colors need to be specified as objects
-of class "<code><a href="https://colorspace.R-Forge.R-project.org//reference/polarLUV.html" class="external-link">colorspace::polarLUV()</a></code>".  If only one color is
+"<code><a href="https://colorspace.R-Forge.R-project.org/reference/RGB.html" class="external-link">colorspace::RGB()</a></code>".  HCL colors need to be specified as objects
+of class "<code><a href="https://colorspace.R-Forge.R-project.org/reference/polarLUV.html" class="external-link">colorspace::polarLUV()</a></code>".  If only one color is
 supplied, it is used as end color, while the start color is taken to be
 transparent for RGB or white for HCL.</p></dd>
+
+
 <dt>gamma</dt>
 <dd><p>numeric; the display <em>gamma</em> value (see
-<code><a href="https://colorspace.R-Forge.R-project.org//reference/hex.html" class="external-link">colorspace::hex()</a></code>).</p></dd>
+<code><a href="https://colorspace.R-Forge.R-project.org/reference/hex.html" class="external-link">colorspace::hex()</a></code>).</p></dd>
+
+
 <dt>fixup</dt>
 <dd><p>a logical indicating whether the colors should be corrected to
-valid RGB values (see <code><a href="https://colorspace.R-Forge.R-project.org//reference/hex.html" class="external-link">colorspace::hex()</a></code>).</p></dd>
+valid RGB values (see <code><a href="https://colorspace.R-Forge.R-project.org/reference/hex.html" class="external-link">colorspace::hex()</a></code>).</p></dd>
+
+
 <dt>coords</dt>
 <dd><p>a matrix or <code>data.frame</code> with two columns giving the
 coordinates for the labels.</p></dd>
+
+
 <dt>numbers</dt>
 <dd><p>a logical indicating whether the corresponding proportions or
 numbers of missing/imputed values should be used as labels for the regions.</p></dd>
+
+
 <dt>digits</dt>
 <dd><p>the number of digits to be used in the labels (in case of
 proportions).</p></dd>
+
+
 <dt>cex.numbers</dt>
 <dd><p>the character expansion factor to be used for the labels.</p></dd>
+
+
 <dt>col.numbers</dt>
 <dd><p>the color to be used for the labels.</p></dd>
+
+
 <dt>legend</dt>
 <dd><p>a logical indicating whether a legend should be plotted.</p></dd>
+
+
 <dt>interactive</dt>
 <dd><p>a logical indicating whether more detailed information
 about missing/imputed values should be displayed interactively (see
 ‘Details’).</p></dd>
+
+
 <dt>...</dt>
 <dd><p>further arguments to be passed to <code>plot</code>.</p></dd>
+
+
 <dt>xleft</dt>
 <dd><p>left <em>x</em> position of the legend.</p></dd>
+
+
 <dt>ybottom</dt>
 <dd><p>bottom <em>y</em> position of the legend.</p></dd>
+
+
 <dt>xright</dt>
 <dd><p>right <em>x</em> position of the legend.</p></dd>
+
+
 <dt>ytop</dt>
 <dd><p>top <em>y</em> position of the legend.</p></dd>
+
+
 <dt>cmap</dt>
 <dd><p>a list as returned by <code>colormapMiss</code> that contains the
 required information for the legend.</p></dd>
+
+
 <dt>horizontal</dt>
 <dd><p>a logical indicating whether the legend should be drawn
 horizontally or vertically.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p><code>colormapMiss</code> returns a list with the following components:</p><ul><li><p>nmiss a numeric vector containing the number of missing/imputed
+    
+
+<p><code>colormapMiss</code> returns a list with the following components:</p><ul><li><p>nmiss a numeric vector containing the number of missing/imputed
 values in each region.</p></li>
 <li><p>nobs a numeric vector containing the number of observations in
 each region.</p></li>
@@ -219,9 +270,9 @@ continuous color scheme.</p></li>
 <li><p>space a character string giving the color space (either
 <code>"rgb"</code> for RGB colors or <code>"hcl"</code> for HCL colors).</p></li>
 <li><p>gamma numeric; the display <em>gamma</em> value (see
-<code><a href="https://colorspace.R-Forge.R-project.org//reference/hex.html" class="external-link">colorspace::hex()</a></code>).</p></li>
+<code><a href="https://colorspace.R-Forge.R-project.org/reference/hex.html" class="external-link">colorspace::hex()</a></code>).</p></li>
 <li><p>fixup a logical indicating whether the colors have been
-corrected to valid RGB values (see <code><a href="https://colorspace.R-Forge.R-project.org//reference/hex.html" class="external-link">colorspace::hex()</a></code>).</p></li>
+corrected to valid RGB values (see <code><a href="https://colorspace.R-Forge.R-project.org/reference/hex.html" class="external-link">colorspace::hex()</a></code>).</p></li>
 </ul></div>
     <div id="details">
     <h2>Details</h2>
@@ -271,7 +322,7 @@ Prantner</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

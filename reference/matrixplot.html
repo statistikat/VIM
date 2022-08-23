@@ -79,30 +79,32 @@ while missing/imputed data is visualized by a clearly distinguishable color.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">matrixplot</span><span class="op">(</span>
-  <span class="va">x</span>,
-  delimiter <span class="op">=</span> <span class="cn">NULL</span>,
-  sortby <span class="op">=</span> <span class="cn">NULL</span>,
-  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>, <span class="st">"orange"</span><span class="op">)</span>,
-  fixup <span class="op">=</span> <span class="cn">TRUE</span>,
-  xlim <span class="op">=</span> <span class="cn">NULL</span>,
-  ylim <span class="op">=</span> <span class="cn">NULL</span>,
-  main <span class="op">=</span> <span class="cn">NULL</span>,
-  sub <span class="op">=</span> <span class="cn">NULL</span>,
-  xlab <span class="op">=</span> <span class="cn">NULL</span>,
-  ylab <span class="op">=</span> <span class="cn">NULL</span>,
-  axes <span class="op">=</span> <span class="cn">TRUE</span>,
-  labels <span class="op">=</span> <span class="va">axes</span>,
-  xpd <span class="op">=</span> <span class="cn">NULL</span>,
-  interactive <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">matrixplot</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  delimiter <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sortby <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>, <span class="st">"orange"</span><span class="op">)</span>,</span>
+<span>  fixup <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  xlim <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ylim <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sub <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  xlab <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ylab <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  axes <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  labels <span class="op">=</span> <span class="va">axes</span>,</span>
+<span>  xpd <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  interactive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>x</dt>
 <dd><p>a matrix or <code>data.frame</code>.</p></dd>
+
+
 <dt>delimiter</dt>
 <dd><p>a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, <code>x</code> needs to have
@@ -111,14 +113,18 @@ imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
 to the given colors for imputed variables (see <code>col</code>).</p></dd>
+
+
 <dt>sortby</dt>
 <dd><p>a numeric or character value specifying the variable to sort
 the data matrix by, or <code>NULL</code> to plot without sorting.</p></dd>
+
+
 <dt>col</dt>
 <dd><p>the colors to be used in the plot.  RGB colors may be specified
-as character strings or as objects of class "<code><a href="https://colorspace.R-Forge.R-project.org//reference/RGB.html" class="external-link">colorspace::RGB()</a></code>".
+as character strings or as objects of class "<code><a href="https://colorspace.R-Forge.R-project.org/reference/RGB.html" class="external-link">colorspace::RGB()</a></code>".
 HCL colors need to be specified as objects of class
-"<code><a href="https://colorspace.R-Forge.R-project.org//reference/polarLUV.html" class="external-link">colorspace::polarLUV()</a></code>".  If only one color is supplied, it is
+"<code><a href="https://colorspace.R-Forge.R-project.org/reference/polarLUV.html" class="external-link">colorspace::polarLUV()</a></code>".  If only one color is supplied, it is
 used for missing and imputed data and a greyscale is used for available
 data. If two colors are supplied, the first is used for missing and the
 second for imputed data and a greyscale for available data.  If three colors
@@ -128,32 +134,51 @@ Missing/imputed data is visualized by the second/third color in this case.
 If four colors are supplied, the first is used as start color and the second
 as end color for the available data, while the third/fourth color is used
 for missing/imputed data.</p></dd>
+
+
 <dt>fixup</dt>
 <dd><p>a logical indicating whether the colors should be corrected to
-valid RGB values (see <code><a href="https://colorspace.R-Forge.R-project.org//reference/hex.html" class="external-link">colorspace::hex()</a></code>).</p></dd>
+valid RGB values (see <code><a href="https://colorspace.R-Forge.R-project.org/reference/hex.html" class="external-link">colorspace::hex()</a></code>).</p></dd>
+
+
 <dt>xlim, ylim</dt>
 <dd><p>axis limits.</p></dd>
+
+
 <dt>main, sub</dt>
 <dd><p>main and sub title.</p></dd>
+
+
 <dt>xlab, ylab</dt>
 <dd><p>axis labels.</p></dd>
+
+
 <dt>axes</dt>
 <dd><p>a logical indicating whether axes should be drawn on the plot.</p></dd>
+
+
 <dt>labels</dt>
 <dd><p>either a logical indicating whether labels should be plotted
 below each column, or a character vector giving the labels.</p></dd>
+
+
 <dt>xpd</dt>
 <dd><p>a logical indicating whether the rectangles should be allowed to
 go outside the plot region.  If <code>NULL</code>, it defaults to <code>TRUE</code>
 unless axis limits are specified.</p></dd>
+
+
 <dt>interactive</dt>
 <dd><p>a logical indicating whether a variable to be used for
 sorting can be selected interactively (see ‘Details’).</p></dd>
+
+
 <dt>...</dt>
 <dd><p>for <code>matrixplot</code> and <code>iimagMiss</code>, further graphical
 parameters to be passed to <code><a href="https://rdrr.io/r/graphics/plot.window.html" class="external-link">graphics::plot.window()</a></code>,
 <code><a href="https://rdrr.io/r/graphics/title.html" class="external-link">graphics::title()</a></code> and <code><a href="https://rdrr.io/r/graphics/axis.html" class="external-link">graphics::axis()</a></code>.  For
 <code>TKRmatrixplot</code>, further arguments to be passed to <code>matrixplot</code>.</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -210,22 +235,22 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span>
-<span class="r-in"><span class="co">## for missing values</span></span>
-<span class="r-in"><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="op">-</span><span class="op">(</span><span class="fl">8</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span><span class="op">]</span></span>
-<span class="r-in"><span class="va">x</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">x</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">matrixplot</span><span class="op">(</span><span class="va">x</span>, sortby <span class="op">=</span> <span class="st">"BrainWgt"</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## for missing values</span></span></span>
+<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="op">-</span><span class="op">(</span><span class="fl">8</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">x</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">x</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">matrixplot</span><span class="op">(</span><span class="va">x</span>, sortby <span class="op">=</span> <span class="st">"BrainWgt"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>variable 'Dream' contains infinite values</span>
 <span class="r-plt img"><img src="matrixplot-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">## for imputed values</span></span>
-<span class="r-in"><span class="va">x_imp</span> <span class="op">&lt;-</span> <span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">[</span>, <span class="op">-</span><span class="op">(</span><span class="fl">8</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">x_imp</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">x_imp</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">matrixplot</span><span class="op">(</span><span class="va">x_imp</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span>, sortby <span class="op">=</span> <span class="st">"BrainWgt"</span><span class="op">)</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## for imputed values</span></span></span>
+<span class="r-in"><span><span class="va">x_imp</span> <span class="op">&lt;-</span> <span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">[</span>, <span class="op">-</span><span class="op">(</span><span class="fl">8</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">x_imp</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">x_imp</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">4</span>,<span class="fl">6</span>,<span class="fl">7</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">matrixplot</span><span class="op">(</span><span class="va">x_imp</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span>, sortby <span class="op">=</span> <span class="st">"BrainWgt"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>variable 'Dream' contains infinite values</span>
 <span class="r-plt img"><img src="matrixplot-2.png" alt="" width="700" height="433"></span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -240,7 +265,7 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

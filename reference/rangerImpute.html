@@ -75,41 +75,56 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">rangerImpute</span><span class="op">(</span>
-  <span class="va">formula</span>,
-  <span class="va">data</span>,
-  imp_var <span class="op">=</span> <span class="cn">TRUE</span>,
-  imp_suffix <span class="op">=</span> <span class="st">"imp"</span>,
-  <span class="va">...</span>,
-  verbose <span class="op">=</span> <span class="cn">FALSE</span>,
-  median <span class="op">=</span> <span class="cn">FALSE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rangerImpute</span><span class="op">(</span></span>
+<span>  <span class="va">formula</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  imp_var <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  imp_suffix <span class="op">=</span> <span class="st">"imp"</span>,</span>
+<span>  <span class="va">...</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  median <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>formula</dt>
 <dd><p>model formula for the imputation</p></dd>
+
+
 <dt>data</dt>
 <dd><p>A <code>data.frame</code> containing the data</p></dd>
+
+
 <dt>imp_var</dt>
 <dd><p><code>TRUE</code>/<code>FALSE</code> if a <code>TRUE</code>/<code>FALSE</code> variables for each imputed
 variable should be created show the imputation status</p></dd>
+
+
 <dt>imp_suffix</dt>
 <dd><p>suffix used for TF imputation variables</p></dd>
+
+
 <dt>...</dt>
 <dd><p>Arguments passed to <code><a href="https://rdrr.io/pkg/ranger/man/ranger.html" class="external-link">ranger::ranger()</a></code></p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>Show the number of observations used for training
 and evaluating the RF-Model. This parameter is also passed down to
 <code><a href="https://rdrr.io/pkg/ranger/man/ranger.html" class="external-link">ranger::ranger()</a></code> to show computation status.</p></dd>
+
+
 <dt>median</dt>
 <dd><p>Use the median (rather than the arithmetic mean) to average
 the values of individual trees for a more robust estimate.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>the imputed data set.</p>
+    
+
+<p>the imputed data set.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>
@@ -126,8 +141,8 @@ the values of individual trees for a more robust estimate.</p></dd>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">rangerImpute</span><span class="op">(</span><span class="va">Dream</span><span class="op">+</span><span class="va">NonD</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">rangerImpute</span><span class="op">(</span><span class="va">Dream</span><span class="op">+</span><span class="va">NonD</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt      NonD     Dream Sleep  Span  Gest Pred Exp Danger</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  2.970833 1.4355100   3.3  38.6 645.0    3   5      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.300000 2.0000000   8.3   4.5  42.0    3   1      3</span>
@@ -268,7 +283,7 @@ the values of individual trees for a more robust estimate.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

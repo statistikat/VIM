@@ -77,50 +77,71 @@ algorithm for imputation.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">hotdeck</span><span class="op">(</span>
-  <span class="va">data</span>,
-  variable <span class="op">=</span> <span class="cn">NULL</span>,
-  ord_var <span class="op">=</span> <span class="cn">NULL</span>,
-  domain_var <span class="op">=</span> <span class="cn">NULL</span>,
-  makeNA <span class="op">=</span> <span class="cn">NULL</span>,
-  NAcond <span class="op">=</span> <span class="cn">NULL</span>,
-  impNA <span class="op">=</span> <span class="cn">TRUE</span>,
-  donorcond <span class="op">=</span> <span class="cn">NULL</span>,
-  imp_var <span class="op">=</span> <span class="cn">TRUE</span>,
-  imp_suffix <span class="op">=</span> <span class="st">"imp"</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">hotdeck</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  variable <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ord_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  domain_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  makeNA <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  NAcond <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  impNA <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  donorcond <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  imp_var <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  imp_suffix <span class="op">=</span> <span class="st">"imp"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>data</dt>
 <dd><p>data.frame or matrix</p></dd>
+
+
 <dt>variable</dt>
 <dd><p>variables where missing values should be imputed (not overlapping with ord_var)</p></dd>
+
+
 <dt>ord_var</dt>
 <dd><p>variables for sorting the data set before imputation (not overlapping with variable)</p></dd>
+
+
 <dt>domain_var</dt>
 <dd><p>variables for building domains and impute within these
 domains</p></dd>
+
+
 <dt>makeNA</dt>
 <dd><p>list of length equal to the number of variables, with values, that should be converted to NA for each variable</p></dd>
+
+
 <dt>NAcond</dt>
 <dd><p>list of length equal to the number of variables, with a condition for imputing a NA</p></dd>
+
+
 <dt>impNA</dt>
 <dd><p>TRUE/FALSE whether NA should be imputed</p></dd>
+
+
 <dt>donorcond</dt>
 <dd><p>list of length equal to the number of variables, with a donorcond condition as character string.
 e.g. "&gt;5" or c("&gt;5","&lt;10). If the list element for a variable is NULL no condition will be applied for this variable.</p></dd>
+
+
 <dt>imp_var</dt>
 <dd><p>TRUE/FALSE if a TRUE/FALSE variables for each imputed
 variable should be created show the imputation status</p></dd>
+
+
 <dt>imp_suffix</dt>
 <dd><p>suffix for the TRUE/FALSE variables showing the imputation
 status</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>the imputed data set.</p>
+    
+
+<p>the imputed data set.</p>
     </div>
     <div id="note">
     <h2>Note</h2>
@@ -152,37 +173,37 @@ Statistical Software</em>, 74(7), 1-16.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">sleepI</span> <span class="op">&lt;-</span> <span class="fu">hotdeck</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">sleepI2</span> <span class="op">&lt;-</span> <span class="fu">hotdeck</span><span class="op">(</span><span class="va">sleep</span>,ord_var<span class="op">=</span><span class="st">"BodyWgt"</span>,domain_var<span class="op">=</span><span class="st">"Pred"</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Usage of donorcond in a simple example</span></span>
-<span class="r-in"><span class="va">sleepI3</span> <span class="op">&lt;-</span> <span class="fu">hotdeck</span><span class="op">(</span></span>
-<span class="r-in">  <span class="va">sleep</span>,</span>
-<span class="r-in">  variable <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Dream"</span>, <span class="st">"Sleep"</span>, <span class="st">"Span"</span>, <span class="st">"Gest"</span><span class="op">)</span>,</span>
-<span class="r-in">  ord_var <span class="op">=</span> <span class="st">"BodyWgt"</span>, domain_var <span class="op">=</span> <span class="st">"Pred"</span>,</span>
-<span class="r-in">  donorcond <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"&gt;4"</span>, <span class="st">"&lt;17"</span>, <span class="st">"&gt;1.5"</span>, <span class="st">"%between%c(8,13)"</span>, <span class="st">"&gt;5"</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">132</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">nRows</span> <span class="op">&lt;-</span> <span class="fl">1e3</span></span>
-<span class="r-in"><span class="co"># Generate a data set with nRows rows and several variables</span></span>
-<span class="r-in"><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span class="r-in">  x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nRows</span><span class="op">)</span>, y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nRows</span><span class="op">)</span>,</span>
-<span class="r-in">  z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">LETTERS</span>, <span class="va">nRows</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
-<span class="r-in">  d1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">LETTERS</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span>, <span class="va">nRows</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
-<span class="r-in">  d2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">LETTERS</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span>, <span class="va">nRows</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
-<span class="r-in">  o1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nRows</span><span class="op">)</span>, o2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nRows</span><span class="op">)</span>, o3 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">)</span></span>
-<span class="r-in"><span class="va">origX</span> <span class="op">&lt;-</span> <span class="va">x</span></span>
-<span class="r-in"><span class="va">x</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">nRows</span>,<span class="va">nRows</span><span class="op">/</span><span class="fl">10</span><span class="op">)</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
-<span class="r-in"><span class="va">x</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">nRows</span>,<span class="va">nRows</span><span class="op">/</span><span class="fl">10</span><span class="op">)</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
-<span class="r-in"><span class="va">x</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">nRows</span>,<span class="va">nRows</span><span class="op">/</span><span class="fl">10</span><span class="op">)</span>, <span class="fl">3</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
-<span class="r-in"><span class="va">x</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">nRows</span>,<span class="va">nRows</span><span class="op">/</span><span class="fl">10</span><span class="op">)</span>, <span class="fl">4</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
-<span class="r-in"><span class="va">xImp</span> <span class="op">&lt;-</span> <span class="fu">hotdeck</span><span class="op">(</span><span class="va">x</span>,ord_var <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"o1"</span>, <span class="st">"o2"</span>, <span class="st">"o3"</span><span class="op">)</span>, domain_var <span class="op">=</span> <span class="st">"d2"</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sleepI</span> <span class="op">&lt;-</span> <span class="fu">hotdeck</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sleepI2</span> <span class="op">&lt;-</span> <span class="fu">hotdeck</span><span class="op">(</span><span class="va">sleep</span>,ord_var<span class="op">=</span><span class="st">"BodyWgt"</span>,domain_var<span class="op">=</span><span class="st">"Pred"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Usage of donorcond in a simple example</span></span></span>
+<span class="r-in"><span><span class="va">sleepI3</span> <span class="op">&lt;-</span> <span class="fu">hotdeck</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">sleep</span>,</span></span>
+<span class="r-in"><span>  variable <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Dream"</span>, <span class="st">"Sleep"</span>, <span class="st">"Span"</span>, <span class="st">"Gest"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  ord_var <span class="op">=</span> <span class="st">"BodyWgt"</span>, domain_var <span class="op">=</span> <span class="st">"Pred"</span>,</span></span>
+<span class="r-in"><span>  donorcond <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"&gt;4"</span>, <span class="st">"&lt;17"</span>, <span class="st">"&gt;1.5"</span>, <span class="st">"%between%c(8,13)"</span>, <span class="st">"&gt;5"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">132</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">nRows</span> <span class="op">&lt;-</span> <span class="fl">1e3</span></span></span>
+<span class="r-in"><span><span class="co"># Generate a data set with nRows rows and several variables</span></span></span>
+<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nRows</span><span class="op">)</span>, y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nRows</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">LETTERS</span>, <span class="va">nRows</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  d1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">LETTERS</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span>, <span class="va">nRows</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  d2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">LETTERS</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span>, <span class="va">nRows</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  o1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nRows</span><span class="op">)</span>, o2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nRows</span><span class="op">)</span>, o3 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">origX</span> <span class="op">&lt;-</span> <span class="va">x</span></span></span>
+<span class="r-in"><span><span class="va">x</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">nRows</span>,<span class="va">nRows</span><span class="op">/</span><span class="fl">10</span><span class="op">)</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
+<span class="r-in"><span><span class="va">x</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">nRows</span>,<span class="va">nRows</span><span class="op">/</span><span class="fl">10</span><span class="op">)</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
+<span class="r-in"><span><span class="va">x</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">nRows</span>,<span class="va">nRows</span><span class="op">/</span><span class="fl">10</span><span class="op">)</span>, <span class="fl">3</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
+<span class="r-in"><span><span class="va">x</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">nRows</span>,<span class="va">nRows</span><span class="op">/</span><span class="fl">10</span><span class="op">)</span>, <span class="fl">4</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
+<span class="r-in"><span><span class="va">xImp</span> <span class="op">&lt;-</span> <span class="fu">hotdeck</span><span class="op">(</span><span class="va">x</span>,ord_var <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"o1"</span>, <span class="st">"o2"</span>, <span class="st">"o3"</span><span class="op">)</span>, domain_var <span class="op">=</span> <span class="st">"d2"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -197,7 +218,7 @@ Statistical Software</em>, 74(7), 1-16.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

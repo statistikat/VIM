@@ -77,102 +77,151 @@ for numerical, categorical, ordered and semi-continous variables.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">kNN</span><span class="op">(</span>
-  <span class="va">data</span>,
-  variable <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>,
-  metric <span class="op">=</span> <span class="cn">NULL</span>,
-  k <span class="op">=</span> <span class="fl">5</span>,
-  dist_var <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>,
-  weights <span class="op">=</span> <span class="cn">NULL</span>,
-  numFun <span class="op">=</span> <span class="va">median</span>,
-  catFun <span class="op">=</span> <span class="va">maxCat</span>,
-  makeNA <span class="op">=</span> <span class="cn">NULL</span>,
-  NAcond <span class="op">=</span> <span class="cn">NULL</span>,
-  impNA <span class="op">=</span> <span class="cn">TRUE</span>,
-  donorcond <span class="op">=</span> <span class="cn">NULL</span>,
-  mixed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">vector</a></span><span class="op">(</span><span class="op">)</span>,
-  mixed.constant <span class="op">=</span> <span class="cn">NULL</span>,
-  trace <span class="op">=</span> <span class="cn">FALSE</span>,
-  imp_var <span class="op">=</span> <span class="cn">TRUE</span>,
-  imp_suffix <span class="op">=</span> <span class="st">"imp"</span>,
-  addRF <span class="op">=</span> <span class="cn">FALSE</span>,
-  onlyRF <span class="op">=</span> <span class="cn">FALSE</span>,
-  addRandom <span class="op">=</span> <span class="cn">FALSE</span>,
-  useImputedDist <span class="op">=</span> <span class="cn">TRUE</span>,
-  weightDist <span class="op">=</span> <span class="cn">FALSE</span>,
-  methodStand <span class="op">=</span> <span class="st">"range"</span>,
-  ordFun <span class="op">=</span> <span class="va">medianSamp</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">kNN</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  variable <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>,</span>
+<span>  metric <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  dist_var <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>,</span>
+<span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  numFun <span class="op">=</span> <span class="va">median</span>,</span>
+<span>  catFun <span class="op">=</span> <span class="va">maxCat</span>,</span>
+<span>  makeNA <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  NAcond <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  impNA <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  donorcond <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  mixed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">vector</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  mixed.constant <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trace <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  imp_var <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  imp_suffix <span class="op">=</span> <span class="st">"imp"</span>,</span>
+<span>  addRF <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  onlyRF <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  addRandom <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  useImputedDist <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  weightDist <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  methodStand <span class="op">=</span> <span class="st">"range"</span>,</span>
+<span>  ordFun <span class="op">=</span> <span class="va">medianSamp</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>data</dt>
 <dd><p>data.frame or matrix</p></dd>
+
+
 <dt>variable</dt>
 <dd><p>variables where missing values should be imputed</p></dd>
+
+
 <dt>metric</dt>
 <dd><p>metric to be used for calculating the distances between</p></dd>
+
+
 <dt>k</dt>
 <dd><p>number of Nearest Neighbours used</p></dd>
+
+
 <dt>dist_var</dt>
 <dd><p>names or variables to be used for distance calculation</p></dd>
+
+
 <dt>weights</dt>
 <dd><p>weights for the variables for distance calculation.
 If <code>weights = "auto"</code> weights will be selected based on variable importance from random forest regression, using function <code><a href="https://rdrr.io/pkg/ranger/man/ranger.html" class="external-link">ranger::ranger()</a></code>.
 Weights are calculated for each variable seperately.</p></dd>
+
+
 <dt>numFun</dt>
 <dd><p>function for aggregating the k Nearest Neighbours in the case
 of a numerical variable</p></dd>
+
+
 <dt>catFun</dt>
 <dd><p>function for aggregating the k Nearest Neighbours in the case
 of a categorical variable</p></dd>
+
+
 <dt>makeNA</dt>
 <dd><p>list of length equal to the number of variables, with values, that should be converted to NA for each variable</p></dd>
+
+
 <dt>NAcond</dt>
 <dd><p>list of length equal to the number of variables, with a condition for imputing a NA</p></dd>
+
+
 <dt>impNA</dt>
 <dd><p>TRUE/FALSE whether NA should be imputed</p></dd>
+
+
 <dt>donorcond</dt>
 <dd><p>list of length equal to the number of variables, with a donorcond condition as character string.
 e.g. a list element can be "&gt;5" or c("&gt;5","&lt;10). If the list element for a variable is NULL no condition will be applied for this variable.</p></dd>
+
+
 <dt>mixed</dt>
 <dd><p>names of mixed variables</p></dd>
+
+
 <dt>mixed.constant</dt>
 <dd><p>vector with length equal to the number of
 semi-continuous variables specifying the point of the semi-continuous
 distribution with non-zero probability</p></dd>
+
+
 <dt>trace</dt>
 <dd><p>TRUE/FALSE if additional information about the imputation
 process should be printed</p></dd>
+
+
 <dt>imp_var</dt>
 <dd><p>TRUE/FALSE if a TRUE/FALSE variables for each imputed
 variable should be created show the imputation status</p></dd>
+
+
 <dt>imp_suffix</dt>
 <dd><p>suffix for the TRUE/FALSE variables showing the imputation
 status</p></dd>
+
+
 <dt>addRF</dt>
 <dd><p>TRUE/FALSE each variable will be modelled using random forest regression (<code><a href="https://rdrr.io/pkg/ranger/man/ranger.html" class="external-link">ranger::ranger()</a></code>) and used as additional distance variable.</p></dd>
+
+
 <dt>onlyRF</dt>
 <dd><p>TRUE/FALSE if TRUE only additional distance variables created from random forest regression will be used as distance variables.</p></dd>
+
+
 <dt>addRandom</dt>
 <dd><p>TRUE/FALSE if an additional random variable should be added
 for distance calculation</p></dd>
+
+
 <dt>useImputedDist</dt>
 <dd><p>TRUE/FALSE if an imputed value should be used for distance calculation for imputing another variable.
 Be aware that this results in a dependency on the ordering of the variables.</p></dd>
+
+
 <dt>weightDist</dt>
 <dd><p>TRUE/FALSE if the distances of the k nearest neighbours should be used as weights in the
 aggregation step</p></dd>
+
+
 <dt>methodStand</dt>
 <dd><p>either "range" or "iqr" to be used in the standardization of numeric vaiables in the gower distance</p></dd>
+
+
 <dt>ordFun</dt>
 <dd><p>function for aggregating the k Nearest Neighbours in the case
 of a ordered factor variable</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>the imputed data set.</p>
+    
+
+<p>the imputed data set.</p>
     </div>
     <div id="references">
     <h2>References</h2>
@@ -199,9 +248,9 @@ Statistical Software</em>, 74(7), 1-16.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">kNN</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">kNN</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger BodyWgt_imp</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  3.2   0.8   3.3  38.6 645.0    3   5      3       FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.3   2.0   8.3   4.5  42.0    3   1      3       FALSE</span>
@@ -391,8 +440,8 @@ Statistical Software</em>, 74(7), 1-16.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 60      FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 61      FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 62      FALSE</span>
-<span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">laeken</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">kNN</span><span class="op">(</span><span class="va">sleep</span>, numFun <span class="op">=</span> <span class="va">weightedMean</span>, weightDist<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">laeken</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">kNN</span><span class="op">(</span><span class="va">sleep</span>, numFun <span class="op">=</span> <span class="va">weightedMean</span>, weightDist<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt      NonD     Dream     Sleep       Span      Gest Pred</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  3.621115 1.0244651  3.300000  38.600000 645.00000    3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.300000 2.0000000  8.300000   4.500000  42.00000    3</span>
@@ -582,7 +631,7 @@ Statistical Software</em>, 74(7), 1-16.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 60    FALSE    FALSE   FALSE      FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 61    FALSE    FALSE   FALSE      FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 62    FALSE    FALSE   FALSE      FALSE</span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -597,7 +646,7 @@ Statistical Software</em>, 74(7), 1-16.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

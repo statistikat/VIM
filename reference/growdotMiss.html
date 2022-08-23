@@ -79,44 +79,52 @@ highlighted.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">growdotMiss</span><span class="op">(</span>
-  <span class="va">x</span>,
-  <span class="va">coords</span>,
-  <span class="va">map</span>,
-  pos <span class="op">=</span> <span class="fl">1</span>,
-  delimiter <span class="op">=</span> <span class="cn">NULL</span>,
-  selection <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"any"</span>, <span class="st">"all"</span><span class="op">)</span>,
-  log <span class="op">=</span> <span class="cn">FALSE</span>,
-  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"red"</span>, <span class="st">"skyblue4"</span>, <span class="st">"red4"</span>, <span class="st">"orange"</span>, <span class="st">"orange4"</span><span class="op">)</span>,
-  border <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"bg"</span><span class="op">)</span>,
-  alpha <span class="op">=</span> <span class="cn">NULL</span>,
-  scale <span class="op">=</span> <span class="cn">NULL</span>,
-  size <span class="op">=</span> <span class="cn">NULL</span>,
-  exp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.95</span>, <span class="fl">0.05</span><span class="op">)</span>,
-  col.map <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/gray.html" class="external-link">grey</a></span><span class="op">(</span><span class="fl">0.5</span><span class="op">)</span>,
-  legend <span class="op">=</span> <span class="cn">TRUE</span>,
-  legtitle <span class="op">=</span> <span class="st">"Legend"</span>,
-  cex.legtitle <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,
-  cex.legtext <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,
-  ncircles <span class="op">=</span> <span class="fl">6</span>,
-  ndigits <span class="op">=</span> <span class="fl">1</span>,
-  interactive <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">growdotMiss</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">coords</span>,</span>
+<span>  <span class="va">map</span>,</span>
+<span>  pos <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  delimiter <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  selection <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"any"</span>, <span class="st">"all"</span><span class="op">)</span>,</span>
+<span>  log <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"red"</span>, <span class="st">"skyblue4"</span>, <span class="st">"red4"</span>, <span class="st">"orange"</span>, <span class="st">"orange4"</span><span class="op">)</span>,</span>
+<span>  border <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"bg"</span><span class="op">)</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  scale <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  size <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  exp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.95</span>, <span class="fl">0.05</span><span class="op">)</span>,</span>
+<span>  col.map <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/gray.html" class="external-link">grey</a></span><span class="op">(</span><span class="fl">0.5</span><span class="op">)</span>,</span>
+<span>  legend <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  legtitle <span class="op">=</span> <span class="st">"Legend"</span>,</span>
+<span>  cex.legtitle <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,</span>
+<span>  cex.legtext <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,</span>
+<span>  ncircles <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>  ndigits <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  interactive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>x</dt>
 <dd><p>a vector, matrix or <code>data.frame</code>.</p></dd>
+
+
 <dt>coords</dt>
 <dd><p>a matrix or <code>data.frame</code> with two columns giving the
 spatial coordinates of the observations.</p></dd>
+
+
 <dt>map</dt>
 <dd><p>a background map to be passed to <code><a href="bgmap.html">bgmap()</a></code>.</p></dd>
+
+
 <dt>pos</dt>
 <dd><p>a numeric value giving the index of the variable determining the
 dot sizes.</p></dd>
+
+
 <dt>delimiter</dt>
 <dd><p>a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, <code>x</code> needs to have
@@ -125,58 +133,93 @@ imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
 to the given colors for imputed variables (see <code>col</code>).</p></dd>
+
+
 <dt>selection</dt>
 <dd><p>the selection method for highlighting missing/imputed
 values in multiple additional variables.  Possible values are <code>"any"</code>
 (highlighting of missing/imputed values in <em>any</em> of the additional
 variables) and <code>"all"</code> (highlighting of missing/imputed values in
 <em>all</em> of the additional variables).</p></dd>
+
+
 <dt>log</dt>
 <dd><p>a logical indicating whether the variable given by <code>pos</code>
 should be log-transformed.</p></dd>
+
+
 <dt>col</dt>
 <dd><p>a vector of length six giving the colors to be used in the plot.
 If only one color is supplied, it is used for the borders of non-highlighted
 dots and the surface area of highlighted dots.  Else if two colors are
 supplied, they are recycled.</p></dd>
+
+
 <dt>border</dt>
 <dd><p>a vector of length four giving the colors to be used for the
 borders of the growing dots.  Use <code>NA</code> to omit borders.</p></dd>
+
+
 <dt>alpha</dt>
 <dd><p>a numeric value between 0 and 1 giving the level of
 transparency of the colors, or <code>NULL</code>.  This can be used to prevent
 overplotting.</p></dd>
+
+
 <dt>scale</dt>
 <dd><p>scaling factor of the map.</p></dd>
+
+
 <dt>size</dt>
 <dd><p>a vector of length two giving the sizes for the smallest and
 largest dots.</p></dd>
+
+
 <dt>exp</dt>
 <dd><p>a vector of length three giving the factors that define the shape
 of the exponential function (see ‘Details’).</p></dd>
+
+
 <dt>col.map</dt>
 <dd><p>the color to be used for the background map.</p></dd>
+
+
 <dt>legend</dt>
 <dd><p>a logical indicating whether a legend should be plotted.</p></dd>
+
+
 <dt>legtitle</dt>
 <dd><p>the title for the legend.</p></dd>
+
+
 <dt>cex.legtitle</dt>
 <dd><p>the character expansion factor to be used for the title
 of the legend.</p></dd>
+
+
 <dt>cex.legtext</dt>
 <dd><p>the character expansion factor to be used in the legend.</p></dd>
+
+
 <dt>ncircles</dt>
 <dd><p>the number of circles displayed in the legend.</p></dd>
+
+
 <dt>ndigits</dt>
 <dd><p>the number of digits displayed in the legend.  Note that \
 this is just a suggestion (see <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code>).</p></dd>
+
+
 <dt>interactive</dt>
 <dd><p>a logical indicating whether information about certain
 observations can be displayed interactively (see ‘Details’).</p></dd>
+
+
 <dt>...</dt>
 <dd><p>for <code>growdotMiss</code>, further arguments and graphical
 parameters to be passed to <code><a href="bgmap.html">bgmap()</a></code>.  For <code>bubbleMiss</code>, the
 arguments to be passed to <code>growdotMiss</code>.</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -215,28 +258,28 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">chorizonDL</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">kola.background</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">coo</span> <span class="op">&lt;-</span> <span class="va">chorizonDL</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"XCOO"</span>, <span class="st">"YCOO"</span><span class="op">)</span><span class="op">]</span></span>
-<span class="r-in"><span class="co">## for missing values</span></span>
-<span class="r-in"><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">chorizonDL</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Ca"</span>,<span class="st">"As"</span>, <span class="st">"Bi"</span><span class="op">)</span><span class="op">]</span></span>
-<span class="r-in"><span class="fu">growdotMiss</span><span class="op">(</span><span class="va">x</span>, <span class="va">coo</span>, <span class="va">kola.background</span>, border <span class="op">=</span> <span class="st">"white"</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">chorizonDL</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">kola.background</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">coo</span> <span class="op">&lt;-</span> <span class="va">chorizonDL</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"XCOO"</span>, <span class="st">"YCOO"</span><span class="op">)</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="co">## for missing values</span></span></span>
+<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">chorizonDL</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Ca"</span>,<span class="st">"As"</span>, <span class="st">"Bi"</span><span class="op">)</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="fu">growdotMiss</span><span class="op">(</span><span class="va">x</span>, <span class="va">coo</span>, <span class="va">kola.background</span>, border <span class="op">=</span> <span class="st">"white"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="growdotMiss-1.png" alt="" width="700" height="433"></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Click on a point to get more information.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> To regain use of the VIM GUI and the R console, click in a region that does not contain any points.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">## for imputed values</span></span>
-<span class="r-in"><span class="va">x_imp</span> <span class="op">&lt;-</span> <span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="va">chorizonDL</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Ca"</span>,<span class="st">"As"</span>,<span class="st">"Bi"</span> <span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">growdotMiss</span><span class="op">(</span><span class="va">x_imp</span>, <span class="va">coo</span>, <span class="va">kola.background</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span>, border <span class="op">=</span> <span class="st">"white"</span><span class="op">)</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## for imputed values</span></span></span>
+<span class="r-in"><span><span class="va">x_imp</span> <span class="op">&lt;-</span> <span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="va">chorizonDL</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Ca"</span>,<span class="st">"As"</span>,<span class="st">"Bi"</span> <span class="op">)</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">growdotMiss</span><span class="op">(</span><span class="va">x_imp</span>, <span class="va">coo</span>, <span class="va">kola.background</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span>, border <span class="op">=</span> <span class="st">"white"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="growdotMiss-2.png" alt="" width="700" height="433"></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Click on a point to get more information.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> To regain use of the VIM GUI and the R console, click in a region that does not contain any points.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -251,7 +294,7 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

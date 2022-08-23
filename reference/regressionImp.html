@@ -75,41 +75,56 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">regressionImp</span><span class="op">(</span>
-  <span class="va">formula</span>,
-  <span class="va">data</span>,
-  family <span class="op">=</span> <span class="st">"AUTO"</span>,
-  robust <span class="op">=</span> <span class="cn">FALSE</span>,
-  imp_var <span class="op">=</span> <span class="cn">TRUE</span>,
-  imp_suffix <span class="op">=</span> <span class="st">"imp"</span>,
-  mod_cat <span class="op">=</span> <span class="cn">FALSE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">regressionImp</span><span class="op">(</span></span>
+<span>  <span class="va">formula</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  family <span class="op">=</span> <span class="st">"AUTO"</span>,</span>
+<span>  robust <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  imp_var <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  imp_suffix <span class="op">=</span> <span class="st">"imp"</span>,</span>
+<span>  mod_cat <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>formula</dt>
 <dd><p>model formula to impute one variable</p></dd>
+
+
 <dt>data</dt>
 <dd><p>A data.frame containing the data</p></dd>
+
+
 <dt>family</dt>
 <dd><p>family argument for <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>. <code>"AUTO"</code> (the default) tries to choose
 automatically and is the only really tested option!!!</p></dd>
+
+
 <dt>robust</dt>
 <dd><p><code>TRUE</code>/<code>FALSE</code> if robust regression should be used. See details.</p></dd>
+
+
 <dt>imp_var</dt>
 <dd><p><code>TRUE</code>/<code>FALSE</code> if a <code>TRUE</code>/<code>FALSE</code> variables for each imputed
 variable should be created show the imputation status</p></dd>
+
+
 <dt>imp_suffix</dt>
 <dd><p>suffix used for TF imputation variables</p></dd>
+
+
 <dt>mod_cat</dt>
 <dd><p><code>TRUE</code>/<code>FALSE</code> if <code>TRUE</code> for categorical variables the level with
 the highest prediction probability is selected, otherwise it is sampled
 according to the probabilities.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>the imputed data set.</p>
+    
+
+<p>the imputed data set.</p>
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -141,17 +156,17 @@ Statistical Software</em>, 74(7), 1-16.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">sleepImp1</span> <span class="op">&lt;-</span> <span class="fu">regressionImp</span><span class="op">(</span><span class="va">Dream</span><span class="op">+</span><span class="va">NonD</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">sleepImp2</span> <span class="op">&lt;-</span> <span class="fu">regressionImp</span><span class="op">(</span><span class="va">Sleep</span><span class="op">+</span><span class="va">Gest</span><span class="op">+</span><span class="va">Span</span><span class="op">+</span><span class="va">Dream</span><span class="op">+</span><span class="va">NonD</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">testdata</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">imp_testdata1</span> <span class="op">&lt;-</span> <span class="fu">regressionImp</span><span class="op">(</span><span class="va">b1</span><span class="op">+</span><span class="va">b2</span><span class="op">~</span><span class="va">x1</span><span class="op">+</span><span class="va">x2</span>,data<span class="op">=</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sleepImp1</span> <span class="op">&lt;-</span> <span class="fu">regressionImp</span><span class="op">(</span><span class="va">Dream</span><span class="op">+</span><span class="va">NonD</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sleepImp2</span> <span class="op">&lt;-</span> <span class="fu">regressionImp</span><span class="op">(</span><span class="va">Sleep</span><span class="op">+</span><span class="va">Gest</span><span class="op">+</span><span class="va">Span</span><span class="op">+</span><span class="va">Dream</span><span class="op">+</span><span class="va">NonD</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">testdata</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">imp_testdata1</span> <span class="op">&lt;-</span> <span class="fu">regressionImp</span><span class="op">(</span><span class="va">b1</span><span class="op">+</span><span class="va">b2</span><span class="op">~</span><span class="va">x1</span><span class="op">+</span><span class="va">x2</span>,data<span class="op">=</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> There still missing values in variable b2 . Probably due to missing values in the regressors.</span>
-<span class="r-in"><span class="va">imp_testdata3</span> <span class="op">&lt;-</span> <span class="fu">regressionImp</span><span class="op">(</span><span class="va">x1</span><span class="op">~</span><span class="va">x2</span>,data<span class="op">=</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span>,robust<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
+<span class="r-in"><span><span class="va">imp_testdata3</span> <span class="op">&lt;-</span> <span class="fu">regressionImp</span><span class="op">(</span><span class="va">x1</span><span class="op">~</span><span class="va">x2</span>,data<span class="op">=</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span>,robust<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> There still missing values in variable x1 . Probably due to missing values in the regressors.</span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -166,7 +181,7 @@ Statistical Software</em>, 74(7), 1-16.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

@@ -83,33 +83,35 @@ be highlighted.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">parcoordMiss</span><span class="op">(</span>
-  <span class="va">x</span>,
-  delimiter <span class="op">=</span> <span class="cn">NULL</span>,
-  highlight <span class="op">=</span> <span class="cn">NULL</span>,
-  selection <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"any"</span>, <span class="st">"all"</span><span class="op">)</span>,
-  plotvars <span class="op">=</span> <span class="cn">NULL</span>,
-  plotNA <span class="op">=</span> <span class="cn">TRUE</span>,
-  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"red"</span>, <span class="st">"skyblue4"</span>, <span class="st">"red4"</span>, <span class="st">"orange"</span>, <span class="st">"orange4"</span><span class="op">)</span>,
-  alpha <span class="op">=</span> <span class="cn">NULL</span>,
-  lty <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"lty"</span><span class="op">)</span>,
-  xlim <span class="op">=</span> <span class="cn">NULL</span>,
-  ylim <span class="op">=</span> <span class="cn">NULL</span>,
-  main <span class="op">=</span> <span class="cn">NULL</span>,
-  sub <span class="op">=</span> <span class="cn">NULL</span>,
-  xlab <span class="op">=</span> <span class="cn">NULL</span>,
-  ylab <span class="op">=</span> <span class="cn">NULL</span>,
-  labels <span class="op">=</span> <span class="cn">TRUE</span>,
-  xpd <span class="op">=</span> <span class="cn">NULL</span>,
-  interactive <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">parcoordMiss</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  delimiter <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  highlight <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  selection <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"any"</span>, <span class="st">"all"</span><span class="op">)</span>,</span>
+<span>  plotvars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  plotNA <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"red"</span>, <span class="st">"skyblue4"</span>, <span class="st">"red4"</span>, <span class="st">"orange"</span>, <span class="st">"orange4"</span><span class="op">)</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  lty <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"lty"</span><span class="op">)</span>,</span>
+<span>  xlim <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ylim <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sub <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  xlab <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ylab <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  labels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  xpd <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  interactive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>x</dt>
 <dd><p>a matrix or <code>data.frame</code>.</p></dd>
+
+
 <dt>delimiter</dt>
 <dd><p>a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, <code>x</code> needs to have
@@ -118,22 +120,32 @@ imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
 to the given colors for imputed variables (see <code>col</code>).</p></dd>
+
+
 <dt>highlight</dt>
 <dd><p>a vector giving the variables to be used for highlighting.
 If <code>NULL</code> (the default), all variables are used for highlighting.</p></dd>
+
+
 <dt>selection</dt>
 <dd><p>the selection method for highlighting missing/imputed
 values in multiple highlight variables.  Possible values are <code>"any"</code>
 (highlighting of missing/imputed values in <em>any</em> of the highlight
 variables) and <code>"all"</code> (highlighting of missing/imputed values in
 <em>all</em> of the highlight variables).</p></dd>
+
+
 <dt>plotvars</dt>
 <dd><p>a vector giving the variables to be plotted.  If <code>NULL</code>
 (the default), all variables are plotted.</p></dd>
+
+
 <dt>plotNA</dt>
 <dd><p>a logical indicating whether missing values in the plot
 variables should be represented by a point above the corresponding
 coordinate axis to prevent disconnected lines.</p></dd>
+
+
 <dt>col</dt>
 <dd><p>if <code>plotNA</code> is <code>TRUE</code>, a vector of length six giving
 the colors to be used for observations with different combinations of
@@ -141,10 +153,14 @@ observed and missing/imputed values in the plot variables and highlight
 variables (vectors of length one or two are recycled).  Otherwise, a vector
 of length two giving the colors for non-highlighted and highlighted
 observations (if a single color is supplied, it is used for both).</p></dd>
+
+
 <dt>alpha</dt>
 <dd><p>a numeric value between 0 and 1 giving the level of
 transparency of the colors, or <code>NULL</code>.  This can be used to prevent
 overplotting.</p></dd>
+
+
 <dt>lty</dt>
 <dd><p>if <code>plotNA</code> is <code>TRUE</code>, a vector of length four giving
 the line types to be used for observations with different combinations of
@@ -152,26 +168,41 @@ observed and missing/imputed values in the plot variables and highlight
 variables (vectors of length one or two are recycled).  Otherwise, a vector
 of length two giving the line types for non-highlighted and highlighted
 observations (if a single line type is supplied, it is used for both).</p></dd>
+
+
 <dt>xlim, ylim</dt>
 <dd><p>axis limits.</p></dd>
+
+
 <dt>main, sub</dt>
 <dd><p>main and sub title.</p></dd>
+
+
 <dt>xlab, ylab</dt>
 <dd><p>axis labels.</p></dd>
+
+
 <dt>labels</dt>
 <dd><p>either a logical indicating whether labels should be plotted
 below each coordinate axis, or a character vector giving the labels.</p></dd>
+
+
 <dt>xpd</dt>
 <dd><p>a logical indicating whether the lines should be allowed to go
 outside the plot region.  If <code>NULL</code>, it defaults to <code>TRUE</code> unless
 axis limits are specified.</p></dd>
+
+
 <dt>interactive</dt>
 <dd><p>a logical indicating whether interactive features should
 be enabled (see ‘Details’).</p></dd>
+
+
 <dt>...</dt>
 <dd><p>for <code>parcoordMiss</code>, further graphical parameters to be
 passed down (see <code><a href="https://rdrr.io/r/graphics/par.html" class="external-link">graphics::par()</a></code>).  For <code>TKRparcoordMiss</code>,
 further arguments to be passed to <code>parcoordMiss</code>.</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -240,22 +271,22 @@ Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">chorizonDL</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span>
-<span class="r-in"><span class="co">## for missing values</span></span>
-<span class="r-in"><span class="fu">parcoordMiss</span><span class="op">(</span><span class="va">chorizonDL</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">15</span>,<span class="fl">101</span><span class="op">:</span><span class="fl">110</span><span class="op">)</span><span class="op">]</span>, </span>
-<span class="r-in">    plotvars<span class="op">=</span><span class="fl">2</span><span class="op">:</span><span class="fl">11</span>, interactive <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"top"</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"red"</span><span class="op">)</span>, lwd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span>, </span>
-<span class="r-in">    legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"observed in Bi"</span>, <span class="st">"missing in Bi"</span><span class="op">)</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">chorizonDL</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## for missing values</span></span></span>
+<span class="r-in"><span><span class="fu">parcoordMiss</span><span class="op">(</span><span class="va">chorizonDL</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">15</span>,<span class="fl">101</span><span class="op">:</span><span class="fl">110</span><span class="op">)</span><span class="op">]</span>, </span></span>
+<span class="r-in"><span>    plotvars<span class="op">=</span><span class="fl">2</span><span class="op">:</span><span class="fl">11</span>, interactive <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"top"</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"red"</span><span class="op">)</span>, lwd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span>, </span></span>
+<span class="r-in"><span>    legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"observed in Bi"</span>, <span class="st">"missing in Bi"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="parcoordMiss-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">## for imputed values</span></span>
-<span class="r-in"><span class="fu">parcoordMiss</span><span class="op">(</span><span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="va">chorizonDL</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">15</span>,<span class="fl">101</span><span class="op">:</span><span class="fl">110</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span> ,</span>
-<span class="r-in">    plotvars<span class="op">=</span><span class="fl">2</span><span class="op">:</span><span class="fl">11</span>, interactive <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"top"</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"orange"</span><span class="op">)</span>, lwd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span>, </span>
-<span class="r-in">    legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"observed in Bi"</span>, <span class="st">"imputed in Bi"</span><span class="op">)</span><span class="op">)</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## for imputed values</span></span></span>
+<span class="r-in"><span><span class="fu">parcoordMiss</span><span class="op">(</span><span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="va">chorizonDL</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">15</span>,<span class="fl">101</span><span class="op">:</span><span class="fl">110</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span> ,</span></span>
+<span class="r-in"><span>    plotvars<span class="op">=</span><span class="fl">2</span><span class="op">:</span><span class="fl">11</span>, interactive <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"top"</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"orange"</span><span class="op">)</span>, lwd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span>, </span></span>
+<span class="r-in"><span>    legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"observed in Bi"</span>, <span class="st">"imputed in Bi"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="parcoordMiss-2.png" alt="" width="700" height="433"></span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -270,7 +301,7 @@ Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

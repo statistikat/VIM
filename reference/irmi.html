@@ -77,101 +77,146 @@ and the remaining variables serve as the regressors.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">irmi</span><span class="op">(</span>
-  <span class="va">x</span>,
-  eps <span class="op">=</span> <span class="fl">5</span>,
-  maxit <span class="op">=</span> <span class="fl">100</span>,
-  mixed <span class="op">=</span> <span class="cn">NULL</span>,
-  mixed.constant <span class="op">=</span> <span class="cn">NULL</span>,
-  count <span class="op">=</span> <span class="cn">NULL</span>,
-  step <span class="op">=</span> <span class="cn">FALSE</span>,
-  robust <span class="op">=</span> <span class="cn">FALSE</span>,
-  takeAll <span class="op">=</span> <span class="cn">TRUE</span>,
-  noise <span class="op">=</span> <span class="cn">TRUE</span>,
-  noise.factor <span class="op">=</span> <span class="fl">1</span>,
-  force <span class="op">=</span> <span class="cn">FALSE</span>,
-  robMethod <span class="op">=</span> <span class="st">"MM"</span>,
-  force.mixed <span class="op">=</span> <span class="cn">TRUE</span>,
-  mi <span class="op">=</span> <span class="fl">1</span>,
-  addMixedFactors <span class="op">=</span> <span class="cn">FALSE</span>,
-  trace <span class="op">=</span> <span class="cn">FALSE</span>,
-  init.method <span class="op">=</span> <span class="st">"kNN"</span>,
-  modelFormulas <span class="op">=</span> <span class="cn">NULL</span>,
-  multinom.method <span class="op">=</span> <span class="st">"multinom"</span>,
-  imp_var <span class="op">=</span> <span class="cn">TRUE</span>,
-  imp_suffix <span class="op">=</span> <span class="st">"imp"</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">irmi</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  eps <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  maxit <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  mixed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  mixed.constant <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  count <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  step <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  robust <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  takeAll <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  noise <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  noise.factor <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  force <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  robMethod <span class="op">=</span> <span class="st">"MM"</span>,</span>
+<span>  force.mixed <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  mi <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  addMixedFactors <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  trace <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  init.method <span class="op">=</span> <span class="st">"kNN"</span>,</span>
+<span>  modelFormulas <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  multinom.method <span class="op">=</span> <span class="st">"multinom"</span>,</span>
+<span>  imp_var <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  imp_suffix <span class="op">=</span> <span class="st">"imp"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>x</dt>
 <dd><p>data.frame or matrix</p></dd>
+
+
 <dt>eps</dt>
 <dd><p>threshold for convergency</p></dd>
+
+
 <dt>maxit</dt>
 <dd><p>maximum number of iterations</p></dd>
+
+
 <dt>mixed</dt>
 <dd><p>column index of the semi-continuous variables</p></dd>
+
+
 <dt>mixed.constant</dt>
 <dd><p>vector with length equal to the number of
 semi-continuous variables specifying the point of the semi-continuous
 distribution with non-zero probability</p></dd>
+
+
 <dt>count</dt>
 <dd><p>column index of count variables</p></dd>
+
+
 <dt>step</dt>
 <dd><p>a stepwise model selection is applied when the parameter is set
 to TRUE</p></dd>
+
+
 <dt>robust</dt>
 <dd><p>if TRUE, robust regression methods will be applied</p></dd>
+
+
 <dt>takeAll</dt>
 <dd><p>takes information of (initialised) missings in the response
 as well for regression imputation.</p></dd>
+
+
 <dt>noise</dt>
 <dd><p>irmi has the option to add a random error term to the imputed
 values, this creates the possibility for multiple imputation. The error term
 has mean 0 and variance corresponding to the variance of the regression
 residuals.</p></dd>
+
+
 <dt>noise.factor</dt>
 <dd><p>amount of noise.</p></dd>
+
+
 <dt>force</dt>
 <dd><p>if TRUE, the algorithm tries to find a solution in any case,
 possible by using different robust methods automatically.</p></dd>
+
+
 <dt>robMethod</dt>
 <dd><p>regression method when the response is continuous.</p></dd>
+
+
 <dt>force.mixed</dt>
 <dd><p>if TRUE, the algorithm tries to find a solution in any
 case, possible by using different robust methods automatically.</p></dd>
+
+
 <dt>mi</dt>
 <dd><p>number of multiple imputations.</p></dd>
+
+
 <dt>addMixedFactors</dt>
 <dd><p>if TRUE add additional factor variable for each
 mixed variable as X variable in the regression</p></dd>
+
+
 <dt>trace</dt>
 <dd><p>Additional information about the iterations when trace equals
 TRUE.</p></dd>
+
+
 <dt>init.method</dt>
 <dd><p>Method for initialization of missing values (kNN or
 median)</p></dd>
+
+
 <dt>modelFormulas</dt>
 <dd><p>a named list with the name of variables for the  rhs
 of the formulas, which must contain a rhs formula for each variable with
 missing values, it should look like `list(y1=c("x1","x2"),y2=c("x1","x3"))``
 if factor variables for the mixed variables should be created for the
 regression models</p></dd>
+
+
 <dt>multinom.method</dt>
 <dd><p>Method for estimating the multinomial models
 (current default and only available method is multinom)</p></dd>
+
+
 <dt>imp_var</dt>
 <dd><p>TRUE/FALSE if a TRUE/FALSE variables for each imputed
 variable should be created show the imputation status</p></dd>
+
+
 <dt>imp_suffix</dt>
 <dd><p>suffix for the TRUE/FALSE variables showing the imputation
 status</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>the imputed data set.</p>
+    
+
+<p>the imputed data set.</p>
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -209,32 +254,32 @@ Statistical Software</em>, 74(7), 1-16.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">irmi</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">testdata</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">imp_testdata1</span> <span class="op">&lt;-</span> <span class="fu">irmi</span><span class="op">(</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span>, mixed <span class="op">=</span> <span class="va">testdata</span><span class="op">$</span><span class="va">mixed</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># mixed.constant != 0 (-10)</span></span>
-<span class="r-in"><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">$</span><span class="va">m1</span><span class="op">[</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">$</span><span class="va">m1</span> <span class="op">==</span> <span class="fl">0</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="op">-</span><span class="fl">10</span></span>
-<span class="r-in"><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">$</span><span class="va">m2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">$</span><span class="va">m2</span> <span class="op">+</span> <span class="fl">0.001</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">imp_testdata2</span> <span class="op">&lt;-</span> <span class="fu">irmi</span><span class="op">(</span></span>
-<span class="r-in">  <span class="va">testdata</span><span class="op">$</span><span class="va">wna</span>,</span>
-<span class="r-in">  mixed <span class="op">=</span> <span class="va">testdata</span><span class="op">$</span><span class="va">mixed</span>,</span>
-<span class="r-in">  mixed.constant <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">10</span>,<span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.001</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">)</span></span>
-<span class="r-in"><span class="va">imp_testdata2</span><span class="op">$</span><span class="va">m2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">imp_testdata2</span><span class="op">$</span><span class="va">m2</span><span class="op">)</span> <span class="op">-</span> <span class="fl">0.001</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">#example with fixed formulas for the variables with missing</span></span>
-<span class="r-in"><span class="va">form</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span class="r-in">  NonD  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>, <span class="st">"BrainWgt"</span><span class="op">)</span>,</span>
-<span class="r-in">  Dream <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>, <span class="st">"BrainWgt"</span><span class="op">)</span>,</span>
-<span class="r-in">  Sleep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BrainWgt"</span>           <span class="op">)</span>,</span>
-<span class="r-in">  Span  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>            <span class="op">)</span>,</span>
-<span class="r-in">  Gest  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>, <span class="st">"BrainWgt"</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">)</span></span>
-<span class="r-in"><span class="fu">irmi</span><span class="op">(</span><span class="va">sleep</span>, modelFormulas <span class="op">=</span> <span class="va">form</span>, trace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">irmi</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">testdata</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">imp_testdata1</span> <span class="op">&lt;-</span> <span class="fu">irmi</span><span class="op">(</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span>, mixed <span class="op">=</span> <span class="va">testdata</span><span class="op">$</span><span class="va">mixed</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># mixed.constant != 0 (-10)</span></span></span>
+<span class="r-in"><span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">$</span><span class="va">m1</span><span class="op">[</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">$</span><span class="va">m1</span> <span class="op">==</span> <span class="fl">0</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="op">-</span><span class="fl">10</span></span></span>
+<span class="r-in"><span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">$</span><span class="va">m2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">$</span><span class="va">m2</span> <span class="op">+</span> <span class="fl">0.001</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">imp_testdata2</span> <span class="op">&lt;-</span> <span class="fu">irmi</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">testdata</span><span class="op">$</span><span class="va">wna</span>,</span></span>
+<span class="r-in"><span>  mixed <span class="op">=</span> <span class="va">testdata</span><span class="op">$</span><span class="va">mixed</span>,</span></span>
+<span class="r-in"><span>  mixed.constant <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">10</span>,<span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.001</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">imp_testdata2</span><span class="op">$</span><span class="va">m2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">imp_testdata2</span><span class="op">$</span><span class="va">m2</span><span class="op">)</span> <span class="op">-</span> <span class="fl">0.001</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">#example with fixed formulas for the variables with missing</span></span></span>
+<span class="r-in"><span><span class="va">form</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  NonD  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>, <span class="st">"BrainWgt"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Dream <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>, <span class="st">"BrainWgt"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Sleep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BrainWgt"</span>           <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Span  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>            <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Gest  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>, <span class="st">"BrainWgt"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">irmi</span><span class="op">(</span><span class="va">sleep</span>, modelFormulas <span class="op">=</span> <span class="va">form</span>, trace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Method for multinomial models:multinom</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    BodyWgt BrainWgt NonD Dream Sleep Span Gest Pred Exp Danger</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 6654.000   5712.0  3.2   0.8   3.3 38.6  645    3   5      3</span>
@@ -330,12 +375,12 @@ Statistical Software</em>, 74(7), 1-16.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Exp      "integer" "0"     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Danger   "integer" "0"     </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> The variables NonD_imp,Dream_imp,Sleep_imp,Span_imp,Gest_imp are added to the data set.</span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Example with ordered variable</span></span>
-<span class="r-in"><span class="va">td</span> <span class="op">&lt;-</span> <span class="va">testdata</span><span class="op">$</span><span class="va">wna</span></span>
-<span class="r-in"><span class="va">td</span><span class="op">$</span><span class="va">c1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.ordered</a></span><span class="op">(</span><span class="va">td</span><span class="op">$</span><span class="va">c1</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">irmi</span><span class="op">(</span><span class="va">td</span><span class="op">)</span></span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Example with ordered variable</span></span></span>
+<span class="r-in"><span><span class="va">td</span> <span class="op">&lt;-</span> <span class="va">testdata</span><span class="op">$</span><span class="va">wna</span></span></span>
+<span class="r-in"><span><span class="va">td</span><span class="op">$</span><span class="va">c1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.ordered</a></span><span class="op">(</span><span class="va">td</span><span class="op">$</span><span class="va">c1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">irmi</span><span class="op">(</span><span class="va">td</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -350,7 +395,7 @@ Statistical Software</em>, 74(7), 1-16.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

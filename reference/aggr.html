@@ -83,45 +83,47 @@ the amount of missing/imputed values in certain combinations of variables.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">aggr</span><span class="op">(</span><span class="va">x</span>, delimiter <span class="op">=</span> <span class="cn">NULL</span>, plot <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span>
-
-<span class="co"># S3 method for aggr</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span>
-  <span class="va">x</span>,
-  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"red"</span>, <span class="st">"orange"</span><span class="op">)</span>,
-  bars <span class="op">=</span> <span class="cn">TRUE</span>,
-  numbers <span class="op">=</span> <span class="cn">FALSE</span>,
-  prop <span class="op">=</span> <span class="cn">TRUE</span>,
-  combined <span class="op">=</span> <span class="cn">FALSE</span>,
-  varheight <span class="op">=</span> <span class="cn">FALSE</span>,
-  only.miss <span class="op">=</span> <span class="cn">FALSE</span>,
-  border <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"fg"</span><span class="op">)</span>,
-  sortVars <span class="op">=</span> <span class="cn">FALSE</span>,
-  sortCombs <span class="op">=</span> <span class="cn">TRUE</span>,
-  ylabs <span class="op">=</span> <span class="cn">NULL</span>,
-  axes <span class="op">=</span> <span class="cn">TRUE</span>,
-  labels <span class="op">=</span> <span class="va">axes</span>,
-  cex.lab <span class="op">=</span> <span class="fl">1.2</span>,
-  cex.axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,
-  cex.numbers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,
-  gap <span class="op">=</span> <span class="fl">4</span>,
-  <span class="va">...</span>
-<span class="op">)</span>
-
-<span class="co"># S3 method for aggr</span>
-<span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, digits <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span>
-
-<span class="co"># S3 method for aggr</span>
-<span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span>
-
-<span class="co"># S3 method for summary.aggr</span>
-<span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">aggr</span><span class="op">(</span><span class="va">x</span>, delimiter <span class="op">=</span> <span class="cn">NULL</span>, plot <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for aggr</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"red"</span>, <span class="st">"orange"</span><span class="op">)</span>,</span>
+<span>  bars <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  numbers <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  prop <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  combined <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  varheight <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  only.miss <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  border <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"fg"</span><span class="op">)</span>,</span>
+<span>  sortVars <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  sortCombs <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  ylabs <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  axes <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  labels <span class="op">=</span> <span class="va">axes</span>,</span>
+<span>  cex.lab <span class="op">=</span> <span class="fl">1.2</span>,</span>
+<span>  cex.axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,</span>
+<span>  cex.numbers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,</span>
+<span>  gap <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for aggr</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, digits <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for aggr</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for summary.aggr</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>x</dt>
 <dd><p>an object of class <code>"summary.aggr"</code>.</p></dd>
+
+
 <dt>delimiter</dt>
 <dd><p>a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, <code>x</code> needs to have
@@ -130,26 +132,40 @@ imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
 to the given colors for imputed variables (see <code>col</code>).</p></dd>
+
+
 <dt>plot</dt>
 <dd><p>a logical indicating whether the results should be plotted (the
 default is <code>TRUE</code>).</p></dd>
+
+
 <dt>...</dt>
 <dd><p>Further arguments, currently ignored.</p></dd>
+
+
 <dt>col</dt>
 <dd><p>a vector of length three giving the colors to be used for
 observed, missing and imputed data. If only one color is supplied, it is
 used for missing and imputed data and observed data is transparent. If only
 two colors are supplied, the first one is used for observed data and the
 second color is used for missing and imputed data.</p></dd>
+
+
 <dt>bars</dt>
 <dd><p>a logical indicating whether a small barplot for the frequencies
 of the different combinations should be drawn.</p></dd>
+
+
 <dt>numbers</dt>
 <dd><p>a logical indicating whether the proportion or frequencies of
 the different combinations should be represented by numbers.</p></dd>
+
+
 <dt>prop</dt>
 <dd><p>a logical indicating whether the proportion of missing/imputed
 values and combinations should be used rather than the total amount.</p></dd>
+
+
 <dt>combined</dt>
 <dd><p>a logical indicating whether the two plots should be
 combined.  If <code>FALSE</code>, a separate barplot on the left hand side shows
@@ -157,9 +173,13 @@ the amount of missing/imputed values in each variable.  If <code>TRUE</code>, a
 small version of this barplot is drawn on top of the plot for the
 combinations of missing/imputed and non-missing values.  See
 “Details” for more information.</p></dd>
+
+
 <dt>varheight</dt>
 <dd><p>a logical indicating whether the cell heights are given by
 the frequencies of occurrence of the corresponding combinations.</p></dd>
+
+
 <dt>only.miss</dt>
 <dd><p>a logical indicating whether the small barplot for the
 frequencies of the combinations should only be drawn for combinations
@@ -168,45 +188,72 @@ useful if most observations are complete, in which case the corresponding
 bar would dominate the barplot such that the remaining bars are too
 compressed.  The proportion or frequency of complete observations (as
 determined by <code>prop</code>) is then represented by a number instead of a bar.</p></dd>
+
+
 <dt>border</dt>
 <dd><p>the color to be used for the border of the bars and
 rectangles.  Use <code>border=NA</code> to omit borders.</p></dd>
+
+
 <dt>sortVars</dt>
 <dd><p>a logical indicating whether the variables should be sorted
 by the number of missing/imputed values.</p></dd>
+
+
 <dt>sortCombs</dt>
 <dd><p>a logical indicating whether the combinations should be
 sorted by the frequency of occurrence.</p></dd>
+
+
 <dt>ylabs</dt>
 <dd><p>if <code>combined</code> is <code>TRUE</code>, a character string giving
 the y-axis label of the combined plot, otherwise a character vector of
 length two giving the y-axis labels for the two plots.</p></dd>
+
+
 <dt>axes</dt>
 <dd><p>a logical indicating whether axes should be drawn.</p></dd>
+
+
 <dt>labels</dt>
 <dd><p>either a logical indicating whether labels should be plotted
 on the x-axis, or a character vector giving the labels.</p></dd>
+
+
 <dt>cex.lab</dt>
 <dd><p>the character expansion factor to be used for the axis
 labels.</p></dd>
+
+
 <dt>cex.axis</dt>
 <dd><p>the character expansion factor to be used for the axis
 annotation.</p></dd>
+
+
 <dt>cex.numbers</dt>
 <dd><p>the character expansion factor to be used for the
 proportion or frequencies of the different combinations</p></dd>
+
+
 <dt>gap</dt>
 <dd><p>if <code>combined</code> is <code>FALSE</code>, a numeric value giving the
 distance between the two plots in margin lines.</p></dd>
+
+
 <dt>digits</dt>
 <dd><p>the minimum number of significant digits to be used (see
 <code><a href="https://rdrr.io/r/base/print.default.html" class="external-link">print.default()</a></code>).</p></dd>
+
+
 <dt>object</dt>
 <dd><p>an object of class <code>"aggr"</code>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>for <code>aggr</code>, a list of class <code>"aggr"</code> containing the
+    
+
+<p>for <code>aggr</code>, a list of class <code>"aggr"</code> containing the
 following components:</p><ul><li><p>x the data used.</p></li>
 <li><p>combinations a character vector representing the combinations of
 variables.</p></li>
@@ -295,12 +342,12 @@ values by Bernd Prantner</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span>, package<span class="op">=</span><span class="st">"VIM"</span><span class="op">)</span></span>
-<span class="r-in"><span class="co">## for missing values</span></span>
-<span class="r-in"><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu">aggr</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span>, package<span class="op">=</span><span class="st">"VIM"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## for missing values</span></span></span>
+<span class="r-in"><span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu">aggr</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="aggr-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span class="va">a</span></span>
+<span class="r-in"><span><span class="va">a</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Missings in variables:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Variable Count</span>
@@ -309,7 +356,7 @@ values by Bernd Prantner</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Sleep     4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Span     4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Gest     4</span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">a</span><span class="op">)</span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">a</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Missings per variable: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Variable Count</span>
@@ -334,12 +381,12 @@ values by Bernd Prantner</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  0:0:1:1:0:0:0:0:0:0     9 14.516129</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  0:0:1:1:0:1:0:0:0:0     1  1.612903</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  0:0:1:1:1:0:0:0:0:0     2  3.225806</span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">## for imputed values</span></span>
-<span class="r-in"><span class="va">sleep_IMPUTED</span> <span class="op">&lt;-</span> <span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu">aggr</span><span class="op">(</span><span class="va">sleep_IMPUTED</span>, delimiter<span class="op">=</span><span class="st">"_imp"</span><span class="op">)</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## for imputed values</span></span></span>
+<span class="r-in"><span><span class="va">sleep_IMPUTED</span> <span class="op">&lt;-</span> <span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu">aggr</span><span class="op">(</span><span class="va">sleep_IMPUTED</span>, delimiter<span class="op">=</span><span class="st">"_imp"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="aggr-2.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span class="va">a</span></span>
+<span class="r-in"><span><span class="va">a</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Imputed missings in variables:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Variable Count</span>
@@ -348,7 +395,7 @@ values by Bernd Prantner</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Sleep     4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Span     4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Gest     4</span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">a</span><span class="op">)</span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">a</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Imputed missings per variables:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Variable Count</span>
@@ -373,11 +420,11 @@ values by Bernd Prantner</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  0:0:2:2:0:0:0:0:0:0     9 14.516129</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  0:0:2:2:0:2:0:0:0:0     1  1.612903</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  0:0:2:2:2:0:0:0:0:0     2  3.225806</span>
-<span class="r-in"></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu">aggr</span><span class="op">(</span><span class="va">sleep</span>, plot<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">a</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu">aggr</span><span class="op">(</span><span class="va">sleep</span>, plot<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">a</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Missings in variables:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Variable Count</span>
@@ -386,10 +433,10 @@ values by Bernd Prantner</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Sleep     4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Span     4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Gest     4</span>
-<span class="r-in"></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">aggr</span><span class="op">(</span><span class="va">sleep</span>, plot<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">aggr</span><span class="op">(</span><span class="va">sleep</span>, plot<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Missings per variable: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Variable Count</span>
@@ -414,11 +461,11 @@ values by Bernd Prantner</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  0:0:1:1:0:0:0:0:0:0     9 14.516129</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  0:0:1:1:0:1:0:0:0:0     1  1.612903</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  0:0:1:1:1:0:0:0:0:0     2  3.225806</span>
-<span class="r-in"></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">aggr</span><span class="op">(</span><span class="va">sleep</span>, plot<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">s</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">aggr</span><span class="op">(</span><span class="va">sleep</span>, plot<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">s</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Missings per variable: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Variable Count</span>
@@ -443,7 +490,7 @@ values by Bernd Prantner</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  0:0:1:1:0:0:0:0:0:0     9 14.516129</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  0:0:1:1:0:1:0:0:0:0     1  1.612903</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  0:0:1:1:1:0:0:0:0:0     2  3.225806</span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -458,7 +505,7 @@ values by Bernd Prantner</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

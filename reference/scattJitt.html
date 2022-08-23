@@ -75,32 +75,34 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">scattJitt</span><span class="op">(</span>
-  <span class="va">x</span>,
-  delimiter <span class="op">=</span> <span class="cn">NULL</span>,
-  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"red"</span>, <span class="st">"red4"</span>, <span class="st">"orange"</span>, <span class="st">"orange4"</span><span class="op">)</span>,
-  alpha <span class="op">=</span> <span class="cn">NULL</span>,
-  cex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,
-  col.line <span class="op">=</span> <span class="st">"lightgrey"</span>,
-  lty <span class="op">=</span> <span class="st">"dashed"</span>,
-  lwd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"lwd"</span><span class="op">)</span>,
-  numbers <span class="op">=</span> <span class="cn">TRUE</span>,
-  cex.numbers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,
-  main <span class="op">=</span> <span class="cn">NULL</span>,
-  sub <span class="op">=</span> <span class="cn">NULL</span>,
-  xlab <span class="op">=</span> <span class="cn">NULL</span>,
-  ylab <span class="op">=</span> <span class="cn">NULL</span>,
-  axes <span class="op">=</span> <span class="cn">TRUE</span>,
-  frame.plot <span class="op">=</span> <span class="va">axes</span>,
-  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"observed"</span>, <span class="st">"missing"</span>, <span class="st">"imputed"</span><span class="op">)</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">scattJitt</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  delimiter <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"skyblue"</span>, <span class="st">"red"</span>, <span class="st">"red4"</span>, <span class="st">"orange"</span>, <span class="st">"orange4"</span><span class="op">)</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,</span>
+<span>  col.line <span class="op">=</span> <span class="st">"lightgrey"</span>,</span>
+<span>  lty <span class="op">=</span> <span class="st">"dashed"</span>,</span>
+<span>  lwd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"lwd"</span><span class="op">)</span>,</span>
+<span>  numbers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  cex.numbers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="st">"cex"</span><span class="op">)</span>,</span>
+<span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sub <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  xlab <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ylab <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  axes <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  frame.plot <span class="op">=</span> <span class="va">axes</span>,</span>
+<span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"observed"</span>, <span class="st">"missing"</span>, <span class="st">"imputed"</span><span class="op">)</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>x</dt>
 <dd><p>a <code>data.frame</code> or <code>matrix</code> with two columns.</p></dd>
+
+
 <dt>delimiter</dt>
 <dd><p>a character-vector to distinguish between variables and
 imputation-indices for imputed variables (therefore, <code>x</code> needs to have
@@ -109,6 +111,8 @@ imputation-index for any imputed variable (a logical-vector indicating which
 values of the variable have been imputed). If such imputation-indices are
 found, they are used for highlighting and the colors are adjusted according
 to the given colors for imputed variables (see <code>col</code>).</p></dd>
+
+
 <dt>col</dt>
 <dd><p>a vector of length five giving the colors to be used in the plot.
 The first color will be used for complete observations, the second/fourth
@@ -116,42 +120,69 @@ color for missing/imputed values in only one variable, and the third/fifth
 color for missing/imputed values in both variables.  If only one color is
 supplied, it is used for all.  Else if two colors are supplied, the second
 one is recycled.</p></dd>
+
+
 <dt>alpha</dt>
 <dd><p>a numeric value between 0 and 1 giving the level of
 transparency of the colors, or <code>NULL</code>.  This can be used to prevent
 overplotting.</p></dd>
+
+
 <dt>cex</dt>
 <dd><p>the character expansion factor for the plot characters.</p></dd>
+
+
 <dt>col.line</dt>
 <dd><p>the color for the lines dividing the plot region.</p></dd>
+
+
 <dt>lty</dt>
 <dd><p>the line type for the lines dividing the plot region (see
 <code><a href="https://rdrr.io/r/graphics/par.html" class="external-link">graphics::par()</a></code>).</p></dd>
+
+
 <dt>lwd</dt>
 <dd><p>the line width for the lines dividing the plot region.</p></dd>
+
+
 <dt>numbers</dt>
 <dd><p>a logical indicating whether the frequencies of observed and
 missing/imputed values should be displayed (see ‘Details’).</p></dd>
+
+
 <dt>cex.numbers</dt>
 <dd><p>the character expansion factor to be used for the
 frequencies of the observed and missing/imputed values.</p></dd>
+
+
 <dt>main, sub</dt>
 <dd><p>main and sub title.</p></dd>
+
+
 <dt>xlab, ylab</dt>
 <dd><p>axis labels.</p></dd>
+
+
 <dt>axes</dt>
 <dd><p>a logical indicating whether both axes should be drawn on the
 plot.  Use graphical parameter <code>"xaxt"</code> or <code>"yaxt"</code> to suppress
 just one of the axes.</p></dd>
+
+
 <dt>frame.plot</dt>
 <dd><p>a logical indicating whether a box should be drawn around
 the plot.</p></dd>
+
+
 <dt>labels</dt>
 <dd><p>a vector of length three giving the axis labels for the
 regions for observed, missing and imputed values (see ‘Details’).</p></dd>
+
+
 <dt>...</dt>
 <dd><p>further graphical parameters to be passed down (see
 <code><a href="https://rdrr.io/r/graphics/par.html" class="external-link">graphics::par()</a></code>).</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -200,16 +231,16 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">tao</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span>
-<span class="r-in"><span class="co">## for missing values</span></span>
-<span class="r-in"><span class="fu">scattJitt</span><span class="op">(</span><span class="va">tao</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Air.Temp"</span>, <span class="st">"Humidity"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">tao</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">## for missing values</span></span></span>
+<span class="r-in"><span><span class="fu">scattJitt</span><span class="op">(</span><span class="va">tao</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Air.Temp"</span>, <span class="st">"Humidity"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="scattJitt-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">## for imputed values</span></span>
-<span class="r-in"><span class="fu">scattJitt</span><span class="op">(</span><span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="va">tao</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Air.Temp"</span>, <span class="st">"Humidity"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## for imputed values</span></span></span>
+<span class="r-in"><span><span class="fu">scattJitt</span><span class="op">(</span><span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="va">tao</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Air.Temp"</span>, <span class="st">"Humidity"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="scattJitt-2.png" alt="" width="700" height="433"></span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -224,7 +255,7 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>
