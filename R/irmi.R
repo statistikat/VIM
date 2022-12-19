@@ -28,8 +28,9 @@
 #'   residuals.
 #' @param noise.factor amount of noise.
 #' @param force if TRUE, the algorithm tries to find a solution in any case,
-#'   possible by using different robust methods automatically.
-#' @param robMethod regression method when the response is continuous.
+#'   possible by using different robust methods automatically. 
+#' @param robMethod regression method when the response is continuous. Default is
+#'   MM-regression with `lmrob`.
 #' @param force.mixed if TRUE, the algorithm tries to find a solution in any
 #'   case, possible by using different robust methods automatically.
 #' @param addMixedFactors if TRUE add additional factor variable for each
