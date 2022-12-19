@@ -613,7 +613,6 @@ Inter.list <- function(A) {
 }
 
 
-
 #' Initialization of missing values
 #'
 #' Rough estimation of missing values in a vector according to its type.
@@ -759,15 +758,13 @@ useLM <- function(x_reg, ndata, wy, mixed_tf, mixed_constant, factors, step,
     glm.num <- glm(form, data = x_reg, family = "gaussian")
     #cat("not ROBUST!!!!!!!!\n")
   } else {
-    if (exists("glm.num"))
-      rm(glm.num)
     if (force) {
-      try(glm.num <- rlm(form, data = x_reg, method = "MM"), silent = TRUE)
-      if (!exists("glm.num")) {
-        try(glm.num <- lmrob(form, data = x_reg), silent = TRUE)
-        if (!exists("glm.num")) {
-          glm.num <- rlm(form, data = x_reg, method = "M")
-          if (!exists("glm.num")) {
+      e1 <- try(glm.num <- lmrob(form, data = x_reg, method="MM"), silent = TRUE)
+      if (inherits(e1, "try-error")) {
+        e2 <- try(glm.num <- lmrob(form, data = x_reg, method = "M"), silent = TRUE)
+        if (inherits(e2, "try-error")) {
+          e3 <- try(glm.num <- lmrob(form, data = x_reg, method = "D"), silent = TRUE)
+          if (inherits(e3, "try-error")) {
             glm.num <- glm(form, data = x_reg, family = "gaussian")
           }
         }
@@ -777,7 +774,7 @@ useLM <- function(x_reg, ndata, wy, mixed_tf, mixed_constant, factors, step,
         robMethod,
         lmrob = lmrob(form, data = x_reg),
         lqs = lqs(form, data = x_reg),
-        rlm(form, data = x_reg, method = robMethod)
+        lmrob(form, data = x_reg, method = robMethod)
       )
     }
   }
