@@ -30,7 +30,6 @@ The following example demonstrates the functionality of `hodeck()` and `kNN()` u
 
 ```{r setup, message=F}
 library(VIM)
-library(magrittr)
 dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")]
 dataset$BodyWgt <- log(dataset$BodyWgt)
 dataset$Span <- log(dataset$Span)
@@ -65,15 +64,15 @@ The specified variables in `matchImpute()` serve as a donor and enable imputatio
 As we can see in the next two plots, the origninal data structure of `NonD` and `Span` is preserved by `hotdeck()`. `kNN()` reveals the typically procedure of methods, which are based on similar data points weighted by the distance. 
 
 ```{r, fig.height=5}
-imp_hotdeck[, c("NonD", "Span", "NonD_imp")] %>% 
+imp_hotdeck[, c("NonD", "Span", "NonD_imp")] |> 
   marginplot(delimiter = "_imp")
-imp_knn[, c("NonD", "Span", "NonD_imp")] %>% 
+imp_knn[, c("NonD", "Span", "NonD_imp")] |> 
   marginplot(delimiter = "_imp")
 ```
 
 `matchImpute()` works by sampling values from the suitable donors and also provides reasonable results.
 ```{r, fig.height=5}
-imp_match[, c("NonD", "Span", "NonD_imp")] %>% 
+imp_match[, c("NonD", "Span", "NonD_imp")] |> 
   marginplot(delimiter = "_imp")
 ```
 

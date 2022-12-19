@@ -28,7 +28,6 @@ deliberately to include some interactions between the missing values.
 
 ```{r setup, message = FALSE}
 library(VIM)
-library(magrittr)
 dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")]
 dataset$BodyWgt <- log(dataset$BodyWgt)
 dataset$Span <- log(dataset$Span)
@@ -61,7 +60,7 @@ As we can see in the next two plots, the correlation structure of `NonD` and
 suggests that the variable `Span` had little to no effect on the model.
 
 ```{r, fig.height=5}
-imp_regression[, c("NonD", "BodyWgt", "NonD_imp")] %>% 
+imp_regression[, c("NonD", "BodyWgt", "NonD_imp")] |> 
   marginplot(delimiter = "_imp")
 ```
 
@@ -69,9 +68,9 @@ For `rangerImpute()` on the other hand, `Span` played an important role in the
 generation of the imputed values.
 
 ```{r, fig.height=5}
-imp_ranger[, c("NonD", "BodyWgt", "NonD_imp")] %>% 
+imp_ranger[, c("NonD", "BodyWgt", "NonD_imp")] |> 
   marginplot(delimiter = "_imp")
-imp_ranger[, c("NonD", "Span", "NonD_imp")] %>% 
+imp_ranger[, c("NonD", "Span", "NonD_imp")] |> 
   marginplot(delimiter = "_imp")
 ```
 
