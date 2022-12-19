@@ -34,7 +34,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.2.2</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.2.3</span>
       </span>
     </div>
 
@@ -88,11 +88,13 @@
 
       
 
-      </header><script src="modelImp_files/core-js-2.5.3/shim.min.js"></script><script src="modelImp_files/react-17.0.0/react.min.js"></script><script src="modelImp_files/react-17.0.0/react-dom.min.js"></script><script src="modelImp_files/reactwidget-1.0.0/react-tools.js"></script><script src="modelImp_files/htmlwidgets-1.5.4/htmlwidgets.js"></script><script src="modelImp_files/reactable-binding-0.3.0/reactable.js"></script><div class="row">
+      </header><script src="modelImp_files/core-js-2.5.3/shim.min.js"></script><script src="modelImp_files/react-17.0.0/react.min.js"></script><script src="modelImp_files/react-17.0.0/react-dom.min.js"></script><script src="modelImp_files/reactwidget-1.0.0/react-tools.js"></script><script src="modelImp_files/htmlwidgets-1.6.0/htmlwidgets.js"></script><link href="modelImp_files/reactable-0.4.1/reactable.css" rel="stylesheet">
+<script src="modelImp_files/reactable-binding-0.4.1/reactable.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Model based Imputation Methods</h1>
-                        <h4 data-toc-skip class="author">Gregor de Cillia</h4>
+                        <h4 data-toc-skip class="author">Gregor de
+Cillia</h4>
             
       
       <small class="dont-index">Source: <a href="https://github.com/statistikat/VIM/blob/HEAD/vignettes/modelImp.Rmd" class="external-link"><code>vignettes/modelImp.Rmd</code></a></small>
@@ -102,14 +104,18 @@
 
     
     
-<p>This vignette showcases the functions <code><a href="../reference/regressionImp.html">regressionImp()</a></code> and <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code>, which can both be used to generate imputations for several variables in a dataset using a formula interface.</p>
+<p>This vignette showcases the functions <code><a href="../reference/regressionImp.html">regressionImp()</a></code>
+and <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code>, which can both be used to generate
+imputations for several variables in a dataset using a formula
+interface.</p>
 <div class="section level2">
 <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
 </h2>
-<p>For data, a subset of <code>sleep</code> is used. The columns have been selected deliberately to include some interactions between the missing values.</p>
+<p>For data, a subset of <code>sleep</code> is used. The columns have
+been selected deliberately to include some interactions between the
+missing values.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/statistikat/VIM" class="external-link">VIM</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://magrittr.tidyverse.org" class="external-link">magrittr</a></span><span class="op">)</span></span>
 <span><span class="va">dataset</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Dream"</span>, <span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span><span class="op">)</span></span>
 <span><span class="va">dataset</span><span class="op">$</span><span class="va">Span</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">Span</span><span class="op">)</span></span>
@@ -126,37 +132,51 @@
 <div class="section level2">
 <h2 id="imputation">Imputation<a class="anchor" aria-label="anchor" href="#imputation"></a>
 </h2>
-<p>In order to invoke the imputation methods, a formula is used to specify which variables are to be estimated and which variables should be used as regressors. We will start by imputing <code>NonD</code> based in <code>BodyWgt</code> and <code>Span</code>.</p>
+<p>In order to invoke the imputation methods, a formula is used to
+specify which variables are to be estimated and which variables should
+be used as regressors. We will start by imputing <code>NonD</code> based
+in <code>BodyWgt</code> and <code>Span</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_regression</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">NonD</span> <span class="op">~</span> <span class="va">BodyWgt</span> <span class="op">+</span> <span class="va">Span</span>, <span class="va">dataset</span><span class="op">)</span></span>
 <span><span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span></span>
 <span><span class="va">imp_ranger</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rangerImpute.html">rangerImpute</a></span><span class="op">(</span><span class="va">NonD</span> <span class="op">~</span> <span class="va">BodyWgt</span> <span class="op">+</span> <span class="va">Span</span>, <span class="va">dataset</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_regression</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="modelImp_files/figure-html/unnamed-chunk-2-1.png" width="576" style="display: block; margin: auto;"></p>
-<p>We can see that for <code>regrssionImp()</code> there are still missings in <code>NonD</code> for all observations where <code>Span</code> is unobserved. This is because the regression model could not be applied to those observations. The same is true for the values imputed via <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code>.</p>
+<p>We can see that for <code>regrssionImp()</code> there are still
+missings in <code>NonD</code> for all observations where
+<code>Span</code> is unobserved. This is because the regression model
+could not be applied to those observations. The same is true for the
+values imputed via <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="diagnosing-the-results">Diagnosing the results<a class="anchor" aria-label="anchor" href="#diagnosing-the-results"></a>
 </h2>
-<p>As we can see in the next two plots, the correlation structure of <code>NonD</code> and <code>BodyWgt</code> is preserved by both imputation methods. In the case of <code><a href="../reference/regressionImp.html">regressionImp()</a></code> all imputed values almost follow a straight line. This suggests that the variable <code>Span</code> had little to no effect on the model.</p>
+<p>As we can see in the next two plots, the correlation structure of
+<code>NonD</code> and <code>BodyWgt</code> is preserved by both
+imputation methods. In the case of <code><a href="../reference/regressionImp.html">regressionImp()</a></code> all
+imputed values almost follow a straight line. This suggests that the
+variable <code>Span</code> had little to no effect on the model.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">imp_regression</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">imp_regression</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span>delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="modelImp_files/figure-html/unnamed-chunk-3-1.png" width="576" style="display: block; margin: auto;"></p>
-<p>For <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code> on the other hand, <code>Span</code> played an important role in the generation of the imputed values.</p>
+<p>For <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code> on the other hand, <code>Span</code>
+played an important role in the generation of the imputed values.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">imp_ranger</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">imp_ranger</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span>delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="modelImp_files/figure-html/unnamed-chunk-4-1.png" width="576" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">imp_ranger</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">imp_ranger</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span>delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="modelImp_files/figure-html/unnamed-chunk-4-2.png" width="576" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level2">
 <h2 id="imputing-multiple-variables">Imputing multiple variables<a class="anchor" aria-label="anchor" href="#imputing-multiple-variables"></a>
 </h2>
-<p>To impute several variables at once, the formula in <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code> and <code><a href="../reference/regressionImp.html">regressionImp()</a></code> can be specified with more than one column name in the left hand side.</p>
+<p>To impute several variables at once, the formula in
+<code><a href="../reference/rangerImpute.html">rangerImpute()</a></code> and <code><a href="../reference/regressionImp.html">regressionImp()</a></code> can be
+specified with more than one column name in the left hand side.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_regression</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">Dream</span> <span class="op">+</span> <span class="va">NonD</span> <span class="op">~</span> <span class="va">BodyWgt</span> <span class="op">+</span> <span class="va">Span</span>, <span class="va">dataset</span><span class="op">)</span></span>
 <span><span class="co">#&gt; There still missing values in variable Dream . Probably due to missing values in the regressors.</span></span>
@@ -164,12 +184,15 @@
 <span><span class="va">imp_ranger</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rangerImpute.html">rangerImpute</a></span><span class="op">(</span><span class="va">Dream</span> <span class="op">+</span> <span class="va">NonD</span> <span class="op">~</span> <span class="va">BodyWgt</span> <span class="op">+</span> <span class="va">Span</span>, <span class="va">dataset</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_regression</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="modelImp_files/figure-html/unnamed-chunk-5-1.png" width="576" style="display: block; margin: auto;"></p>
-<p>Again, there are missings left for both <code>Dream</code> and <code>NonD</code>.</p>
+<p>Again, there are missings left for both <code>Dream</code> and
+<code>NonD</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="performance-of-method">Performance of method<a class="anchor" aria-label="anchor" href="#performance-of-method"></a>
 </h2>
-<p>In order to validate the performance of <code><a href="../reference/regressionImp.html">regressionImp()</a></code> the <code>iris</code> dataset is used. Firstly, some values are randomly set to <code>NA</code>.</p>
+<p>In order to validate the performance of <code><a href="../reference/regressionImp.html">regressionImp()</a></code>
+the <code>iris</code> dataset is used. Firstly, some values are randomly
+set to <code>NA</code>.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://glin.github.io/reactable/" class="external-link">reactable</a></span><span class="op">)</span></span>
 <span></span>
@@ -190,14 +213,19 @@
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">df</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; S.Length  S.Width P.Length  P.Width  Species </span></span>
 <span><span class="co">#&gt;       12       10       13       12        0</span></span></code></pre></div>
-<p>We can see that there are missings in all variables and some observations reveal missing values on several points. In the next step we perform a multiple variable imputation and <code>Species</code> serves as a regressor.</p>
+<p>We can see that there are missings in all variables and some
+observations reveal missing values on several points. In the next step
+we perform a multiple variable imputation and <code>Species</code>
+serves as a regressor.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_regression</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">S.Length</span> <span class="op">+</span> <span class="va">S.Width</span> <span class="op">+</span> <span class="va">P.Length</span> <span class="op">+</span> <span class="va">P.Width</span> <span class="op">~</span> <span class="va">Species</span>, <span class="va">df</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_regression</span>, delimiter <span class="op">=</span> <span class="st">"imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="modelImp_files/figure-html/unnamed-chunk-7-1.png" width="576" style="display: block; margin: auto;"></p>
-<p>The plot indicates that all missing values have been imputed by the <code><a href="../reference/regressionImp.html">regressionImp()</a></code> algorithm. The following table displays the rounded first five results of the imputation for all variables.</p>
-<div id="htmlwidget-198eb91c97a92ff4cbfe" class="reactable html-widget" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-198eb91c97a92ff4cbfe">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"TRUE1":[4.4,7,5.4,6.1,6.5],"IMPUTED1":[5.02,5.92,5.02,5.92,6.56],"TRUE2":[2.5,3,3,3.2,3.4],"IMPUTED2":[2.78,2.98,2.98,2.98,3.45],"TRUE3":[4.1,5.6,1.4,1.3,5.1],"IMPUTED3":[4.26,5.57,1.47,1.47,5.57],"TRUE4":[0.1,1.5,2.1,1.5,0.2],"IMPUTED4":[0.25,1.31,2.02,1.31,0.25]},"columns":[{"accessor":"TRUE1","name":"True","type":"numeric"},{"accessor":"IMPUTED1","name":"Imputed","type":"numeric"},{"accessor":"TRUE2","name":"True","type":"numeric"},{"accessor":"IMPUTED2","name":"Imputed","type":"numeric"},{"accessor":"TRUE3","name":"True","type":"numeric"},{"accessor":"IMPUTED3","name":"Imputed","type":"numeric"},{"accessor":"TRUE4","name":"True","type":"numeric"},{"accessor":"IMPUTED4","name":"Imputed","type":"numeric"}],"columnGroups":[{"name":"S.Length","columns":["TRUE1","IMPUTED1"]},{"name":"S.Width","columns":["TRUE2","IMPUTED2"]},{"name":"P.Length","columns":["TRUE3","IMPUTED3"]},{"name":"P.Width","columns":["TRUE4","IMPUTED4"]}],"defaultPageSize":10,"paginationType":"numbers","showPageInfo":true,"minRows":1,"highlight":true,"bordered":true,"striped":true,"dataKey":"a997a05deffd9e7839f6c9c0ce9085ea"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<p>The plot indicates that all missing values have been imputed by the
+<code><a href="../reference/regressionImp.html">regressionImp()</a></code> algorithm. The following table displays the
+rounded first five results of the imputation for all variables.</p>
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-198eb91c97a92ff4cbfe" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-198eb91c97a92ff4cbfe">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"TRUE1":[4.4,7,5.4,6.1,6.5],"IMPUTED1":[5.02,5.92,5.02,5.92,6.56],"TRUE2":[2.5,3,3,3.2,3.4],"IMPUTED2":[2.78,2.98,2.98,2.98,3.45],"TRUE3":[4.1,5.6,1.4,1.3,5.1],"IMPUTED3":[4.26,5.57,1.47,1.47,5.57],"TRUE4":[0.1,1.5,2.1,1.5,0.2],"IMPUTED4":[0.25,1.31,2.02,1.31,0.25]},"columns":[{"id":"TRUE1","name":"True","type":"numeric"},{"id":"IMPUTED1","name":"Imputed","type":"numeric"},{"id":"TRUE2","name":"True","type":"numeric"},{"id":"IMPUTED2","name":"Imputed","type":"numeric"},{"id":"TRUE3","name":"True","type":"numeric"},{"id":"IMPUTED3","name":"Imputed","type":"numeric"},{"id":"TRUE4","name":"True","type":"numeric"},{"id":"IMPUTED4","name":"Imputed","type":"numeric"}],"columnGroups":[{"name":"S.Length","columns":["TRUE1","IMPUTED1"]},{"name":"S.Width","columns":["TRUE2","IMPUTED2"]},{"name":"P.Length","columns":["TRUE3","IMPUTED3"]},{"name":"P.Width","columns":["TRUE4","IMPUTED4"]}],"highlight":true,"bordered":true,"striped":true,"dataKey":"e81afb282c46c4abfe771448f14986c9"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
   </div>
 
@@ -218,7 +246,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer>

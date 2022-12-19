@@ -34,7 +34,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.2.2</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.2.3</span>
       </span>
     </div>
 
@@ -101,7 +101,11 @@
 
     
     
-<p>VIM introduces tools for visualization of missing and imputed values. Forthermore, methods to impute missing values are featured. This vignette will give a brief look at a common imputation scenario and showcase how VIM can be used to both impute the data and also interpret the results visually.</p>
+<p>VIM introduces tools for visualization of missing and imputed values.
+Forthermore, methods to impute missing values are featured. This
+vignette will give a brief look at a common imputation scenario and
+showcase how VIM can be used to both impute the data and also interpret
+the results visually.</p>
 <div class="section level2">
 <h2 id="visualize-missing-values">Visualize missing values<a class="anchor" aria-label="anchor" href="#visualize-missing-values"></a>
 </h2>
@@ -111,49 +115,75 @@
 <span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">sleep</span>, plot <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">a</span>, numbers <span class="op">=</span> <span class="cn">TRUE</span>, prop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="VIM_files/figure-html/setup-1.png" width="672" style="display: block; margin: auto;"></p>
-<p>The left plot shows the amount of missings for each column in the dataset <code>sleep</code> and the right plot shows how often each combination of missings occur. For example, there are 9 rows wich contain a missing in both <code>NonD</code> and <code>Dream</code>.</p>
-<p>For simplicity, we will only look at the variables <code>Dream</code> and <code>Sleep</code> for the remainer of this vignette. Bivariate datasets can be passed to special functions that visualize the structure of missings such as <code><a href="../reference/marginplot.html">marginplot()</a></code>.</p>
+<p>The left plot shows the amount of missings for each column in the
+dataset <code>sleep</code> and the right plot shows how often each
+combination of missings occur. For example, there are 9 rows wich
+contain a missing in both <code>NonD</code> and <code>Dream</code>.</p>
+<p>For simplicity, we will only look at the variables <code>Dream</code>
+and <code>Sleep</code> for the remainer of this vignette. Bivariate
+datasets can be passed to special functions that visualize the structure
+of missings such as <code><a href="../reference/marginplot.html">marginplot()</a></code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Dream"</span>, <span class="st">"Sleep"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
 <p><img src="VIM_files/figure-html/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;"></p>
-<p>The <strong><font color="red">red</font></strong> boxplot on the left shows the distrubution of all values of <code>Sleep</code> where <code>Dream</code> contains a missing value. The <strong><font color="#87ceeb">blue</font></strong> boxplot on the left shows the distribution of the values of <code>Sleep</code> where <code>Dream</code> is observed.</p>
+<p>The <strong><font color="red">red</font></strong> boxplot on the left
+shows the distrubution of all values of <code>Sleep</code> where
+<code>Dream</code> contains a missing value. The
+<strong><font color="#87ceeb">blue</font></strong> boxplot on the left
+shows the distribution of the values of <code>Sleep</code> where
+<code>Dream</code> is observed.</p>
 </div>
 <div class="section level2">
 <h2 id="impute-missing-values">Impute missing values<a class="anchor" aria-label="anchor" href="#impute-missing-values"></a>
 </h2>
-<p>In order to impute missing values, <code>VIM</code> offers a spectrum of imputation methods like <code><a href="../reference/kNN.html">kNN()</a></code> (k nearest neighbour), <code><a href="../reference/hotdeck.html">hotdeck()</a></code> and so forth. Those functions can be applied to a <code>data.frame</code> and return another <code>data.frame</code> where missings are replaced by imputed values.</p>
+<p>In order to impute missing values, <code>VIM</code> offers a spectrum
+of imputation methods like <code><a href="../reference/kNN.html">kNN()</a></code> (k nearest neighbour),
+<code><a href="../reference/hotdeck.html">hotdeck()</a></code> and so forth. Those functions can be applied to a
+<code>data.frame</code> and return another <code>data.frame</code> where
+missings are replaced by imputed values.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">x_imputed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
-<p>To learn more about all implemented imputation methods, three vignettes are available</p>
+<p>To learn more about all implemented imputation methods, three
+vignettes are available</p>
 <ul>
 <li>
-<code><a href="../articles/donorImp.html">vignette("donorImp")</a></code> explains the donor-based imputation methods <code><a href="../reference/hotdeck.html">hotdeck()</a></code> and <code><a href="../reference/kNN.html">kNN()</a></code>
+<code><a href="../articles/donorImp.html">vignette("donorImp")</a></code> explains the donor-based
+imputation methods <code><a href="../reference/hotdeck.html">hotdeck()</a></code> and <code><a href="../reference/kNN.html">kNN()</a></code>
 </li>
 <li>
-<code><a href="../articles/modelImp.html">vignette("modelImp")</a></code> gives insight into the model-based imputation methods <code><a href="../reference/regressionImp.html">regressionImp()</a></code> and <code><a href="../reference/matchImpute.html">matchImpute()</a></code>
+<code><a href="../articles/modelImp.html">vignette("modelImp")</a></code> gives insight into the model-based
+imputation methods <code><a href="../reference/regressionImp.html">regressionImp()</a></code> and
+<code><a href="../reference/matchImpute.html">matchImpute()</a></code>
 </li>
 <li>
-<code><a href="../articles/irmi.html">vignette("irmi")</a></code> showcases the <code><a href="../reference/irmi.html">irmi()</a></code> method.</li>
+<code><a href="../articles/irmi.html">vignette("irmi")</a></code> showcases the <code><a href="../reference/irmi.html">irmi()</a></code>
+method.</li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="visualize-imputed-values">Visualize imputed values<a class="anchor" aria-label="anchor" href="#visualize-imputed-values"></a>
 </h2>
-<p>The same functions that visualize missing values can also visualize the imputed dataset.</p>
+<p>The same functions that visualize missing values can also visualize
+the imputed dataset.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span><span class="va">x_imputed</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="VIM_files/figure-html/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;"></p>
-<p>In this plot three differnt colors are used in the top-right. These colors represent the structure of missings.</p>
+<p>In this plot three differnt colors are used in the top-right. These
+colors represent the structure of missings.</p>
 <ul>
 <li>
-<strong><font color="#8b5a00">brown</font></strong> points represent values where <code>Dream</code> was missing initially</li>
+<strong><font color="#8b5a00">brown</font></strong> points represent
+values where <code>Dream</code> was missing initially</li>
 <li>
-<strong><font color="#ffa500">beige</font></strong> points represent values where <code>Sleep</code> was missing initially</li>
+<strong><font color="#ffa500">beige</font></strong> points represent
+values where <code>Sleep</code> was missing initially</li>
 <li>
-<strong>black</strong> points represent values where both <code>Dream</code> and <code>Sleep</code> were missing initially</li>
+<strong>black</strong> points represent values where both
+<code>Dream</code> and <code>Sleep</code> were missing initially</li>
 </ul>
-<p>The <code><a href="../reference/kNN.html">kNN()</a></code> method seemingly preserves the correlation between <code>Dream</code> and <code>Sleep</code>.</p>
+<p>The <code><a href="../reference/kNN.html">kNN()</a></code> method seemingly preserves the correlation
+between <code>Dream</code> and <code>Sleep</code>.</p>
 </div>
   </div>
 
@@ -174,7 +204,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer>

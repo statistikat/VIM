@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.2.2</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.2.3</span>
       </span>
     </div>
 
@@ -80,7 +80,9 @@
     <div class="section level2">
 <h2 class="page-header" data-toc-text="6.0.1" id="vim-601">VIM 6.0.1<a class="anchor" aria-label="anchor" href="#vim-601"></a></h2>
 <ul><li>add new vignettes explaining all remaining imputation methods (<code><a href="../reference/irmi.html">irmi()</a></code>, <code><a href="../reference/kNN.html">kNN()</a></code>, <code><a href="../reference/hotdeck.html">hotdeck()</a></code> and <code><a href="../reference/regressionImp.html">regressionImp()</a></code>). Thanks <a href="https://github.com/wolfgangrannetbauer" class="external-link">@wolfgangrannetbauer</a> (<a href="https://github.com/statistikat/VIM/issues/44" class="external-link">#44</a>, <a href="https://github.com/statistikat/VIM/issues/45" class="external-link">#45</a>)</li>
-<li>Allow missing and imputed values in several visualization functions.<ul><li>The new functionalities are showcased in the new <a href="http://statistikat.github.io/VIM/articles/VisualImp.html" class="external-link">visualization vignette</a> (<a href="https://github.com/statistikat/VIM/issues/46" class="external-link">#46</a>). Thanks <a href="https://github.com/wolfgangrannetbauer" class="external-link">@wolfgangrannetbauer</a>!</li></ul></li>
+<li>Allow missing and imputed values in several visualization functions.
+<ul><li>The new functionalities are showcased in the new <a href="http://statistikat.github.io/VIM/articles/VisualImp.html" class="external-link">visualization vignette</a> (<a href="https://github.com/statistikat/VIM/issues/46" class="external-link">#46</a>). Thanks <a href="https://github.com/wolfgangrannetbauer" class="external-link">@wolfgangrannetbauer</a>!</li>
+</ul></li>
 <li>Add <code><a href="../reference/tableMiss.html">tableMiss()</a></code>: A table that highlights missing and imputed values via colors (<a href="https://github.com/statistikat/VIM/issues/47" class="external-link">#47</a>).</li>
 <li>Bug fix for kNN (<a href="https://github.com/statistikat/VIM/issues/48" class="external-link">#48</a>) Thanks <a href="https://github.com/torockel" class="external-link">@torockel</a></li>
 </ul></div>
@@ -117,17 +119,21 @@
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="4.9.1" id="vim-491">VIM 4.9.1<a class="anchor" aria-label="anchor" href="#vim-491"></a></h2>
-<ul><li>data set <code>collision</code> added</li></ul></div>
+<ul><li>data set <code>collision</code> added</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="4.8.0" id="vim-480">VIM 4.8.0<small>2019-02-11</small><a class="anchor" aria-label="anchor" href="#vim-480"></a></h2>
-<ul><li>fixed a bug in the distance computation when different variable types are used</li></ul></div>
+<ul><li>fixed a bug in the distance computation when different variable types are used</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="4.7.18" id="vim-4718">VIM 4.7.18<a class="anchor" aria-label="anchor" href="#vim-4718"></a></h2>
-<ul><li>added <code>imp_var</code> and <code>imp_suffix</code> to <code><a href="../reference/irmi.html">irmi()</a></code>, so it is more consistent with the other functions (<a href="https://github.com/statistikat/VIM/issues/27" class="external-link">#27</a>)</li></ul></div>
+<ul><li>added <code>imp_var</code> and <code>imp_suffix</code> to <code><a href="../reference/irmi.html">irmi()</a></code>, so it is more consistent with the other functions (<a href="https://github.com/statistikat/VIM/issues/27" class="external-link">#27</a>)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="4.7.17" id="vim-4717">VIM 4.7.17<a class="anchor" aria-label="anchor" href="#vim-4717"></a></h2>
 <ul><li>added parameter addRF, only RF to <code><a href="../reference/kNN.html">kNN()</a></code>, to use random forest in combination with <code><a href="../reference/kNN.html">kNN()</a></code>
-</li></ul></div>
+</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="4.7.12" id="vim-4712">VIM 4.7.12<a class="anchor" aria-label="anchor" href="#vim-4712"></a></h2>
 <ul><li>testthat package used for all tests</li>
@@ -136,7 +142,8 @@
 </ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="4.7.1" id="vim-471">VIM 4.7.1<a class="anchor" aria-label="anchor" href="#vim-471"></a></h2>
-<ul><li>new imputation function <code><a href="../reference/matchImpute.html">matchImpute()</a></code> for imputing randomly within groups</li></ul></div>
+<ul><li>new imputation function <code><a href="../reference/matchImpute.html">matchImpute()</a></code> for imputing randomly within groups</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="4.7.0" id="vim-470">VIM 4.7.0<small>2017-04-11</small><a class="anchor" aria-label="anchor" href="#vim-470"></a></h2>
 <ul><li>remove handling of <code>impNA</code> in <code><a href="../reference/hotdeck.html">hotdeck()</a></code>
@@ -175,13 +182,16 @@
     <div class="section level2">
 <h2 class="page-header" data-toc-text="4.3.0" id="vim-430">VIM 4.3.0<small>2015-07-07</small><a class="anchor" aria-label="anchor" href="#vim-430"></a></h2>
 <ul><li>bugfix for <code><a href="../reference/hotdeck.html">hotdeck()</a></code> with <code>makeNA</code>
-</li></ul></div>
+</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="4.2.3" id="vim-423">VIM 4.2.3<a class="anchor" aria-label="anchor" href="#vim-423"></a></h2>
-<ul><li>bugfix for the computation of distances for ordered variables</li></ul></div>
+<ul><li>bugfix for the computation of distances for ordered variables</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="4.2.1" id="vim-421">VIM 4.2.1<a class="anchor" aria-label="anchor" href="#vim-421"></a></h2>
-<ul><li>new option for <code><a href="../reference/kNN.html">kNN()</a></code> <code>useImputedDist</code> if the imputed values of a variable should be used in subsequent imputation of another variable.</li></ul></div>
+<ul><li>new option for <code><a href="../reference/kNN.html">kNN()</a></code> <code>useImputedDist</code> if the imputed values of a variable should be used in subsequent imputation of another variable.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="4.2.0" id="vim-420">VIM 4.2.0<a class="anchor" aria-label="anchor" href="#vim-420"></a></h2>
 <ul><li>bug fixed in <code><a href="../reference/irmi.html">irmi()</a></code> with newer version of nnet (multinom) and if residual scale can not be computed (noise)</li>
@@ -228,7 +238,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

@@ -34,7 +34,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.2.2</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.2.3</span>
       </span>
     </div>
 
@@ -88,11 +88,13 @@
 
       
 
-      </header><script src="donorImp_files/core-js-2.5.3/shim.min.js"></script><script src="donorImp_files/react-17.0.0/react.min.js"></script><script src="donorImp_files/react-17.0.0/react-dom.min.js"></script><script src="donorImp_files/reactwidget-1.0.0/react-tools.js"></script><script src="donorImp_files/htmlwidgets-1.5.4/htmlwidgets.js"></script><script src="donorImp_files/reactable-binding-0.3.0/reactable.js"></script><div class="row">
+      </header><script src="donorImp_files/core-js-2.5.3/shim.min.js"></script><script src="donorImp_files/react-17.0.0/react.min.js"></script><script src="donorImp_files/react-17.0.0/react-dom.min.js"></script><script src="donorImp_files/reactwidget-1.0.0/react-tools.js"></script><script src="donorImp_files/htmlwidgets-1.6.0/htmlwidgets.js"></script><link href="donorImp_files/reactable-0.4.1/reactable.css" rel="stylesheet">
+<script src="donorImp_files/reactable-binding-0.4.1/reactable.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Donor based Imputation Methods</h1>
-                        <h4 data-toc-skip class="author">Wolfgang Rannetbauer</h4>
+                        <h4 data-toc-skip class="author">Wolfgang
+Rannetbauer</h4>
             
       
       <small class="dont-index">Source: <a href="https://github.com/statistikat/VIM/blob/HEAD/vignettes/donorImp.Rmd" class="external-link"><code>vignettes/donorImp.Rmd</code></a></small>
@@ -105,22 +107,33 @@
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>In addition to Model based Imputation Methods (see <code><a href="../articles/modelImp.html">vignette("modelImp")</a></code>) the <code>VIM</code> package also presents donor based imputation methods, namely Hot-Deck Imputation, k-Nearest Neighbour Imputation and fast matching/imputation based on categorical variable.</p>
-<p>This vignette showcases the functions <code><a href="../reference/hotdeck.html">hotdeck()</a></code> and <code><a href="../reference/kNN.html">kNN()</a></code>, which can both be used to generate imputations for several variables in a dataset. Moreover, the function <code><a href="../reference/matchImpute.html">matchImpute()</a></code> is presented, which is in contrast a imputation method based on categorical variables.</p>
+<p>In addition to Model based Imputation Methods (see
+<code><a href="../articles/modelImp.html">vignette("modelImp")</a></code>) the <code>VIM</code> package also
+presents donor based imputation methods, namely Hot-Deck Imputation,
+k-Nearest Neighbour Imputation and fast matching/imputation based on
+categorical variable.</p>
+<p>This vignette showcases the functions <code><a href="../reference/hotdeck.html">hotdeck()</a></code> and
+<code><a href="../reference/kNN.html">kNN()</a></code>, which can both be used to generate imputations for
+several variables in a dataset. Moreover, the function
+<code><a href="../reference/matchImpute.html">matchImpute()</a></code> is presented, which is in contrast a
+imputation method based on categorical variables.</p>
 </div>
 <div class="section level2">
 <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
 </h2>
-<p>The following example demonstrates the functionality of <code>hodeck()</code> and <code><a href="../reference/kNN.html">kNN()</a></code> using a subset of <code>sleep</code>. The columns have been selected deliberately to include some interactions between the missing values.</p>
+<p>The following example demonstrates the functionality of
+<code>hodeck()</code> and <code><a href="../reference/kNN.html">kNN()</a></code> using a subset of
+<code>sleep</code>. The columns have been selected deliberately to
+include some interactions between the missing values.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/statistikat/VIM" class="external-link">VIM</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://magrittr.tidyverse.org" class="external-link">magrittr</a></span><span class="op">)</span></span>
 <span><span class="va">dataset</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Dream"</span>, <span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span><span class="op">)</span></span>
 <span><span class="va">dataset</span><span class="op">$</span><span class="va">Span</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">Span</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/setup-1.png" width="576" style="display: block; margin: auto;"></p>
-<p>The plot indicates several missing values in <code>Dream</code>, <code>NonD</code>, and <code>Span.</code></p>
+<p>The plot indicates several missing values in <code>Dream</code>,
+<code>NonD</code>, and <code>Span.</code></p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">dataset</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   Dream    NonD BodyWgt    Span </span></span>
@@ -129,7 +142,12 @@
 <div class="section level2">
 <h2 id="imputation">Imputation<a class="anchor" aria-label="anchor" href="#imputation"></a>
 </h2>
-<p>The call of the functions is straightforward. We will start by just imputing <code>NonD</code> based on the other variables. Besides imputing missing variables for a single variable, these functions also support imputation of multiple variables. For <code><a href="../reference/matchImpute.html">matchImpute()</a></code> suitable donors are searched based on matching of the categorical variables.</p>
+<p>The call of the functions is straightforward. We will start by just
+imputing <code>NonD</code> based on the other variables. Besides
+imputing missing variables for a single variable, these functions also
+support imputation of multiple variables. For <code><a href="../reference/matchImpute.html">matchImpute()</a></code>
+suitable donors are searched based on matching of the categorical
+variables.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_hotdeck</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hotdeck.html">hotdeck</a></span><span class="op">(</span><span class="va">dataset</span>, variable <span class="op">=</span> <span class="st">"NonD"</span><span class="op">)</span>  <span class="co"># hotdeck imputation</span></span>
 <span><span class="va">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span><span class="op">(</span><span class="va">dataset</span>, variable <span class="op">=</span> <span class="st">"NonD"</span><span class="op">)</span> <span class="co"># kNN imputation</span></span>
@@ -137,22 +155,31 @@
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_knn</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_match</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-3-1.png" width="576" style="display: block; margin: auto;"></p>
-<p>We can see that <code><a href="../reference/kNN.html">kNN()</a></code> imputed all missing values for <code>NonD</code> in our dataset. The same is true for the values imputed via <code><a href="../reference/hotdeck.html">hotdeck()</a></code>. The specified variables in <code><a href="../reference/matchImpute.html">matchImpute()</a></code> serve as a donor and enable imputation for <code>NonD</code>.</p>
+<p>We can see that <code><a href="../reference/kNN.html">kNN()</a></code> imputed all missing values for
+<code>NonD</code> in our dataset. The same is true for the values
+imputed via <code><a href="../reference/hotdeck.html">hotdeck()</a></code>. The specified variables in
+<code><a href="../reference/matchImpute.html">matchImpute()</a></code> serve as a donor and enable imputation for
+<code>NonD</code>.</p>
 <div class="section level3">
 <h3 id="diagnosing-the-results">Diagnosing the results<a class="anchor" aria-label="anchor" href="#diagnosing-the-results"></a>
 </h3>
-<p>As we can see in the next two plots, the origninal data structure of <code>NonD</code> and <code>Span</code> is preserved by <code><a href="../reference/hotdeck.html">hotdeck()</a></code>. <code><a href="../reference/kNN.html">kNN()</a></code> reveals the typically procedure of methods, which are based on similar data points weighted by the distance.</p>
+<p>As we can see in the next two plots, the origninal data structure of
+<code>NonD</code> and <code>Span</code> is preserved by
+<code><a href="../reference/hotdeck.html">hotdeck()</a></code>. <code><a href="../reference/kNN.html">kNN()</a></code> reveals the typically
+procedure of methods, which are based on similar data points weighted by
+the distance.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">imp_hotdeck</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">imp_hotdeck</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span>delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-4-1.png" width="576" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">imp_knn</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">imp_knn</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span>delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-4-2.png" width="576" style="display: block; margin: auto;"></p>
-<p><code><a href="../reference/matchImpute.html">matchImpute()</a></code> works by sampling values from the suitable donors and also provides reasonable results.</p>
+<p><code><a href="../reference/matchImpute.html">matchImpute()</a></code> works by sampling values from the suitable
+donors and also provides reasonable results.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">imp_match</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">imp_match</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span>delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-5-1.png" width="576" style="display: block; margin: auto;"></p>
 </div>
@@ -160,7 +187,10 @@
 <div class="section level2">
 <h2 id="performance-of-method">Performance of method<a class="anchor" aria-label="anchor" href="#performance-of-method"></a>
 </h2>
-<p>In order to validate the performance of <code><a href="../reference/kNN.html">kNN()</a></code> and to highlight the ability to impute different datatypes the <code>iris</code> dataset is used. Firstly, some values are randomly set to <code>NA</code>.</p>
+<p>In order to validate the performance of <code><a href="../reference/kNN.html">kNN()</a></code> and to
+highlight the ability to impute different datatypes the
+<code>iris</code> dataset is used. Firstly, some values are randomly set
+to <code>NA</code>.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span></span>
 <span><span class="va">df</span> <span class="op">&lt;-</span> <span class="va">iris</span></span>
@@ -179,14 +209,17 @@
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">df</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; S.Length  S.Width P.Length  P.Width  Species </span></span>
 <span><span class="co">#&gt;       10        9        8       10       12</span></span></code></pre></div>
-<p>We can see that there are missings in all variables and some observations reveal missing values on several points.</p>
+<p>We can see that there are missings in all variables and some
+observations reveal missing values on several points.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_knn</span>, delimiter <span class="op">=</span> <span class="st">"imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-7-1.png" width="576" style="display: block; margin: auto;"></p>
-<p>The plot indicates that all missing values have been imputed by <code><a href="../reference/kNN.html">kNN()</a></code>. The following table displays the rounded first five results of the imputation for all variables.</p>
-<div id="htmlwidget-70c255e2466d62322b30" class="reactable html-widget" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-70c255e2466d62322b30">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"TRUE1":["6.4","7","5.4","6.5","7.6"],"IMPUTED1":["6.9","6.4","6.1","6.8","6.3"],"TRUE2":["4.1","2.7","2.8","3.8","3.5"],"IMPUTED2":["3.5","3.2","2.8","3.5","3.4"],"TRUE3":["4.1","4.1","3.9","5.1","4.7"],"IMPUTED3":["4","4.2","4.5","5.5","4.5"],"TRUE4":["0.2","0.2","0.3","1.5","0.2"],"IMPUTED4":["0.2","0.4","0.2","1.4","0.2"],"TRUE5":["setosa","virginica","versicolor","versicolor","virginica"],"IMPUTED5":["setosa","virginica","versicolor","virginica","virginica"]},"columns":[{"accessor":"TRUE1","name":"True","type":"character"},{"accessor":"IMPUTED1","name":"Imputed","type":"character"},{"accessor":"TRUE2","name":"True","type":"character"},{"accessor":"IMPUTED2","name":"Imputed","type":"character"},{"accessor":"TRUE3","name":"True","type":"character"},{"accessor":"IMPUTED3","name":"Imputed","type":"character"},{"accessor":"TRUE4","name":"True","type":"character"},{"accessor":"IMPUTED4","name":"Imputed","type":"character"},{"accessor":"TRUE5","name":"True","type":"character"},{"accessor":"IMPUTED5","name":"Imputed","type":"character"}],"columnGroups":[{"name":"S.Length","columns":["TRUE1","IMPUTED1"]},{"name":"S.Width","columns":["TRUE2","IMPUTED2"]},{"name":"P.Length","columns":["TRUE3","IMPUTED3"]},{"name":"P.Width","columns":["TRUE4","IMPUTED4"]},{"name":"Species","columns":["TRUE5","IMPUTED5"]}],"defaultPageSize":10,"paginationType":"numbers","showPageInfo":true,"minRows":1,"highlight":true,"bordered":true,"striped":true,"dataKey":"b83bd5db72f71b2e4f0be3be91bee8ff"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<p>The plot indicates that all missing values have been imputed by
+<code><a href="../reference/kNN.html">kNN()</a></code>. The following table displays the rounded first five
+results of the imputation for all variables.</p>
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-70c255e2466d62322b30" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-70c255e2466d62322b30">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"TRUE1":["6.4","7","5.4","6.5","7.6"],"IMPUTED1":["6.9","6.4","6.1","6.8","6.3"],"TRUE2":["4.1","2.7","2.8","3.8","3.5"],"IMPUTED2":["3.5","3.2","2.8","3.5","3.4"],"TRUE3":["4.1","4.1","3.9","5.1","4.7"],"IMPUTED3":["4","4.2","4.5","5.5","4.5"],"TRUE4":["0.2","0.2","0.3","1.5","0.2"],"IMPUTED4":["0.2","0.4","0.2","1.4","0.2"],"TRUE5":["setosa","virginica","versicolor","versicolor","virginica"],"IMPUTED5":["setosa","virginica","versicolor","virginica","virginica"]},"columns":[{"id":"TRUE1","name":"True","type":"character"},{"id":"IMPUTED1","name":"Imputed","type":"character"},{"id":"TRUE2","name":"True","type":"character"},{"id":"IMPUTED2","name":"Imputed","type":"character"},{"id":"TRUE3","name":"True","type":"character"},{"id":"IMPUTED3","name":"Imputed","type":"character"},{"id":"TRUE4","name":"True","type":"character"},{"id":"IMPUTED4","name":"Imputed","type":"character"},{"id":"TRUE5","name":"True","type":"character"},{"id":"IMPUTED5","name":"Imputed","type":"character"}],"columnGroups":[{"name":"S.Length","columns":["TRUE1","IMPUTED1"]},{"name":"S.Width","columns":["TRUE2","IMPUTED2"]},{"name":"P.Length","columns":["TRUE3","IMPUTED3"]},{"name":"P.Width","columns":["TRUE4","IMPUTED4"]},{"name":"Species","columns":["TRUE5","IMPUTED5"]}],"highlight":true,"bordered":true,"striped":true,"dataKey":"53ca64e03cfd3be75a1d3333f815da04"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
   </div>
 
@@ -207,7 +240,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer>
