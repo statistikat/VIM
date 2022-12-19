@@ -225,6 +225,9 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
             
             # remaining missing values will be set to a random value from the group
             if(length(Don)>0){
+              if(sum(!TFindex)==0){
+                stop("No donor available for ", v, " in a certain group.")
+              }
               Don[TFindex] <- Don[!TFindex][sample(sum(!TFindex),1)]    
             }
             
