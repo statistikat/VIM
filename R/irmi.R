@@ -53,7 +53,6 @@
 #'   status
 #' @return the imputed data set.
 #' @author Matthias Templ, Alexander Kowarik
-#' @seealso [mi::mi()]
 #' @references M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
 #' regression imputation using standard and robust methods.  *Journal of
 #' Computational Statistics and Data Analysis*, Vol. 55, pp. 2793-2806.

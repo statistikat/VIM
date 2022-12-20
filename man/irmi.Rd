@@ -17,7 +17,7 @@ irmi(
   noise = TRUE,
   noise.factor = 1,
   force = FALSE,
-  robMethod = "MM",
+  robMethod = "lmrob",
   force.mixed = TRUE,
   mi = 1,
   addMixedFactors = FALSE,
@@ -62,7 +62,8 @@ residuals.}
 \item{force}{if TRUE, the algorithm tries to find a solution in any case,
 possible by using different robust methods automatically.}
 
-\item{robMethod}{regression method when the response is continuous.}
+\item{robMethod}{regression method when the response is continuous. Default is
+MM-regression with \code{lmrob}.}
 
 \item{force.mixed}{if TRUE, the algorithm tries to find a solution in any
 case, possible by using different robust methods automatically.}
@@ -151,8 +152,6 @@ R package VIM.  \emph{Journal of
 Statistical Software}, 74(7), 1-16.
 }
 \seealso{
-\code{\link[mi:04mi]{mi::mi()}}
-
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
