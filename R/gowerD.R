@@ -47,6 +47,19 @@ gowerD <- function(data.x, data.y = data.x,
                    returnMin=FALSE,
                    methodStand="range") {
   stopifnot(length(methodStand)==1&&methodStand%in%c("range", "iqr"))
+  if(length(levOrders)>0){
+    stopifnot(length(levOrders)==length(orders))
+    levOrdersUniqueX <- sapply(orders,function(x)length(unique(data.x[[x]])))
+    if(any(levOrdersUniqueX!=levOrders)){
+      warning("The number of unique values in the ordinal variables in data.x
+              does not correspond to the values given in levOrders")
+    }
+    levOrdersUniqueY <- sapply(orders,function(x)length(unique(data.x[[x]])))
+    if(any(levOrdersUniqueY!=levOrders)){
+      warning("The number of unique values in the ordinal variables in data.y
+              does not correspond to the values given in levOrders")
+    }
+  }
   maxplus1 <- function(x){
     if(all(is.na(x)))
       return(1)
@@ -86,6 +99,7 @@ gowerD <- function(data.x, data.y = data.x,
                         2,min0,na.rm=TRUE)
       rmax <- apply(rbind(data.x[,numerical,drop=FALSE],
                         data.y[,numerical,drop=FALSE]),2,max1,na.rm=TRUE)
+      print(c(rmin,rmax))
     }else if(methodStand == "iqr"){
       rmin <- apply(rbind(data.x[,numerical,drop=FALSE],data.y[,numerical,drop=FALSE]),2,quantile,na.rm=TRUE,
                     probs=.25)
