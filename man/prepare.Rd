@@ -7,8 +7,8 @@
 prepare(
   x,
   scaling = c("none", "classical", "MCD", "robust", "onestep"),
-  transformation = c("none", "minus", "reciprocal", "logarithm", "exponential",
-    "boxcox", "clr", "ilr", "alr"),
+  transformation = c("none", "minus", "reciprocal", "logarithm", "exponential", "boxcox",
+    "clr", "ilr", "alr"),
   alpha = NULL,
   powers = NULL,
   start = 0,

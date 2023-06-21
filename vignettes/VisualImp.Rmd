@@ -29,7 +29,6 @@ The following example demonstrates the functionality of the plotting functions u
 
 ```{r setup, message=F}
 library(VIM)
-library(magrittr)
 dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")] # dataset with missings
 dataset$BodyWgt <- log(dataset$BodyWgt)
 dataset$Span <- log(dataset$Span)
@@ -140,9 +139,9 @@ dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")]
 dataset$BodyWgt <- log(dataset$BodyWgt)
 dataset$Span <- log(dataset$Span)
 imp_knn <- kNN(dataset, variable = "NonD") 
-dataset[, c("NonD", "Span")] %>% 
+dataset[, c("NonD", "Span")] |> 
   marginplot()
-imp_knn[, c("NonD", "Span", "NonD_imp")] %>% 
+imp_knn[, c("NonD", "Span", "NonD_imp")] |> 
   marginplot(delimiter = "_imp")
 ```
 

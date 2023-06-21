@@ -28,8 +28,9 @@
 #'   residuals.
 #' @param noise.factor amount of noise.
 #' @param force if TRUE, the algorithm tries to find a solution in any case,
-#'   possible by using different robust methods automatically.
-#' @param robMethod regression method when the response is continuous.
+#'   possible by using different robust methods automatically. 
+#' @param robMethod regression method when the response is continuous. Default is
+#'   MM-regression with `lmrob`.
 #' @param force.mixed if TRUE, the algorithm tries to find a solution in any
 #'   case, possible by using different robust methods automatically.
 #' @param addMixedFactors if TRUE add additional factor variable for each
@@ -52,7 +53,6 @@
 #'   status
 #' @return the imputed data set.
 #' @author Matthias Templ, Alexander Kowarik
-#' @seealso [mi::mi()]
 #' @references M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
 #' regression imputation using standard and robust methods.  *Journal of
 #' Computational Statistics and Data Analysis*, Vol. 55, pp. 2793-2806.
@@ -97,7 +97,7 @@
 #' @export
 irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
     count = NULL, step = FALSE, robust = FALSE, takeAll = TRUE, noise = TRUE,
-    noise.factor = 1, force = FALSE, robMethod = "MM", force.mixed = TRUE,
+    noise.factor = 1, force = FALSE, robMethod = "lmrob", force.mixed = TRUE,
     mi = 1, addMixedFactors = FALSE, trace = FALSE, init.method = "kNN",
     modelFormulas = NULL, multinom.method = "multinom", imp_var = TRUE,
     imp_suffix = "imp") {

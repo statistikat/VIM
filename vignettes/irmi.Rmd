@@ -31,7 +31,6 @@ The following example demonstrates the functionality of `irmi()` using a subset 
 
 ```{r setup, message=F}
 library(VIM)
-library(magrittr)
 dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")]
 dataset$BodyWgt <- log(dataset$BodyWgt)
 dataset$Span <- log(dataset$Span)
@@ -61,14 +60,14 @@ We can see that `irmi()` imputed all missing values for all variables in our dat
 As we can see in the next plot, for imputing missing values in `NonD` `Bodygt` plays an important role. The original data structure of `NonD` and `BodyWgt` is preserved by the `irmi()` imputation method.
 
 ```{r, fig.height=5}
-imp_irmi[, c("NonD", "BodyWgt", "NonD_imp")] %>% 
+imp_irmi[, c("NonD", "BodyWgt", "NonD_imp")] |> 
   marginplot(delimiter = "_imp")
 ```
 
 The same is true for the data structure of `Span` and `BodyWgt`.
 
 ```{r, fig.height=5}
-imp_irmi[, c("Span", "BodyWgt", "Span_imp")] %>% 
+imp_irmi[, c("Span", "BodyWgt", "Span_imp")] |> 
   marginplot(delimiter = "_imp")
 ```
 

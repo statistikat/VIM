@@ -1,7 +1,11 @@
+# VIM 6.2.3
+- default robust regression method for irmi for numeric variables changes from rlm to lmrob.
+
 # VIM 6.1.1
 - ordFun as parameter of kNN to control the function applied to ordinal variables
 - methodStand option in gowerD and kNN to switch between range and interquartile range for the standardization of numerical variables
 - donorcond in kNN and hotdeck extended so it also accepts NULL as list element and multiple conditions as character vector
+
 # VIM 6.0.2
 - error message in `hotdeck()` when ord_var and variable overlap
 - family argument of class 'family' now work in regressionImp
