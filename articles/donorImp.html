@@ -88,8 +88,8 @@
 
       
 
-      </header><script src="donorImp_files/core-js-2.5.3/shim.min.js"></script><script src="donorImp_files/react-17.0.0/react.min.js"></script><script src="donorImp_files/react-17.0.0/react-dom.min.js"></script><script src="donorImp_files/reactwidget-1.0.0/react-tools.js"></script><script src="donorImp_files/htmlwidgets-1.6.0/htmlwidgets.js"></script><link href="donorImp_files/reactable-0.4.1/reactable.css" rel="stylesheet">
-<script src="donorImp_files/reactable-binding-0.4.1/reactable.js"></script><div class="row">
+      </header><script src="donorImp_files/core-js-2.5.3/shim.min.js"></script><script src="donorImp_files/react-17.0.0/react.min.js"></script><script src="donorImp_files/react-17.0.0/react-dom.min.js"></script><script src="donorImp_files/reactwidget-1.0.0/react-tools.js"></script><script src="donorImp_files/htmlwidgets-1.6.2/htmlwidgets.js"></script><link href="donorImp_files/reactable-0.4.4/reactable.css" rel="stylesheet">
+<script src="donorImp_files/reactable-binding-0.4.4/reactable.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Donor based Imputation Methods</h1>
@@ -151,6 +151,8 @@ variables.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_hotdeck</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hotdeck.html">hotdeck</a></span><span class="op">(</span><span class="va">dataset</span>, variable <span class="op">=</span> <span class="st">"NonD"</span><span class="op">)</span>  <span class="co"># hotdeck imputation</span></span>
 <span><span class="va">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span><span class="op">(</span><span class="va">dataset</span>, variable <span class="op">=</span> <span class="st">"NonD"</span><span class="op">)</span> <span class="co"># kNN imputation</span></span>
+<span><span class="co">#&gt;      Dream    BodyWgt       Span      Dream    BodyWgt       Span </span></span>
+<span><span class="co">#&gt;  0.0000000 -5.2983174  0.6931472  6.6000000  8.8029735  4.6051702</span></span>
 <span><span class="va">imp_match</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/matchImpute.html">matchImpute</a></span><span class="op">(</span><span class="va">dataset</span>, variable <span class="op">=</span> <span class="st">"NonD"</span>, match_var <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>,<span class="st">"Span"</span><span class="op">)</span><span class="op">)</span> <span class="co"># match imputation</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_knn</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_match</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
@@ -213,6 +215,16 @@ to <code>NA</code>.</p>
 observations reveal missing values on several points.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  S.Width P.Length  P.Width  S.Width P.Length  P.Width </span></span>
+<span><span class="co">#&gt;      2.0      1.0      0.1      4.4      6.9      2.5 </span></span>
+<span><span class="co">#&gt; S.Length P.Length  P.Width S.Length P.Length  P.Width </span></span>
+<span><span class="co">#&gt;      4.3      1.0      0.1      7.9      6.9      2.5 </span></span>
+<span><span class="co">#&gt; S.Length  S.Width  P.Width S.Length  S.Width  P.Width </span></span>
+<span><span class="co">#&gt;      4.3      2.0      0.1      7.9      4.4      2.5 </span></span>
+<span><span class="co">#&gt; S.Length  S.Width P.Length S.Length  S.Width P.Length </span></span>
+<span><span class="co">#&gt;      4.3      2.0      1.0      7.9      4.4      6.9 </span></span>
+<span><span class="co">#&gt; S.Length  S.Width P.Length  P.Width S.Length  S.Width P.Length  P.Width </span></span>
+<span><span class="co">#&gt;      4.3      2.0      1.0      0.1      7.9      4.4      6.9      2.5</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_knn</span>, delimiter <span class="op">=</span> <span class="st">"imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-7-1.png" width="576" style="display: block; margin: auto;"></p>
 <p>The plot indicates that all missing values have been imputed by

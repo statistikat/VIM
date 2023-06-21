@@ -159,6 +159,12 @@ returnIndex=TRUE: a named list with "ind" containing the requested indices and "
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># all variables used as numerical</span></span></span>
 <span class="r-in"><span><span class="fu">gowerD</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600    2.000   12.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger  BodyWgt BrainWgt     NonD    Dream    Sleep     Span </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000    1.000 6654.000 5712.000   17.900    6.600   19.900  100.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Gest     Pred      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  645.000    5.000    5.000    5.000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            [,1]       [,2]        [,3]      [,4]      [,5]       [,6]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [1,] 0.0000000 0.80194496 0.569870867 0.6617888 0.5166715 0.73966024</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [2,] 0.8019450 0.00000000 0.480629002 0.6656651 0.4565394 0.21901970</span>
@@ -793,6 +799,10 @@ returnIndex=TRUE: a named list with "ind" containing the requested indices and "
 <span class="r-in"><span><span class="co"># split in numerical an</span></span></span>
 <span class="r-in"><span><span class="fu">gowerD</span><span class="op">(</span><span class="va">sleep</span>, numerical <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>, <span class="st">"BrainWgt"</span>, <span class="st">"NonD"</span>, <span class="st">"Dream"</span>, <span class="st">"Sleep"</span>, <span class="st">"Span"</span>, <span class="st">"Gest"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  orders <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Pred"</span>,<span class="st">"Exp"</span>,<span class="st">"Danger"</span><span class="op">)</span>, levOrders <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>,<span class="fl">5</span>,<span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Gest  BodyWgt </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600    2.000   12.000 6654.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BrainWgt     NonD    Dream    Sleep     Span     Gest </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5712.000   17.900    6.600   19.900  100.000  645.000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            [,1]       [,2]        [,3]      [,4]      [,5]       [,6]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [1,] 0.0000000 0.80194496 0.569870867 0.6617888 0.5166715 0.73966024</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [2,] 0.8019450 0.00000000 0.480629002 0.6656651 0.4565394 0.21901970</span>
@@ -1427,6 +1437,10 @@ returnIndex=TRUE: a named list with "ind" containing the requested indices and "
 <span class="r-in"><span><span class="co"># as before but only returning the index of the closest observation</span></span></span>
 <span class="r-in"><span><span class="fu">gowerD</span><span class="op">(</span><span class="va">sleep</span>, numerical <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>, <span class="st">"BrainWgt"</span>, <span class="st">"NonD"</span>, <span class="st">"Dream"</span>, <span class="st">"Sleep"</span>, <span class="st">"Span"</span>, <span class="st">"Gest"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  orders <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Pred"</span>,<span class="st">"Exp"</span>,<span class="st">"Danger"</span><span class="op">)</span>, levOrders <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>,<span class="fl">5</span>,<span class="fl">5</span><span class="op">)</span>, returnIndex <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Gest  BodyWgt </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600    2.000   12.000 6654.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BrainWgt     NonD    Dream    Sleep     Span     Gest </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5712.000   17.900    6.600   19.900  100.000  645.000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ind</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10] [,11] [,12] [,13] [,14]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1,]    1    2    3    4    5    6    7    8    9    10    11    12    13    14</span>

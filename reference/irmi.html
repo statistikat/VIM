@@ -257,9 +257,55 @@ Statistical Software</em>, 74(7), 1-16.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">irmi</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt    Dream    Sleep     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    0.000    2.600    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt    Dream    Sleep     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000    6.600   19.900  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Sleep     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    2.600    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Sleep     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900   19.900  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream    Sleep     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600   19.900  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600    2.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600   19.900  100.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">testdata</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">imp_testdata1</span> <span class="op">&lt;-</span> <span class="fu">irmi</span><span class="op">(</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span>, mixed <span class="op">=</span> <span class="va">testdata</span><span class="op">$</span><span class="va">mixed</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x2        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.599866 15.039669 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996 15.235603 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        x1        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 15.235603 15.039669 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        x1        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 15.235603 15.039669 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        x1        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 15.235603 15.039669 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        x1        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 15.235603 15.039669 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        x1        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 15.235603 15.039669 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        x1        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 15.235603 15.039669 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># mixed.constant != 0 (-10)</span></span></span>
 <span class="r-in"><span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">$</span><span class="va">m1</span><span class="op">[</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">$</span><span class="va">m1</span> <span class="op">==</span> <span class="fl">0</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="op">-</span><span class="fl">10</span></span></span>
@@ -269,6 +315,22 @@ Statistical Software</em>, 74(7), 1-16.</p>
 <span class="r-in"><span>  mixed <span class="op">=</span> <span class="va">testdata</span><span class="op">$</span><span class="va">mixed</span>,</span></span>
 <span class="r-in"><span>  mixed.constant <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">10</span>,<span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.001</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x2        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.599866 15.039669 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996 15.235603 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        x1        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 15.235603 15.039669 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        x1        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 15.235603 15.039669 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        x1        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 15.235603 15.039669 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        x1        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 15.235603 15.039669 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        x1        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 15.235603 15.039669 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        x1        x2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 15.235603 15.039669 </span>
 <span class="r-in"><span><span class="va">imp_testdata2</span><span class="op">$</span><span class="va">m2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">imp_testdata2</span><span class="op">$</span><span class="va">m2</span><span class="op">)</span> <span class="op">-</span> <span class="fl">0.001</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#example with fixed formulas for the variables with missing</span></span></span>
@@ -281,6 +343,36 @@ Statistical Software</em>, 74(7), 1-16.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">irmi</span><span class="op">(</span><span class="va">sleep</span>, modelFormulas <span class="op">=</span> <span class="va">form</span>, trace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Method for multinomial models:multinom</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt    Dream    Sleep     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    0.000    2.600    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt    Dream    Sleep     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000    6.600   19.900  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Sleep     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    2.600    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Sleep     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900   19.900  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream    Sleep     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600   19.900  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600    2.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600   19.900  100.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    BodyWgt BrainWgt NonD Dream Sleep Span Gest Pred Exp Danger</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 6654.000   5712.0  3.2   0.8   3.3 38.6  645    3   5      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2    1.000      6.6  6.3   2.0   8.3  4.5   42    3   1      3</span>
@@ -380,6 +472,38 @@ Statistical Software</em>, 74(7), 1-16.</p>
 <span class="r-in"><span><span class="va">td</span> <span class="op">&lt;-</span> <span class="va">testdata</span><span class="op">$</span><span class="va">wna</span></span></span>
 <span class="r-in"><span><span class="va">td</span><span class="op">$</span><span class="va">c1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.ordered</a></span><span class="op">(</span><span class="va">td</span><span class="op">$</span><span class="va">c1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">irmi</span><span class="op">(</span><span class="va">td</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The number of unique values in the ordinal variables in data.x</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>               does not correspond to the values given in levOrders</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The number of unique values in the ordinal variables in data.y</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>               does not correspond to the values given in levOrders</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         x2         m1         m2         x2         m1         m2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4.599866 -10.000000  -6.907755  15.039669  13.741169   2.625980 </span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The number of unique values in the ordinal variables in data.x</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>               does not correspond to the values given in levOrders</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The number of unique values in the ordinal variables in data.y</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>               does not correspond to the values given in levOrders</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         x1         m1         m2         x1         m1         m2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4.176996 -10.000000  -6.907755  15.235603  13.741169   2.625980 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         x1         x2         m1         m2         x1         x2         m1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4.176996   4.599866 -10.000000  -6.907755  15.235603  15.039669  13.741169 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         m2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2.625980 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         x1         x2         m1         m2         x1         x2         m1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4.176996   4.599866 -10.000000  -6.907755  15.235603  15.039669  13.741169 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         m2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2.625980 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         x1         x2         m1         m2         x1         x2         m1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4.176996   4.599866 -10.000000  -6.907755  15.235603  15.039669  13.741169 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         m2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2.625980 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         x1         x2         m1         m2         x1         x2         m1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4.176996   4.599866 -10.000000  -6.907755  15.235603  15.039669  13.741169 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         m2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2.625980 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        x1        x2        m2        x1        x2        m2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  4.176996  4.599866 -6.907755 15.235603 15.039669  2.625980 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         x1         x2         m1         x1         x2         m1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4.176996   4.599866 -10.000000  15.235603  15.039669  13.741169 </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

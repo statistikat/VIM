@@ -251,6 +251,36 @@ Statistical Software</em>, 74(7), 1-16.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">kNN</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt    Dream    Sleep     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    0.000    2.600    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt    Dream    Sleep     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000    6.600   19.900  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Sleep     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    2.600    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Sleep     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900   19.900  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream    Sleep     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600   19.900  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600    2.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600   19.900  100.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger BodyWgt_imp</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  3.2   0.8   3.3  38.6 645.0    3   5      3       FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.3   2.0   8.3   4.5  42.0    3   1      3       FALSE</span>
@@ -442,6 +472,36 @@ Statistical Software</em>, 74(7), 1-16.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 62      FALSE</span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">laeken</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">kNN</span><span class="op">(</span><span class="va">sleep</span>, numFun <span class="op">=</span> <span class="va">weightedMean</span>, weightDist<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt    Dream    Sleep     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    0.000    2.600    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt    Dream    Sleep     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000    6.600   19.900  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Sleep     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    2.600    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Sleep     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900   19.900  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream    Sleep     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600   19.900  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600    2.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600   19.900  100.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt      NonD     Dream     Sleep       Span      Gest Pred</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  3.621115 1.0244651  3.300000  38.600000 645.00000    3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.300000 2.0000000  8.300000   4.500000  42.00000    3</span>

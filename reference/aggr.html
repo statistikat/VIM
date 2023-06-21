@@ -384,6 +384,36 @@ values by Bernd Prantner</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## for imputed values</span></span></span>
 <span class="r-in"><span><span class="va">sleep_IMPUTED</span> <span class="op">&lt;-</span> <span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt    Dream    Sleep     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    0.000    2.600    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt    Dream    Sleep     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000    6.600   19.900  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Sleep     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    2.600    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Sleep     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900   19.900  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream     Span     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.000   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream     Span     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600  100.000  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Gest     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600   12.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream    Sleep     Gest     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600   19.900  645.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Pred      Exp </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    0.005    0.140    2.100    0.000    2.600    2.000    1.000    1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Danger  BodyWgt BrainWgt     NonD    Dream    Sleep     Span     Pred </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1.000 6654.000 5712.000   17.900    6.600   19.900  100.000    5.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Exp   Danger </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.000    5.000 </span>
 <span class="r-in"><span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu">aggr</span><span class="op">(</span><span class="va">sleep_IMPUTED</span>, delimiter<span class="op">=</span><span class="st">"_imp"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="aggr-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="va">a</span></span></span>

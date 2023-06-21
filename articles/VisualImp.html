@@ -125,7 +125,13 @@ powerful donor-based imputation methods and also included in the
 <span><span class="va">dataset</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Dream"</span>, <span class="st">"NonD"</span>, <span class="st">"BodyWgt"</span>, <span class="st">"Span"</span><span class="op">)</span><span class="op">]</span> <span class="co"># dataset with missings</span></span>
 <span><span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span><span class="op">)</span></span>
 <span><span class="va">dataset</span><span class="op">$</span><span class="va">Span</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">Span</span><span class="op">)</span></span>
-<span><span class="va">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">)</span> <span class="co"># dataset with imputed values</span></span></code></pre></div>
+<span><span class="va">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">)</span> <span class="co"># dataset with imputed values</span></span>
+<span><span class="co">#&gt;       NonD    BodyWgt       Span       NonD    BodyWgt       Span </span></span>
+<span><span class="co">#&gt;  2.1000000 -5.2983174  0.6931472 17.9000000  8.8029735  4.6051702 </span></span>
+<span><span class="co">#&gt;      Dream    BodyWgt       Span      Dream    BodyWgt       Span </span></span>
+<span><span class="co">#&gt;  0.0000000 -5.2983174  0.6931472  6.6000000  8.8029735  4.6051702 </span></span>
+<span><span class="co">#&gt;     Dream      NonD   BodyWgt     Dream      NonD   BodyWgt </span></span>
+<span><span class="co">#&gt;  0.000000  2.100000 -5.298317  6.600000 17.900000  8.802973</span></span></code></pre></div>
 <p>To keep things as simple as possible, the plotting functions in
 <code>VIM</code> uses three main colors. Each color represents a
 property:</p>
@@ -282,6 +288,8 @@ both variables.</p>
 <span><span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">BodyWgt</span><span class="op">)</span></span>
 <span><span class="va">dataset</span><span class="op">$</span><span class="va">Span</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">Span</span><span class="op">)</span></span>
 <span><span class="va">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span><span class="op">(</span><span class="va">dataset</span>, variable <span class="op">=</span> <span class="st">"NonD"</span><span class="op">)</span> </span>
+<span><span class="co">#&gt;      Dream    BodyWgt       Span      Dream    BodyWgt       Span </span></span>
+<span><span class="co">#&gt;  0.0000000 -5.2983174  0.6931472  6.6000000  8.8029735  4.6051702</span></span>
 <span><span class="va">dataset</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span><span class="op">)</span><span class="op">]</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-7-1.png" width="576" style="display: block; margin: auto;"></p>
@@ -306,6 +314,10 @@ each panel.</p>
 <code class="sourceCode R"><span></span>
 <span><span class="co">## for imputed values</span></span>
 <span><span class="va">x_imp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/irmi.html">irmi</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">[</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; BrainWgt    Dream BrainWgt    Dream </span></span>
+<span><span class="co">#&gt;     0.14     0.00  5712.00     6.60 </span></span>
+<span><span class="co">#&gt; BrainWgt     NonD BrainWgt     NonD </span></span>
+<span><span class="co">#&gt;     0.14     2.10  5712.00    17.90</span></span>
 <span><span class="va">x_imp</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">x_imp</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/marginmatrix.html">marginmatrix</a></span><span class="op">(</span><span class="va">x_imp</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-8-2.png" width="576" style="display: block; margin: auto;"></p>

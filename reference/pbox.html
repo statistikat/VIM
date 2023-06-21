@@ -260,6 +260,94 @@ and Classification</em>, Online first. DOI: 10.1007/s11634-011-0102-y.</p>
 <span class="r-in"><span><span class="co">## for imputed values</span></span></span>
 <span class="r-in"><span><span class="fu">pbox</span><span class="op">(</span><span class="fu"><a href="kNN.html">kNN</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">chorizonDL</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">8</span>,<span class="fl">10</span>,<span class="fl">11</span>,<span class="fl">17</span>,<span class="fl">19</span>,<span class="fl">25</span>,<span class="fl">29</span>,<span class="fl">37</span>,<span class="fl">38</span>,<span class="fl">40</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>     delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          As     Au_INAA           B     Br_INAA     Ca_INAA     Co_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -2.30258509 -6.21460810  1.09861229  0.09531018  9.21034037  1.09861229 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Cs_INAA          Hg     Hg_INAA           K          As     Au_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.00000000 -3.91202301  0.00000000  5.29831737  3.42426265 -0.01918282 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           B     Br_INAA     Ca_INAA     Co_INAA     Cs_INAA          Hg </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  2.39789527  4.02535169 11.00209984  4.04305127  2.07944154 -1.83258146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Hg_INAA           K </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229  9.30565055 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Ag     Au_INAA           B     Br_INAA     Ca_INAA     Co_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -6.90775528 -6.21460810  1.09861229  0.09531018  9.21034037  1.09861229 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Cs_INAA          Hg     Hg_INAA           K          Ag     Au_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.00000000 -3.91202301  0.00000000  5.29831737 -2.12863179 -0.01918282 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           B     Br_INAA     Ca_INAA     Co_INAA     Cs_INAA          Hg </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  2.39789527  4.02535169 11.00209984  4.04305127  2.07944154 -1.83258146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Hg_INAA           K </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229  9.30565055 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Ag          As           B     Br_INAA     Ca_INAA     Co_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -6.90775528 -2.30258509  1.09861229  0.09531018  9.21034037  1.09861229 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Cs_INAA          Hg     Hg_INAA           K          Ag          As </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.00000000 -3.91202301  0.00000000  5.29831737 -2.12863179  3.42426265 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           B     Br_INAA     Ca_INAA     Co_INAA     Cs_INAA          Hg </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  2.39789527  4.02535169 11.00209984  4.04305127  2.07944154 -1.83258146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Hg_INAA           K </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229  9.30565055 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Ag          As     Au_INAA     Br_INAA     Ca_INAA     Co_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -6.90775528 -2.30258509 -6.21460810  0.09531018  9.21034037  1.09861229 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Cs_INAA          Hg     Hg_INAA           K          Ag          As </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.00000000 -3.91202301  0.00000000  5.29831737 -2.12863179  3.42426265 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Au_INAA     Br_INAA     Ca_INAA     Co_INAA     Cs_INAA          Hg </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.01918282  4.02535169 11.00209984  4.04305127  2.07944154 -1.83258146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Hg_INAA           K </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229  9.30565055 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Ag          As     Au_INAA           B     Ca_INAA     Co_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -6.90775528 -2.30258509 -6.21460810  1.09861229  9.21034037  1.09861229 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Cs_INAA          Hg     Hg_INAA           K          Ag          As </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.00000000 -3.91202301  0.00000000  5.29831737 -2.12863179  3.42426265 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Au_INAA           B     Ca_INAA     Co_INAA     Cs_INAA          Hg </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.01918282  2.39789527 11.00209984  4.04305127  2.07944154 -1.83258146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Hg_INAA           K </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229  9.30565055 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Ag          As     Au_INAA           B     Br_INAA     Co_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -6.90775528 -2.30258509 -6.21460810  1.09861229  0.09531018  1.09861229 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Cs_INAA          Hg     Hg_INAA           K          Ag          As </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.00000000 -3.91202301  0.00000000  5.29831737 -2.12863179  3.42426265 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Au_INAA           B     Br_INAA     Co_INAA     Cs_INAA          Hg </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.01918282  2.39789527  4.02535169  4.04305127  2.07944154 -1.83258146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Hg_INAA           K </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229  9.30565055 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Ag          As     Au_INAA           B     Br_INAA     Ca_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -6.90775528 -2.30258509 -6.21460810  1.09861229  0.09531018  9.21034037 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Cs_INAA          Hg     Hg_INAA           K          Ag          As </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.00000000 -3.91202301  0.00000000  5.29831737 -2.12863179  3.42426265 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Au_INAA           B     Br_INAA     Ca_INAA     Cs_INAA          Hg </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.01918282  2.39789527  4.02535169 11.00209984  2.07944154 -1.83258146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Hg_INAA           K </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229  9.30565055 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Ag          As     Au_INAA           B     Br_INAA     Ca_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -6.90775528 -2.30258509 -6.21460810  1.09861229  0.09531018  9.21034037 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Co_INAA          Hg     Hg_INAA           K          Ag          As </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229 -3.91202301  0.00000000  5.29831737 -2.12863179  3.42426265 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Au_INAA           B     Br_INAA     Ca_INAA     Co_INAA          Hg </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.01918282  2.39789527  4.02535169 11.00209984  4.04305127 -1.83258146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Hg_INAA           K </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229  9.30565055 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Ag          As     Au_INAA           B     Br_INAA     Ca_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -6.90775528 -2.30258509 -6.21460810  1.09861229  0.09531018  9.21034037 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Co_INAA     Cs_INAA     Hg_INAA           K          Ag          As </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229  0.00000000  0.00000000  5.29831737 -2.12863179  3.42426265 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Au_INAA           B     Br_INAA     Ca_INAA     Co_INAA     Cs_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.01918282  2.39789527  4.02535169 11.00209984  4.04305127  2.07944154 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Hg_INAA           K </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229  9.30565055 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Ag          As     Au_INAA           B     Br_INAA     Ca_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -6.90775528 -2.30258509 -6.21460810  1.09861229  0.09531018  9.21034037 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Co_INAA     Cs_INAA          Hg           K          Ag          As </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229  0.00000000 -3.91202301  5.29831737 -2.12863179  3.42426265 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Au_INAA           B     Br_INAA     Ca_INAA     Co_INAA     Cs_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.01918282  2.39789527  4.02535169 11.00209984  4.04305127  2.07944154 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Hg           K </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -1.83258146  9.30565055 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Ag          As     Au_INAA           B     Br_INAA     Ca_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -6.90775528 -2.30258509 -6.21460810  1.09861229  0.09531018  9.21034037 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Co_INAA     Cs_INAA          Hg     Hg_INAA          Ag          As </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.09861229  0.00000000 -3.91202301  0.00000000 -2.12863179  3.42426265 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Au_INAA           B     Br_INAA     Ca_INAA     Co_INAA     Cs_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.01918282  2.39789527  4.02535169 11.00209984  4.04305127  2.07944154 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Hg     Hg_INAA </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -1.83258146  1.09861229 </span>
 <span class="r-plt img"><img src="pbox-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
