@@ -198,4 +198,7 @@
   <url>
     <loc>/reference/wine.html</loc>
   </url>
+  <url>
+    <loc>/reference/xgboostImpute.html</loc>
+  </url>
 </urlset>
