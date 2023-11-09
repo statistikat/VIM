@@ -1,5 +1,9 @@
 library(VIM)
 message("matchImpute general")
+setna <- function(d,i,col=2){
+  d[i,col] <- NA
+  d
+}
 d <- data.frame(x=LETTERS[1:6],y=as.double(1:6),z=as.double(1:6),
                 w=ordered(LETTERS[1:6]), stringsAsFactors = FALSE)
 dorig <- rbind(d,d)

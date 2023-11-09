@@ -6,10 +6,14 @@
 #' @param imp_var `TRUE`/`FALSE` if a `TRUE`/`FALSE` variables for each imputed
 #' variable should be created show the imputation status
 #' @param imp_suffix suffix used for TF imputation variables
-#' @param ... Arguments passed to [xgboost::xgboost()]
 #' @param verbose Show the number of observations used for training
 #'   and evaluating the RF-Model. This parameter is also passed down to
 #'   [xgboost::xgboost()] to show computation status.
+#' @param ... Arguments passed to [xgboost::xgboost()]
+#' @param nrounds max number of boosting iterations,
+#'   argument passed to [xgboost::xgboost()]
+#' @param objective objective for xgboost,
+#'   argument passed to [xgboost::xgboost()]
 #' @return the imputed data set.
 #' @family imputation methods
 #' @examples 
@@ -63,21 +67,25 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
           num_class <- max(labtmp)+1
         }
         
-      }else if(inherits(labtmp,"numeric")){
-        currentClass <- "numeric"
-        if(length(unique(labtmp))==2){
-          warning("binary factor detected but not probably stored as factor.")
-          objective <- "binary:logistic"
-        }else{
-          objective <- "reg:squarederror"
-        }
       }else if(inherits(labtmp,"integer")){
         currentClass <- "integer"
         if(length(unique(labtmp))==2){
-          warning("binary factor detected but not probably stored as factor.")
+          lvlsInt <- unique(labtmp)
+          labtmp <- match(labtmp,lvlsInt)-1
+          warning("binary factor detected but not probproperlyably stored as factor.")
           objective <- "binary:logistic"
         }else{
           objective <- "count:poisson"## Todo: this might not be wise as default
+        }
+      }else if(inherits(labtmp,"numeric")){
+        currentClass <- "numeric"
+        if(length(unique(labtmp))==2){
+          lvlsInt <- unique(labtmp)
+          labtmp <- match(labtmp,lvlsInt)-1
+          warning("binary factor detected but not properly stored as factor.")
+          objective <- "binary:logistic"
+        }else{
+          objective <- "reg:squarederror"
         }
       }
         
@@ -85,10 +93,10 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
       mm <- model.matrix(form,dattmp)
       if(!is.null(num_class)){
         mod <- xgboost::xgboost(data = mm, label = labtmp,
-                                nrounds=nrounds, objective=objective, num_class = num_class, verbose = FALSE,...)
+                                nrounds=nrounds, objective=objective, num_class = num_class, verbose = verbose,...)
       }else{
         mod <- xgboost::xgboost(data = mm, label = labtmp,
-                                nrounds=nrounds, objective=objective, verbose = FALSE,...)
+                                nrounds=nrounds, objective=objective, verbose = verbose,...)
       }
       
       if (verbose)
@@ -101,6 +109,8 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
         }else{
           data[!rhs_na & lhs_na, lhsV] <- levels(dattmp[,lhsV])[predictions+1]  
         }
+      }else if(currentClass%in%c("numeric","integer")&objective=="binary:logistic"){
+        data[!rhs_na & lhs_na, lhsV] <- lvlsInt[as.numeric(predictions>.5)+1]  
       }else{
         data[!rhs_na & lhs_na, lhsV] <- predictions  
       }

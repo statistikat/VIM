@@ -13,7 +13,8 @@ max_dist <- function(x, y) {
 
 df$y[1:3] <- NA
 df$fac[3:5] <- NA
-
+df$binNum <- as.integer(df$fac)+17
+df$binInt <- as.integer(df$fac)+17L
 # xgboostImpute accuracy", {
   df.out <- xgboostImpute(y ~ x, df)
   expect_true(
@@ -28,10 +29,17 @@ df$fac[3:5] <- NA
 
 # factor response predicted accurately", {
   df.out <- xgboostImpute(fac ~ x, df)
-  df.out[df.out$fac_imp,]
   expect_identical(df.out$fac, as.factor(df$x >= 0))
 # 
-
+  
+  # interger binary response predicted accurately", {
+  expect_warning(df.out <- xgboostImpute(binInt ~ x, df))
+  expect_identical(df.out$binInt==19, df$x >= 0)
+  # 
+  # numeric binary response predicted accurately", {
+  expect_warning(df.out <- xgboostImpute(binNum ~ x, df))
+  expect_identical(df.out$binNum==19, df$x >= 0)
+  # 
 # factor regressor used reasonably", {
   df2 <- df
   df2$x[1:10] <- NA
