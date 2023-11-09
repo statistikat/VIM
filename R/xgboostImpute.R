@@ -96,7 +96,11 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
       predictions <- 
         predict(mod, model.matrix(formPred,subset(data, !rhs_na & lhs_na)))
       if(currentClass=="factor"){
-        data[!rhs_na & lhs_na, lhsV] <- levels(dattmp[,lhsV])[predictions+1]
+        if(is.null(num_class)){
+          data[!rhs_na & lhs_na, lhsV] <- levels(dattmp[,lhsV])[as.numeric(predictions>.5)+1]  
+        }else{
+          data[!rhs_na & lhs_na, lhsV] <- levels(dattmp[,lhsV])[predictions+1]  
+        }
       }else{
         data[!rhs_na & lhs_na, lhsV] <- predictions  
       }
