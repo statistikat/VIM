@@ -1,32 +1,32 @@
 #' Xgboost Imputation
 #'
-#' Impute missing values based on a random forest model using [ranger::ranger()]
+#' Impute missing values based on a random forest model using [xgboost::xgboost()]
 #' @param formula model formula for the imputation
 #' @param data A `data.frame` containing the data
 #' @param imp_var `TRUE`/`FALSE` if a `TRUE`/`FALSE` variables for each imputed
 #' variable should be created show the imputation status
 #' @param imp_suffix suffix used for TF imputation variables
-#' @param ... Arguments passed to [ranger::ranger()]
+#' @param ... Arguments passed to [xgboost::xgboost()]
 #' @param verbose Show the number of observations used for training
 #'   and evaluating the RF-Model. This parameter is also passed down to
-#'   [ranger::ranger()] to show computation status.
-#' @param median Use the median (rather than the arithmetic mean) to average
-#'   the values of individual trees for a more robust estimate.
+#'   [xgboost::xgboost()] to show computation status.
 #' @return the imputed data set.
 #' @family imputation methods
 #' @examples 
 #' data(sleep)
 #' xgboostImpute(Dream~BodyWgt+BrainWgt,data=sleep)
 #' xgboostImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
+#' xgboostImpute(Dream+NonD+Gest~BodyWgt+BrainWgt,data=sleep)
 #' 
 #' sleepx <- sleep
-#' sleepx$Pred <- as.factor(sleepx$Pred)
+#' sleepx$Pred <- as.factor(LETTERS[sleepx$Pred])
 #' sleepx$Pred[1] <- NA
+#' xgboostImpute(Pred~BodyWgt+BrainWgt,data=sleepx)
 #' @export
 xgboostImpute <- function(formula, data, imp_var = TRUE,
-                         imp_suffix = "imp", ..., verbose = FALSE,
-                         nrounds=2, objective=NULL,
-                         median = FALSE){
+                         imp_suffix = "imp", verbose = FALSE,
+                         nrounds=100, objective=NULL,
+                         ...){
   check_data(data)
   formchar <- as.character(formula)
   lhs <- gsub(" ", "", strsplit(formchar[2], "\\+")[[1]])
@@ -39,7 +39,9 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
     stopifnot(length(objective)!=length(lhs))
   }
   for (lhsV in lhs) {
-    form <- as.formula(paste(lhsV, "~", rhs))
+    form <- as.formula(paste(lhsV, "~", rhs,"-1"))
+    # formula without left side for prediction
+    formPred <- as.formula(paste( "~", rhs,"-1"))
     lhs_vector <- data[[lhsV]]
     num_class <- NULL
     if (!any(is.na(lhs_vector))) {
@@ -47,18 +49,22 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
     } else {
       lhs_na <- is.na(lhs_vector)
       if (verbose)
-        message("Training   model for ", lhsV, " on ", sum(!rhs_na & !lhs_na), " observations")
+        message("Training model for ", lhsV, " on ", sum(!rhs_na & !lhs_na), " observations")
       dattmp <- subset(data, !rhs_na & !lhs_na)
       labtmp <- dattmp[[lhsV]]
+      currentClass <- NULL
       if(inherits(labtmp,"factor")){
+        currentClass <- "factor"
         labtmp <- as.integer(labtmp)-1
         if(length(unique(labtmp))==2){
           objective <- "binary:logistic"
         }else if(length(unique(labtmp))>2){
           objective <- "multi:softmax"
+          num_class <- max(labtmp)+1
         }
-        num_class <- max(labtmp)+1
+        
       }else if(inherits(labtmp,"numeric")){
+        currentClass <- "numeric"
         if(length(unique(labtmp))==2){
           warning("binary factor detected but not probably stored as factor.")
           objective <- "binary:logistic"
@@ -66,6 +72,7 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
           objective <- "reg:squarederror"
         }
       }else if(inherits(labtmp,"integer")){
+        currentClass <- "integer"
         if(length(unique(labtmp))==2){
           warning("binary factor detected but not probably stored as factor.")
           objective <- "binary:logistic"
@@ -76,18 +83,24 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
         
       
       mm <- model.matrix(form,dattmp)
-      mod <- xgboost::xgboost(data = mm, label = labtmp,
-                       nrounds=nrounds, objective=objective, num_class = num_class)
+      if(!is.null(num_class)){
+        mod <- xgboost::xgboost(data = mm, label = labtmp,
+                                nrounds=nrounds, objective=objective, num_class = num_class, verbose = FALSE,...)
+      }else{
+        mod <- xgboost::xgboost(data = mm, label = labtmp,
+                                nrounds=nrounds, objective=objective, verbose = FALSE,...)
+      }
+      
       if (verbose)
         message("Evaluating model for ", lhsV, " on ", sum(!rhs_na & lhs_na), " observations")
-      if (median & inherits(lhs_vector, "numeric")) {
-        predictions <- apply(
-          predict(mod, model.matrix(form,subset(data, !rhs_na & lhs_na)), predict.all = TRUE)$predictions,
-          1, median)
-      } else {
-        predictions <- predict(mod, model.matrix(as.formula(paste0("~",rhs)),subset(data, !rhs_na & lhs_na)))
+      predictions <- 
+        predict(mod, model.matrix(formPred,subset(data, !rhs_na & lhs_na)))
+      if(currentClass=="factor"){
+        data[!rhs_na & lhs_na, lhsV] <- levels(dattmp[,lhsV])[predictions+1]
+      }else{
+        data[!rhs_na & lhs_na, lhsV] <- predictions  
       }
-      data[!rhs_na & lhs_na, lhsV] <- predictions
+      
     }
     
     if (imp_var) {
