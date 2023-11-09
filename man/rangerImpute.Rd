@@ -52,6 +52,7 @@ Other imputation methods:
 \code{\link{matchImpute}()},
 \code{\link{medianSamp}()},
 \code{\link{regressionImp}()},
-\code{\link{sampleCat}()}
+\code{\link{sampleCat}()},
+\code{\link{xgboostImpute}()}
 }
 \concept{imputation methods}
