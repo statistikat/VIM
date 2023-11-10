@@ -1,5 +1,5 @@
 Package: VIM
-Version: 6.2.3
+Version: 6.2.4
 Title: Visualization and Imputation of Missing Values
 Authors@R: c(
   person("Matthias", "Templ", email = "matthias.templ@gmail.com", role = c("aut","cre")),
