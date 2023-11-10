@@ -59,7 +59,8 @@ Other imputation methods:
 \code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
 \code{\link{regressionImp}()},
-\code{\link{sampleCat}()}
+\code{\link{sampleCat}()},
+\code{\link{xgboostImpute}()}
 }
 \author{
 Johannes Gussenbauer, Alexander Kowarik

@@ -26,6 +26,7 @@ Imports:
     laeken,
     ranger,
     MASS,
+    xgboost,
     data.table(>= 1.9.4)
 Suggests: 
     dplyr,

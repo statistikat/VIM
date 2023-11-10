@@ -31,22 +31,44 @@ rangerImpute <- function(formula, data, imp_var = TRUE,
   for (lhsV in lhs) {
     form <- as.formula(paste(lhsV, "~", rhs))
     lhs_vector <- data[[lhsV]]
+    lhs_isfactor <- inherits(lhs_vector, "factor")
+    
     if (!any(is.na(lhs_vector))) {
       cat(paste0("No missings in ", lhsV, ".\n"))
     } else {
       lhs_na <- is.na(lhs_vector)
       if (verbose)
         message("Training   model for ", lhsV, " on ", sum(!rhs_na & !lhs_na), " observations")
-      mod <- ranger::ranger(form, subset(data, !rhs_na & !lhs_na), ..., verbose = verbose)
+      
+      if(lhs_isfactor){
+        mod <- ranger::ranger(form, subset(data, !rhs_na & !lhs_na), probability = TRUE, ..., verbose = verbose)
+      }else{
+        mod <- ranger::ranger(form, subset(data, !rhs_na & !lhs_na), ..., verbose = verbose)
+      }
+
       if (verbose)
         message("Evaluating model for ", lhsV, " on ", sum(!rhs_na & lhs_na), " observations")
-      if (median & inherits(lhs_vector, "numeric")) {
-        predictions <- apply(
-          predict(mod, subset(data, !rhs_na & lhs_na), predict.all = TRUE)$predictions,
-          1, median)
-      } else {
+      
+      if(lhs_isfactor){
         predictions <- predict(mod, subset(data, !rhs_na & lhs_na))$predictions
+        predict_levels <- colnames(predictions)
+        
+        predictions <- apply(predictions,1,function(z,lev){
+          z <- cumsum(z)
+          z_lev <- lev[z>runif(1)]
+          return(z_lev[1])
+        },lev=predict_levels)
+        
+      }else{
+        if (median & inherits(lhs_vector, "numeric")) {
+          predictions <- apply(
+            predict(mod, subset(data, !rhs_na & lhs_na), predict.all = TRUE)$predictions,
+            1, median)
+        } else {
+          predictions <- predict(mod, subset(data, !rhs_na & lhs_na))$predictions
+        }
       }
+
       data[!rhs_na & lhs_na, lhsV] <- predictions
     }
     

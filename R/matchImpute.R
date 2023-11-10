@@ -59,7 +59,13 @@ matchImpute <- function(data,variable=colnames(data)[!colnames(data)%in%match_va
     data <- as.data.table(data)
   else
     data <- data.table::copy(data)
+  tfna <- data[,sapply(lapply(.SD,is.na),all),.SDcols=variable]
+  if(any(tfna)){
+    stop(paste0(variable[tfna],collapse=", ")," ", ifelse(sum(tfna)>1,"are","is")," completely missing")
+    
+  }
   na_present <- data[,sum(sapply(lapply(.SD,is.na),sum)),.SDcols=variable]
+  
   
   if(imp_var){
     data[,paste(variable,imp_suffix,sep="_"):=lapply(.SD,is.na),.SDcols=variable]
