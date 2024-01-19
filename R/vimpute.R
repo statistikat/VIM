@@ -31,10 +31,11 @@
 #' @param imp_suffix 
 #' @param verbose 
 #'
-#' @return
+#' @return imputed data set
 #' @export
 #'
 #' @examples
+#' vimpute(sleep)
 vimpute <- function(data,
                     variable = colnames(data),
                     sequential = TRUE,
@@ -47,5 +48,7 @@ vimpute <- function(data,
                     imp_var=FALSE,
                     imp_suffix="imp", 
                     verbose = FALSE){
-  stop("this is not a real function yet")
+  message("this is not a real function yet")
+  output <- data
+  return(output)
 }

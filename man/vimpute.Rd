@@ -52,6 +52,9 @@ vimpute(
 
 \item{verbose}{}
 }
+\value{
+imputed data set
+}
 \description{
 VIM Model Based Imputation framework
 generally idea function that incorporates a framework for model based imputation.
@@ -64,4 +67,7 @@ Options should be
 \item model options: (robust) regression, ranger, XGBoost, some kind of transformer model
 \item complex formula (with \code{formula}) for each variable possible.
 }
+}
+\examples{
+vimpute(sleep)
 }
