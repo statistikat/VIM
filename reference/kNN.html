@@ -80,7 +80,6 @@ for numerical, categorical, ordered and semi-continous variables.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">kNN</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
 <span>  variable <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>,</span>
-<span>  metric <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  dist_var <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -113,10 +112,6 @@ for numerical, categorical, ordered and semi-continous variables.</p>
 
 <dt>variable</dt>
 <dd><p>variables where missing values should be imputed</p></dd>
-
-
-<dt>metric</dt>
-<dd><p>metric to be used for calculating the distances between</p></dd>
 
 
 <dt>k</dt>
