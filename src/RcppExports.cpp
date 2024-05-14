@@ -57,3 +57,41 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// tokenpred_to_string_cpp
+List tokenpred_to_string_cpp(NumericVector probs, DataFrame target_tok, bool sample_tok_probs);
+RcppExport SEXP _VIM_tokenpred_to_string_cpp(SEXP probsSEXP, SEXP target_tokSEXP, SEXP sample_tok_probsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type probs(probsSEXP);
+    Rcpp::traits::input_parameter< DataFrame >::type target_tok(target_tokSEXP);
+    Rcpp::traits::input_parameter< bool >::type sample_tok_probs(sample_tok_probsSEXP);
+    rcpp_result_gen = Rcpp::wrap(tokenpred_to_string_cpp(probs, target_tok, sample_tok_probs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// parallel_tokenpred_to_string
+List parallel_tokenpred_to_string(NumericMatrix probs, DataFrame target_tok, bool sample_tok_probs);
+RcppExport SEXP _VIM_parallel_tokenpred_to_string(SEXP probsSEXP, SEXP target_tokSEXP, SEXP sample_tok_probsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type probs(probsSEXP);
+    Rcpp::traits::input_parameter< DataFrame >::type target_tok(target_tokSEXP);
+    Rcpp::traits::input_parameter< bool >::type sample_tok_probs(sample_tok_probsSEXP);
+    rcpp_result_gen = Rcpp::wrap(parallel_tokenpred_to_string(probs, target_tok, sample_tok_probs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// training_seq_cpp
+NumericMatrix training_seq_cpp(int len_target, NumericMatrix train_tokenized);
+RcppExport SEXP _VIM_training_seq_cpp(SEXP len_targetSEXP, SEXP train_tokenizedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type len_target(len_targetSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type train_tokenized(train_tokenizedSEXP);
+    rcpp_result_gen = Rcpp::wrap(training_seq_cpp(len_target, train_tokenized));
+    return rcpp_result_gen;
+END_RCPP
+}

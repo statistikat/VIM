@@ -1,0 +1,675 @@
+#library(tensorflow)
+#library(keras)
+#library(data.table)
+#library(stringr)
+#library("Rcpp")
+#sourceCpp("Imputation/tokenpred_to_string.cpp")
+#sourceCpp("Imputation/training_seq.cpp")
+
+#' Transformer-based Imputation
+#'
+#' Impute missing values using a transformer model.
+#'
+#' @param data Dataset to impute.
+#' @param target Target variable to impute.
+#' @param cat_vars Categorical variables.
+#' @param include_cols Columns to include in imputation.
+#' @param imp_col Whether to add an imputation indicator column.
+#' @param num_unique_cat Number of unique values to consider as categorical.
+#' @param verbose Verbosity level.
+#' @param dropout1 Dropout rate in transformer heads.
+#' @param dropout2 Dropout rate in feed forward network.
+#' @param num_heads Number of attention heads per transformer block.
+#' @param num_transformer_blocks Number of transformer blocks.
+#' @param feed_forward_dim Dimension of feed forward network.
+#' @param embedding_dim Dimension of embedding layer.
+#' @param dense_dim Dimension of dense layer with relu activation.
+#' @param epochs Number of epochs to train.
+#' @param patience Number of epochs with no improvement to stop training.
+#' @param batch_size Batch size for training.
+#' @param learning_rate Learning rate for optimizer.
+#' @param patience_min_delta Minimum change to qualify as improvement.
+#' @param regularization_factor Regularization factor for kernel regularization.
+#' @param monitor Evaluation measure to monitor.
+#' @param decimal_points_target Number of decimal points for numeric target (ignored if target is categorical)
+#' @param decimal_points Number of decimal points for numeric input variables
+#' @param round_long_decs boolean: rounds numeric values with over 5 decimal points to only three decimal points (only if decimal_points is NULL)
+
+#' @author Nina Niederhametner
+#' @return Imputed dataset.
+#' @export
+
+transformerImpute <- function(data,target,cat_vars=NULL,
+                              include_cols=NULL, imp_col=FALSE,
+                              num_unique_cat = 35,
+                              verbose=1, dropout1=0.2, dropout2=0.3,num_heads=8, 
+                              num_transformer_blocks=1, feed_forward_dim=512,
+                              embedding_dim=128,dense_dim=128,
+                              epochs=10, patience=5,batch_size=64,
+                              learning_rate=0.0001,patience_min_delta=0.01,
+                              regularization_factor=0.01,
+                              monitor="val_loss",
+                              decimal_points=1,
+                              decimal_points_target=1,
+                              round_long_decs=TRUE){
+  TOKEN <- TOKEN_sep <- Word_ngram <- last_digit <- last_digit_flag <- NULL
+  column <- help_position <- column_help <- imp <- NULL
+  dat <- copy(data)
+  if(!is.data.table(dat)){
+    dat <- as.data.table(dat)
+  }
+  
+  if(!is.null(include_cols)){
+    dat <- dat[, include_cols, with = FALSE]
+  }
+  
+  #check how many unique values each column consists of
+  #columns with low number of unique values are set to categoric vars
+  if(is.null(cat_vars)){
+    num_unique <- apply(dat,2,function(x) length(unique(x)))
+    cat_vars <- names(which(num_unique<num_unique_cat))
+  }
+  
+  na_idx <- which(is.na(dat[,get(target)]))
+  
+  if(length(na_idx)==0){
+    return(dat)
+  }
+  
+  dat_text <- data_to_text(dat,cat_vars,target,decimal_points=decimal_points,
+                           decimal_points_target=decimal_points_target,
+                           round_long_decs=round_long_decs)
+  dat_str <- dat_text$dat
+  lens <- dat_text$len
+  
+  #neuer tokenizer
+  tok <- generate_tok(dat_str,lens,cat_vars)
+  tok <- tok[!(column==target&is.na(Word_ngram)),]
+  
+  train <- dat_str[!na_idx,] #vollständige Zeilen
+  test <- dat_str[na_idx,] #unvollständige Zeilen
+  
+  
+  embs <- copy(train)
+  cont_vars <- names(dat)[!(names(dat) %in% cat_vars)]
+  for(cont in cont_vars){
+    cont_help <- paste0(cont,"_",1:max(nchar(embs[[cont]]),na.rm=TRUE))
+    embs[,c(cont_help) := tstrsplit(get(cont), split="")]
+    embs[,c(cont):=NULL]
+  }
+  melt_vars <- copy(colnames(embs))
+  embs[,help_position:=.I]
+  embs <- melt(embs,id.vars="help_position", measure.vars=melt_vars, variable.name="column", value.name="Word_ngram")
+  #na_help_pos <- embs[is.na(Word_ngram),help_position]
+  #embs[is.na(Word_ngram),Word_ngram:=0]
+  
+  embs[,column_help:=gsub("_\\d+$","",column)]
+  embs[tok,TOKEN:=TOKEN,on=list(column_help = column,Word_ngram)]
+  
+  # seperator token
+  embs[,TOKEN_sep:=tok[Word_ngram==",",TOKEN]]
+  embs[column_help!=column, last_digit:=as.numeric(stringr::str_extract_all(column,"\\d+"))]
+  embs[column_help!=column, last_digit_flag:=last_digit==max(last_digit),by=list(column_help)]
+  embs[column_help!=column & last_digit_flag==FALSE, TOKEN_sep:=NA] # only , after last digit
+  embs[column_help==target, TOKEN_sep:=NA] # target needs no ,
+  
+  target_cols <- as.character(unique(embs[column_help==target,column]))
+  
+  # cast back
+  embs <- dcast(embs, formula =  help_position ~ column, value.var = c("TOKEN","TOKEN_sep"))
+  
+  # correct order of columns
+  colorder <- c(melt_vars[!(melt_vars %in% target_cols)],target_cols)
+  colorder <- c(rbind(paste0("TOKEN_",colorder),
+                      paste0("TOKEN_sep_",colorder)))
+  setcolorder(embs,colorder)
+  
+  # drop columns with NAs
+  drop_cols <- sapply(embs,function(z){any(is.na(z))})
+  drop_cols <- names(drop_cols)[drop_cols]
+  embs[,c(drop_cols):=NULL]
+  embs[,help_position:=NULL]
+  
+  train_emb <- as.matrix(embs)
+  colnames_train_emb <- colnames(train_emb)
+  
+  #split train_emb in train and test data before creating sequences
+  train_idx <- sample(nrow(train_emb),floor(nrow(train_emb)*0.8))
+  
+  # t_seqs <- training_seq(lens[[target]], train_emb[train_idx,])
+  # test_seqs <- training_seq(lens[[target]], train_emb[-train_idx,])
+  
+  # new Rcpp version
+  t_seqs <- training_seq_cpp(lens[[target]], train_emb[train_idx,])
+  test_seqs <- training_seq_cpp(lens[[target]], train_emb[-train_idx,])
+  
+  input_shape <- ncol(t_seqs)-1
+  num_words <- nrow(tok) #number tokens in tokenizer
+  
+  target_tok <- tok[column==target]
+  
+  #find position of period in numeric target variables
+  if(!(target %in% cat_vars)){
+    pos_period <- NA
+    if("." %in% target_tok$Word_ngram){
+      s <- dat_str[!na_idx,get(target)][1]
+      pos_period <- which(strsplit(s, "")[[1]]==".")
+      tok_period_pos <- which(target_tok$Word_ngram==".")
+      temp_tok <- target_tok[!(Word_ngram==".")]
+      tok_period <- target_tok[Word_ngram==".",TOKEN]
+    }else{
+      temp_tok <- copy(target_tok)
+      tok_period_pos <- NULL
+    }
+  }else{
+    tok_period_pos <- NULL
+    temp_tok <- copy(target_tok)
+  }
+  
+  
+  num_toks_out <- nrow(target_tok)
+  yLev <- levels(as.factor(matrix(train_emb[,(ncol(train_emb)-lens[[target]]+1):ncol(train_emb)])))
+  
+  y <- factor(t_seqs[,input_shape+1],levels=yLev)
+  y_train <- as.numeric(y)-1
+ 
+  y_test <- as.numeric(factor(test_seqs[,input_shape+1],levels=yLev))-1
+  
+  
+  FLAGS <- keras::flags(
+    keras::flag_numeric("dropout1", dropout1),
+    keras::flag_numeric("dropout2", dropout2),
+    keras::flag_numeric("num_heads", num_heads),
+    keras::flag_numeric("num_transformer_blocks",num_transformer_blocks),
+    keras::flag_numeric("ff_dim",feed_forward_dim),
+    keras::flag_numeric("embed_dim",embedding_dim),
+    keras::flag_numeric("dense_dim",dense_dim),
+    keras::flag_numeric("epochs",epochs),
+    keras::flag_numeric("patience",patience),
+    keras::flag_numeric("learning_rate",learning_rate),
+    keras::flag_numeric("batch_size",batch_size),
+    keras::flag_string("monitor",monitor),
+    keras::flag_numeric("patience_min_delta",patience_min_delta),
+    keras::flag_numeric("regularization",regularization_factor)
+  )
+  
+  
+  model <- build_model_cLM(
+    input_shape,
+    num_heads = FLAGS$num_heads,
+    ff_dim = FLAGS$ff_dim, 
+    num_transformer_blocks = FLAGS$num_transformer_blocks,
+    dropout1 = FLAGS$dropout1,
+    dropout2 = FLAGS$dropout2,
+    maxlen = input_shape,
+    embed_dim = FLAGS$embed_dim,
+    num_words = num_words,
+    regularization = FLAGS$regularization,
+    dense_dim=FLAGS$dense_dim,
+    num_toks_out = num_toks_out
+  )
+  
+  model |> keras::compile(
+    loss = "sparse_categorical_crossentropy",
+    optimizer = keras::optimizer_adam(learning_rate = FLAGS$learning_rate),
+    metrics=c("sparse_categorical_accuracy")
+  )
+  
+  
+  callbacks <- list(
+    keras::callback_early_stopping(patience = FLAGS$patience, restore_best_weights = TRUE,
+                            monitor = FLAGS$monitor, min_delta=FLAGS$patience_min_delta)
+  )
+  
+  
+  history <- model |>
+    keras::fit(
+      t_seqs[,1:input_shape],
+      y_train,
+      epochs = FLAGS$epochs,
+      validation_data = list(test_seqs[,1:input_shape],y_test),
+      shuffle=TRUE,
+      verbose=verbose,
+      callbacks = callbacks,
+      batch_size = batch_size
+    )
+  
+  n_toks <- lens[[target]] #numer of toks to generate
+  
+  #remove target column from dataset
+  test[,(target):=NULL]
+  
+  
+  embs <- copy(test)
+  cont_vars <- names(test)[!(names(test) %in% cat_vars)]
+  for(cont in cont_vars){
+    cont_help <- paste0(cont,"_",1:max(nchar(embs[[cont]]),na.rm=TRUE))
+    embs[,c(cont_help) := tstrsplit(get(cont), split="")]
+    embs[,c(cont):=NULL]
+  }
+  melt_vars <- copy(colnames(embs))
+  embs[,help_position:=.I]
+  embs <- melt(embs,id.vars="help_position", measure.vars=melt_vars, variable.name="column", value.name="Word_ngram")
+  
+  embs[,column_help:=gsub("_\\d+$","",column)]
+  embs[tok,TOKEN:=TOKEN,on=list(column_help = column,Word_ngram)]
+  
+  # seperator token
+  embs[,TOKEN_sep:=tok[Word_ngram==",",TOKEN]]
+  embs[column_help!=column, last_digit:=as.numeric(stringr::str_extract_all(column,"\\d+"))]
+  embs[column_help!=column, last_digit_flag:=last_digit==max(last_digit),by=list(column_help)]
+  embs[column_help!=column & last_digit_flag==FALSE, TOKEN_sep:=NA] # only , after last digit
+  embs[column_help==target, TOKEN_sep:=NA] # target needs no ,
+  
+  # cast back
+  embs <- dcast(embs, formula =  help_position ~ column, value.var = c("TOKEN","TOKEN_sep"))
+  
+  # correct order of columns
+  colorder <- melt_vars
+  colorder <- c(rbind(paste0("TOKEN_",colorder),
+                      paste0("TOKEN_sep_",colorder)))
+  setcolorder(embs,colorder)
+  
+  # drop columns with NAs
+  drop_cols <- sapply(embs,function(z){any(is.na(z))})
+  drop_cols <- names(drop_cols)[drop_cols]
+  embs[,c(drop_cols):=NULL]
+  embs[,help_position:=NULL]
+  
+  test_emb <- as.matrix(embs)
+  test_emb <- cbind(matrix(0,ncol=input_shape-ncol(test_emb),nrow=nrow(test_emb)),
+                    test_emb)
+  colnames(test_emb) <- NULL
+
+  pred_toks <- ""  
+  for(i in 1:n_toks){
+    tok_minus_pos <- NULL
+    temp_tok_i <- copy(temp_tok)
+    if(i>1){
+      #add previously predicted tokens to embedding and remove one zero padding column from the left
+      test_emb <- cbind(test_emb,next_tok_ids)[,-1]
+      
+      #if the next position is the position of a period: add period and move to prediction of next token
+      if(!is.na(pos_period)){
+        if(i==pos_period){
+          test_emb <- cbind(test_emb,tok_period)[,-1]
+          pred_toks <- paste0(pred_toks,".")
+          next
+        }
+      }
+      
+      # - sign can only be appear in the front
+      tok_minus_pos <- temp_tok[Word_ngram=="-",which=TRUE]
+      if(length(tok_minus_pos)!=0){
+        temp_tok_i <- temp_tok[-c(tok_minus_pos),]
+      }
+    }
+    
+    probs <- model|>predict(test_emb)
+    
+    sample_tok_probs <- ifelse(target %in% cat_vars,TRUE,FALSE)
+    
+    if(!is.null(tok_period_pos)){
+      probs <- probs[,-tok_period_pos]
+    }
+    #if(!is.null(tok_minus_pos)){
+    if(length(tok_minus_pos)!=0){ #tok_minus_pos is integer(0) if "-" does not exist in temp_tok
+      probs <- probs[,-tok_minus_pos]
+    }
+    ## DEBUG with Rcpp
+    # tti <<- temp_tok_i
+    # stp <<- sample_tok_probs
+    # pp <<- probs
+    # tti -> temp_tok_i
+    # stp -> sample_tok_probs
+    # pp -> probs
+    # stop()
+    # temp <- apply(probs,1,function(x)tokenpred_to_string(x,temp_tok_i,sample_tok_probs))
+    ###
+    temp <- parallel_tokenpred_to_string(probs, temp_tok_i, sample_tok_probs)
+    next_tok_ids <- as.numeric(unlist(temp)[c(TRUE,FALSE)])
+    next_toks <- unlist(temp)[c(FALSE,TRUE)]
+    
+    pred_toks <- paste0(pred_toks,next_toks)
+  }
+  as.numeric(pred_toks)
+  
+  if(target%in%cat_vars){
+    dat[na_idx,(target):= as.factor(pred_toks)]
+  }else{
+    dat[na_idx,(target):= as.numeric(pred_toks)]
+  }
+  
+  if(imp_col){
+    dat[,imp:=0]
+    dat[na_idx,imp:=1]
+  }
+  
+  return(dat)
+}
+
+################################################################################
+#model functions
+
+transformer_encoder <- function(inputs,
+                                embed_dim,
+                                num_heads,
+                                ff_dim,
+                                dropout = 0) {
+  # Attention and Normalization
+  attention_layer <-
+    keras::layer_multi_head_attention(key_dim = embed_dim,
+                               num_heads = num_heads,
+                               dropout = dropout)
+  
+  
+  x <- attention_layer(inputs, inputs) |> 
+    keras::layer_dropout(dropout)
+  
+  res <- x + inputs   |> 
+    keras::layer_layer_normalization(epsilon = 1e-3)
+  
+  # Feed Forward Network
+  x <- res |>
+    keras::layer_conv_1d(ff_dim, kernel_size = 1, activation = "relu") |>
+    keras::layer_conv_1d(embed_dim, kernel_size = 1) |> 
+    keras::layer_dropout(dropout)
+  
+  x <- x + res |>
+    keras::layer_layer_normalization(epsilon = 1e-3)
+  
+  return(x)
+}
+
+
+
+build_model_cLM <- function(input_shape,
+                            embed_dim,
+                            num_heads,
+                            ff_dim,
+                            num_transformer_blocks,
+                            maxlen,
+                            num_words,
+                            regularization,
+                            dense_dim,
+                            num_toks_out,
+                            dropout1 = 0,
+                            dropout2 = 0) {
+  
+  inputs <- keras::layer_input(shape=input_shape)
+  
+  x <- inputs |> keras::layer_embedding(num_words,
+                                 output_dim = embed_dim
+                                 ,mask_zero = TRUE
+  )
+  
+  positions  <- tensorflow::tf$range(start=0, limit = maxlen, delta = 1)
+  positions <- positions |> keras::layer_embedding(input_dim = maxlen, 
+                                            output_dim = embed_dim
+                                            ,mask_zero = TRUE
+  )
+  
+  x <- x + positions
+  
+  for (i in 1:num_transformer_blocks) {
+    x <- x |>
+      keras::layer_layer_normalization() |>
+      transformer_encoder(
+        embed_dim = embed_dim,
+        num_heads = num_heads,
+        ff_dim = ff_dim,
+        dropout = dropout1
+      )
+  }
+  
+  x <- x |> 
+    keras::layer_global_average_pooling_1d(data_format = "channels_first")
+  
+  x <- x |>
+    keras::layer_dense(dense_dim,activation = "relu") |>
+    keras::layer_dropout(dropout2)
+  
+  outputs <- x |> 
+    keras::layer_batch_normalization() |>
+    keras::layer_dense(num_toks_out, activation = "softmax",
+                kernel_regularizer = keras::regularizer_l2(l=regularization))
+  
+  keras::keras_model(inputs, outputs)
+}
+
+# devides input into sequences of fixed length
+#first add zero padding, length depends on the number of token the target var consists of (#tok_t)
+#the model input shape is then ncol of train embedding + lenth of zero padding
+#per input string/line, there are #tok_t sequences produces, the first shows the first token of
+#the target var, the second the first and second token of target var
+#len_target: number of tokens in target variable (e.g. categoric vars-> len_target=1)
+#train_tokenized: matrix containing the token ids for each token in a row
+
+# moved to Rcpp
+
+# training_seq <- function(len_target, train_tokenized){
+#   orig_train_len <- ncol(train_tokenized)
+#   #padding left to include all text when shifting
+#   train_tokenized <- cbind(matrix(0,ncol=len_target-1,nrow=nrow(train_tokenized)),
+#                            train_tokenized)
+#   #training sequences of length max_seq_length +1
+#   #last token is the target token
+#   seqs <- matrix(NA, nrow=(len_target*nrow(train_tokenized)),
+#                  ncol=orig_train_len)
+#   for(i in 1:(nrow(train_tokenized))){
+#     for(j in 0:(len_target-1)){
+#       seqs[i+j*nrow(train_tokenized),] <- train_tokenized[i,(j+1):(orig_train_len+j)]
+#     }
+#   }
+#   return(seqs)
+# }
+
+
+# generates the tokenizers with all valid tokens
+# valid tokens are padding token, digits 0 to 9, ./,/space, all unique categories for categoric variables
+# all cols in dat_str must be type character
+# dat_str: a data frame or data table containing all variables to use as predictors/ target for imputation
+# lens: list containing the number of tokens per column (e.g. for categoric vars=1, for numeric "123"=3)
+# cat_vars: vector of categorical variables in dat 
+generate_tok <- function(dat_str,lens,cat_vars=NULL){
+  len <- Word_ngram <- column <- TOKEN <- NULL
+  toks <- data.table(Word_ngram=c(","),column="u")
+  
+  for(i in seq_along(names(dat_str))){
+    if(names(dat_str)[i] %in% cat_vars){
+      un <- as.character(unique(dat_str[,get(names(dat_str)[i])]))
+      un <- c(un,NA)
+    }else{
+      valid_strings <- dat_str[,get(names(dat_str)[i])][dat_str[,!is.na(get(names(dat_str)[i]))]]
+      un <- unique(as.vector(stringr::str_split_fixed(valid_strings,"",lens[[names(dat_str)[i]]])))
+      un <- c(un,NA)
+    }
+    toks <- rbind(toks,data.table(Word_ngram=as.character(un),column=names(dat_str)[i]))
+  }
+  
+  #order token by length (decreasing)
+  toks[,len:=nchar(Word_ngram)]
+  toks <- toks[order(len,decreasing=TRUE),list(Word_ngram,column)]
+  toks <- rbind(data.table(Word_ngram="_pad_",column="u"),toks) #pad token id must be 0
+  toks[,TOKEN:=0:(nrow(toks)-1)]
+  return(toks)
+}
+
+# convert all columns to character of same shape
+# dat: a data frame or data table containing all variables to use as predictors/ target for imputation
+# cat_vars: vector of categorical variables in dat 
+data_to_text <- function(dat,cat_vars,target,decimal_points_target,decimal_points,round_long_decs){
+  
+  len <- list()
+  if(names(dat)[1] %in% cat_vars){
+    dat_str <- data.table(dat[,get(names(dat)[1])])
+    len[[names(dat)[1]]] <- 1
+  }else{
+    dec_points <- ifelse(names(dat)[1]==target,decimal_points_target,decimal_points)
+    str_col <- col_to_string(dat[,get(names(dat)[1])],decimal_points=dec_points,
+                                 round_long_decs=round_long_decs)
+    dat_str <- data.table(str_col$x)
+    len[[names(dat)[1]]] <- str_col$len
+  }
+  
+  for(i in 2:ncol(dat)){
+    if(names(dat)[i] %in% cat_vars){
+      dat_str <- cbind(dat_str,dat[,get(names(dat)[i])])
+      len[[names(dat)[i]]] <- 1
+    }else{
+      dec_points <- ifelse(names(dat)[i]==target,decimal_points_target,decimal_points)
+      str_col <- col_to_string(dat[,get(names(dat)[i])],decimal_points=dec_points,
+                                   round_long_decs=round_long_decs)
+      dat_str <- cbind(dat_str,str_col$x)
+      len[[names(dat)[i]]] <- str_col$len
+    }
+  }
+  names(dat_str) <- names(dat)
+  return(list(dat=dat_str,len=len))
+}
+
+
+
+
+#################################################################################
+#helper functions
+
+#tokenize according to given tokenizer
+#dat: dataset containing the string column to tokenize
+#tok: tokenizer generated from generate tokenizer of any data.table listing tokens and tokenids with colnames (Word_ngram, TOKEN)
+#string_col: string col to tokenize
+#maxlen: cuts vactors of tokenids to maxlen
+#left_pad: use left padding instead of right
+#EOS_token: binary, if TRUE -> add given EOS token to the end of every string
+setupEmbedding3 <- function(dat, tok, string_col = "text", 
+                            keep_spaces = TRUE, 
+                            maxlen=NULL, left_pad=FALSE, EOS_token = NULL){
+  
+  Word_ngram <- TOKEN <- NULL
+  dat <- copy(dat)
+  
+  if(!is.data.table(dat)){
+    dat <- as.data.table(dat)
+  }
+  
+  if(keep_spaces == FALSE){
+    dat[,c(string_col):=gsub("\\s","",get(string_col))]
+  }
+  
+  x <- stringr::str_extract_all(dat[,get(string_col)],paste0(tok$Word_ngram,collapse="|"),simplify = T) #cut string inputs into given tokens
+  out_idx <- t(apply(x,1,function(y) collect_ids(tok,y)))
+  
+  if(!is.null(EOS_token)){
+    #add eos token to end of every sequence
+    out_idx <- as.matrix(cbind(out_idx,tok[Word_ngram==EOS_token,TOKEN]))
+    if(!(EOS_token %in% tok$Word_ngram)){
+      tok <- rbind(tok,data.table("Word_ngram"=EOS_token,"TOKEN"=max(tok$TOKEN)+1))
+    }
+  }
+  
+  #shorten emb to maxlen
+  if(!is.null(maxlen)){
+    if(maxlen<dim(out_idx)[2]){
+      out_idx <- out_idx[,1:maxlen]
+    }else if(maxlen>dim(out_idx)[2]){
+      pad <- matrix(0,ncol=maxlen-ncol(out_idx),nrow=nrow(out_idx))
+      out_idx <- cbind(out_idx,pad)
+    }
+  }
+  
+  if(left_pad){
+    out_idx <- t(apply(out_idx,1,left_padding))
+  }
+  
+  num_words <- nrow(tok)
+  return(list(out_idx, num_words=num_words, tok = tok))
+}
+
+#translates one row of strings to corresponding token ids defined in tok
+collect_ids <- function(tok,row_){
+  row_ <- data.table(row_)
+  merge(row_,tok, by.x = "row_", by.y = "Word_ngram", sort=FALSE)$TOKEN
+}
+
+#moves padding from right to left
+left_padding <- function(vec){
+  pos_zero <- which(vec==0)[1]
+  if(is.na(pos_zero)){
+    return(vec)
+  }else{
+    num_zero <- length(vec)-which(vec==0)[1]+1
+    temp <- vec[1:pos_zero-1]
+    out <- c(rep(0,num_zero),temp)
+    return(out)
+  }
+}
+
+# moves - sign to front of string
+move_neg_to_front <- function(exp){
+  exp <- sub("\\-",0,exp)
+  exp <- sub(0,"\\-",exp)
+  return(exp)
+}
+
+# transforms numeric values to uniform strings
+# round_long_decs automatically rounds numbers with over 5 decimal points to only three decimal points (only if decimal_points is not supplied)
+# outputs a list where x: vector of uniform strings
+#                     decimal_points: number of decimal points used for values
+col_to_string <- function(x,decimal_points=NULL, round_long_decs = TRUE){
+  na_idx <- which(is.na(x))
+  if(!is.null(decimal_points)){
+    x <- round(x,decimal_points)
+  }else{
+    x_decimal <- x[-na_idx]
+    x_decimal <- x_decimal[x_decimal!=0]
+    x_decimal <- as.character(x_decimal)
+    x_decimal <- strsplit(x = x_decimal, split = "\\.")
+    
+    if(length(x_decimal)==0){
+      decimal_points <- NA
+    }else{
+      x_decimal <- sapply(x_decimal,`[`,2)
+      x_decimal[is.na(x_decimal)] <- ""
+      decimal_points <- max(nchar(x_decimal), na.rm=TRUE)
+      if(!is.na(decimal_points)){
+        if(round_long_decs&decimal_points>3){
+          decimal_points <- 3
+        }
+        x <- round(x,decimal_points)
+      }
+    }
+    
+  }
+  neg_pos <- which(x<0) #find the negative values (needed later)
+  
+  if(!is.na(decimal_points)){
+    round_expr <- paste0("%.",decimal_points,"f") #Zahlen ohne Komma bekommen .00
+    x <- paste(sprintf(round_expr, x))
+  }
+  
+  max_str_size <- max(nchar(x)) #größte Zahl (. und nachkommastellen sind für alle gleich)
+  
+  x <- stringr::str_pad(x,max_str_size,side = "left","0") #zero padding links damit alle die gleiche anzahl an chars haben
+  
+  x[neg_pos] <- move_neg_to_front(x[neg_pos]) #move the "-" to the front
+  len <- nchar(x[1])
+  x[na_idx] <-NA
+  return(list(x=x,len=len))
+}
+
+
+#find next token - not used anymore
+# tokenpred_to_string <- function(probs,target_tok,sample_tok_probs=FALSE){
+#   
+#   if(sample_tok_probs){
+#     #next token sampled with probabities of probs
+#     token_idx <- sample(nrow(target_tok),1,prob = probs)
+#   }else{
+#     #next token is the token with highest probability
+#     token_idx <- which.max(probs)
+#   }
+#   token <- target_tok[token_idx,Word_ngram]
+#   token_id <- target_tok[token_idx,TOKEN]
+#   return(list(token_id=token_id,token=token))
+# }
+

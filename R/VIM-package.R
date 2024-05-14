@@ -598,7 +598,7 @@ NULL
 #'
 #' @name VIM-package
 #' @aliases VIM-package VIM
-#' @docType package
+"_PACKAGE"
 #' @author Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
 #'
 #' Maintainer: Matthias Templ <templ@@tuwien.ac.at>

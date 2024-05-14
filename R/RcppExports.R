@@ -13,3 +13,15 @@ gowerDind <- function(dataX, dataY, weights, ncolNUMFAC, levOrders, mixedConstan
     .Call('_VIM_gowerDind', PACKAGE = 'VIM', dataX, dataY, weights, ncolNUMFAC, levOrders, mixedConstants, nR, returnMinR)
 }
 
+tokenpred_to_string_cpp <- function(probs, target_tok, sample_tok_probs) {
+    .Call('_VIM_tokenpred_to_string_cpp', PACKAGE = 'VIM', probs, target_tok, sample_tok_probs)
+}
+
+parallel_tokenpred_to_string <- function(probs, target_tok, sample_tok_probs) {
+    .Call('_VIM_parallel_tokenpred_to_string', PACKAGE = 'VIM', probs, target_tok, sample_tok_probs)
+}
+
+training_seq_cpp <- function(len_target, train_tokenized) {
+    .Call('_VIM_training_seq_cpp', PACKAGE = 'VIM', len_target, train_tokenized)
+}
+

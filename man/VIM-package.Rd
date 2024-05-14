@@ -28,18 +28,27 @@ A graphical user interface available in the package VIMGUI allows an easy
 handling of the plot methods.  In addition, \code{VIM} can be used for data
 from essentially any field.
 }
-\references{
-M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-data using visualization tools.  \emph{Journal of Advances in Data Analysis
-and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/statistikat/VIM}
+}
 
-M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
-imputation using standard and robust methods.  \emph{Journal of
-Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
 }
 \author{
-Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
+\strong{Maintainer}: Matthias Templ \email{matthias.templ@gmail.com}
 
-Maintainer: Matthias Templ \href{mailto:templ@tuwien.ac.at}{templ@tuwien.ac.at}
+Authors:
+\itemize{
+  \item Alexander Kowarik \email{alexander.kowarik@statistik.gv.at} (\href{https://orcid.org/0000-0001-8598-4130}{ORCID})
+  \item Andreas Alfons
+  \item Gregor de Cillia \email{gregor.decillia@statistik.gv.at}
+  \item Wolfgang Rannetbauer
 }
-\keyword{package}
+
+Other contributors:
+\itemize{
+  \item Bernd Prantner [contributor]
+}
+
+}
