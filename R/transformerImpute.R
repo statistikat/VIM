@@ -64,7 +64,7 @@ transformerImpute <- function(data,target,cat_vars=NULL,
   }
   
   #check how many unique values each column consists of
-  #columns with low number of unique values are set to categoric vars
+  #columns with low number of unique values are set to categoric vars if cat_vars is not passed
   if(is.null(cat_vars)){
     num_unique <- apply(dat,2,function(x) length(unique(x)))
     cat_vars <- names(which(num_unique<num_unique_cat))
