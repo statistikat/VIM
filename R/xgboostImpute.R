@@ -40,7 +40,7 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
   rhs_na <- apply(subset(data, select = rhs2), 1, function(x) any(is.na(x)))
   #objective should be a vector of lenght equal to the lhs variables
   if(!is.null(objective)){
-    stopifnot(length(objective)!=length(lhs))
+    stopifnot(length(objective)==length(lhs))
   }
   for (lhsV in lhs) {
     form <- as.formula(paste(lhsV, "~", rhs,"-1"))
