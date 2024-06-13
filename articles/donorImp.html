@@ -153,8 +153,9 @@ variables.</p>
 <code class="sourceCode R"><span><span class="va">imp_hotdeck</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hotdeck.html">hotdeck</a></span><span class="op">(</span><span class="va">dataset</span>, variable <span class="op">=</span> <span class="st">"NonD"</span><span class="op">)</span>  <span class="co"># hotdeck imputation</span></span>
 <span><span class="va">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span><span class="op">(</span><span class="va">dataset</span>, variable <span class="op">=</span> <span class="st">"NonD"</span><span class="op">)</span> <span class="co"># kNN imputation</span></span>
 <span><span class="co">#&gt;      Dream    BodyWgt       Span      Dream    BodyWgt       Span </span></span>
-<span><span class="co">#&gt;  0.0000000 -5.2983174  0.6931472  6.6000000  8.8029735  4.6051702</span></span>
-<span><span class="va">imp_match</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/matchImpute.html">matchImpute</a></span><span class="op">(</span><span class="va">dataset</span>, variable <span class="op">=</span> <span class="st">"NonD"</span>, match_var <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>,<span class="st">"Span"</span><span class="op">)</span><span class="op">)</span> <span class="co"># match imputation</span></span>
+<span><span class="co">#&gt;  0.0000000 -5.2983174  0.6931472  6.6000000  8.8029735  4.6051702</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">imp_match</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/matchImpute.html">matchImpute</a></span><span class="op">(</span><span class="va">dataset</span>, variable <span class="op">=</span> <span class="st">"NonD"</span>, match_var <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BodyWgt"</span>,<span class="st">"Span"</span><span class="op">)</span><span class="op">)</span> <span class="co"># match imputation</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_knn</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_match</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-3-1.png" width="576" style="display: block; margin: auto;"></p>
@@ -171,17 +172,17 @@ imputed via <code><a href="../reference/hotdeck.html">hotdeck()</a></code>. The 
 <code><a href="../reference/hotdeck.html">hotdeck()</a></code>. <code><a href="../reference/kNN.html">kNN()</a></code> reveals the typically
 procedure of methods, which are based on similar data points weighted by
 the distance.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_hotdeck</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span>delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-4-1.png" width="576" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_knn</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span>delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-4-2.png" width="576" style="display: block; margin: auto;"></p>
 <p><code><a href="../reference/matchImpute.html">matchImpute()</a></code> works by sampling values from the suitable
 donors and also provides reasonable results.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_match</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NonD"</span>, <span class="st">"Span"</span>, <span class="st">"NonD_imp"</span><span class="op">)</span><span class="op">]</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span>delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-5-1.png" width="576" style="display: block; margin: auto;"></p>
@@ -194,7 +195,7 @@ donors and also provides reasonable results.</p>
 highlight the ability to impute different datatypes the
 <code>iris</code> dataset is used. Firstly, some values are randomly set
 to <code>NA</code>.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span></span>
 <span><span class="va">df</span> <span class="op">&lt;-</span> <span class="va">iris</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"S.Length"</span>,<span class="st">"S.Width"</span>,<span class="st">"P.Length"</span>,<span class="st">"P.Width"</span>,<span class="st">"Species"</span><span class="op">)</span></span>
@@ -208,13 +209,13 @@ to <code>NA</code>.</p>
 <span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-6-1.png" width="576" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">df</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; S.Length  S.Width P.Length  P.Width  Species </span></span>
 <span><span class="co">#&gt;       10        9        8       10       12</span></span></code></pre></div>
 <p>We can see that there are missings in all variables and some
 observations reveal missing values on several points.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_knn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/kNN.html">kNN</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  S.Width P.Length  P.Width  S.Width P.Length  P.Width </span></span>
 <span><span class="co">#&gt;      2.0      1.0      0.1      4.4      6.9      2.5 </span></span>
@@ -225,8 +226,9 @@ observations reveal missing values on several points.</p>
 <span><span class="co">#&gt; S.Length  S.Width P.Length S.Length  S.Width P.Length </span></span>
 <span><span class="co">#&gt;      4.3      2.0      1.0      7.9      4.4      6.9 </span></span>
 <span><span class="co">#&gt; S.Length  S.Width P.Length  P.Width S.Length  S.Width P.Length  P.Width </span></span>
-<span><span class="co">#&gt;      4.3      2.0      1.0      0.1      7.9      4.4      6.9      2.5</span></span>
-<span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_knn</span>, delimiter <span class="op">=</span> <span class="st">"imp"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt;      4.3      2.0      1.0      0.1      7.9      4.4      6.9      2.5</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_knn</span>, delimiter <span class="op">=</span> <span class="st">"imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="donorImp_files/figure-html/unnamed-chunk-7-1.png" width="576" style="display: block; margin: auto;"></p>
 <p>The plot indicates that all missing values have been imputed by
 <code><a href="../reference/kNN.html">kNN()</a></code>. The following table displays the rounded first five
