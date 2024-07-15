@@ -103,7 +103,7 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
                            decimal_points_target,
                            round_long_decs)
   dat_str <- dat_text$dat
-  lens <- dat_text$lens
+  lens <- dat_text$len
   
   test <- dat_str[na_idx,] #unvollständige Zeilen
   
@@ -194,7 +194,7 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
   
   # seperator token
   embs[,TOKEN_sep:=tok[Word_ngram==",",TOKEN]]
-  embs[column_help!=column, last_digit:=as.numeric(stringr::str_extract_all(column,"\\d+"))]
+  embs[column_help!=column, last_digit:=as.numeric(stringi::stri_extract_last(column,regex="\\d+"))]
   embs[column_help!=column, last_digit_flag:=last_digit==max(last_digit),by=list(column_help)]
   embs[column_help!=column & last_digit_flag==FALSE, TOKEN_sep:=NA] # only , after last digit
   embs[column_help==target, TOKEN_sep:=NA] # target needs no ,
@@ -242,6 +242,7 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
       if(length(tok_minus_pos)!=0){
         temp_tok_i <- temp_tok[-c(tok_minus_pos),]
       }
+      test_emb <- matrix(test_emb,ncol=input_shape)
     }
     
     probs <- model|>predict(test_emb)
@@ -271,7 +272,7 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
     
     pred_toks <- paste0(pred_toks,next_toks)
   }
-  as.numeric(pred_toks)
+
   
   if(target%in%cat_vars){
     dat[na_idx,(target):= as.factor(pred_toks)]
@@ -368,6 +369,19 @@ train_transformer <- function(data,target,cat_vars,
     embs[,c(cont_help) := tstrsplit(get(cont), split="")]
     embs[,c(cont):=NULL]
   }
+  
+  hier_ind <- which(lengths(hier_cat)>1)
+  
+  for(h in hier_ind){
+    hier_help <- paste0(cat_vars[h],"_",1:length(hier_cat[[h]]))
+    hier_len <- hier_cat[[h]]
+    csum <- c(0,cumsum(hier_len))
+    for(k in 1:length(hier_len)){
+      embs[,hier_help[k] := substr(get(cat_vars[h]),csum[k]+1,csum[k+1])]
+    }
+    
+    embs[,c(cat_vars[h]):=NULL]
+  }
   melt_vars <- copy(colnames(embs))
   embs[,help_position:=.I]
   embs <- melt(embs,id.vars="help_position", measure.vars=melt_vars, variable.name="column", value.name="Word_ngram")
@@ -379,7 +393,7 @@ train_transformer <- function(data,target,cat_vars,
   
   # seperator token
   embs[,TOKEN_sep:=tok[Word_ngram==",",TOKEN]]
-  embs[column_help!=column, last_digit:=as.numeric(stringr::str_extract_all(column,"\\d+"))]
+  embs[column_help!=column, last_digit:=as.numeric(stringi::stri_extract_last(column,regex="\\d+"))]
   embs[column_help!=column, last_digit_flag:=last_digit==max(last_digit),by=list(column_help)]
   embs[column_help!=column & last_digit_flag==FALSE, TOKEN_sep:=NA] # only , after last digit
   embs[column_help==target, TOKEN_sep:=NA] # target needs no ,
