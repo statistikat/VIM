@@ -99,7 +99,6 @@ gowerD <- function(data.x, data.y = data.x,
                         2,min0,na.rm=TRUE)
       rmax <- apply(rbind(data.x[,numerical,drop=FALSE],
                         data.y[,numerical,drop=FALSE]),2,max1,na.rm=TRUE)
-      print(c(rmin,rmax))
     }else if(methodStand == "iqr"){
       rmin <- apply(rbind(data.x[,numerical,drop=FALSE],data.y[,numerical,drop=FALSE]),2,quantile,na.rm=TRUE,
                     probs=.25)
