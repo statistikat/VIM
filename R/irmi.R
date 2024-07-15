@@ -231,7 +231,7 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
 #  if(is.null(count)) count <- rep(FALSE, P)
 #  if(!is.null(count) && length(count) != P) stop(paste("Length of mixed must either be NULL or", P))
 #if(any(countlog == mixedlog) && countlog == TRUE) stop(paste("you declined variable", which(countlog==mixedlog && countlog==TRUE), "to be both, count and mixed"))
-  if (length(Inter(list(count, mixed))) > 0)
+  if (length(Inter_list(list(count, mixed))) > 0)
     stop(paste("you declined a variable to be both, count and mixed"))
   #for(i in which(countlog)){
   #  class(x[,i]) <- c("count", "numeric")
@@ -590,8 +590,7 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
 
 ### utility functions
 anyNA <- function(X) any(is.na(X))
-Unit <- function(A) UseMethod("Unit")
-Unit.list <- function(A) {
+Unit_list <- function(A) {
   # Units a list of vectors into one vector
   a <- vector()
   for (i in 1:length(A)) {
@@ -599,10 +598,9 @@ Unit.list <- function(A) {
   }
   levels(as.factor(a))
 }
-Inter <- function(A) UseMethod("Inter")
-Inter.list <- function(A) {
+Inter_list <- function(A) {
   # common entries from a list of vectors
-  a <- Unit(A)
+  a <- Unit_list(A)
   TF <- rep(TRUE, length(a))
   for (i in 1:length(a)) {
     for (j in 1:length(A)) {
@@ -680,7 +678,7 @@ getM <- function(x_reg, ndata, type, index, mixed_tf, mixed_constant, factors,
 useLM <- function(x_reg, ndata, wy, mixed_tf, mixed_constant, factors, step,
                   robust, noise, noise.factor, force, robMethod, form) {
   n <- nrow(x_reg)
-  factors <- Inter(list(colnames(x_reg), factors))
+  factors <- Inter_list(list(colnames(x_reg), factors))
   ## for semicontinuous variables
   if (mixed_tf) {
     del_factors <- vector()
@@ -820,7 +818,7 @@ useLM <- function(x_reg, ndata, wy, mixed_tf, mixed_constant, factors, step,
 
 ## count data as response
 useGLMcount <- function(x_reg,  ndata, wy, factors, step, robust, form) {
-  factors <- Inter(list(colnames(x_reg), factors))
+  factors <- Inter_list(list(colnames(x_reg), factors))
   if (length(factors) > 0) {
     for (f in 1:length(factors)) {
       if (any(summary(x_reg[, factors[f]]) == 0)) {
@@ -853,7 +851,7 @@ useGLMcount <- function(x_reg,  ndata, wy, factors, step, robust, form) {
 
 # categorical response
 useMN <- function(x_reg, ndata, wy, factors, step, robust, form, multinom.method){
-  factors <- Inter(list(colnames(x_reg), factors))
+  factors <- Inter_list(list(colnames(x_reg), factors))
   if (length(factors) > 0) {
     for (f in 1:length(factors)) {
       if (any(summary(x_reg[, factors[f]]) == 0)) {
@@ -883,7 +881,7 @@ useMN <- function(x_reg, ndata, wy, factors, step, robust, form, multinom.method
 
 # ordered response
 useOrd <- function(x_reg, ndata,  wy, factors, step, robust, form){
-  factors <- Inter(list(colnames(x_reg), factors))
+  factors <- Inter_list(list(colnames(x_reg), factors))
   if (length(factors) > 0) {
     for (f in 1:length(factors)) {
       if (any(summary(x_reg[, factors[f]]) == 0)) {
@@ -907,7 +905,7 @@ useOrd <- function(x_reg, ndata,  wy, factors, step, robust, form){
 
 # binary response
 useB <- function(x_reg,  ndata, wy, factors, step, robust, form) {
-  factors <- Inter(list(colnames(x_reg), factors))
+  factors <- Inter_list(list(colnames(x_reg), factors))
   #TODO: Faktoren mit 2 Levels und nicht Levels 0 1, funktionieren NICHT!!!!
   if (length(factors) > 0){
     for (f in 1:length(factors)) {

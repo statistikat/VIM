@@ -7,7 +7,6 @@
 kNN(
   data,
   variable = colnames(data),
-  metric = NULL,
   k = 5,
   dist_var = colnames(data),
   weights = NULL,
@@ -35,8 +34,6 @@ kNN(
 \item{data}{data.frame or matrix}
 
 \item{variable}{variables where missing values should be imputed}
-
-\item{metric}{metric to be used for calculating the distances between}
 
 \item{k}{number of Nearest Neighbours used}
 

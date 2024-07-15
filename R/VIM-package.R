@@ -596,12 +596,6 @@ NULL
 #' handling of the plot methods.  In addition, `VIM` can be used for data
 #' from essentially any field.
 #'
-#' \tabular{ll}{ Package: \tab VIM\cr Version: \tab 3.0.3\cr Date: \tab
-#' 2013-01-09\cr Depends: \tab R (>= 2.10),e1071,car, colorspace, nnet,
-#' robustbase, tcltk, tkrplot, sp, vcd, Rcpp\cr Imports: \tab car, colorspace,
-#' grDevices, robustbase, stats, tcltk, sp, utils, vcd\cr License: \tab GPL (>=
-#' 2)\cr URL: \tab http://cran.r-project.org/package=VIM\cr }
-#'
 #' @name VIM-package
 #' @aliases VIM-package VIM
 #' @docType package

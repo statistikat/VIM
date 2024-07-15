@@ -42,7 +42,6 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,
 ## (k)NN-Imputation
 #data - data.frame of the data with missing
 #variable - vector of variablesnames to be imputed
-#metric - method for distance computation of in function daisy(cluster), otherwise automatical selection
 #k - number of neighbours used
 #dist_var - list/vector of the variablenames used for distance computation
 #weights - list/vector of the weights for the different dist variables
@@ -64,7 +63,6 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,
 #' @aliases kNN
 #' @param data data.frame or matrix
 #' @param variable variables where missing values should be imputed
-#' @param metric metric to be used for calculating the distances between
 #' @param k number of Nearest Neighbours used
 #' @param dist_var names or variables to be used for distance calculation
 #' @param weights weights for the variables for distance calculation.
@@ -115,7 +113,7 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,
 #' kNN(sleep, numFun = weightedMean, weightDist=TRUE)
 #'
 #' @export
-kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnames(data),weights=NULL,
+kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weights=NULL,
                 numFun = median, catFun=maxCat,
                 makeNA=NULL,NAcond=NULL, impNA=TRUE, donorcond=NULL,mixed=vector(),mixed.constant=NULL,trace=FALSE,
                 imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE,
@@ -224,12 +222,7 @@ kNN <- function(data, variable=colnames(data), metric=NULL, k=5, dist_var=colnam
 
   ###Make an index for selecting donors
   INDEX <- 1:ndat
-  ##START DISTANCE IMPUTATION
-  ## if(is.null(metric))
-  ##   metric <- c("euclidean", "manhattan", "gower")
-  ## else if(!metric%in%c("euclidean", "manhattan", "gower"))
-  ##   stop("metric is unknown")
-
+  
   # add features using random forest (ranger)
   if(addRF){
 

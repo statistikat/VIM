@@ -1,5 +1,7 @@
 # VIM 6.x.x
  - fix infinite loop in matchImpute in case all observations of a variable are missing
+ - remove parameter metric from kNN because it was not used
+ - add function xgboostImpute for using a simple xgboostModel to impute
 
 # VIM 6.2.3
 - default robust regression method for irmi for numeric variables changes from rlm to lmrob.
