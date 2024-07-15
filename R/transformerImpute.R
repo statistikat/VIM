@@ -638,9 +638,10 @@ generate_tok <- function(dat_str,lens,cat_vars=NULL, hier_cat = NULL){
             start_index <- end_index + 1
           }
           unX <- lapply(unX,unique)
+          un <- unique(unlist(unX))
         }
       }
-      un <- unique(unlist(unX))
+      
       un <- c(un,NA)
     }else{
       valid_strings <- dat_str[,get(names(dat_str)[i])][dat_str[,!is.na(get(names(dat_str)[i]))]]
