@@ -1,7 +1,9 @@
 ---
 title: "Supportive Graphic Methods"
-author: Wolfgang Rannetbauer
-output: rmarkdown::html_vignette
+author: Wolfgang Rannetbauer, Birgit Karlhuber
+output: 
+  rmarkdown::html_vignette:
+    toc: TRUE
 vignette: >
   %\VignetteIndexEntry{Supportive Graphic Methods}
   %\VignetteEngine{knitr::rmarkdown}
@@ -164,3 +166,195 @@ marginmatrix(x_imp, delimiter = "_imp")
 ```
 
 
+## Function pbox()
+
+The function `pbox()`, can be used to create parallel boxplots of one variable of interest with information about missing/ imputed values in other variables. 
+
+```{r, results=FALSE, fig.width = 7,  fig.height=6}
+dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")] # dataset with missings
+
+# for missing values
+dataset$BodyWgt <- log(dataset$BodyWgt)
+dataset$Span <- log(dataset$Span)
+
+pbox(dataset)
+
+```
+
+```{r, results=FALSE, fig.width = 7,  fig.height=6}
+# for imputed values
+pbox(kNN(dataset), delimiter = "_imp")
+
+```
+
+This plot consists of several boxplots. The first, white plot, is a standard boxplot of the variable of interest, in this case of the variable Dream. Second, boxplots grouped by observed and missing/imputed values according to `selection` are produced for the other variables, NonD and Span. 
+
+Additionally, the frequencies of the missing/imputed values can be represented by numbers. If so, the first line corresponds to the observed values of the variable of interest and their distribution in the different groups, the second line to the missing/imputed values.
+
+If `interactive=TRUE`, clicking in the left margin of the plot results in switching to the previous variable and clicking in the right margin results in switching to the next variable.  Clicking anywhere else on the graphics device quits the interactive session.
+
+
+## Function parcoordMiss
+
+The function `parcoordMiss()`, can be used to create a parallel coordinate plot with adjustments for missing/imputed values. 
+
+```{r, results=FALSE, fig.height=4}
+dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")] # dataset with missings
+
+## for missing values
+parcoordMiss(dataset, plotvars=2:4, interactive = FALSE)
+legend("top", col = c("skyblue", "red"), lwd = c(1,1),
+       legend = c("observed in Dream", "missing in Dream"))
+
+```
+
+```{r, results=FALSE, fig.height=4}
+## for imputed values
+parcoordMiss(kNN(dataset), plotvars=2:4, delimiter = "_imp" , 
+             interactive = FALSE)
+legend("top", col = c("skyblue", "orange"), lwd = c(1,1),
+       legend = c("observed in Dream", "imputed in Dream"))
+
+```
+
+Missing values in the plotted variables may be represented by a point above the corresponding coordinate axis to prevent disconnected lines. In addition, observations with missing/imputed values in selected variables may be
+highlighted.
+
+## Function spineMiss
+
+The function `spineMiss()`, can be used to create a spineplot or spinogramm and highlights missing/imputed values in other variables by splitting each cell into two parts. Additional information about missing/imputed values in the variable of interest is shown on the right hand side. 
+
+```{r, fig.height=4}
+data(sleep, package = "VIM") # dataset with missings
+table(sleep$Exp) # categorical variable of interest
+
+## for missing values
+spineMiss(sleep[, c("Exp", "Sleep")])
+```
+
+```{r, results=FALSE , fig.height=4}
+## for imputed values
+spineMiss(kNN(sleep[, c("Exp", "Sleep")]), delimiter = "_imp")
+```
+
+
+The variable of interest (`Exp`) is a categorical variable, because of this the function creates a spineplot. Thus the proportion of highlighted observations in each category/class is displayed on the vertical axis. This fact allows to compare the proportions of missing/imputed values among the different categories/classes.
+
+
+## Function mosaicMiss
+
+The function `mosaicMiss()`, can be used to create a mosaic plot with information about missing/imputed values.
+
+Mosaic plots are graphical representations of multi-way contingency tables. The frequencies of the different cells are visualized by area-proportional rectangles (tiles). Additional tiles are be used to display the frequencies of missing/imputed values. Furthermore, missing/imputed values in a certain variable or combination of variables can be highlighted in order to explore their structure.
+
+```{r, results=FALSE , fig.height=5}
+## for missing values
+# using the three categorical variables Pred, Exp and Danger
+mosaicMiss(sleep, highlight = 4, plotvars = 8:10, miss.labels = FALSE) 
+```
+
+```{r, results=FALSE , fig.height=5}
+## for imputed values
+mosaicMiss(kNN(sleep), highlight = 4, plotvars = 8:10, delimiter = "_imp",
+           miss.labels = FALSE)
+```
+
+## Function scattmatrixMiss
+
+The function `scattmatrixMiss()`, can be used to create scatterplot matrix in which observations with missing/imputed values in certain variables are highlighted.
+
+```{r, message=FALSE, warning=FALSE, fig.height=5}
+## for missing values
+x <- sleep[, 1:5]
+x[,c(1,2,4)] <- log10(x[,c(1,2,4)])
+scattmatrixMiss(x, highlight = "Dream")
+```
+
+
+```{r, message=FALSE,warning=FALSE, fig.height=5}
+## for imputed values
+x_imp <- kNN(sleep[, 1:5])
+x_imp[,c(1,2,4)] <- log10(x_imp[,c(1,2,4)])
+scattmatrixMiss(x_imp, delimiter = "_imp", highlight = "Dream")
+```
+
+## Function scattJitt
+
+The function `scattJitt()`, can be used to create a bivariate jitter plot. The amount of observed and missing/imputed values is visualized by jittered points. Thereby the plot region is divided into up to four regions according to the existence of missing/imputed values in one or both variables. In addition, the amount of observed and missing/imputed values can be represented by a number.
+
+```{r, message=FALSE, fig.height=4}
+## for missing values
+scattJitt(sleep[, c("Dream", "Span")])
+```
+
+```{r, results=FALSE, fig.height=4}
+## for imputed values
+scattJitt(kNN(sleep[, c("Dream", "Span")]), delimiter = "_imp")
+```
+
+
+## Additional functions
+
+These functions are not intended for direct use, but are used by the other plotting functions.
+
+### Function pairsVIM
+
+The function `scattJitt()`, can be used to create a scatterplot matrix. This function is also used by `scattmatrixMiss()`. 
+
+```{r, results=FALSE, fig.height=5, warning=FALSE}
+x <- sleep[, -(8:10)]
+x[,c(1,2,4,6,7)] <- log10(x[,c(1,2,4,6,7)])
+pairsVIM(x)
+```
+
+### Function colSequence
+
+The function `colSequence()`, can be used to compute color sequences by linear interpolation based on a continuous color scheme between certain start and end colors. Color sequences may thereby be computed in the HCL or RGB color space.
+
+```{r}
+p <- c(0, 0.3, 0.55, 0.8, 1)
+
+## HCL colors
+colSequence(p, c(0, 0, 100), c(0, 100, 50))
+colSequence(p, polarLUV(L=90, C=30, H=90), c(0, 100, 50))
+```
+```{r}
+## RGB colors
+colSequence(p, c(1, 1, 1), c(1, 0, 0), space="rgb")
+colSequence(p, RGB(1, 1, 0), "red")
+```
+
+### Function rugNA
+
+The function `rugNA()`, can be used to add a rug representation of missing/imputed values in only one of the variables to scatterplots. 
+
+If side is 1 or 3, the rug representation consists of values available in x but missing/imputed in y. Else if side is 2 or 4, it consists of values available in y but missing/imputed in x.
+
+```{r, fig.height=4}
+## for missing values
+x <- sleep[, "Dream"]
+y <- sleep[, "Span"]
+plot(x, y)
+rugNA(x, y, side = 1)
+rugNA(x, y, side = 2)
+```
+
+```{r, results=FALSE, fig.height=4}
+## for imputed values
+x_imp <- kNN(sleep[, c("Dream","Span")])
+x <- x_imp[, "Dream"]
+y <- x_imp[, "Span"]
+miss <- x_imp[, c("Dream_imp","Span_imp")]
+plot(x, y)
+rugNA(x, y, side = 1, col = "orange", miss = miss)
+rugNA(x, y, side = 2, col = "orange", miss = miss)
+
+```
+
+### Function alphablend
+
+The function `alphablend()`, can be used to convert colors to semitransparent colors. 
+
+```{r}
+alphablend("red", 0.6)
+```
