@@ -3,8 +3,10 @@ pkgdown: 2.1.0
 pkgdown_sha: ~
 articles:
   donorImp: donorImp.html
+  impPCA: impPCA.html
   irmi: irmi.html
   modelImp: modelImp.html
   VIM: VIM.html
   VisualImp: VisualImp.html
-last_built: 2024-07-17T09:20Z
+  xgboostImpute: xgboostImpute.html
+last_built: 2024-07-17T09:30Z
