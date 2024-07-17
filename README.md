@@ -3,7 +3,6 @@
 [![R-CMD-check](https://github.com/statistikat/VIM/workflows/R-CMD-check/badge.svg)](https://github.com/statistikat/VIM/actions)
 [![Codecov test coverage](https://codecov.io/gh/statistikat/VIM/branch/master/graph/badge.svg)](https://app.codecov.io/gh/statistikat/VIM?branch=master)
 [![CRAN status](https://www.r-pkg.org/badges/version/VIM)](https://CRAN.R-project.org/package=VIM)
-[![Downloads](http://cranlogs.r-pkg.org/badges/VIM)](https://CRAN.R-project.org/package=VIM)
 [![Mentioned in Awesome Official Statistics ](https://awesome.re/mentioned-badge.svg)](http://www.awesomeofficialstatistics.org)
 
 This package introduces new tools for the visualization of missing and/or imputed values, which can be used for exploring the data and the structure of the missing and/or imputed values. Depending on this structure of the missing values, the corresponding methods may help to identify the mechanism generating the missings and allows to explore the data including missing values. In addition, the quality of imputation can be visually explored using various univariate, bivariate, multiple and multivariate plot methods.
