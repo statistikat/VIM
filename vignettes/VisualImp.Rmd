@@ -1,6 +1,6 @@
 ---
 title: "Supportive Graphic Methods"
-author: Wolfgang Rannetbauer
+author: Wolfgang Rannetbauer, Birgit Karlhuber
 output: 
   rmarkdown::html_vignette:
     toc: TRUE
