@@ -15,8 +15,8 @@
 #' @param eps threshold for convergency
 #' @param model_uncertainty 
 #' @param imputation_uncertainty 
-#' @param method methods of imputation which can be used, possible options are "regression","ranger","xgboost","GPT"
-#' @param robust `TRUE`/`FALSE` if robust regression should be used, just for method 'regression'
+#' @param method methods of imputation which can be used, possible options are
+#' "robust","regression","ranger","xgboost","GPT"
 #' @param formula in a named list a specific model formula for the regression
 #' model can be specified
 #' @param imp_var TRUE/FALSE if a TRUE/FALSE variables for each imputed
@@ -30,7 +30,9 @@
 #' @export
 #'
 #' @examples
-#' vimpute(sleep)
+#' x <- vimpute(sleep, method="ranger", sequential = FALSE, imp_var=TRUE)
+#' y <- vimpute(sleep, method="ranger", sequential = TRUE, imp_var=TRUE)
+#' z <- vimpute(sleep, method="ranger", sequential = TRUE, imp_var=TRUE, imputation_uncertainty ="PMM_1")
 #' vimpute (sleep, formula = list(Span=~BodyWgt+BraunWgt:Danger))
 
 
@@ -50,15 +52,14 @@ vimpute <- function(data,
                     # how to best deal with it that each method has own parameters?
                     nboot = 25,
                     imputation_uncertainty = "none", # "PMM_k" #(choices: "midastouch", "normal", "residual", "PMM_k",
-                    method = c("regression","ranger","xgboost"), # ,"GPT" 
-                    robust = FALSE,
+                    method = "robust",#c("robust","regression","ranger","xgboost"), # ,"GPT" 
                     formula = NULL, # possibility to override the individual models. A named list (name of variable -> formula used, else default).
                     imp_var=FALSE,
                     imp_suffix="imp", 
-                    verbose = FALSE){
+                    verbose = FALSE,
+                    ...){
   
   ## parameter checks
-  stopifnot(is.logical(robust))
   stopifnot(is.logical(imp_var))
   stopifnot(is.logical(verbose))
   stopifnot(is.logical(sequential))
@@ -95,7 +96,7 @@ vimpute <- function(data,
     stop(imputation_uncertainty, " is not a valid input for the parameter 'imputation_uncertainty'.")
   }
   
-  if(!method %in% c("regression","ranger","xgboost")){ # ,"GPT"
+  if(!method %in% c("robust","regression","ranger","xgboost")){ # ,"GPT"
     stop(method, " is not a valid input for the parameter 'method'.")
   }
   
@@ -119,7 +120,7 @@ vimpute <- function(data,
   ## method - general code
 
   # impute values for all columns with missing values
-  current_output <- VIM::initialise(x=data, method="median")
+  current_output <- VIM:::initialise(x=data, method="median")
   lhs <- variable
   
   ##### sequential #####
@@ -163,9 +164,10 @@ vimpute <- function(data,
           # predict missings
           pred[b,] <- switch(
             method,
-            regression = VIM::regressionImp(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, robust = robust), # , ...
-            ranger = VIM::rangerImpute(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, verbose = verbose), # , ...
-            xgboost = VIM::xgboostImpute(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, verbose = verbose),
+            regression = regressionImp(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, robust = FALSE, ...), 
+            robust = regressionImp(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, robust = TRUE, ...), 
+            ranger = rangerImpute(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, verbose = verbose, ...), 
+            xgboost = xgboostImpute(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, verbose = verbose, ...),
             # GPT = ,
           )[id_miss_comb,lhs[i]]
         }
@@ -178,9 +180,10 @@ vimpute <- function(data,
         # predict missings
         pred_output <- switch(
           method,
-          regression = VIM::regressionImp(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, robust = robust), # , ...
-          ranger = VIM::rangerImpute(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, verbose = verbose), # , ...
-          xgboost = VIM::xgboostImpute(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, verbose = verbose),
+          regression = regressionImp(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, robust = FALSE, ...), 
+          robust = regressionImp(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, robust = TRUE, ...), 
+          ranger = rangerImpute(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, verbose = verbose, ...), 
+          xgboost = xgboostImpute(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, verbose = verbose, ...),
           # GPT = ,
         )
         
@@ -284,9 +287,10 @@ vimpute <- function(data,
       
       dat_pmm <- switch(
         method,
-        regression = VIM::regressionImp(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, robust = robust), # , ...
-        ranger = VIM::rangerImpute(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, verbose = verbose), # , ...
-        xgboost = VIM::xgboostImpute(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, verbose = verbose),
+        regression = regressionImp(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, robust = FALSE, ...),
+        robust = regressionImp(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, robust = TRUE, ...),
+        ranger = rangerImpute(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, verbose = verbose, ...),
+        xgboost = xgboostImpute(formula = form, data = data_comb, imp_var = TRUE, imp_suffix = imp_suffix, verbose = verbose, ...),
         # GPT = ,
       )
       
@@ -297,7 +301,7 @@ vimpute <- function(data,
       output$Predict <- part[,variable[i]]
       
       # apply the kNN function
-      knnP <- VIM::kNN(output,k=k,dist_var="Predict", variable=variable[i], imp_suffix = imp_suffix)
+      knnP <- kNN(output,k=k,dist_var="Predict", variable=variable[i], imp_suffix = imp_suffix)
       output$Predict <- NULL
       
       # add estimates to the current-output-dataset and output-dataset
@@ -314,105 +318,107 @@ vimpute <- function(data,
 }
 
 
+if(0){
+  # for testing
+  
+  data=VIM::sleep
+  variable = c("Dream", "NonD", "Sleep") # colnames(data)[apply(data,2,function(x) any (is.na(x)))]
+  sequential = FALSE
+  nseq = 10
+  eps = 5
+  model_uncertainty = "bootstrap"
+  imputation_uncertainty = "none"
+  method = "regression"
+  robust = TRUE
+  formula = list(NonD=~BodyWgt+BrainWgt) #  NULL
+  imp_var=FALSE
+  imp_suffix="imp"
+  verbose = FALSE
+  nboot = 25
+  
+  
+  test <- vimpute(data=VIM::sleep, method="regression", imp_var=TRUE, sequential = FALSE)
+  test1 <- vimpute(data=VIM::sleep, formula = list(NonD=~BodyWgt+BrainWgt),
+                   method="regression", robust=TRUE, imp_var=TRUE, sequential = FALSE) ## error
+  test2 <- vimpute(data=VIM::sleep, formula = list(Dream=~BodyWgt+BrainWgt), imputation_uncertainty = "PMM_3",
+                   method="regression", imp_var=TRUE, sequential = FALSE)
+  test3 <- vimpute(data=VIM::sleep, imputation_uncertainty = "PMM_3", method="ranger", imp_var=TRUE, sequential = FALSE)
+  test4 <- vimpute(data=VIM::sleep, imputation_uncertainty = "PMM_3", method="regression", imp_var=FALSE, sequential = FALSE)
+  test5 <- vimpute(data=VIM::sleep, imputation_uncertainty = "PMM_3", method="ranger", imp_var=TRUE, sequential = FALSE)
+  test6 <- vimpute(data=VIM::sleep, formula = list(Dream=~BodyWgt+BrainWgt), imputation_uncertainty = "none", 
+                   method="regression", imp_var=TRUE, nseq=10, sequential = TRUE)
+  test7 <- vimpute(data=VIM::sleep, formula = list(NonD=~BodyWgt+BrainWgt), imputation_uncertainty = "PMM_3", 
+                   method="regression", imp_var=TRUE, nseq=10, sequential = TRUE, imp_suffix="xxx")
+  test13 <- vimpute(data=VIM::sleep, formula = list(Dream=~Span+Gest), imputation_uncertainty = "none", 
+                    method="regression", imp_var=FALSE, nseq=10, sequential = TRUE, imp_suffix="imp")
+  test14 <- vimpute(data=VIM::sleep, variable = c("Dream", "NonD", "Sleep"), sequential = FALSE, model_uncertainty = "none",
+                    imputation_uncertainty = "none", method="regression", formula = list(Dream=~BodyWgt+BrainWgt, NonD=~BodyWgt+BrainWgt),
+                    imp_var=TRUE)
+  
+  # compare bootstrap vs. no bootstrap (all other option stay the same)
+  testa <- vimpute(data=VIM::sleep, method="regression",formula = list(Dream=~BodyWgt+BrainWgt), variable = "Dream",
+                   imp_var=TRUE, sequential = FALSE, model_uncertainty = "none")
+  testb <- vimpute(data=VIM::sleep, method="regression",formula = list(Dream=~BodyWgt+BrainWgt), variable = "Dream",
+                   imp_var=TRUE, sequential = FALSE, model_uncertainty = "bootstrap", nboot = 10)
+  
+  cbind(testa$Dream, testb$Dream)[is.na(VIM::sleep$Dream),]
+  
+  
+  ###########
+  
+  df <- iris
+  colnames(df) <- c("S.Length","S.Width","P.Length","P.Width","Species")
+  # randomly produce some missing values in the data
+  set.seed(1)
+  nbr_missing <- 50
+  y <- data.frame(row = sample(nrow(iris), size = nbr_missing, replace = TRUE),
+                  col = sample(ncol(iris), size = nbr_missing, replace = TRUE))
+  y<-y[!duplicated(y), ]
+  df[as.matrix(y)] <- NA
+  
+  ##
+  
+  data=df
+  variable = colnames(df)[apply(df,2,function(x) any (is.na(x)))]
+  sequential = FALSE
+  nseq = 100
+  eps = 5
+  model_uncertainty = "bootstrap"
+  imputation_uncertainty = "none"
+  method = "regression"
+  robust = FALSE
+  formula =  NULL # list(Dream=~Span+Gest) # NULL 
+  imp_var=FALSE
+  imp_suffix="imp"
+  verbose = FALSE
+  nboot = 25
+  
+  testa <- vimpute(data=df, method="regression",formula = list(S.Length=~S.Width+P.Length), variable = "S.Length",
+                   imp_var=TRUE, sequential = FALSE, model_uncertainty = "none")
+  testb <- vimpute(data=df, method="regression",formula = list(S.Length=~S.Width+P.Length), variable = "S.Length",
+                   imp_var=TRUE, sequential = FALSE, model_uncertainty = "bootstrap", nboot = 10)
+  
+  cbind(round(testa$S.Length,1) - iris$Sepal.Length, round(testb$S.Length,1)- iris$Sepal.Length)
+  
+  
+  test8 <- vimpute(data=df, formula = list(S.Length=~S.Width+P.Length), variable = c("S.Length"),
+                   method="regression", imp_var=FALSE, sequential = FALSE, imp_suffix="imp")
+  test9 <- vimpute(data=df, formula = list(S.Length=~S.Width+P.Length), variable = c("S.Length"), imputation_uncertainty = "PMM_3", 
+                   method="regression", imp_var=FALSE, sequential = FALSE, imp_suffix="imp")
+  test10 <- vimpute(data=df, formula = list(S.Length=~S.Width+P.Length), variable = c("S.Length"),
+                    method="regression", imp_var=FALSE, nseq=10, sequential = TRUE, imp_suffix="imp")
+  test11 <- vimpute(data=df, formula = list(S.Length=~S.Width+P.Length), variable = c("S.Length"), imputation_uncertainty = "PMM_3", 
+                    method="regression", imp_var=FALSE, nseq=10, sequential = TRUE, imp_suffix="imp")
+  
+  cbind(iris$Sepal.Length - round(test8$S.Length,1), 
+        iris$Sepal.Length - test9$S.Length, 
+        iris$Sepal.Length - round(test10$S.Length,1),
+        iris$Sepal.Length - round(test11$S.Length,1))
+  
+  test12 <- vimpute(data=df, imputation_uncertainty = "none", 
+                    method="regression", imp_var=FALSE, sequential = FALSE, imp_suffix="imp")
+  
+  ??adf.test  
+}
 
-# for testing
-
-data=VIM::sleep
-variable = c("Dream", "NonD", "Sleep") # colnames(data)[apply(data,2,function(x) any (is.na(x)))]
-sequential = FALSE
-nseq = 10
-eps = 5
-model_uncertainty = "bootstrap"
-imputation_uncertainty = "none"
-method = "regression"
-robust = TRUE
-formula = list(NonD=~BodyWgt+BrainWgt) #  NULL
-imp_var=FALSE
-imp_suffix="imp"
-verbose = FALSE
-nboot = 25
-
-
-test <- vimpute(data=VIM::sleep, method="regression", imp_var=TRUE, sequential = FALSE)
-test1 <- vimpute(data=VIM::sleep, formula = list(NonD=~BodyWgt+BrainWgt),
-                 method="regression", robust=TRUE, imp_var=TRUE, sequential = FALSE) ## error
-test2 <- vimpute(data=VIM::sleep, formula = list(Dream=~BodyWgt+BrainWgt), imputation_uncertainty = "PMM_3",
-                 method="regression", imp_var=TRUE, sequential = FALSE)
-test3 <- vimpute(data=VIM::sleep, imputation_uncertainty = "PMM_3", method="ranger", imp_var=TRUE, sequential = FALSE)
-test4 <- vimpute(data=VIM::sleep, imputation_uncertainty = "PMM_3", method="regression", imp_var=FALSE, sequential = FALSE)
-test5 <- vimpute(data=VIM::sleep, imputation_uncertainty = "PMM_3", method="ranger", imp_var=TRUE, sequential = FALSE)
-test6 <- vimpute(data=VIM::sleep, formula = list(Dream=~BodyWgt+BrainWgt), imputation_uncertainty = "none", 
-                 method="regression", imp_var=TRUE, nseq=10, sequential = TRUE)
-test7 <- vimpute(data=VIM::sleep, formula = list(NonD=~BodyWgt+BrainWgt), imputation_uncertainty = "PMM_3", 
-                 method="regression", imp_var=TRUE, nseq=10, sequential = TRUE, imp_suffix="xxx")
-test13 <- vimpute(data=VIM::sleep, formula = list(Dream=~Span+Gest), imputation_uncertainty = "none", 
-                  method="regression", imp_var=FALSE, nseq=10, sequential = TRUE, imp_suffix="imp")
-test14 <- vimpute(data=VIM::sleep, variable = c("Dream", "NonD", "Sleep"), sequential = FALSE, model_uncertainty = "none",
-                  imputation_uncertainty = "none", method="regression", formula = list(Dream=~BodyWgt+BrainWgt, NonD=~BodyWgt+BrainWgt),
-                  imp_var=TRUE)
-
-# compare bootstrap vs. no bootstrap (all other option stay the same)
-testa <- vimpute(data=VIM::sleep, method="regression",formula = list(Dream=~BodyWgt+BrainWgt), variable = "Dream",
-                 imp_var=TRUE, sequential = FALSE, model_uncertainty = "none")
-testb <- vimpute(data=VIM::sleep, method="regression",formula = list(Dream=~BodyWgt+BrainWgt), variable = "Dream",
-                 imp_var=TRUE, sequential = FALSE, model_uncertainty = "bootstrap", nboot = 10)
-
-cbind(testa$Dream, testb$Dream)[is.na(VIM::sleep$Dream),]
-
-
-###########
-
-df <- iris
-colnames(df) <- c("S.Length","S.Width","P.Length","P.Width","Species")
-# randomly produce some missing values in the data
-set.seed(1)
-nbr_missing <- 50
-y <- data.frame(row = sample(nrow(iris), size = nbr_missing, replace = TRUE),
-                col = sample(ncol(iris), size = nbr_missing, replace = TRUE))
-y<-y[!duplicated(y), ]
-df[as.matrix(y)] <- NA
-
-##
-
-data=df
-variable = colnames(df)[apply(df,2,function(x) any (is.na(x)))]
-sequential = FALSE
-nseq = 100
-eps = 5
-model_uncertainty = "bootstrap"
-imputation_uncertainty = "none"
-method = "regression"
-robust = FALSE
-formula =  NULL # list(Dream=~Span+Gest) # NULL 
-imp_var=FALSE
-imp_suffix="imp"
-verbose = FALSE
-nboot = 25
-
-testa <- vimpute(data=df, method="regression",formula = list(S.Length=~S.Width+P.Length), variable = "S.Length",
-                 imp_var=TRUE, sequential = FALSE, model_uncertainty = "none")
-testb <- vimpute(data=df, method="regression",formula = list(S.Length=~S.Width+P.Length), variable = "S.Length",
-                 imp_var=TRUE, sequential = FALSE, model_uncertainty = "bootstrap", nboot = 10)
-
-cbind(round(testa$S.Length,1) - iris$Sepal.Length, round(testb$S.Length,1)- iris$Sepal.Length)
-
-
-test8 <- vimpute(data=df, formula = list(S.Length=~S.Width+P.Length), variable = c("S.Length"),
-                 method="regression", imp_var=FALSE, sequential = FALSE, imp_suffix="imp")
-test9 <- vimpute(data=df, formula = list(S.Length=~S.Width+P.Length), variable = c("S.Length"), imputation_uncertainty = "PMM_3", 
-                 method="regression", imp_var=FALSE, sequential = FALSE, imp_suffix="imp")
-test10 <- vimpute(data=df, formula = list(S.Length=~S.Width+P.Length), variable = c("S.Length"),
-                 method="regression", imp_var=FALSE, nseq=10, sequential = TRUE, imp_suffix="imp")
-test11 <- vimpute(data=df, formula = list(S.Length=~S.Width+P.Length), variable = c("S.Length"), imputation_uncertainty = "PMM_3", 
-                  method="regression", imp_var=FALSE, nseq=10, sequential = TRUE, imp_suffix="imp")
-
-cbind(iris$Sepal.Length - round(test8$S.Length,1), 
-      iris$Sepal.Length - test9$S.Length, 
-      iris$Sepal.Length - round(test10$S.Length,1),
-      iris$Sepal.Length - round(test11$S.Length,1))
-
-test12 <- vimpute(data=df, imputation_uncertainty = "none", 
-                  method="regression", imp_var=FALSE, sequential = FALSE, imp_suffix="imp")
-
-??adf.test
 
