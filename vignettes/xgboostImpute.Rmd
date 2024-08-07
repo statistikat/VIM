@@ -1,5 +1,5 @@
 ---
-title: "Imputation Method based on Random Forest Model"
+title: "Imputation Method based on xgboost"
 author: "Birgit Karlhuber"
 date: "2024-07-08"
 output: rmarkdown::html_vignette
