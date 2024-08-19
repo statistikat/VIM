@@ -118,10 +118,16 @@ vimpute <- function(data,
   
   
   ## method - general code
-
-  # impute values for all columns with missing values
-  current_output <- VIM:::initialise(x=data, method="median")
+  
+  current_output <- data
   lhs <- variable
+  
+  if(sequential==TRUE){
+    # impute values for all columns in "variable"
+    index_var <- grep(variable, colnames(data))
+    current_output[,index_var] <- VIM:::initialise(x=data.frame(data[,index_var]), method="median")
+  }
+  
   
   ##### sequential #####
   d <- 99999
@@ -402,7 +408,7 @@ if(0){
   
   
   test8 <- vimpute(data=df, formula = list(S.Length=~S.Width+P.Length), variable = c("S.Length"),
-                   method="regression", imp_var=FALSE, sequential = FALSE, imp_suffix="imp")
+                   method="regression", imp_var=FALSE, sequential = TRUE, imp_suffix="imp")
   test9 <- vimpute(data=df, formula = list(S.Length=~S.Width+P.Length), variable = c("S.Length"), imputation_uncertainty = "PMM_3", 
                    method="regression", imp_var=FALSE, sequential = FALSE, imp_suffix="imp")
   test10 <- vimpute(data=df, formula = list(S.Length=~S.Width+P.Length), variable = c("S.Length"),
