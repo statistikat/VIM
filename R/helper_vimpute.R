@@ -1,0 +1,626 @@
+library(mlr3) 
+library(mlr3learners) 
+library(mlr3pipelines)
+library(data.table) #fertig
+library(dplyr)
+
+# methoden
+library(glmnet)
+library(mgcv) 
+library(xgboost) 
+library(ranger) 
+
+# transformation
+library(MASS) 
+
+# hyperparameter
+library(mlr3tuning) 
+library(paradox) 
+
+library(VIM) #fertig
+library(Metrics)
+library(openxlsx)
+
+#
+#
+### +++++++++++++++++++++++++++++++++ NEUE LEARNER +++++++++++++++++++++++++++++++++ ###
+library(R6)
+library(estimatr)
+library(robustbase)
+library(nnet) #fertig
+
+register_robust_learners <- function() {
+  
+  # Robust Regression Learner
+  LearnerRegrRobustLM = R6::R6Class(
+    classname = "LearnerRegrRobustLM",
+    inherit = LearnerRegr,
+    public = list(
+      initialize = function() {
+        
+        # definition hyperparameter
+        param_set = ps(
+          method = p_fct(c("M", "MM"), default = "MM"),
+          psi = p_fct(c("bisquare", "lqq", "optimal"), default = "bisquare"),
+          tuning.chi = p_dbl(lower = 0, upper = Inf, default = 1.547),
+          tuning.psi = p_dbl(lower = 0, upper = Inf, default = 1.547),
+          setting = p_fct(c("KS2014", "KS2011"), default = "KS2014"),
+          max.it = p_int(lower = 1, upper = Inf, default = 50),
+          k.max = p_int(lower = 1, upper = Inf, default = 200),
+          nResample = p_int(lower = 1, upper = Inf, default = 1000),
+          subsampling = p_fct(c("simple", "nonsingular"), default = "nonsingular"),
+          ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4)  
+        )
+        
+        super$initialize(
+          id = "regr.lm_rob", 
+          feature_types = c("numeric", "integer", "factor", "ordered"),
+          predict_types = c("response"),
+          packages = c("robustbase", "stats"),
+          man = "robustbase::lmrob",
+          param_set = param_set
+        )
+        
+        self$param_set$values = list(
+          method = "MM",
+          psi = "bisquare",
+          tuning.chi = 1.547,
+          tuning.psi = 1.547,
+          setting = "KS2014",
+          max.it = 50,
+          k.max = 200,
+          nResample = 1000,
+          subsampling = "nonsingular",
+          ridge_lambda = 1e-4
+        )
+      }
+    ),
+    
+    private = list(
+      .train = function(task) {
+        
+        # train data
+        pv = self$param_set$get_values() 
+        data = as.data.frame(task$data())
+        target = task$target_names
+        features = task$feature_names
+        
+        # Handle factors
+        factor_cols = sapply(data, is.factor)
+        if (any(factor_cols)) {
+          for (col in names(data)[factor_cols]) {
+            data[[col]] = droplevels(data[[col]])
+          }
+        }
+        
+        # model matrix
+        formula = reformulate(features, response = target)
+        print("formula: ")
+        print(formula)
+        X = model.matrix(formula, data)
+        y = data[[target]]
+        
+        # Check for rank deficiency
+        qr_X = qr(X)
+        rank_def = qr_X$rank < ncol(X)
+        print("rank def: ")
+        print(rank_def)
+        
+        # rank deficiency -> ridge lambda
+        if (rank_def) {
+          warning("Design matrix rank deficient - applying ridge regularization")
+          lambda = pv$ridge_lambda
+          print("lambda: ")
+          print(lambda)
+          
+          # More stable ridge solution
+          X_center = scale(X, center = TRUE, scale = FALSE) 
+          XtX = crossprod(X_center)
+          diag(XtX) = diag(XtX) + lambda
+          beta = tryCatch(
+            solve(XtX, crossprod(X_center, y - mean(y))),
+            error = function(e) {
+              warning("Ridge failed, using pseudoinverse")
+              MASS::ginv(XtX) %*% crossprod(X_center, y - mean(y)) 
+            }
+          )
+          
+          # Create model object
+          model = structure(
+            list(
+              coefficients = c(mean(y) - crossprod(colMeans(X), beta), beta),
+              fitted.values = X %*% c(mean(y) - crossprod(colMeans(X), beta), beta),
+              rank = qr_X$rank,
+              qr = qr_X,
+              terms = terms(formula),
+              call = match.call(),
+              model = data,
+              x = X
+            ),
+            class = c("ridge_lm", "lm")
+          )
+        } else {
+          # wenn kein rankdefizit: robust fitting
+          control = robustbase::lmrob.control(
+            method = pv$method,
+            psi = pv$psi,
+            tuning.chi = pv$tuning.chi,
+            tuning.psi = pv$tuning.psi,
+            setting = pv$setting,
+            max.it = pv$max.it,
+            k.max = pv$k.max,
+            nResample = pv$nResample,
+            subsampling = pv$subsampling
+          )
+          
+          # fallback lm
+          model = tryCatch({
+            robustbase::lmrob(formula, data = data, control = control)
+          }, error = function(e) {
+            warning("Robust regression failed: ", e$message)
+            lm(formula, data = data)
+          })
+        }
+        
+        print("model: ")
+        print(model)
+        # Store factor levels
+        self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
+        return(model)
+      },
+      
+      .predict = function(task) {
+        model = self$model
+        newdata = as.data.frame(task$data())
+        
+        # Handle factor levels
+        if (!is.null(self$state$factor_levels)) {
+          for (var in names(self$state$factor_levels)) {
+            if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
+              new_levels = setdiff(levels(newdata[[var]]), self$state$factor_levels[[var]])
+              if (length(new_levels) > 0) {
+                replacement = names(which.max(table(model$model[[var]])))
+                newdata[[var]] = ifelse(newdata[[var]] %in% new_levels, 
+                                        replacement, 
+                                        as.character(newdata[[var]]))
+                newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
+              }
+            }
+          }
+        }
+        
+        # Prediction
+        if (inherits(model, "ridge_lm")) {
+          X_new = model.matrix(delete.response(terms(model)), newdata) #Falls das Modell eine Ridge-Regression (ridge_lm) ist
+          response = X_new %*% model$coefficients
+        } else {
+          response = predict(model, newdata = newdata)
+        }
+        
+        PredictionRegr$new(task = task, response = response)
+      }
+    )
+  )
+  # Register the learner
+  mlr3::mlr_learners$add("regr.lm_rob", LearnerRegrRobustLM)
+  
+  
+  
+  # Robust Classification Learner
+  LearnerClassifGlmRob <- R6::R6Class(
+    classname = "LearnerClassifGlmRob",
+    inherit = LearnerClassif,
+    public = list(
+      initialize = function() {
+        
+        # parameter
+        param_set = ps(
+          method = p_fct(c("Mqle", "WBY"), default = "Mqle"), #standard = Maximum Quasi-Likelihood Estimation, Weighted Bianco-Yohai-Schätzer = wird speziell für binäre Daten empfohlen
+          #psi = p_fct(c("bisquare", "lqq", "hampel", "optimal"), default = "bisquare"), #Funktion für die Gewichtung der Residuen
+          #tuning.chi = p_dbl(lower = 0, upper = Inf, default = 1.547), #Tuning-Parameter für die χ-Funktion
+          #tuning.psi = p_dbl(lower = 0, upper = Inf, default = 1.547), #Tuning-Parameter für die ψ-Funktion
+          acc = p_dbl(lower = 0, upper = Inf, default = 1e-4), #Toleranz für die Konvergenz des Algorithmus. Der Algorithmus stoppt, wenn die Änderungen in den Schätzungen kleiner als dieser Wert sind
+          test.acc = p_fct(c("coef", "resid"), default = "coef"), #Kriterium für die Konvergenzprüfung, basierend auf den Änderungen der Koeffizienten vs Residuen
+          #max.it = p_int(lower = 1, upper = Inf, default = 50), #Maximale Anzahl von Iterationen
+          #trace.lev = p_int(lower = 0, upper = 10, default = 0), #Steuert die Ausführlichkeit der Debug-Ausgaben --> höher führt zu mehr debug informationen
+          #weights.on.x = p_fct(c("none", "hat", "robCov"), default = "none"), #Gewichtung der Beobachtungen basierend auf den Prädiktoren
+          family = p_fct(c("binomial", "poisson", "Gamma"), default = "binomial"),  #Nur relevante Familien
+          maxit = p_int(lower = 1, upper = 500, default = 50), # Maximale Anzahl von Iterationen, die der Algorithmus durchführen darf, um eine Lösung zu finden.
+          tcc = p_dbl (lower = 1, upper = 2, default = 1.345), #Tuning-Konstante
+          ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4) # NEU
+        )
+        #param_set
+        super$initialize(
+          id = "classif.glm_rob",
+          feature_types = c("numeric", "integer", "factor", "ordered"),
+          predict_types = c("response", "prob"),
+          packages = c("robustbase"),
+          properties = c( "twoclass"),
+          man = "robustbase::glmrob",
+          param_set = param_set
+        )
+        
+        self$param_set$values = list(
+          method = "Mqle",
+          #psi = "bisquare",
+          #tuning.chi = 1.548,
+          #tuning.psi = 4.685,
+          acc = 1e-4,
+          test.acc = "coef",
+          #max.it = 100,
+          #trace.lev = 0,
+          #weights.on.x = "none",
+          family = "binomial",
+          maxit = 50,
+          tcc = 1.345,
+          ridge_lambda = 1e-4 
+        )
+        
+      }
+    ),
+    
+    private = list(
+      .train = function(task) {
+        pv = self$param_set$get_values()
+        data = as.data.frame(task$data())
+        target = task$target_names
+        features = task$feature_names
+        features <- setdiff(features, target)
+        
+        # Handle factors properly
+        factor_cols = sapply(data, is.factor)
+        
+        # Designmatrix
+        formula = reformulate(features, response = target)
+        X = tryCatch({
+          model.matrix(formula, data)
+        }, error = function(e) {
+          stop("Failed to create design matrix: ", e$message)
+        })
+        
+        if (ncol(X) == 0) {
+          stop("Design matrix has 0 columns - check factor levels and collinearity")
+        }
+        
+        # Check for separation
+        if (any(apply(X, 2, function(x) max(abs(tapply(data[[target]], x, mean, na.rm=TRUE)) %in% c(0,1))))) {
+          warning("Perfect separation detected - applying ridge regularization")
+        }
+        
+        
+        # Fit with regularization fallback
+        model = tryCatch({
+          robustbase::glmrob(
+            formula,
+            data = data,
+            family = binomial(),
+            method = pv$method,
+            control = glmrobMqle.control(
+              acc = pv$acc,
+              test.acc = pv$test.acc,
+              maxit = pv$maxit,
+              tcc = pv$tcc
+            )
+          )
+        }, error = function(e) {
+          warning("Falling back to ridge-regularized solution: ", e$message)
+          
+          # Manual ridge implementation
+          y = as.numeric(data[[target]]) - 1
+          if (ncol(X) == 0) stop("No features available for ridge regression")
+          lambda = ifelse(is.null(pv$ridge_lambda), 1e-4, pv$ridge_lambda)
+          XtX = crossprod(X)
+          diag(XtX) = diag(XtX) + lambda
+          
+          print("lambda: ")
+          print(lambda)
+          
+          # Ridge penalty
+          beta = tryCatch(
+            solve(XtX, crossprod(X, y)),
+            error = function(e) {
+              warning("Using pseudoinverse due to singular system")
+              MASS::ginv(XtX) %*% crossprod(X, y)
+            }
+          )
+          
+          # Create dummy model object
+          structure(
+            list(
+              coefficients = beta,
+              fitted.values = plogis(X %*% beta),
+              formula = formula,
+              data = data,
+              levels = levels(data[[target]])
+            ),
+            class = "ridge_glm"
+          )
+        })
+        
+        # Store factor levels
+        self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
+        
+        return(model)
+      },
+      
+      .predict = function(task) {
+        model = self$model
+        newdata = as.data.frame(task$data())
+        
+        # 5. unknown levels
+        if (!is.null(self$state$factor_levels)) {
+          for (var in names(self$state$factor_levels)) {
+            if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
+              new_levels = setdiff(levels(newdata[[var]]), self$state$factor_levels[[var]])
+              if (length(new_levels) > 0) {
+                # max level
+                mode_level = names(which.max(table(self$model$data[[var]])))
+                newdata[[var]] = ifelse(newdata[[var]] %in% new_levels, 
+                                        mode_level, 
+                                        as.character(newdata[[var]]))
+                newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
+              }
+            }
+          }
+        }
+        
+        if (inherits(model, "ridge_glm")) {
+          X_new = tryCatch(
+            model.matrix(delete.response(terms(model$formula)), newdata),
+            error = function(e) stop("Prediction matrix creation failed: ", e$message)
+          )
+          prob = plogis(X_new %*% model$coefficients)
+        } else {
+          prob = predict(model, newdata = newdata, type = "response")
+        }
+        
+        # prediction
+        prob_matrix = cbind(1 - prob, prob)
+        colnames(prob_matrix) = levels(task$truth())
+        
+        PredictionClassif$new(
+          task = task,
+          response = ifelse(prob > 0.5, levels(task$truth())[2], levels(task$truth())[1]),
+          prob = prob_matrix
+        )
+      }
+    )
+  )
+  # Registriere den robusten Klassifikations-Learner
+  mlr3::mlr_learners$add("classif.glm_rob", LearnerClassifGlmRob)
+}
+
+### +++++++++++++++++++++++++++++++++ HILFSFUNKTIONEN +++++++++++++++++++++++++++++++++ ###
+#
+#
+#
+# left handside formula
+# extrahiert linke Seite einer Formel und gibt den Namen der angewendeten Transformation (z.B. "log") zurück
+identify_lhs_transformation <- function(formula) {
+  lhs <- as.character(formula)[2]  # Linke Seite der Formel extrahieren
+  
+  # Erlaubte Transformationen
+  transformations <- c("log", "sqrt", "exp", "I\\(1/", "boxcox")
+  
+  for (t in transformations) {
+    if (grepl(paste0("^", t), lhs)) {
+      return(ifelse(t == "I\\(1/", "inverse", gsub("\\\\", "", t)))  # "I(1/" wird als "inverse" benannt
+    }
+  }
+  
+  return(NULL)  # Keine Transformation 
+}
+#
+#
+#
+# Transformation
+# Identifiziert, welche Variablen in einer Formel transformiert werden müssen, extrahiert Transformationen und Operatoren, prüft auf existierende Variablen und fehlende Werte und gibt die Ergebnisse in einer Liste zurück.
+identify_variables <- function(formula, data, target_col) {
+  data <- as.data.frame(data)
+  
+  if (is.list(formula)) {
+    results <- lapply(formula, function(f) identify_variables(f, data, target_col))
+    return(results)
+  }
+  
+  # Formel als Zeichenkette extrahieren
+  formchar <- as.character(formula)
+  lhs <- gsub("^I\\(1/|log\\(|sqrt\\(|boxcox\\(|exp\\(|\\)$| ", "", formchar[2])   # Entferne Transformationen und Leerzeichen von der linken Seite
+  rhs <- ifelse(length(formchar) > 2, gsub(" ", "", formchar[3]), "")
+  
+  # Zerlege die rechte Seite nach allen relevanten Operatoren
+  rhs_vars <- if (rhs != "") unlist(strsplit(rhs, "[-+*:/%()]")) else character(0)
+  rhs_vars <- rhs_vars[rhs_vars != ""]
+  
+  # Extrahiere die ursprünglichen Variablennamen ohne Transformationen
+  raw_lhs <- gsub("(log\\(|sqrt\\(|I\\(1/|boxcox\\(|exp\\(|\\))", "", lhs)
+  raw_rhs_vars <- gsub("(log\\(|sqrt\\(|I\\(1/|boxcox\\(|exp\\(|\\))", "", rhs_vars)
+  
+  # Entferne doppelte Variablennamen
+  raw_rhs_vars <- unique(raw_rhs_vars)
+  
+  # Identifiziere Transformationen in den Prädiktoren und der Antwortvariablen
+  transformations <- c(
+    ifelse(grepl("log\\(", formchar[2]), "log", "none"),
+    sapply(rhs_vars, function(var) {
+      if (grepl("log\\(", var)) return("log")
+      if (grepl("sqrt\\(", var)) return("sqrt")
+      if (grepl("^I\\(1/", var)) return("inverse")
+      if (grepl("boxcox\\(", var)) return("boxcox")
+      if (grepl("exp\\(", var)) return("exponential")
+      return("none")
+    }, USE.NAMES = FALSE)
+  )
+  
+  # Identifiziere Modellmatrix-Operatoren
+  operator_mapping <- list(
+    ":" = "interaction",
+    "*" = "crossing",
+    "^" = "power",
+    "%in%" = "nested",
+    "/" = "sub-nested",
+    "-" = "exclusion"
+  )
+  
+  operators <- unique(unlist(regmatches(rhs, gregexpr("[:*^%in%/-]", rhs))))
+  operator_types <- setNames(operators, sapply(operators, function(op) operator_mapping[[op]]))
+  
+  # Initialisiere leere Listen, falls keine Prädiktoren vorhanden sind
+  if (length(rhs_vars) == 0) {
+    transformations <- character(0)
+    raw_rhs_vars <- character(0)
+  }
+  
+  # Identifiziere den Typ der Variablen (nur existierende Spalten auswählen)
+  existing_vars <- c(raw_lhs, raw_rhs_vars)
+  existing_vars <- setdiff(existing_vars, target_col)  # Zielvariable ausschließen
+  existing_vars <- existing_vars[existing_vars %in% colnames(data)]
+  variable_types <- sapply(data[, existing_vars, drop = FALSE], class)
+  
+  # Fehlende Werte in den Prädiktoren überprüfen
+  missing_values <- sapply(data[, intersect(raw_rhs_vars, colnames(data)), drop = FALSE], function(col) sum(is.na(col)))
+  
+  # Ergebnisse zusammenstellen
+  result <- list(
+    response_variable = raw_lhs,
+    predictor_variables = existing_vars,  # Nur existierende Spaltennamen behalten
+    transformations = setNames(transformations, c(lhs, rhs_vars)),  # Transformationen korrekt zuweisen
+    variable_types = variable_types,
+    missing_values = missing_values,
+    model_matrix_operators = operator_types
+  )
+  
+  return(result)
+}
+#
+#
+#
+# Formula finden 
+# Wählt aus einer Liste von Formeln diejenige aus, deren linke Seite der bereinigten Antwortvariable entspricht, indem Transformationen und Leerzeichen entfernt werden.
+select_formula <- function(formula_list, response_variable) {
+  # Remove transformations and spaces from response variable
+  response_variable_cleaned <- gsub("^I\\(1/|^log\\(|^sqrt\\(|^boxcox\\(|^exp\\(|\\)$| ", "", response_variable)
+  
+  selected_formula <- Filter(function(f) {
+    # Remove transformations and spaces from the left-hand side of the formula
+    formula_lhs <- gsub("^I\\(1/|^log\\(|^sqrt\\(|^boxcox\\(|^exp\\(|\\)$| ", "", deparse(f[[2]]))
+    identical(formula_lhs, response_variable_cleaned)
+  }, formula_list)
+  
+  if (length(selected_formula) == 0) return(FALSE)
+  return(selected_formula[[1]])
+}
+#
+#
+#
+# Precheck der Daten
+# # Führt eine Reihe von Vorabprüfungen durch, einschließlich der Überprüfung auf fehlende Werte, Datentypen, Formeln, PMM-Einstellungen und unterstützte Methoden, und gibt die überprüften Daten sowie Variableninformationen zurück.
+precheck <- function(
+    data,
+    pmm,
+    formula,
+    method,
+    sequential
+) {
+  
+  # check missing data
+  variables = colnames(data)
+  variables_NA  = colnames(data)[apply(data, 2, function(x) any(is.na(x)))]   # alle Variablen die missind data haben
+  if (length(variables_NA) == 0) {
+    stop ("Fehler: Keine Missing Data vorhanden")
+  } else {
+    message ("Variablen mit Missing Data: ", paste (variables_NA, collapse = ","))
+  }
+  
+  # check datenstruktur
+  if (is.data.table(data)) {
+    message("data ist ein data.table")  # Richtige Ausgabe
+  } else if (is.matrix(data) || is.data.frame(data)) {
+    data <- as.data.table(data)  # in Dataframe konvertieren
+  } else {
+    stop("Fehler: Eingabe muss ein Dataframe oder eine data.table sein.")
+  }
+  
+  # check formula
+  if (!identical(formula, FALSE)) {
+    if (!is.list(formula)) {
+      stop("Fehler: 'formula' muss entweder FALSE oder eine Liste mit Formeln sein.")
+    }
+    
+    for (var in names(formula)) {
+      if (!inherits(formula[[var]], "formula")) {
+        stop(paste("Fehler: Das Element für", var, "ist keine gültige Formel!"))
+      }
+      
+      # Extrahiere Variablen aus der Formel
+      form_vars <- all.vars(formula[[var]])
+      
+      # Überprüfen, ob alle Variablen in den Daten vorhanden sind
+      missing_vars <- setdiff(form_vars, names(data))
+      if (length(missing_vars) > 0) {
+        stop(paste("Fehlende Variablen in den Daten:", paste(missing_vars, collapse = ", ")))
+      }
+    }
+  }
+  
+  # check pmm
+  check_pmm <- function(
+    pmm, 
+    variables
+  ) {
+    if (!(is.logical(pmm) && length(pmm) == 1) &&
+        !(is.list(pmm) && (length(pmm) == length(variables) || length(pmm) == length(variables_NA)) && all(sapply(pmm, is.logical)))) {
+      stop("Fehler: pmm muss eine Liste der Länge von 'variables' bzw 'considered_variables' (wenn angegeben) mit TRUE/FALSE-Werten enthalten.")
+    }
+  }
+  check_pmm(pmm, variables)
+  
+  # check methoden
+  supported_methods <- c("ranger", "regularized", "xgboost", "robust")
+  
+  # Prüfe ob methoden entweder leer sind oder passen
+  if (length(method) == 0) {
+    message("Methoden sind leer, es wird keine Imputation angewendet.")
+  } else if (is.character(method) && length(method) == 1) {
+    # Falls `method` ein einzelner String ist, erstelle eine Liste mit diesem Wert für alle Variablen
+    method <- setNames(as.list(rep(method, length(variables))), variables)
+  } else if (length(method) == length(variables) || length(method) == length(variables_NA)) {
+    # Falls `method` die gleiche Länge wie `variables` hat oder die Anzahl der Variablen mit NAs übereinstimmt
+    if (is.list(method) && all(sapply(method, is.character))) {
+      # Überprüfe, ob alle Elemente in `method` Zeichenketten sind und gültige Methoden enthalten
+      if (!all(unlist(method) %in% supported_methods)) {
+        stop("Fehler: Eine oder mehrere Methoden in der Liste sind nicht unterstützt.")
+      }
+    } else {
+      stop("Fehler: 'method' muss eine Liste mit Zeichenketten-Werten sein.")
+    }
+  } else {
+    stop("Fehler: 'method' muss entweder leer sein, die gleiche Länge wie 'variables' bzw 'considered_variables' (wenn angegeben) haben oder die Anzahl der Variablen mit NAs übereinstimmen.")
+  }
+  
+  # warnung wenn mehr als 50% fehlende Werte
+  if (nrow(data) == 0) stop("Fehler: Data enthält keine Zeilen.")
+  missing_counts <- colSums(is.na(data))
+  na_cols <- names(missing_counts[missing_counts > 0.5 * nrow(data)])
+  if (length(na_cols) > 0) {
+    warning(paste("Warnung: Die folgenden Variablen haben mehr als 50% fehlende Werte:", paste(na_cols, collapse = ", ")))
+  }
+  
+  # Umwandlung der Datentypen
+  data[, (variables) := lapply(.SD, function(x) {
+    if (is.numeric(x)) {
+      as.numeric(x)  # Integer & Double in Numeric umwandeln
+    } else if (is.character(x)) {
+      as.factor(x)  # Strings in Faktoren umwandeln
+    } else if (is.logical(x)) {
+      as.numeric(x)  # TRUE/FALSE zu 1/0
+    } else if (is.factor(x)) {
+      x  # Faktoren beibehalten
+    } else {
+      stop("Fehler: Unbekannter Datentyp")
+    }
+  }), .SDcols = variables]
+  
+  message("Precheck erfolgreich abgeschlossen.")
+  return(list(data=data, variables=variables, variables_NA=variables_NA, method=method))
+}
