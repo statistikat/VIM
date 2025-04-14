@@ -315,7 +315,7 @@ In order to validate the performance of vimpute() the iris dataset is used. Firs
 library(reactable)
 
 data(iris)
-df <- iris
+df <- as.data.table(iris)
 colnames(df) <- c("S.Length","S.Width","P.Length","P.Width","Species")
 # randomly produce some missing values in the data
 set.seed(1)
@@ -339,7 +339,7 @@ For default model:
 library(reactable)
 
 data(iris)
-df <- iris
+df <- as.data.table(iris)
 colnames(df) <- c("S.Length","S.Width","P.Length","P.Width","Species")
 
 # Create complete copy before introducing NAs
