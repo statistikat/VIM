@@ -390,9 +390,9 @@ vimpute <- function(
         eta = 0.05,
         min_child_weight = 1,
         subsample = 1,
-        colsample_bytree = 1,
+        colsample_bytree = 1
         #verbose = TRUE,
-        nthread = 4
+        #nthread = 4
       )
       
       # Ranger Parameter setzen
