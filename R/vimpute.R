@@ -356,10 +356,10 @@ vimpute <- function(
           stop("Fehler: Zielvariable ist weder numerisch noch ein Faktor!")
         }
         
-        print(paste("DEBUG"))
-        print(task$target_names)  
-        print(task$col_roles$feature)  
-        print(task$missings())
+        # print(paste("DEBUG"))
+        # print(task$target_names)  
+        # print(task$col_roles$feature)  
+        # print(task$missings())
         
 ### *****Create Learner Start***** ###################################################################################################
         message(paste("***** Create Learner"))
@@ -791,7 +791,7 @@ vimpute <- function(
           }
           
           if (isFALSE(seq) || i == nseq) {
-            print(paste("Stochastic class assignment"))
+            # print(paste("Stochastic class assignment"))
             preds <- apply(pred_probs, 1, function(probs) {
               sample(levels(data_temp[[target_col]]), size = 1, prob = probs) # at last iteration: stochastic class assignment
             })
@@ -880,7 +880,7 @@ vimpute <- function(
           data <- copy(data)
         }
         
-        print(paste("test debug data:", head(data), "amount rows:", nrow(data)))
+        # print(paste("test debug data:", head(data), "amount rows:", nrow(data)))
         ### Replace missing values with predicted values Start End ###
         
 ### *****Import Variable Start***** ###################################################################################################
