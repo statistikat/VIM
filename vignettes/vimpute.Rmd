@@ -4,9 +4,11 @@ author: "Eileen Vattheuer"
 date: "2025-03-27"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{VIM}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{Advanced Data Imputation with vimpute()}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r, include=FALSE}
@@ -43,6 +45,7 @@ To demonstrate the function, the `sleep` dataset from the `VIM` package is used.
 
 ```{r, echo = FALSE, results='hide', message=FALSE, warning=FALSE}
 library(VIM)
+library(data.table)
 ```
 ```{r setup_2, message = FALSE}
 data <- as.data.table(VIM::sleep)
@@ -443,8 +446,7 @@ df[as.matrix(y)] <- NA
 # Perform imputation with proper method specification
 result <- vimpute(
   data = df,
-  method = lapply(names(df), function(x) "xgboost") %>% 
-           setNames(names(df))
+  method = setNames(lapply(names(df), function(x) "xgboost"),names(df))
 )
 
 # Extracting the imputed columns from result$data

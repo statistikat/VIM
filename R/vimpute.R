@@ -24,13 +24,15 @@
 #' @param imp_var - If TRUE, the imputed values are stored.
 #' @param pred_history - If TRUE, all predicted values across all iterations are stored.
 #' @param tune - Tunes hyperparameters halfway through iterations, TRUE or FALSE.
+#' @param versbose - If TRUE additional debugging output is provided
 #' @return imputed data set or c(imputed data set, prediction history)
 #' @export
 #'
 #' @examples
-#' x <- vimpute(data = as.data.table(sleep), sequential = FALSE, pred_history = FALSE)
-#' y <- vimpute(data = as.data.table(sleep), sequential = TRUE, nseq = 3, pred_history = FALSE)
-#' z <- vimpute(data = as.data.table(sleep), considered_variables = c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE, pred_history = FALSE)
+#' x <- vimpute(data = sleep, sequential = FALSE, pred_history = FALSE)
+#' y <- vimpute(data = sleep, sequential = TRUE, nseq = 3, pred_history = FALSE)
+#' z <- vimpute(data = sleep, considered_variables =
+#'        c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE, pred_history = FALSE)
 #########################################################################################
 #########################################################################################
 #########################################################################################
@@ -48,7 +50,8 @@ vimpute <- function(
     eps = 0.005, # Stop: if Imputation changes less than 0.5%
     imp_var = TRUE,
     pred_history = TRUE,
-    tune = FALSE
+    tune = FALSE,
+    verbose = FALSE
 ) {
     
 ### ***** Learner START ***** ################################################################################################### 
@@ -80,10 +83,12 @@ vimpute <- function(
     
     # only defined variables
     data_all_variables <- as.data.table(data)
-    data <-  data[, ..considered_variables]
+    data <-  as.data.table(data)[, considered_variables, with = FALSE]
     
 ### ***** Check Data Start ***** ###################################################################################################
-    message(paste("***** Check Data"))
+    if(verbose){
+      message(paste("***** Check Data"))  
+    }
     checked_data <- precheck(data, pmm, formula, method, sequential)
     data         <- checked_data$data
     variables    <- checked_data$variables
@@ -97,7 +102,9 @@ vimpute <- function(
 ### Check Data End ###
     
 ### ***** Def missing indices Start ***** ###################################################################################################
-    message(paste("***** Find Missing Indices"))
+    if(verbose){
+      message(paste("***** Find Missing Indices"))
+    }
     missing_indices <- setNames(lapply(variables, function(var) { #original NAs
       na_idx <- which(is.na(data[[var]]))
       if (length(na_idx) > 0) return(na_idx) else return(integer(0))
@@ -126,18 +133,23 @@ vimpute <- function(
     
     # Iterative Imputation for nseq iterations
     for (i in seq_len(nseq)) {
-      message(paste("ITERATION", i, "von", nseq))
+      if(verbose){
+        message(paste("ITERATION", i, "von", nseq))
+      }
       iteration_times <- list()
       data_prev <- copy(data)
       
       for (var in variables_NA) {
-        message(paste("***** Imputiere Variable:", var))
+        if(verbose){
+          message(paste("***** Imputiere Variable:", var))
+        }
         var_start_time <- Sys.time()
         
         data_before <- copy(data)
         variables    <- checked_data$variables
-        
-        message(paste("***** Prädiktoren wählen"))
+        if(verbose){
+          message(paste("***** Prädiktoren wählen"))
+        }
         if (!isFALSE(formula)) {
           selected_formula <- select_formula(formula, var)  # formula on left handsite
           print(paste("formula: ", selected_formula))
@@ -178,16 +190,25 @@ vimpute <- function(
           #print(paste("data_temp cols", colnames(data_temp)))
           
           # Clean column names
+          # clean_colnames <- function(names) {
+          #   names <- make.names(names, unique = TRUE)
+          #   stringi::stri_replace_all_regex(
+          #     names,
+          #     c("\\(", "\\)", ":", "\\*", "\\^", "%in%", "/", "-", "\\+", " "),
+          #     c("", "", "_int_", "_cross_", "_pow_", "_nest_", "_sub_", "_minus_", "_plus_", ""),
+          #     vectorize_all = FALSE
+          #   )
+          # }
           clean_colnames <- function(names) {
             names <- make.names(names, unique = TRUE)
-            stringi::stri_replace_all_regex(
-              names,
-              c("\\(", "\\)", ":", "\\*", "\\^", "%in%", "/", "-", "\\+", " "),
-              c("", "", "_int_", "_cross_", "_pow_", "_nest_", "_sub_", "_minus_", "_plus_", ""),
-              vectorize_all = FALSE
-            )
+            patterns <- c("\\(", "\\)", ":", "\\*", "\\^", "%in%", "/", "-", "\\+", " ")
+            replacements <- c("", "", "_int_", "_cross_", "_pow_", "_nest_", "_sub_", "_minus_", "_plus_", "")
+            for (i in seq_along(patterns)) {
+              names <- gsub(patterns[i], replacements[i], names)
+            }
+            
+            return(names)
           }
-          
           setnames(data_temp, clean_colnames(names(data_temp)))
           
           # Impute missing values (Median/Mode)  -> for prediction 
@@ -237,7 +258,7 @@ vimpute <- function(
           feature_cols <- setdiff(variables, var)  
           target_col <- var
           selected_cols <- c(target_col, feature_cols)
-          data <- data[, ..selected_cols]
+          data <- data[, selected_cols, with = FALSE]
           data_temp <- data
         }
         
@@ -256,7 +277,9 @@ vimpute <- function(
         #print(paste("Gewählte Methode für", var, ":", method_var))
         
 ### ***** Select suitable learner Start ***** ###################################################################################################
-        message(paste("***** Select Learner"))
+        if(verbose){
+          message(paste("***** Select Learner"))
+        }
         if (is.numeric(data[[target_col]])) {
           learners_list <- list(
             regularized = list(learners[["regr.cv_glmnet"]], learners[["regr.glmnet"]]),
@@ -281,7 +304,9 @@ vimpute <- function(
 ### Select suitable learner End ***** ####
         
 ### *****OHE Start***** ###################################################################################################
-        message(paste("***** OHE"))
+        if(verbose){
+          message(paste("***** OHE"))
+        }
         needs_ohe <- any(sapply(learner_candidates, function(lrn) {
           supports_factors <- "factor" %in% lrn$feature_types
           has_factors <- any(sapply(feature_cols, function(col) is.factor(data_temp[[col]])))
@@ -294,8 +319,9 @@ vimpute <- function(
           #cat("Selected formula exists, no OHE needed.\n")
           needs_ohe <- FALSE
         }
-        
-        cat("needs_ohe:", needs_ohe, "\n")
+        if(verbose){
+          cat("needs_ohe:", needs_ohe, "\n")
+        }
         #CONDITION FOR OHE
         # (1) At least one learner in learner_candidates does not support factors.
         # (2) At least one of the feature columns (feature_cols) is a factor.
@@ -325,7 +351,9 @@ vimpute <- function(
 ### OHE End ###
         
 ### *****Create task Start***** ###################################################################################################
-        message(paste("***** Create task"))
+        if(verbose){
+          message(paste("***** Create task"))
+        }
         data_y_fill <- copy(data_temp)
         supports_missing <- all(sapply(learner_candidates, function(lrn) "missings" %in% lrn$properties))
         # if (supports_missing) {
@@ -355,14 +383,17 @@ vimpute <- function(
         }
         
 ### *****Create Learner Start***** ###################################################################################################
-        message(paste("***** Create Learner"))
-        
-        max_threads <- parallel::detectCores() - 1
-        optimal_threads <- case_when(
-          nrow(data_y_fill_final) < 10000 ~ 1,                  
-          nrow(data_y_fill_final) < 100000 ~ max(1, max_threads %/% 2), 
-          TRUE ~ max_threads                                    
-        )
+        if(verbose){
+          message(paste("***** Create Learner"))
+        }
+        max_threads <- future::availableCores() -1
+        if (nrow(data_y_fill_final) < 10000) {
+          optimal_threads <- 1
+        } else if (nrow(data_y_fill_final) < 100000) {
+          optimal_threads <- max(1, max_threads %/% 2)
+        } else {
+          optimal_threads <- max_threads
+        }
         # XGBoost Parameter
         xgboost_params <- list(
           nrounds = 100,
@@ -376,8 +407,9 @@ vimpute <- function(
           verbose = 1,
           nthread = optimal_threads
         )
-        print(paste("nthread is set to:", optimal_threads))
-        
+        if(verbose){
+          print(paste("nthread is set to:", optimal_threads))
+        }
         # Ranger Parameter 
         ranger_params <- list(
           num.trees = 500,
@@ -437,7 +469,9 @@ vimpute <- function(
 ### Create Learner End ### 
         
 ### *****Hyperparameter Start***** ###################################################################################################
-        message(paste("***** Parametertuning"))
+        if(verbose){
+          message(paste("***** Parametertuning"))
+        }
         #print(paste("i:", i))
         
         
@@ -502,7 +536,7 @@ vimpute <- function(
               tuner$optimize(instance)
               
               # save best parameters
-              best_params <- as.list(instance$result[, learner_param_vals][[1]])
+              best_params <- as.list(instance$result[, get("learner_param_vals")][[1]])
               tuning_status[[var]] <- TRUE
               
               # compare with default
@@ -571,7 +605,9 @@ vimpute <- function(
 ### Hyperparameter End ###
         
 ### ***** NAs Start***** ###################################################################################################
-        message(paste("***** NAs in feature variables bearbeiten"))
+        if(verbose){
+          message(paste("***** NAs in feature variables bearbeiten"))
+        }
         if (method_var == "xgboost") {
           #print("XGBoost erkennt `NA`s automatisch → Keine NA-Indikatoren nötig.")
           po_x_miss <- NULL  # No modification necessary as xgboost accepts missings as NA
@@ -592,7 +628,9 @@ vimpute <- function(
 ### NAs End ###     
         
 ### *****Train Model Start***** ###################################################################################################
-        message("***** Train Model")
+        if(verbose){
+          message("***** Train Model")
+        }
         
         # if (!is.null(lhs_transformation)) {
         #   print(paste("Erkannte Transformation:", lhs_transformation))
@@ -688,7 +726,9 @@ vimpute <- function(
 ### Train Model End ###
         
 ### *****Identify NAs Start***** ###################################################################################################
-        message("***** Identidy missing values *****")
+        if(verbose){
+          message("***** Identidy missing values *****")
+        }
         
         # Function for imputing missing values
         impute_missing_values <- function(data, ref_data) {
@@ -764,7 +804,9 @@ vimpute <- function(
 ### Select suitable task type End ####
         
 ### *****Predict Start***** ###################################################################################################
-        message(paste("***** Predict"))
+        if(verbose){
+          message(paste("***** Predict"))
+        }
         
         if (is.factor(data_temp[[target_col]])) {
           
@@ -829,7 +871,7 @@ vimpute <- function(
         }
         
         # Function to determine the number of decimal places
-        if (class(preds) == "numeric") {
+        if (inherits(preds,"numeric")) {
           
           get_decimal_places <- function(x) {
             if (is.na(x)) return(0)
@@ -845,9 +887,13 @@ vimpute <- function(
 ### Predict End ###################################################################################################
         
 ### *****PMM Start***** ###################################################################################################
-        message(paste("***** pmm for predictions"))
+        if(verbose){
+          message(paste("***** pmm for predictions"))
+        }
         if (pmm[[var]] && is.numeric(data_temp[[var]])) {
-          print(paste("PMM is applied to", var, "."))
+          if(verbose){
+            print(paste("PMM is applied to", var, "."))
+          }
           
           # True observed values from the original data
           observed_values <- na.omit(data[[var]])
@@ -861,7 +907,9 @@ vimpute <- function(
 ### PMM End ###  
         
 ### *****Prediction History Start***** ###################################################################################################
-        message(paste("***** Predict History"))
+        if(verbose){
+          message(paste("***** Predict History"))
+        }
         if (pred_history == TRUE) {
           history[[paste0(var, "_iter", i)]] <- data.table(
             iteration = i,
@@ -874,7 +922,9 @@ vimpute <- function(
 ### Prediction History End ###
         
 ### *****Replace missing values with predicted values Start***** ###################################################################################################
-        message(paste("***** Replace values with new predictions"))
+        if(verbose){
+          message(paste("***** Replace values with new predictions"))
+        }
         if (length(missing_idx) > 0) {
           if (is.numeric(data_prev[[var]])) {  
             data[missing_idx, (var) := as.numeric(preds)]
@@ -889,7 +939,9 @@ vimpute <- function(
 ### Replace missing values with predicted values Start End ###
         
 ### *****Import Variable Start***** ###################################################################################################
-        message(paste("***** Import Variable (imp_var = TRUE)"))
+        if(verbose){
+          message(paste("***** Import Variable (imp_var = TRUE)"))
+        }
         if (length(missing_idx) > 0) {
           if (imp_var) {
             imp_col <- paste0(var, "_imp")    # Name  _imp-Spalte
@@ -916,9 +968,9 @@ vimpute <- function(
         var_end_time <- Sys.time()
         var_time <- difftime(var_end_time, var_start_time, units = "secs")
         iteration_times[[var]] <- round(as.numeric(var_time), 2)
-        
-        message(paste("Zeit für", var, ":", iteration_times[[var]], "Sekunden"))
-        
+        if(verbose){
+          message(paste("Zeit für", var, ":", iteration_times[[var]], "Sekunden"))
+        }
         gc(full = TRUE)
       }
 ### Import Variable END ###
@@ -955,10 +1007,10 @@ vimpute <- function(
         if (length(factor_cols) > 0) {
           if (is_dt) {
             # Calculate number of changed values
-            cat_changes <- sum(data[, ..factor_cols] != data_prev[, ..factor_cols], na.rm = TRUE)
+            cat_changes <- sum(data[, factor_cols, with = FALSE] != data_prev[, factor_cols, with = FALSE], na.rm = TRUE)
             
             # Calculate total number of categorical values
-            total_cat_values <- sum(!is.na(data_prev[, ..factor_cols]))
+            total_cat_values <- sum(!is.na(data_prev[, factor_cols, with = FALSE]))
           } else {
             # If 'data' is data.frame 
             cat_changes <- sum(data[factor_cols] != data_prev[factor_cols], na.rm = TRUE)
@@ -978,8 +1030,10 @@ vimpute <- function(
         if (total_diff < eps) {
           no_change_counter <- no_change_counter + 1
           if (no_change_counter >= 2) {
-            message("Convergence achieved after two consecutive iterations without changes")
-            print(paste("stop after", i, "iterations"))
+            if(verbose){
+              message("Convergence achieved after two consecutive iterations without changes")
+              print(paste("stop after", i, "iterations"))
+            }
             
             if (is.factor(data_temp[[target_col]])) {
               

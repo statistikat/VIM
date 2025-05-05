@@ -2,72 +2,82 @@
 % Please edit documentation in R/vimpute.R
 \name{vimpute}
 \alias{vimpute}
-\title{VIM Model Based Imputation framework
-generally idea function that incorporates a framework for model based imputation.
-Options should be
-\itemize{
-\item sequential modelling
-\item using PMM or not
-\item bootstrap the model error
-\item drawing the predicted value from the "posterior" distribution
-\item model options: (robust) regression, ranger, XGBoost, some kind of transformer model
-\item complex formula (with \code{formula}) for each variable possible.
-}}
+\title{Impute missing values with prefered Model, sequentially, with hyperparametertuning and with PMM (if wanted)}
 \usage{
 vimpute(
   data,
-  variable = colnames(data),
+  considered_variables = names(data),
+  method = setNames(as.list(rep("ranger", length(considered_variables))),
+    considered_variables),
+  pmm = setNames(as.list(rep(TRUE, length(considered_variables))), considered_variables),
+  formula = FALSE,
   sequential = TRUE,
-  modeluncertainty = c("none", "bootstrap", "robustBootrap-stratified",
-    "robustBootstrap-xyz", "BayesianBootstrap"),
-  imputationuncertainty = "PMM",
-  xvar = colnames(data),
-  method = c("lm", "regression", "ranger", "XGBoost", "GPT"),
-  formula = NULL,
-  imp_var = FALSE,
-  imp_suffix = "imp",
+  nseq = 10,
+  eps = 0.005,
+  imp_var = TRUE,
+  pred_history = TRUE,
+  tune = FALSE,
   verbose = FALSE
 )
 }
 \arguments{
-\item{data}{}
+\item{data}{\itemize{
+\item Dataset with missing values. Can be provided as a data.table or data.frame.
+}}
 
-\item{variable}{}
+\item{considered_variables}{\itemize{
+\item Parameters that should be considered in the model
+}}
 
-\item{sequential}{}
+\item{method}{\itemize{
+\item Specifies which learner is used for imputation. Provide as a list for each variable.
+}}
 
-\item{modeluncertainty}{}
+\item{pmm}{\itemize{
+\item TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable.
+}}
 
-\item{imputationuncertainty}{}
+\item{formula}{\itemize{
+\item If not all variables are to be used as predictors, or if transformations or interactions are required (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized".
+}}
 
-\item{xvar}{}
+\item{sequential}{\itemize{
+\item If TRUE, all variables are imputed sequentially.
+}}
 
-\item{method}{}
+\item{nseq}{\itemize{
+\item Maximum number of iterations.
+}}
 
-\item{formula}{}
+\item{eps}{\itemize{
+\item Threshold for convergence.
+}}
 
-\item{imp_var}{}
+\item{imp_var}{\itemize{
+\item If TRUE, the imputed values are stored.
+}}
 
-\item{imp_suffix}{}
+\item{pred_history}{\itemize{
+\item If TRUE, all predicted values across all iterations are stored.
+}}
 
-\item{verbose}{}
+\item{tune}{\itemize{
+\item Tunes hyperparameters halfway through iterations, TRUE or FALSE.
+}}
+
+\item{versbose}{\itemize{
+\item If TRUE additional debugging output is provided
+}}
 }
 \value{
-imputed data set
+imputed data set or c(imputed data set, prediction history)
 }
 \description{
-VIM Model Based Imputation framework
-generally idea function that incorporates a framework for model based imputation.
-Options should be
-\itemize{
-\item sequential modelling
-\item using PMM or not
-\item bootstrap the model error
-\item drawing the predicted value from the "posterior" distribution
-\item model options: (robust) regression, ranger, XGBoost, some kind of transformer model
-\item complex formula (with \code{formula}) for each variable possible.
-}
+Impute missing values with prefered Model, sequentially, with hyperparametertuning and with PMM (if wanted)
 }
 \examples{
-vimpute(sleep)
+x <- vimpute(data = sleep, sequential = FALSE, pred_history = FALSE)
+y <- vimpute(data = sleep, sequential = TRUE, nseq = 3, pred_history = FALSE)
+z <- vimpute(data = sleep, considered_variables =
+       c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE, pred_history = FALSE)
 }
