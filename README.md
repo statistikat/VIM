@@ -1,4 +1,4 @@
-# VIM <a href="https://statistikat.github.io/VIM/"><img src="man/figures/VIM-logo.png" align="right" height="138" /></a>
+# VIM <a href="https://statistikat.github.io/VIM/"><img src="man/figures/VIM-logo.png" align="right" style="height:138px;" /></a>
 
 
 [![R-CMD-check](https://github.com/statistikat/VIM/workflows/R-CMD-check/badge.svg)](https://github.com/statistikat/VIM/actions)
