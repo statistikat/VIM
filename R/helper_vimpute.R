@@ -13,6 +13,7 @@ library(ranger)
 library(MASS) 
 
 library(mlr3tuning) 
+library(future)
 library(paradox) 
 
 library(VIM)

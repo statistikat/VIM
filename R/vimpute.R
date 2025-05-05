@@ -127,10 +127,12 @@ vimpute <- function(
     # Iterative Imputation for nseq iterations
     for (i in seq_len(nseq)) {
       message(paste("ITERATION", i, "von", nseq))
+      iteration_times <- list()
       data_prev <- copy(data)
       
       for (var in variables_NA) {
         message(paste("***** Imputiere Variable:", var))
+        var_start_time <- Sys.time()
         
         data_before <- copy(data)
         variables    <- checked_data$variables
@@ -177,17 +179,13 @@ vimpute <- function(
           
           # Clean column names
           clean_colnames <- function(names) {
-            names <- gsub("\\(", "", names)  # Remove parentheses
-            names <- gsub("\\)", "", names)
-            names <- gsub(":", "_int_", names)   # Interaction (a:b → a_int_b)
-            names <- gsub("\\*", "_cross_", names)  # Crossing (a*b → a_cross_b)
-            names <- gsub("\\^", "_pow_", names)  # Power ((a+b)^2 → a_pow_2_b)
-            names <- gsub("%in%", "_nest_", names)  # Nesting (b %in% a → b_nest_a)
-            names <- gsub("/", "_sub_", names)  # Sub-nested (a / b → a_sub_b)
-            names <- gsub("-", "_minus_", names)  # Remove terms (a - b → a_minus_b)
-            names <- gsub("\\+", "_plus_", names)  # Explicitly replace plus (a + b → a_plus_b)
-            names <- gsub(" ", "", names)  # Remove spaces
-            make.names(names, unique = TRUE)  # Ensure valid and unique names
+            names <- make.names(names, unique = TRUE)
+            stringi::stri_replace_all_regex(
+              names,
+              c("\\(", "\\)", ":", "\\*", "\\^", "%in%", "/", "-", "\\+", " "),
+              c("", "", "_int_", "_cross_", "_pow_", "_nest_", "_sub_", "_minus_", "_plus_", ""),
+              vectorize_all = FALSE
+            )
           }
           
           setnames(data_temp, clean_colnames(names(data_temp)))
@@ -356,25 +354,29 @@ vimpute <- function(
           stop("Fehler: Zielvariable ist weder numerisch noch ein Faktor!")
         }
         
-        # print(paste("DEBUG"))
-        # print(task$target_names)  
-        # print(task$col_roles$feature)  
-        # print(task$missings())
-        
 ### *****Create Learner Start***** ###################################################################################################
         message(paste("***** Create Learner"))
         
+        max_threads <- parallel::detectCores() - 1
+        optimal_threads <- case_when(
+          nrow(data_y_fill_final) < 10000 ~ 1,                  
+          nrow(data_y_fill_final) < 100000 ~ max(1, max_threads %/% 2), 
+          TRUE ~ max_threads                                    
+        )
         # XGBoost Parameter
         xgboost_params <- list(
-          nrounds = 500,
-          max_depth = 7,
-          eta = 0.05,
+          nrounds = 100,
+          max_depth = 3,
+          eta = 0.1,
           min_child_weight = 1,
           subsample = 1,
-          colsample_bytree = 1
-          #verbose = TRUE,
-          #nthread = 4
+          colsample_bytree = 1,
+          #tree_method = "hist", 
+          #early_stopping_rounds = 10,
+          verbose = 1,
+          nthread = optimal_threads
         )
+        print(paste("nthread is set to:", optimal_threads))
         
         # Ranger Parameter 
         ranger_params <- list(
@@ -440,7 +442,6 @@ vimpute <- function(
         
         
         if (!tuning_status[[var]] && nseq >= 2 && tune) {
-          #cached_params <- hyperparameter_cache[[var]]
           
           if ((nseq > 2 && i == round(nseq / 2)) || (nseq == 2 && i == 2)) {
             #print("Starte Hyperparameter-Tuning")
@@ -478,6 +479,8 @@ vimpute <- function(
             #best_learner = learners[[best_learner_id]]
             search_space = search_spaces[[best_learner_id]]
             
+            future::plan("multisession") 
+            
             tryCatch({
               # train default model
               if (best_learner_id == "classif.xgboost" || best_learner_id == "regr.xgboost") {
@@ -491,10 +494,11 @@ vimpute <- function(
                 resampling = rsmp("cv", folds = 5,repeats = 3),
                 measure = if (task$task_type == "regr") msr("regr.rmse") else msr("classif.acc"),
                 search_space = search_space,
-                terminator = trm("evals", n_evals = 50)
+                terminator = trm("evals", n_evals = 20)
               )
               
               # tuning
+              tuner <- tnr("random_search", batch_size = parallel::detectCores() - 1)
               tuner$optimize(instance)
               
               # save best parameters
@@ -553,6 +557,8 @@ vimpute <- function(
               #message(paste("Tuning failed for", var, ":", e$message))
               current_learner$param_set$values <- list() # Fallback Default
             })
+            
+            future::plan("sequential")
           } else if (tuning_status[[var]]) {
             # Use cached parameters
             current_learner$param_set$values <- hyperparameter_cache[[var]]$params
@@ -880,8 +886,7 @@ vimpute <- function(
           data <- copy(data)
         }
         
-        # print(paste("test debug data:", head(data), "amount rows:", nrow(data)))
-        ### Replace missing values with predicted values Start End ###
+### Replace missing values with predicted values Start End ###
         
 ### *****Import Variable Start***** ###################################################################################################
         message(paste("***** Import Variable (imp_var = TRUE)"))
@@ -908,6 +913,13 @@ vimpute <- function(
             }
           }
         }
+        var_end_time <- Sys.time()
+        var_time <- difftime(var_end_time, var_start_time, units = "secs")
+        iteration_times[[var]] <- round(as.numeric(var_time), 2)
+        
+        message(paste("Zeit für", var, ":", iteration_times[[var]], "Sekunden"))
+        
+        gc(full = TRUE)
       }
 ### Import Variable END ###
       
@@ -1010,6 +1022,7 @@ vimpute <- function(
       } else {
         no_change_counter <- 0
       }
+      gc(full = TRUE)
     }
     # if (tune) {
     #   print(paste("Number of cases in which the tuned model was better:", count_tuned_better))
