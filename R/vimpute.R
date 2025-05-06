@@ -94,11 +94,14 @@ vimpute <- function(
     variables    <- checked_data$variables
     variables_NA <- checked_data$variables_NA
     method       <- checked_data$method
-    
-    #print(paste("data after check:"))
-    #print(data)
+
+    if (!sequential && nseq 1) {
+        if (verbose) message ("'nseq' was set to 1 because 'sequential = FALSE'.")
+        nseq <- 1
+        }
     
     orig_data <- data
+    
 ### Check Data End ###
     
 ### ***** Def missing indices Start ***** ###################################################################################################
