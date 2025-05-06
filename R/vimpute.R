@@ -95,7 +95,7 @@ vimpute <- function(
     variables_NA <- checked_data$variables_NA
     method       <- checked_data$method
 
-    if (!sequential && nseq 1) {
+    if (!sequential && nseq > 1) {
         if (verbose) message ("'nseq' was set to 1 because 'sequential = FALSE'.")
         nseq <- 1
     }
