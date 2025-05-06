@@ -98,7 +98,7 @@ vimpute <- function(
     if (!sequential && nseq 1) {
         if (verbose) message ("'nseq' was set to 1 because 'sequential = FALSE'.")
         nseq <- 1
-        }
+    }
     
     orig_data <- data
     
