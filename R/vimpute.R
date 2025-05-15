@@ -58,27 +58,22 @@ vimpute <- function(
     no_change_counter <- 0
     robust_required <- any(unlist(method) == "robust")
     
-    # if robust required
     if (robust_required) {
       register_robust_learners()
     }
     
-    learners <- list(
-      "regr.cv_glmnet" = lrn("regr.cv_glmnet"), 
-      "regr.glmnet" = lrn("regr.glmnet"), 
-      "classif.glmnet" = lrn("classif.glmnet"), 
-      "regr.ranger" = lrn("regr.ranger"), 
-      "classif.ranger" = lrn("classif.ranger"), 
-      "regr.xgboost" = lrn("regr.xgboost"), 
-      "classif.xgboost" = lrn("classif.xgboost") 
+    learner_ids <- c(
+      "regr.cv_glmnet", "regr.glmnet", "classif.glmnet",
+      "regr.ranger", "classif.ranger",
+      "regr.xgboost", "classif.xgboost"
     )
     
     if (robust_required) {
-      learners <- c(learners, list(
-        "regr.lm_rob" = lrn("regr.lm_rob"), 
-        "classif.glm_rob" = lrn("classif.glm_rob")
-      ))
+      learner_ids <- c(learner_ids, "regr.lm_rob", "classif.glm_rob")
     }
+
+    learners <- lapply(learner_ids, function(id) lrn(id))
+    names(learners) <- learner_ids
 ### Learner End ###
     
     # only defined variables
@@ -429,10 +424,11 @@ vimpute <- function(
         }
         
         # Initialize learner and set parameters
-        default_learner <- lrn(best_learner$id)
-        current_learner <- lrn(best_learner$id)
-        best_learner <- lrn(best_learner$id)
-        tuned_learner <- lrn(best_learner$id)
+        learner_obj <- lrn(best_learner$id)
+        default_learner <- learner_obj$clone(deep = TRUE)
+        current_learner <- learner_obj$clone(deep = TRUE)
+        best_learner    <- learner_obj$clone(deep = TRUE)
+        tuned_learner   <- learner_obj$clone(deep = TRUE)
         
         # Set parameters for the best learner
         if (grepl("xgboost", best_learner$id)) {
