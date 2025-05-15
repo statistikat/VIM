@@ -65,7 +65,7 @@ vimpute(
 \item Tunes hyperparameters halfway through iterations, TRUE or FALSE.
 }}
 
-\item{versbose}{\itemize{
+\item{verbose}{\itemize{
 \item If TRUE additional debugging output is provided
 }}
 }

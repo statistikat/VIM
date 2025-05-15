@@ -24,7 +24,7 @@
 #' @param imp_var - If TRUE, the imputed values are stored.
 #' @param pred_history - If TRUE, all predicted values across all iterations are stored.
 #' @param tune - Tunes hyperparameters halfway through iterations, TRUE or FALSE.
-#' @param versbose - If TRUE additional debugging output is provided
+#' @param verbose - If TRUE additional debugging output is provided
 #' @return imputed data set or c(imputed data set, prediction history)
 #' @export
 #'
@@ -39,7 +39,7 @@
 
 vimpute <- function(
     data,
-    considered_variables = names(data), # wenn zB nur 5 von 8 Variablen berücksichtigt werden sollen
+    considered_variables = names(data), # other variables will be passed thrpough
     method = setNames(as.list(rep("ranger", length(considered_variables))), considered_variables),
     pmm = setNames(as.list(rep(TRUE, length(considered_variables))), considered_variables),
     formula = FALSE, 
@@ -115,8 +115,6 @@ vimpute <- function(
     missing_indices <- missing_indices[!sapply(missing_indices, is.null)]
     names(missing_indices)
     
-    #print(paste("missing indices before Füllung NAs:"))
-    #print(missing_indices)
     
 ### Def missing indices End ###
     
@@ -144,14 +142,14 @@ vimpute <- function(
       
       for (var in variables_NA) {
         if(verbose){
-          message(paste("***** Imputiere Variable:", var))
+          message(paste("***** Impute variable:", var))
         }
         var_start_time <- Sys.time()
         
         data_before <- copy(data)
         variables    <- checked_data$variables
         if(verbose){
-          message(paste("***** Prädiktoren wählen"))
+          message(paste("***** Select predictors"))
         }
         if (!isFALSE(formula)) {
           selected_formula <- select_formula(formula, var)  # formula on left handsite
@@ -277,7 +275,6 @@ vimpute <- function(
         }
         
         method_var <- method[[var]]
-        #print(paste("Gewählte Methode für", var, ":", method_var))
         
 ### ***** Select suitable learner Start ***** ###################################################################################################
         if(verbose){
@@ -359,12 +356,6 @@ vimpute <- function(
         }
         data_y_fill <- copy(data_temp)
         supports_missing <- all(sapply(learner_candidates, function(lrn) "missings" %in% lrn$properties))
-        # if (supports_missing) {
-        #   # Der Learner kann mit `NA`s umgehen → NA-Indikatoren hinzufügen
-        #   print("Der Learner unterstützt `NA`s")
-        # } else {
-        #   print("Der Learner unterstützt KEINE `NA`s")
-        # }
         
         if (method_var == "ranger") {
           supports_missing <- FALSE
@@ -373,7 +364,7 @@ vimpute <- function(
         # If NA in target variable --> only train with the data that has no NA in Y
         data_y_fill <- data_y_fill[!is.na(get(target_col))]
         
-        # If the learner does not support missing values → use na.omit()
+        # If the learner does not support missing values -> use na.omit()
         data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
         
         # Create task
@@ -433,10 +424,6 @@ vimpute <- function(
           mse_values <- sapply(resample_results, function(res) res$aggregate(msr("regr.rmse")))
           best_learner <- learner_candidates[[which.min(mse_values)]]
           
-          # Print MSE values
-          # for (j in seq_along(learner_candidates)) {
-          #   print(paste("MSE für", learner_candidates[[j]]$id, ":", mse_values[j]))
-          # }
         } else {
           best_learner <- learner_candidates[[1]]
         }
@@ -612,11 +599,9 @@ vimpute <- function(
           message(paste("***** NAs in feature variables bearbeiten"))
         }
         if (method_var == "xgboost") {
-          #print("XGBoost erkennt `NA`s automatisch → Keine NA-Indikatoren nötig.")
           po_x_miss <- NULL  # No modification necessary as xgboost accepts missings as NA
           
         } else if (supports_missing) {
-          #print("Der Learner unterstützt `NA`s → Markiere fehlende Werte.")  
           if (sum(is.na(data_temp)) > 0)  {  #task$data_temp()
             po_x_miss <- po("missind", param_vals = list(
               affect_columns = mlr3pipelines::selector_all(),
@@ -717,7 +702,6 @@ vimpute <- function(
         # Set predict type for classification problems
         if (exists("target_col") && is.factor(data_temp[[target_col]])) {
           learner$predict_type <- "prob"
-          #cat("Predict-Type auf 'prob' gesetzt für Klassifikationsaufgabe\n")
         }
         
         # Debug
@@ -751,7 +735,6 @@ vimpute <- function(
         # Row indices with missing values in `var`
         missing_idx <- missing_indices[[var]]
         if (length(missing_idx) == 0) {
-          #print(paste("Keine fehlenden Werte in ", var, " → Keine Vorhersage notwendig."))
           return(NULL)
         }
         
@@ -761,19 +744,16 @@ vimpute <- function(
         
         # Differentiation: Is a `selected_formula` available?
         if (!isFALSE(selected_formula)) {
-          #print(paste("Formula-Modus aktiviert → Transformierte Design-Matrix (`mm_data`) wird verwendet."))
           
           # Extract missing rows from the design matrix
           backend_data <- mm_data[missing_idx, , drop = FALSE]
           
           # Check whether `backend_data` itself contains missing values
           if (any(is.na(backend_data))) {
-            #print(paste("Fehlende Werte in den Prädiktorvariablen gefunden → Imputation mit Median/Modus."))
             backend_data <- impute_missing_values(backend_data, data_temp)
           }
           
         } else {
-          #print(paste("Kein `selected_formula` → Nutze Originaldaten (`data_temp`)."))
           
           # If no formula, use the original data without `var`.
           backend_cols <- union(feature_cols, var)
@@ -781,7 +761,6 @@ vimpute <- function(
           
           # If the learner does not support `NA`s, these must be imputed
           if (!supports_missing) {
-            #print(paste("The learner does not support `NA`s → preparation of `backend_data`."))
             backend_data <- impute_missing_values(backend_data, data_y_fill)
           }
         }
@@ -882,7 +861,7 @@ vimpute <- function(
             nchar(sub(".*\\.", "", as.character(x)))
           }
           
-          # decimal places as in the “original” data set
+          # decimal places as in the original data set
           decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
           preds <- round(preds, decimal_places)
         }
@@ -972,9 +951,8 @@ vimpute <- function(
         var_time <- difftime(var_end_time, var_start_time, units = "secs")
         iteration_times[[var]] <- round(as.numeric(var_time), 2)
         if(verbose){
-          message(paste("Zeit für", var, ":", iteration_times[[var]], "Sekunden"))
+          message(paste("time used for", var, ":", iteration_times[[var]], "Sekunden"))
         }
-        gc(full = TRUE)
       }
 ### Import Variable END ###
       
@@ -1079,7 +1057,6 @@ vimpute <- function(
       } else {
         no_change_counter <- 0
       }
-      gc(full = TRUE)
     }
     # if (tune) {
     #   print(paste("Number of cases in which the tuned model was better:", count_tuned_better))
