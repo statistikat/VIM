@@ -284,7 +284,8 @@ vimpute <- function(
           )
         } else if (is.factor(data[[target_col]])) {
           if (method_var == "robust" && length(levels(data[[target_col]])) != 2) {
-            stop("Error: 'classif.glm_rob' can only be used for binary classification problems.")
+            warning(paste0("Skipping variable '", target_col, "': 'classif.glm_rob' requires binary classification."))
+            next
           }
           learners_list <- list(
             regularized = list(learners[["classif.glmnet"]]),
