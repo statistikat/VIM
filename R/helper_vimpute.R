@@ -85,83 +85,18 @@ register_robust_learners <- function() {
         #   subsampling = pv$subsampling
         # )
         control = do.call(robustbase::lmrob.control, pv)
-        model = tryCatch({
-          robustbase::lmrob(formula, data = data, control = control)
-        }, error = function(e) {
-          # warning("Robuste Regression fehlgeschlagen: ", e$message)
-          # lm(formula, data = data)
-          stop("Robust regression failed: ", e$message)
-        })
+        model = tryCatch(
+          robustbase::lmrob(formula, data = data, control = control),
+          error = function(e) {
+            warning(sprintf("lmrob() failed for target '%s': %s", target, e$message))
+            return(NULL)
+          }
+        )
+        
+        if (is.null(model)) {
+          stopf("Robuste Regression mit lmrob() ist fehlgeschlagen für Zielvariable '%s'", target)
+        }
         #new end
-
-    ####################################################################################################################
-        # X = model.matrix(formula, data)
-        # y = data[[target]]
-        # 
-        # # check for rank deficiency
-        # qr_X = qr(X)
-        # rank_def = qr_X$rank < ncol(X)
-        # #print("rank def: ")
-        # #print(rank_def)
-        # 
-        # # rank deficiency -> ridge lambda
-        # if (rank_def) {
-        #   warning("Design matrix rank deficient - applying ridge regularization")
-        #   lambda = pv$ridge_lambda
-        #   #print("lambda: ")
-        #   #print(lambda)
-        #   
-        #   # more stable ridge solution
-        #   X_center = scale(X, center = TRUE, scale = FALSE) 
-        #   XtX = crossprod(X_center)
-        #   diag(XtX) = diag(XtX) + lambda
-        #   beta = tryCatch(
-        #     solve(XtX, crossprod(X_center, y - mean(y))),
-        #     error = function(e) {
-        #       warning("Ridge failed, using pseudoinverse")
-        #       MASS::ginv(XtX) %*% crossprod(X_center, y - mean(y)) 
-        #     }
-        #   )
-        #   
-        #   # create model object
-        #   model = structure(
-        #     list(
-        #       coefficients = beta, #c(mean(y) - crossprod(colMeans(X), beta), beta),
-        #       fitted.values = X %*% beta, #X %*% c(mean(y) - crossprod(colMeans(X), beta), beta),
-        #       rank = qr_X$rank,
-        #       qr = qr_X,
-        #       terms = terms(formula),
-        #       call = match.call(),
-        #       model = data,
-        #       x = X
-        #     ),
-        #     class = c("ridge_lm", "lm")
-        #   )
-        # } else {
-        #   # no rank deficite: robust fitting
-        #   control = robustbase::lmrob.control(
-        #     method = pv$method,
-        #     psi = pv$psi,
-        #     tuning.chi = pv$tuning.chi,
-        #     tuning.psi = pv$tuning.psi,
-        #     setting = pv$setting,
-        #     max.it = pv$max.it,
-        #     k.max = pv$k.max,
-        #     nResample = pv$nResample,
-        #     subsampling = pv$subsampling
-        #   )
-        #   
-        #   # fallback lm
-        #   model = tryCatch({
-        #     robustbase::lmrob(formula, data = data, control = control)
-        #   }, error = function(e) {
-        #     warning("Robust regression failed: ", e$message)
-        #     lm(formula, data = data)
-        #   })
-        # }
-  ####################################################################################################################   
-        #print("model: ")
-        #print(model)
         
         # store factor levels 
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
