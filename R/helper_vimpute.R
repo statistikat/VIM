@@ -18,7 +18,11 @@ register_robust_learners <- function() {
           k.max = p_int(lower = 1, upper = Inf, default = 200),
           nResample = p_int(lower = 1, upper = Inf, default = 500),
           subsampling = p_fct(c("simple", "nonsingular"), default = "nonsingular"),
-          ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4)  
+          ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4), 
+          compute.rd = p_lgl(default = FALSE),
+          refine.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
+          solve.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
+          trace.lev = p_int(lower = 0, upper = Inf, default = 0)
         )
         
         super$initialize(
@@ -40,7 +44,11 @@ register_robust_learners <- function() {
           k.max = 200,
           nResample = 500,
           subsampling = "nonsingular",
-          ridge_lambda = 1e-4
+          ridge_lambda = 1e-4,
+          compute.rd = FALSE,
+          refine.tol = 1e-7,
+          solve.tol = 1e-7,
+          trace.lev = 0
         )
       }
     ),
@@ -65,22 +73,24 @@ register_robust_learners <- function() {
         # model matrix
         formula = reformulate(features, response = target)
         #new
-        control = robustbase::lmrob.control(
-          method = pv$method,
-          psi = pv$psi,
-          tuning.chi = pv$tuning.chi,
-          tuning.psi = pv$tuning.psi,
-          setting = pv$setting,
-          max.it = pv$max.it,
-          k.max = pv$k.max,
-          nResample = pv$nResample,
-          subsampling = pv$subsampling
-        )
+        # control = robustbase::lmrob.control(
+        #   method = pv$method,
+        #   psi = pv$psi,
+        #   tuning.chi = pv$tuning.chi,
+        #   tuning.psi = pv$tuning.psi,
+        #   setting = pv$setting,
+        #   max.it = pv$max.it,
+        #   k.max = pv$k.max,
+        #   nResample = pv$nResample,
+        #   subsampling = pv$subsampling
+        # )
+        control = do.call(robustbase::lmrob.control, pv)
         model = tryCatch({
           robustbase::lmrob(formula, data = data, control = control)
         }, error = function(e) {
-          warning("Robuste Regression fehlgeschlagen: ", e$message)
-          lm(formula, data = data)
+          # warning("Robuste Regression fehlgeschlagen: ", e$message)
+          # lm(formula, data = data)
+          stop("Robust regression failed: ", e$message)
         })
         #new end
 
@@ -168,28 +178,33 @@ register_robust_learners <- function() {
             if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
               new_levels = setdiff(levels(newdata[[var]]), self$state$factor_levels[[var]])
               if (length(new_levels) > 0) {
-                replacement = names(which.max(table(model$model[[var]])))
-                newdata[[var]] = ifelse(newdata[[var]] %in% new_levels, 
-                                        replacement, 
-                                        as.character(newdata[[var]]))
+                warning(sprintf("New levels (%s) in factor '%s' replaced with NA", 
+                                paste(new_levels, collapse=", "), var))
                 newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
               }
             }
           }
         }
-        
-        # prediction
-        if (inherits(model, "ridge_lm")) {
-          X_new = model.matrix(delete.response(terms(model)), newdata) #Falls das Modell eine Ridge-Regression (ridge_lm) ist
-          response = X_new %*% model$coefficients
-        } else {
-          response = predict(model, newdata = newdata)
-        }
+        # Standard prediction
+        response = predict(model, newdata = newdata)
         
         PredictionRegr$new(task = task, response = response)
       }
     )
   )
+        
+  #       # prediction
+  #       if (inherits(model, "ridge_lm")) {
+  #         X_new = model.matrix(delete.response(terms(model)), newdata) #Falls das Modell eine Ridge-Regression (ridge_lm) ist
+  #         response = X_new %*% model$coefficients
+  #       } else {
+  #         response = predict(model, newdata = newdata)
+  #       }
+  #       
+  #       PredictionRegr$new(task = task, response = response)
+  #     }
+  #   )
+  # )
   # register the learner
   mlr3::mlr_learners$add("regr.lm_rob", LearnerRegrRobustLM)
   
