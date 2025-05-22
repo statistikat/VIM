@@ -153,7 +153,7 @@ register_robust_learners <- function() {
         #print("model: ")
         #print(model)
         
-        # store factor levels
+        # store factor levels 
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
         return(model)
       },
