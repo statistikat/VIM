@@ -1,4 +1,5 @@
-# VIM
+# VIM <a href="https://statistikat.github.io/VIM/"><img src="man/figures/VIM-logo.png" align="right" style="height:138px;background:white" /></a>
+
 
 [![R-CMD-check](https://github.com/statistikat/VIM/workflows/R-CMD-check/badge.svg)](https://github.com/statistikat/VIM/actions)
 [![Codecov test coverage](https://codecov.io/gh/statistikat/VIM/branch/master/graph/badge.svg)](https://app.codecov.io/gh/statistikat/VIM?branch=master)
