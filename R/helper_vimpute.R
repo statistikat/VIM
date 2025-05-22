@@ -97,8 +97,8 @@ register_robust_learners <- function() {
           # create model object
           model = structure(
             list(
-              coefficients = c(mean(y) - crossprod(colMeans(X), beta), beta),
-              fitted.values = X %*% c(mean(y) - crossprod(colMeans(X), beta), beta),
+              coefficients = beta, #c(mean(y) - crossprod(colMeans(X), beta), beta),
+              fitted.values = X %*% beta, #X %*% c(mean(y) - crossprod(colMeans(X), beta), beta),
               rank = qr_X$rank,
               qr = qr_X,
               terms = terms(formula),
