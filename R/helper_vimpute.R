@@ -11,12 +11,12 @@ register_robust_learners <- function() {
         param_set = ps(
           method = p_fct(c("M", "MM"), default = "MM"),
           psi = p_fct(c("bisquare", "lqq", "optimal"), default = "bisquare"),
-          tuning.chi = p_dbl(lower = 0, upper = Inf, default = 1.547),
-          tuning.psi = p_dbl(lower = 0, upper = Inf, default = 1.547),
+          tuning.chi = p_dbl(lower = 0, upper = Inf, default = 1.55),
+          tuning.psi = p_dbl(lower = 0, upper = Inf, default = 4.69),
           setting = p_fct(c("KS2014", "KS2011"), default = "KS2014"),
           max.it = p_int(lower = 1, upper = Inf, default = 50),
           k.max = p_int(lower = 1, upper = Inf, default = 200),
-          nResample = p_int(lower = 1, upper = Inf, default = 1000),
+          nResample = p_int(lower = 1, upper = Inf, default = 500),
           subsampling = p_fct(c("simple", "nonsingular"), default = "nonsingular"),
           ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4)  
         )
@@ -33,12 +33,12 @@ register_robust_learners <- function() {
         self$param_set$values = list(
           method = "MM",
           psi = "bisquare",
-          tuning.chi = 1.547,
-          tuning.psi = 1.547,
+          tuning.chi = 1.55,
+          tuning.psi = 4.69,
           setting = "KS2014",
           max.it = 50,
           k.max = 200,
-          nResample = 1000,
+          nResample = 500,
           subsampling = "nonsingular",
           ridge_lambda = 1e-4
         )
