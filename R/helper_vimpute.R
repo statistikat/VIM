@@ -179,9 +179,10 @@ register_robust_learners <- function() {
               new_levels = setdiff(levels(newdata[[var]]), self$state$factor_levels[[var]])
               if (length(new_levels) > 0) {
                 warning(sprintf("New levels (%s) in factor '%s' replaced with NA", 
-                                paste(new_levels, collapse=", "), var))
-                newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
+                                paste(new_levels, collapse = ", "), var))
               }
+              # Faktor mit Trainingslevels forcieren
+              newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
             }
           }
         }
