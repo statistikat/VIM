@@ -19,7 +19,7 @@ register_robust_learners <- function() {
           nResample = p_int(lower = 1, upper = Inf, default = 500),
           subsampling = p_fct(c("simple", "nonsingular"), default = "nonsingular"),
           ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4), 
-          compute.rd = p_lgl(default = FALSE),
+          #compute.rd = p_lgl(default = FALSE),
           refine.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
           solve.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
           trace.lev = p_int(lower = 0, upper = Inf, default = 0)
@@ -45,7 +45,7 @@ register_robust_learners <- function() {
           nResample = 500,
           subsampling = "nonsingular",
           ridge_lambda = 1e-4,
-          compute.rd = FALSE,
+          #compute.rd = FALSE,
           refine.tol = 1e-7,
           solve.tol = 1e-7,
           trace.lev = 0
