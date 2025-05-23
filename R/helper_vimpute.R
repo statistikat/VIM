@@ -144,21 +144,10 @@ register_robust_learners <- function() {
           id = "classif.glm_rob",
           feature_types = c("numeric", "integer", "factor", "ordered"),
           predict_types = c("response", "prob"),
-          packages = c("robustbase", "nnet", "MASS"),  # Added MASS for ginv()
-          properties = c("twoclass", "multiclass"),  # Correctly declare both
+          packages = c("robustbase", "nnet", "MASS"),
+          properties = c("twoclass", "multiclass"),
           man = "robustbase::glmrob",
           param_set = param_set
-        )
-        
-        self$param_set$values = list(
-          method = "Mqle",
-          acc = 1e-4,
-          test.acc = "coef",
-          family = "binomial",
-          maxit = 50,
-          tcc = 1.345,
-          ridge_lambda = 1e-4,
-          fallback = "multinom"
         )
       }
     ),
@@ -170,26 +159,24 @@ register_robust_learners <- function() {
         target = task$target_names
         n_classes = length(task$class_names)
         
-        # Store task information
         self$state$n_classes = n_classes
         self$state$is_multiclass = n_classes > 2
         self$state$target_levels = task$class_names
         
         if (self$state$is_multiclass) {
-          message(sprintf(
-            "Target has %d classes. Using %s fallback method.",
-            n_classes, pv$fallback
-          ))
+          message(sprintf("Target has %d classes. Using fallback method: %s", n_classes, pv$fallback))
           return(self$fallback_model(task, pv))
         }
         
-        # Binary classification case
         formula = task$formula()
+        family_fun = match.fun(pv$family)
+        family_obj = family_fun()
+        
         model = tryCatch({
           robustbase::glmrob(
             formula,
             data = data,
-            family = binomial(),
+            family = family_obj,
             method = pv$method,
             control = glmrobMqle.control(
               acc = pv$acc,
@@ -204,11 +191,10 @@ register_robust_learners <- function() {
           self$ridge_fallback(X, data[[target]], formula, pv)
         })
         
-        # Store factor levels
         factor_cols = sapply(data, is.factor)
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
         self$model = model
-        return(invisible(NULL))
+        invisible(NULL)
       },
       
       fallback_model = function(task, pv) {
@@ -229,10 +215,10 @@ register_robust_learners <- function() {
           model = self$ridge_fallback(X, y, formula, pv)
         }
         
-        # Store factor levels
         factor_cols = sapply(data, is.factor)
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
-        return(model)
+        self$model = model
+        invisible(NULL)
       },
       
       ridge_fallback = function(X, y, formula, pv) {
@@ -265,15 +251,11 @@ register_robust_learners <- function() {
         model = self$model
         newdata = task$data()
         
-        # Handle factor levels
         newdata = self$handle_new_levels(newdata)
         
-        # Get probabilities
         if (inherits(model, "multinom_fallback")) {
           prob_matrix = predict(model, newdata = newdata, type = "probs")
-          if (self$state$n_classes == 2) {
-            prob_matrix = cbind(1 - prob_matrix, prob_matrix)
-          }
+          # nnet::multinom usually returns probs for all classes, no adjustment needed
         } else if (inherits(model, "ridge_glm")) {
           X_new = model.matrix(delete.response(terms(model$formula)), newdata)
           prob = plogis(X_new %*% model$coefficients)
@@ -283,13 +265,12 @@ register_robust_learners <- function() {
           prob_matrix = cbind(1 - prob, prob)
         }
         
-        # Ensure correct column order
         prob_matrix = prob_matrix[, self$state$target_levels, drop = FALSE]
         
         if (self$predict_type == "prob") {
           PredictionClassif$new(task = task, prob = prob_matrix)
         } else {
-          response = self$state$target_levels[max.col(prob_matrix)]
+          response = self$state$target_levels[max.col(prob_matrix, ties.method = "first")]
           PredictionClassif$new(task = task, response = response)
         }
       },
@@ -302,9 +283,8 @@ register_robust_learners <- function() {
             new_levels = setdiff(levels(newdata[[var]]), self$state$factor_levels[[var]])
             if (length(new_levels) > 0) {
               mode_level = names(which.max(table(self$model$data[[var]])))
-              newdata[[var]] = ifelse(newdata[[var]] %in% new_levels,
-                                      mode_level,
-                                      as.character(newdata[[var]]))
+              newdata[[var]] = as.character(newdata[[var]])
+              newdata[[var]][newdata[[var]] %in% new_levels] <- mode_level
               newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
             }
           }
@@ -314,8 +294,8 @@ register_robust_learners <- function() {
     )
   )
   
-  # Register the learner
   mlr_learners$add("classif.glm_rob", LearnerClassifGlmRob$new())
+  
 }
 
 
