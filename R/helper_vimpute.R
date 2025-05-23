@@ -193,37 +193,47 @@ register_robust_learners <- function() {
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
         
         if (pv$handle_categorical) {
+          # Handle ordered factors: convert to numeric
           ordered_cols = sapply(data, is.ordered)
           if (any(ordered_cols)) {
             data[ordered_cols] = lapply(data[ordered_cols], as.numeric)
           }
           
+          # Handle unordered factors by model.matrix
           factor_cols = sapply(data, is.factor) & !ordered_cols
           if (any(factor_cols)) {
             formula = reformulate(features, response = target)
-            X = model.matrix(formula, data, contrasts.arg = lapply(
-              data[, factor_cols, drop = FALSE],
-              contrasts, contrasts = FALSE
-            ))
-            X = X[, colnames(X) != "(Intercept)", drop = FALSE]
-            non_factor_data = data[, !factor_cols & !colnames(data) %in% target, drop = FALSE]
-            if (ncol(non_factor_data) > 0) {
-              data = cbind(data[target], non_factor_data, X)
-            } else {
-              data = cbind(data[target], X)
+            X = model.matrix(
+              formula,
+              data,
+              contrasts.arg = lapply(
+                data[, factor_cols, drop = FALSE],
+                contrasts, contrasts = FALSE
+              )
+            )
+            # Store columns for prediction
+            self$state$model_columns = colnames(X)
+            # Remove intercept column if present
+            if ("(Intercept)" %in% colnames(X)) {
+              X = X[, colnames(X) != "(Intercept)", drop = FALSE]
             }
+            
+            # Combine target, non-factor features, and expanded factor matrix
+            non_factor_data = data[, !factor_cols & colnames(data) != target, drop = FALSE]
+            data = cbind(data[target], non_factor_data, X)
             features = setdiff(colnames(data), target)
           }
         }
         
         formula = reformulate(features, response = target)
         
+        # Separation check (for factors)
         if (any(sapply(data[features], function(x) {
           if (is.numeric(x)) return(FALSE)
           tab = table(data[[target]], x)
           any(apply(tab, 2, function(col) any(col == 0)))
         }))) {
-          warning("Perfect separation detected in categorical variables - applying ridge regularization")
+          warning("Perfect separation detected - applying ridge regularization")
           pv$ridge_lambda = max(pv$ridge_lambda, 1e-3)
         }
         
@@ -231,7 +241,10 @@ register_robust_learners <- function() {
           robustbase::glmrob(
             formula,
             data = data,
-            family = match.fun(pv$family)(),
+            family = switch(pv$family,
+                            binomial = binomial(),
+                            poisson = poisson(),
+                            Gamma = Gamma()),
             method = pv$method,
             control = glmrobMqle.control(
               acc = pv$acc,
@@ -261,7 +274,8 @@ register_robust_learners <- function() {
               formula = formula,
               data = data,
               levels = levels(data[[target]]),
-              ridge = TRUE
+              ridge = TRUE,
+              model_columns = colnames(X)
             ),
             class = "ridge_glm"
           )
@@ -274,79 +288,83 @@ register_robust_learners <- function() {
         model = self$model
         newdata = as.data.frame(task$data())
         
-        # Faktorlevels anpassen 
+        # Handle factor levels in newdata
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
             if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
               new_levels = setdiff(levels(newdata[[var]]), self$state$factor_levels[[var]])
               if (length(new_levels) > 0) {
                 mode_level = names(which.max(table(model$data[[var]])))
-                newdata[[var]] = ifelse(
-                  as.character(newdata[[var]]) %in% new_levels,
-                  mode_level,
-                  as.character(newdata[[var]])
+                newdata[[var]] = factor(
+                  ifelse(as.character(newdata[[var]]) %in% new_levels, mode_level, as.character(newdata[[var]])),
+                  levels = self$state$factor_levels[[var]]
                 )
+              } else {
                 newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
               }
             }
           }
         }
         
-        # geordnete Faktoren zu numerisch konvertieren
+        # Convert ordered factors to numeric
         ordered_cols = sapply(newdata, is.ordered)
         if (any(ordered_cols)) {
           newdata[ordered_cols] = lapply(newdata[ordered_cols], as.numeric)
         }
         
-        # *** Neu: Erzeuge Modelmatrix mit gleichen Spalten wie beim Trainieren ***
-        tt = terms(model$formula)
-        Terms = delete.response(tt)
-        
-        # Modellrahmen mit Trainings-Faktorlevels erzeugen
-        mf = model.frame(Terms, newdata, xlev = self$state$factor_levels)
-        
-        # Modellmatrix mit Dummy-Variablen
-        mm = model.matrix(Terms, mf, contrasts.arg = lapply(
-          mf[, sapply(mf, is.factor), drop = FALSE],
-          contrasts, contrasts = FALSE
-        ))
-        
-        # Fehlende Spalten in mm ergänzen mit 0 (Spalten aus Trainingsdesign, die fehlen)
-        train_cols = names(coef(model))[-1]  # alle Prädiktoren ohne (Intercept)
-        missing_cols = setdiff(train_cols, colnames(mm))
-        if (length(missing_cols) > 0) {
-          for (col in missing_cols) {
-            mm = cbind(mm, rep(0, nrow(mm)))
-            colnames(mm)[ncol(mm)] = col
+        # Prediction depending on model type
+        tryCatch({
+          if (inherits(model, "ridge_glm")) {
+            tt = terms(model$formula)
+            Terms = delete.response(tt)
+            mf = model.frame(Terms, newdata, na.action = na.pass,
+                             xlev = self$state$factor_levels)
+            mm = model.matrix(Terms, mf,
+                              contrasts.arg = lapply(
+                                mf[, sapply(mf, is.factor), drop = FALSE],
+                                contrasts, contrasts = FALSE
+                              ))
+            
+            model_cols = model$model_columns
+            missing_cols = setdiff(model_cols, colnames(mm))
+            if (length(missing_cols) > 0) {
+              mm = cbind(mm, matrix(0, nrow = nrow(mm), ncol = length(missing_cols)))
+              colnames(mm)[(ncol(mm) - length(missing_cols) + 1):ncol(mm)] = missing_cols
+            }
+            mm = mm[, model_cols, drop = FALSE]
+            
+            # Remove intercept if present in ridge model coefficients
+            if (model$ridge && "(Intercept)" %in% colnames(mm)) {
+              mm = mm[, colnames(mm) != "(Intercept)", drop = FALSE]
+            }
+            
+            if (length(model$coefficients) != ncol(mm)) {
+              stop("Dimension mismatch between model coefficients and prediction matrix")
+            }
+            
+            prob = plogis(mm %*% model$coefficients)
+          } else {
+            prob = predict(model, newdata = newdata, type = "response")
           }
-        }
-        
-        # Spalten in der Reihenfolge des Trainingsordners sortieren
-        mm = mm[, train_cols, drop = FALSE]
-        
-        # Wenn Ridge, Intercept entfernen
-        if (inherits(model, "ridge_glm") && model$ridge) {
-          # Modellmatrix ohne Intercept
-          # (Falls Intercept in mm noch drin ist)
-          mm = mm[, colnames(mm) != "(Intercept)", drop = FALSE]
-        }
-        
-        # Wahrscheinlichkeiten vorhersagen
-        prob = plogis(mm %*% model$coefficients[train_cols])
-        
-        prob_matrix = cbind(1 - prob, prob)
-        colnames(prob_matrix) = levels(task$truth())
-        
-        PredictionClassif$new(
-          task = task,
-          response = ifelse(prob > 0.5, levels(task$truth())[2], levels(task$truth())[1]),
-          prob = prob_matrix
-        )
+          
+          prob_matrix = cbind(1 - prob, prob)
+          colnames(prob_matrix) = levels(task$truth())
+          
+          PredictionClassif$new(
+            task = task,
+            response = ifelse(prob > 0.5, levels(task$truth())[2], levels(task$truth())[1]),
+            prob = prob_matrix
+          )
+        }, error = function(e) {
+          stop(sprintf("Prediction failed: %s\nMissing variables: %s",
+                       e$message,
+                       paste(setdiff(all.vars(terms(model$formula)), colnames(newdata)), collapse = ", ")))
+        })
       }
     )
   )
   
-  # Registrieren in mlr3
+  # Register the learner
   mlr3::mlr_learners$add("classif.glm_rob", LearnerClassifGlmRob)
 }
 
