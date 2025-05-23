@@ -207,7 +207,8 @@ register_robust_learners <- function() {
         # Store factor levels
         factor_cols = sapply(data, is.factor)
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
-        return(model)
+        self$model = model
+        return(invisible(NULL))
       },
       
       fallback_model = function(task, pv) {
