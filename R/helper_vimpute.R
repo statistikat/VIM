@@ -188,6 +188,9 @@ register_robust_learners <- function() {
         target = task$target_names
         features = task$feature_names
         
+        # Save original column names
+        self$state$original_columns = colnames(data)
+        
         # Save factor levels
         factor_cols = sapply(data, is.factor)
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
@@ -211,8 +214,14 @@ register_robust_learners <- function() {
                 contrasts, contrasts = FALSE
               )
             )
-            # Store columns for prediction
-            self$state$model_columns = colnames(X)
+            
+            # Store the full model matrix structure
+            self$state$model_structure = list(
+              columns = colnames(X),
+              terms = terms(formula),
+              contrasts = attr(X, "contrasts")
+            )
+            
             # Remove intercept column if present
             if ("(Intercept)" %in% colnames(X)) {
               X = X[, colnames(X) != "(Intercept)", drop = FALSE]
@@ -226,6 +235,9 @@ register_robust_learners <- function() {
         }
         
         formula = reformulate(features, response = target)
+        
+        # Store final formula
+        self$state$final_formula = formula
         
         # Separation check (for factors)
         if (any(sapply(data[features], function(x) {
@@ -275,7 +287,11 @@ register_robust_learners <- function() {
               data = data,
               levels = levels(data[[target]]),
               ridge = TRUE,
-              model_columns = colnames(X)
+              model_structure = list(
+                columns = colnames(X),
+                terms = terms(formula),
+                contrasts = attr(X, "contrasts")
+              )
             ),
             class = "ridge_glm"
           )
@@ -288,47 +304,94 @@ register_robust_learners <- function() {
         model = self$model
         newdata = as.data.frame(task$data())
         
-        # Faktorlevels anpassen (ersetze neue Levels durch häufigsten Level aus Training)
+        # Ensure all original columns are present (fill with NA if missing)
+        missing_cols = setdiff(self$state$original_columns, colnames(newdata))
+        if (length(missing_cols) > 0) {
+          for (col in missing_cols) {
+            newdata[[col]] = NA
+          }
+        }
+        
+        # Restore factor levels and handle new levels
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
             if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
+              # Handle new levels
               new_levels = setdiff(levels(newdata[[var]]), self$state$factor_levels[[var]])
               if (length(new_levels) > 0) {
                 mode_level = names(which.max(table(model$data[[var]])))
-                newdata[[var]] = factor(
-                  ifelse(as.character(newdata[[var]]) %in% new_levels, mode_level, as.character(newdata[[var]])),
-                  levels = self$state$factor_levels[[var]]
+                newdata[[var]] = ifelse(
+                  as.character(newdata[[var]]) %in% new_levels,
+                  mode_level,
+                  as.character(newdata[[var]])
                 )
-              } else {
-                newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
               }
+              newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
             }
           }
         }
         
-        # Vorhersage mit predict() des Modells (Typ: Response-Wahrscheinlichkeit)
-        probs = tryCatch({
-          predict(model, newdata = newdata, type = "response")
+        # Convert ordered factors to numeric
+        ordered_cols = sapply(newdata, is.ordered)
+        if (any(ordered_cols)) {
+          newdata[ordered_cols] = lapply(newdata[ordered_cols], as.numeric)
+        }
+        
+        # Create model matrix with EXACTLY the same structure as training
+        model_struct = if (inherits(model, "ridge_glm")) model$model_structure else self$state$model_structure
+        
+        tryCatch({
+          tt = model_struct$terms
+          Terms = delete.response(tt)
+          mf = model.frame(Terms, newdata, na.action = na.pass,
+                           xlev = self$state$factor_levels)
+          
+          # Recreate the EXACT same contrasts as training
+          mm = model.matrix(Terms, mf, contrasts.arg = model_struct$contrasts)
+          
+          # Ensure all columns from training are present
+          missing_cols = setdiff(model_struct$columns, colnames(mm))
+          if (length(missing_cols) > 0) {
+            zero_mat = matrix(0, nrow = nrow(mm), ncol = length(missing_cols))
+            colnames(zero_mat) = missing_cols
+            mm = cbind(mm, zero_mat)
+          }
+          
+          # Reorder columns to match training exactly
+          mm = mm[, model_struct$columns, drop = FALSE]
+          
+          # For ridge models, remove intercept if needed
+          if (inherits(model, "ridge_glm") && model$ridge) {
+            if ("(Intercept)" %in% colnames(mm)) {
+              mm = mm[, colnames(mm) != "(Intercept)", drop = FALSE]
+            }
+          }
+          
+          # Verify dimensions
+          if (ncol(mm) != length(model$coefficients)) {
+            stop(sprintf("Dimension mismatch: model has %d coefficients but prediction matrix has %d columns",
+                         length(model$coefficients), ncol(mm)))
+          }
+          
+          # Make predictions
+          prob = plogis(mm %*% model$coefficients)
+          
+          # Create prediction object
+          prob_matrix = cbind(1 - prob, prob)
+          colnames(prob_matrix) = levels(task$truth())
+          
+          PredictionClassif$new(
+            task = task,
+            response = ifelse(prob > 0.5, levels(task$truth())[2], levels(task$truth())[1]),
+            prob = prob_matrix
+          )
         }, error = function(e) {
-          stop("Fehler bei der Vorhersage: ", e$message)
+          stop(sprintf("Prediction failed: %s\nMissing variables: %s\nExpected columns: %s",
+                       e$message,
+                       paste(setdiff(all.vars(model$formula), colnames(newdata)), collapse = ", "),
+                       paste(model_struct$columns, collapse = ", ")))
         })
-        
-        # Wahrscheinlichkeiten in Matrix: Spalten entsprechen den Klassen
-        class_levels = levels(task$truth())
-        prob_matrix = cbind(1 - probs, probs)
-        colnames(prob_matrix) = class_levels
-        
-        # Vorhersageklasse: Schwellenwert 0.5
-        response = ifelse(probs > 0.5, class_levels[2], class_levels[1])
-        
-        # Rückgabe eines PredictionClassif-Objekts
-        PredictionClassif$new(
-          task = task,
-          response = response,
-          prob = prob_matrix
-        )
       }
-      
     )
   )
   
