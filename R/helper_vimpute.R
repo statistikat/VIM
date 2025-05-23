@@ -274,6 +274,7 @@ register_robust_learners <- function() {
         model = self$model
         newdata = as.data.frame(task$data())
         
+        # Faktorlevels anpassen 
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
             if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
@@ -291,30 +292,47 @@ register_robust_learners <- function() {
           }
         }
         
+        # geordnete Faktoren zu numerisch konvertieren
         ordered_cols = sapply(newdata, is.ordered)
         if (any(ordered_cols)) {
           newdata[ordered_cols] = lapply(newdata[ordered_cols], as.numeric)
         }
         
-        if (inherits(model, "ridge_glm")) {
-          X_new = tryCatch({
-            tt = terms(model$formula)
-            Terms = delete.response(tt)
-            mf = model.frame(Terms, newdata, xlev = self$state$factor_levels)
-            mm = model.matrix(Terms, mf, contrasts.arg = lapply(
-              mf[, sapply(mf, is.factor), drop = FALSE],
-              contrasts, contrasts = FALSE
-            ))
-            if (model$ridge) {
-              mm = mm[, colnames(mm) != "(Intercept)", drop = FALSE]
-            }
-            mm
-          }, error = function(e) stop("Prediction matrix creation failed: ", e$message))
-          
-          prob = plogis(X_new %*% model$coefficients)
-        } else {
-          prob = predict(model, newdata = newdata, type = "response")
+        # *** Neu: Erzeuge Modelmatrix mit gleichen Spalten wie beim Trainieren ***
+        tt = terms(model$formula)
+        Terms = delete.response(tt)
+        
+        # Modellrahmen mit Trainings-Faktorlevels erzeugen
+        mf = model.frame(Terms, newdata, xlev = self$state$factor_levels)
+        
+        # Modellmatrix mit Dummy-Variablen
+        mm = model.matrix(Terms, mf, contrasts.arg = lapply(
+          mf[, sapply(mf, is.factor), drop = FALSE],
+          contrasts, contrasts = FALSE
+        ))
+        
+        # Fehlende Spalten in mm ergänzen mit 0 (Spalten aus Trainingsdesign, die fehlen)
+        train_cols = names(coef(model))[-1]  # alle Prädiktoren ohne (Intercept)
+        missing_cols = setdiff(train_cols, colnames(mm))
+        if (length(missing_cols) > 0) {
+          for (col in missing_cols) {
+            mm = cbind(mm, rep(0, nrow(mm)))
+            colnames(mm)[ncol(mm)] = col
+          }
         }
+        
+        # Spalten in der Reihenfolge des Trainingsordners sortieren
+        mm = mm[, train_cols, drop = FALSE]
+        
+        # Wenn Ridge, Intercept entfernen
+        if (inherits(model, "ridge_glm") && model$ridge) {
+          # Modellmatrix ohne Intercept
+          # (Falls Intercept in mm noch drin ist)
+          mm = mm[, colnames(mm) != "(Intercept)", drop = FALSE]
+        }
+        
+        # Wahrscheinlichkeiten vorhersagen
+        prob = plogis(mm %*% model$coefficients[train_cols])
         
         prob_matrix = cbind(1 - prob, prob)
         colnames(prob_matrix) = levels(task$truth())
