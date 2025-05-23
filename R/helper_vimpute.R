@@ -1,13 +1,12 @@
 register_robust_learners <- function() {
   
-  # Robust Regression Learner
   LearnerRegrRobustLM = R6::R6Class(
     classname = "LearnerRegrRobustLM",
     inherit = LearnerRegr,
     public = list(
       initialize = function() {
         
-        # definition hyperparameter
+        # Hyperparameter-Definition
         param_set = ps(
           method = p_fct(c("M", "MM"), default = "MM"),
           psi = p_fct(c("bisquare", "lqq", "optimal"), default = "bisquare"),
@@ -19,10 +18,10 @@ register_robust_learners <- function() {
           nResample = p_int(lower = 1, upper = Inf, default = 500),
           subsampling = p_fct(c("simple", "nonsingular"), default = "nonsingular"),
           ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4), 
-          #compute.rd = p_lgl(default = FALSE),
           refine.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
           solve.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
-          trace.lev = p_int(lower = 0, upper = Inf, default = 0)
+          trace.lev = p_int(lower = 0, upper = Inf, default = 0),
+          fallback_to_lm = p_lgl(default = TRUE)  # new
         )
         
         super$initialize(
@@ -45,24 +44,22 @@ register_robust_learners <- function() {
           nResample = 500,
           subsampling = "nonsingular",
           ridge_lambda = 1e-4,
-          #compute.rd = FALSE,
           refine.tol = 1e-7,
           solve.tol = 1e-7,
-          trace.lev = 0
+          trace.lev = 0,
+          fallback_to_lm = TRUE
         )
       }
     ),
     
     private = list(
       .train = function(task) {
-        
-        # train data
         pv = self$param_set$get_values() 
         data = as.data.frame(task$data())
         target = task$target_names
         features = task$feature_names
         
-        # handle factors
+        # factors
         factor_cols = sapply(data, is.factor)
         if (any(factor_cols)) {
           for (col in names(data)[factor_cols]) {
@@ -70,33 +67,47 @@ register_robust_learners <- function() {
           }
         }
         
-        # model matrix
         formula = reformulate(features, response = target)
-        #new
-        control = do.call(robustbase::lmrob.control, pv)
+        control = do.call(robustbase::lmrob.control, pv[names(pv) != "fallback_to_lm"])
+        
+        # Robust Regression
         model = tryCatch(
-          robustbase::lmrob(formula, data = data, control = control),
+          {
+            robustbase::lmrob(formula, data = data, control = control)
+          },
           error = function(e) {
-            warning(sprintf("lmrob() failed for target '%s': %s", target, e$message))
-            return(NULL)
+            if (pv$fallback_to_lm) {
+              warning(sprintf("lmrob() failed for target '%s', falling back to lm(). Error: %s", 
+                              target, e$message))
+              tryCatch(
+                {
+                  stats::lm(formula, data = data)
+                },
+                error = function(e) {
+                  warning(sprintf("Fallback lm() also failed for target '%s': %s", target, e$message))
+                  NULL
+                }
+              )
+            } else {
+              warning(sprintf("lmrob() failed for target '%s' and fallback disabled: %s", 
+                              target, e$message))
+              NULL
+            }
           }
         )
         
         if (is.null(model)) {
-          warning(sprintf("lmrob() fehlgeschlagen für Zielvariable '%s', gebe Dummy-Modell zurück", target))
-          
-          model = list(dummy = TRUE)
+          warning(sprintf("All models failed for target '%s', returning dummy model", target))
+          model = list(dummy = TRUE, fallback_used = FALSE)
           class(model) = "dummy_model"
-          
-          self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
-          return(model)
         } else {
-        #new end
+          # Fallback
+          model$fallback_used = inherits(model, "lm") && !inherits(model, "lmrob")
+        }
         
-        # store factor levels 
+        # save factor levels
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
         return(model)
-        }
       },
       
       .predict = function(task) {
@@ -105,11 +116,10 @@ register_robust_learners <- function() {
         
         if (inherits(model, "dummy_model")) {
           n = nrow(newdata)
-          response = rep(NA_real_, n)
-          return(PredictionRegr$new(task = task, response = response))
+          return(PredictionRegr$new(task = task, response = rep(NA_real_, n)))
         }
         
-        # handle factor levels
+        # factor levels
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
             if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
@@ -118,23 +128,19 @@ register_robust_learners <- function() {
                 warning(sprintf("New levels (%s) in factor '%s' replaced with NA", 
                                 paste(new_levels, collapse = ", "), var))
               }
-              # Faktor mit Trainingslevels forcieren
               newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
             }
           }
         }
-        # Standard prediction
-        response = predict(model, newdata = newdata)
         
+        response = predict(model, newdata = newdata)
         PredictionRegr$new(task = task, response = response)
       }
     )
   )
-        
-  # register the learner
+  
+  # Learner 
   mlr3::mlr_learners$add("regr.lm_rob", LearnerRegrRobustLM)
-  
-  
   
   # robust Classification Learner
   LearnerClassifGlmRob <- R6::R6Class(
