@@ -128,53 +128,40 @@ register_robust_learners <- function() {
     inherit = LearnerClassif,
     public = list(
       initialize = function() {
-
-        # parameter
         param_set = ps(
-          method = p_fct(c("Mqle", "WBY"), default = "Mqle"), #standard = Maximum Quasi-Likelihood Estimation, Weighted Bianco-Yohai Estimator = especially recommended for binary data
-          #psi = p_fct(c("bisquare", "lqq", "hampel", "optimal"), default = "bisquare"), #Funktion für die Gewichtung der Residuen
-          #tuning.chi = p_dbl(lower = 0, upper = Inf, default = 1.547), #Tuning-Parameter χ-function
-          #tuning.psi = p_dbl(lower = 0, upper = Inf, default = 1.547), #Tuning-Parameter  ψ-function
-          acc = p_dbl(lower = 0, upper = Inf, default = 1e-4), #Tolerance for the convergence of the algorithm. The algorithm stops if the changes in the estimates are smaller than this value
-          test.acc = p_fct(c("coef", "resid"), default = "coef"), #Criterion for the convergence test, based on the changes in the coefficients vs. residuals
-          #max.it = p_int(lower = 1, upper = Inf, default = 50),
-          #trace.lev = p_int(lower = 0, upper = 10, default = 0),
-          #weights.on.x = p_fct(c("none", "hat", "robCov"), default = "none"),
-          family = p_fct(c("binomial", "poisson", "Gamma"), default = "binomial"),
-          maxit = p_int(lower = 1, upper = 500, default = 50), # Maximum number of iterations that the algorithm may perform to find a solution.
-          tcc = p_dbl (lower = 1, upper = 2, default = 1.345), #Tuning constant
-          ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4)
+          method = p_fct(c("Mqle", "WBY"), default = "Mqle"),
+          acc = p_dbl(lower = 0, upper = Inf, default = 1e-4),
+          test.acc = p_fct(c("coef", "resid"), default = "coef"),
+          family = p_fct(c("binomial"), default = "binomial"),  # Only binomial supported for robust
+          maxit = p_int(lower = 1, upper = 500, default = 50),
+          tcc = p_dbl(lower = 1, upper = 2, default = 1.345),
+          ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4),
+          fallback = p_fct(c("multinom", "ridge"), default = "multinom")  # New parameter for fallback
         )
-        #param_set
+        
         super$initialize(
           id = "classif.glm_rob",
           feature_types = c("numeric", "integer", "factor", "ordered"),
           predict_types = c("response", "prob"),
-          packages = c("robustbase"),
-          properties = c( "twoclass"),
+          packages = c("robustbase", "nnet"),  # Added nnet for multinomial fallback
+          properties = "twoclass",  # Primary property
           man = "robustbase::glmrob",
           param_set = param_set
         )
-
+        
         self$param_set$values = list(
           method = "Mqle",
-          #psi = "bisquare",
-          #tuning.chi = 1.548,
-          #tuning.psi = 4.685,
           acc = 1e-4,
           test.acc = "coef",
-          #max.it = 100,
-          #trace.lev = 0,
-          #weights.on.x = "none",
           family = "binomial",
           maxit = 50,
           tcc = 1.345,
-          ridge_lambda = 1e-4
+          ridge_lambda = 1e-4,
+          fallback = "multinom"
         )
-
       }
     ),
-
+    
     private = list(
       .train = function(task) {
         pv = self$param_set$get_values()
@@ -182,28 +169,35 @@ register_robust_learners <- function() {
         target = task$target_names
         features = task$feature_names
         features <- setdiff(features, target)
-
+        
+        # Check number of classes
+        n_classes = length(task$class_names)
+        self$state$n_classes = n_classes
+        
+        if (n_classes > 2) {
+          warning(sprintf(
+            "Target has %d classes. Robust GLM only supports binary classification. Falling back to %s method.",
+            n_classes, pv$fallback
+          ))
+          
+          return(self$fallback_model(task, pv))
+        }
+        
         # Handle factors properly
         factor_cols = sapply(data, is.factor)
-
-        # Designmatrix
+        
+        # Design matrix
         formula = reformulate(features, response = target)
         X = tryCatch({
           model.matrix(formula, data)
         }, error = function(e) {
           stop("Failed to create design matrix: ", e$message)
         })
-
+        
         if (ncol(X) == 0) {
           stop("Design matrix has 0 columns - check factor levels and collinearity")
         }
-
-        # # Check for separation
-        # if (any(apply(X, 2, function(x) max(abs(tapply(data[[target]], x, mean, na.rm=TRUE)) %in% c(0,1))))) {
-        #   warning("Perfect separation detected - applying ridge regularization")
-        # }
-
-
+        
         # Fit with regularization fallback
         model = tryCatch({
           robustbase::glmrob(
@@ -220,57 +214,78 @@ register_robust_learners <- function() {
           )
         }, error = function(e) {
           warning("Falling back to ridge-regularized solution: ", e$message)
-
-          # Manual ridge implementation
-          y = as.numeric(data[[target]]) - 1
-          if (ncol(X) == 0) stop("No features available for ridge regression")
-          lambda = ifelse(is.null(pv$ridge_lambda), 1e-4, pv$ridge_lambda)
-          XtX = crossprod(X)
-          diag(XtX) = diag(XtX) + lambda
-
-          print("lambda: ")
-          print(lambda)
-
-          # Ridge penalty
-          beta = tryCatch(
-            solve(XtX, crossprod(X, y)),
-            error = function(e) {
-              warning("Using pseudoinverse due to singular system")
-              MASS::ginv(XtX) %*% crossprod(X, y)
-            }
-          )
-
-          # Create dummy model object
-          structure(
-            list(
-              coefficients = beta,
-              fitted.values = plogis(X %*% beta),
-              formula = formula,
-              data = data,
-              levels = levels(data[[target]])
-            ),
-            class = "ridge_glm"
-          )
+          self$ridge_fallback(X, data[[target]], formula, pv)
         })
-
+        
         # Store factor levels
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
-
         return(model)
       },
-
+      
+      fallback_model = function(task, pv) {
+        data = task$data()
+        formula = task$formula()
+        
+        if (pv$fallback == "multinom") {
+          # Multinomial logistic regression fallback
+          requireNamespace("nnet")
+          model = nnet::multinom(
+            formula,
+            data = data,
+            trace = FALSE,
+            maxit = pv$maxit
+          )
+          class(model) = c("multinom_fallback", class(model))
+        } else {
+          # Ridge regression fallback
+          X = model.matrix(formula, data)
+          y = data[[task$target_names]]
+          model = self$ridge_fallback(X, y, formula, pv)
+        }
+        
+        return(model)
+      },
+      
+      ridge_fallback = function(X, y, formula, pv) {
+        y_num = as.numeric(y) - 1
+        if (ncol(X) == 0) stop("No features available for ridge regression")
+        lambda = ifelse(is.null(pv$ridge_lambda), 1e-4, pv$ridge_lambda)
+        XtX = crossprod(X)
+        diag(XtX) = diag(XtX) + lambda
+        
+        beta = tryCatch(
+          solve(XtX, crossprod(X, y_num)),
+          error = function(e) {
+            warning("Using pseudoinverse due to singular system")
+            MASS::ginv(XtX) %*% crossprod(X, y_num)
+          }
+        )
+        
+        structure(
+          list(
+            coefficients = beta,
+            fitted.values = plogis(X %*% beta),
+            formula = formula,
+            data = data.frame(X, y),
+            levels = levels(y),
+            n_classes = length(unique(y))
+          ),
+          class = "ridge_glm"
+        )
+      },
+      
       .predict = function(task) {
         model = self$model
         newdata = as.data.frame(task$data())
-
-        # unknown levels
+        n_classes = self$state$n_classes
+        
+        # Handle unknown factor levels
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
             if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
               new_levels = setdiff(levels(newdata[[var]]), self$state$factor_levels[[var]])
               if (length(new_levels) > 0) {
-                # max level
-                mode_level = names(which.max(table(self$model$data[[var]])))
+                mode_level = names(which.max(table(model$data[[var]])))
                 newdata[[var]] = ifelse(newdata[[var]] %in% new_levels,
                                         mode_level,
                                         as.character(newdata[[var]]))
@@ -279,31 +294,41 @@ register_robust_learners <- function() {
             }
           }
         }
-
+        
+        # Different prediction handling based on model type
         if (inherits(model, "ridge_glm")) {
           X_new = tryCatch(
             model.matrix(delete.response(terms(model$formula)), newdata),
             error = function(e) stop("Prediction matrix creation failed: ", e$message)
           )
           prob = plogis(X_new %*% model$coefficients)
+          prob_matrix = cbind(1 - prob, prob)
+        } else if (inherits(model, "multinom_fallback")) {
+          prob_matrix = predict(model, newdata = newdata, type = "probs")
+          if (n_classes == 2) {  # multinom returns only one column for binary case
+            prob_matrix = cbind(1 - prob_matrix, prob_matrix)
+          }
         } else {
           prob = predict(model, newdata = newdata, type = "response")
+          prob_matrix = cbind(1 - prob, prob)
         }
-
-        # prediction
-        prob_matrix = cbind(1 - prob, prob)
-        colnames(prob_matrix) = levels(task$truth())
-
-        PredictionClassif$new(
-          task = task,
-          response = ifelse(prob > 0.5, levels(task$truth())[2], levels(task$truth())[1]),
-          prob = prob_matrix
-        )
+        
+        # Ensure proper column names
+        colnames(prob_matrix) = task$class_names
+        
+        # Create prediction object
+        if (self$predict_type == "prob") {
+          PredictionClassif$new(task = task, prob = prob_matrix)
+        } else {
+          response = colnames(prob_matrix)[max.col(prob_matrix)]
+          PredictionClassif$new(task = task, response = response)
+        }
       }
     )
   )
-  # Register the robust classification learner
-  mlr3::mlr_learners$add("classif.glm_rob", LearnerClassifGlmRob)
+  
+  # Register the learner
+  mlr_learners$add("classif.glm_rob", LearnerClassifGlmRob)
 }
 
 

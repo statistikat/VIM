@@ -284,8 +284,9 @@ vimpute <- function(
           )
         } else if (is.factor(data[[target_col]])) {
           if (method_var == "robust" && length(levels(data[[target_col]])) != 2) {
-            warning(paste0("Skipping variable '", target_col, "': 'classif.glm_rob' requires binary classification."))
-            next
+            #warning(paste0("Skipping variable '", target_col, "': 'classif.glm_rob' requires binary classification."))
+            warning(paste0("Variable not binary", target_col, "': use alternative method than glm.rob"))
+            #next
           }
           learners_list <- list(
             regularized = list(learners[["classif.glmnet"]]),
@@ -293,9 +294,9 @@ vimpute <- function(
             ranger = list(learners[["classif.ranger"]]),
             xgboost = list(learners[["classif.xgboost"]])
           )
-        } else {
-          next
-        }
+        } #else {
+          #next
+        #}
         learner_candidates <- learners_list[[method_var]]
 ### Select suitable learner End ***** ####
         
