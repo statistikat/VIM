@@ -315,7 +315,7 @@ register_robust_learners <- function() {
   )
   
   # Register the learner
-  mlr_learners$add("classif.glm_rob", LearnerClassifGlmRob)
+  mlr_learners$add("classif.glm_rob", LearnerClassifGlmRob$new)
 }
 
 
