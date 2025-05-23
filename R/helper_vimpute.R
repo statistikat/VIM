@@ -73,17 +73,6 @@ register_robust_learners <- function() {
         # model matrix
         formula = reformulate(features, response = target)
         #new
-        # control = robustbase::lmrob.control(
-        #   method = pv$method,
-        #   psi = pv$psi,
-        #   tuning.chi = pv$tuning.chi,
-        #   tuning.psi = pv$tuning.psi,
-        #   setting = pv$setting,
-        #   max.it = pv$max.it,
-        #   k.max = pv$k.max,
-        #   nResample = pv$nResample,
-        #   subsampling = pv$subsampling
-        # )
         control = do.call(robustbase::lmrob.control, pv)
         model = tryCatch(
           robustbase::lmrob(formula, data = data, control = control),
@@ -94,19 +83,31 @@ register_robust_learners <- function() {
         )
         
         if (is.null(model)) {
-          warning(sprintf("lmrob() fehlgeschlagen für Zielvariable '%s', keine Imputation", target))
-          return(NULL)
-        }
+          warning(sprintf("lmrob() fehlgeschlagen für Zielvariable '%s', gebe Dummy-Modell zurück", target))
+          
+          model = list(dummy = TRUE)
+          class(model) = "dummy_model"
+          
+          self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
+          return(model)
+        } else {
         #new end
         
         # store factor levels 
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
         return(model)
+        }
       },
       
       .predict = function(task) {
         model = self$model
         newdata = as.data.frame(task$data())
+        
+        if (inherits(model, "dummy_model")) {
+          n = nrow(newdata)
+          response = rep(NA_real_, n)
+          return(PredictionRegr$new(task = task, response = response))
+        }
         
         # handle factor levels
         if (!is.null(self$state$factor_levels)) {
@@ -130,18 +131,6 @@ register_robust_learners <- function() {
     )
   )
         
-  #       # prediction
-  #       if (inherits(model, "ridge_lm")) {
-  #         X_new = model.matrix(delete.response(terms(model)), newdata) #Falls das Modell eine Ridge-Regression (ridge_lm) ist
-  #         response = X_new %*% model$coefficients
-  #       } else {
-  #         response = predict(model, newdata = newdata)
-  #       }
-  #       
-  #       PredictionRegr$new(task = task, response = response)
-  #     }
-  #   )
-  # )
   # register the learner
   mlr3::mlr_learners$add("regr.lm_rob", LearnerRegrRobustLM)
   
