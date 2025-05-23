@@ -288,11 +288,10 @@ register_robust_learners <- function() {
         model = self$model
         newdata = as.data.frame(task$data())
         
-        # Faktorlevels wiederherstellen und neue Levels ersetzen
+        # Faktorlevels anpassen (ersetze neue Levels durch häufigsten Level aus Training)
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
             if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
-              # Neue Levels auf Mode aus Trainingsdaten setzen
               new_levels = setdiff(levels(newdata[[var]]), self$state$factor_levels[[var]])
               if (length(new_levels) > 0) {
                 mode_level = names(which.max(table(model$data[[var]])))
@@ -307,62 +306,29 @@ register_robust_learners <- function() {
           }
         }
         
-        # Ordered Faktoren zu numerisch
-        ordered_cols = sapply(newdata, is.ordered)
-        if (any(ordered_cols)) {
-          newdata[ordered_cols] = lapply(newdata[ordered_cols], as.numeric)
-        }
+        # Vorhersage mit predict() des Modells (Typ: Response-Wahrscheinlichkeit)
+        probs = tryCatch({
+          predict(model, newdata = newdata, type = "response")
+        }, error = function(e) {
+          stop("Fehler bei der Vorhersage: ", e$message)
+        })
         
-        # Modellmatrix mit gleichen Levels & Kontrasten wie Training erzeugen
-        tt = terms(model$formula)
-        Terms = delete.response(tt)
-        mf = model.frame(Terms, newdata, na.action = na.pass,
-                         xlev = self$state$factor_levels)
+        # Wahrscheinlichkeiten in Matrix: Spalten entsprechen den Klassen
+        class_levels = levels(task$truth())
+        prob_matrix = cbind(1 - probs, probs)
+        colnames(prob_matrix) = class_levels
         
-        # Kontraste ohne automatische Erstellung (kontrastfrei)
-        contrasts_list = lapply(
-          mf[, sapply(mf, is.factor), drop = FALSE],
-          contrasts, contrasts = FALSE
-        )
+        # Vorhersageklasse: Schwellenwert 0.5
+        response = ifelse(probs > 0.5, class_levels[2], class_levels[1])
         
-        mm = model.matrix(Terms, mf, contrasts.arg = contrasts_list)
-        
-        # Fehlende Spalten ergänzen
-        model_cols = if (!is.null(self$state$model_columns)) self$state$model_columns else colnames(mm)
-        missing_cols = setdiff(model_cols, colnames(mm))
-        if (length(missing_cols) > 0) {
-          zero_mat = matrix(0, nrow = nrow(mm), ncol = length(missing_cols))
-          colnames(zero_mat) = missing_cols
-          mm = cbind(mm, zero_mat)
-        }
-        
-        # Spalten in der Reihenfolge des Trainings anordnen
-        mm = mm[, model_cols, drop = FALSE]
-        
-        # Bei Ridge-Modell: Intercept rausnehmen (falls nötig)
-        if (inherits(model, "ridge_glm") && model$ridge) {
-          if ("(Intercept)" %in% colnames(mm)) {
-            mm = mm[, colnames(mm) != "(Intercept)", drop = FALSE]
-          }
-        }
-        
-        # Dimensionen prüfen
-        if (length(model$coefficients) != ncol(mm)) {
-          stop("Dimension mismatch between model coefficients and design matrix")
-        }
-        
-        # Vorhersage
-        prob = plogis(mm %*% model$coefficients)
-        
-        prob_matrix = cbind(1 - prob, prob)
-        colnames(prob_matrix) = levels(task$truth())
-        
+        # Rückgabe eines PredictionClassif-Objekts
         PredictionClassif$new(
           task = task,
-          response = ifelse(prob > 0.5, levels(task$truth())[2], levels(task$truth())[1]),
+          response = response,
           prob = prob_matrix
         )
       }
+      
     )
   )
   
