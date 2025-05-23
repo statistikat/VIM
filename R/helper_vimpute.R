@@ -149,6 +149,17 @@ register_robust_learners <- function() {
           man = "robustbase::glmrob",
           param_set = param_set
         )
+        
+        self$param_set$values = list(
+          method = "Mqle",
+          acc = 1e-4,
+          test.acc = "coef",
+          family = "binomial",
+          maxit = 50,
+          tcc = 1.345,
+          ridge_lambda = 1e-4,
+          fallback = "multinom"
+        )
       }
     ),
     
@@ -194,14 +205,16 @@ register_robust_learners <- function() {
         factor_cols = sapply(data, is.factor)
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
         self$model = model
-        invisible(NULL)
+        return(model)
       },
       
       fallback_model = function(task, pv) {
         data = task$data()
-        formula = task$formula()
+        target = task$target_names
+        features = task$feature_names
         
         if (pv$fallback == "multinom") {
+          formula = as.formula(paste(target, "~ ."))
           model = nnet::multinom(
             formula,
             data = data,
@@ -210,15 +223,16 @@ register_robust_learners <- function() {
           )
           class(model) = c("multinom_fallback", class(model))
         } else {
+          formula = as.formula(paste(target, "~ ."))
           X = model.matrix(formula, data)
-          y = data[[task$target_names]]
+          y = data[[target]]
           model = self$ridge_fallback(X, y, formula, pv)
         }
         
         factor_cols = sapply(data, is.factor)
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
         self$model = model
-        invisible(NULL)
+        return(model)
       },
       
       ridge_fallback = function(X, y, formula, pv) {
@@ -254,24 +268,35 @@ register_robust_learners <- function() {
         newdata = self$handle_new_levels(newdata)
         
         if (inherits(model, "multinom_fallback")) {
-          prob_matrix = predict(model, newdata = newdata, type = "probs")
-          # nnet::multinom usually returns probs for all classes, no adjustment needed
+          if (self$predict_type == "prob") {
+            prob_matrix = predict(model, newdata = newdata, type = "probs")
+            # Ensure prob_matrix is a matrix (multinom sometimes returns vector for binary)
+            if (!is.matrix(prob_matrix)) {
+              prob_matrix = cbind(1 - prob_matrix, prob_matrix)
+              colnames(prob_matrix) = self$state$target_levels
+            }
+          } else {
+            response = predict(model, newdata = newdata, type = "class")
+            return(PredictionClassif$new(task = task, response = response))
+          }
         } else if (inherits(model, "ridge_glm")) {
           X_new = model.matrix(delete.response(terms(model$formula)), newdata)
           prob = plogis(X_new %*% model$coefficients)
           prob_matrix = cbind(1 - prob, prob)
+          colnames(prob_matrix) = self$state$target_levels
         } else {
           prob = predict(model, newdata = newdata, type = "response")
           prob_matrix = cbind(1 - prob, prob)
+          colnames(prob_matrix) = self$state$target_levels
         }
         
-        prob_matrix = prob_matrix[, self$state$target_levels, drop = FALSE]
-        
         if (self$predict_type == "prob") {
-          PredictionClassif$new(task = task, prob = prob_matrix)
+          # Ensure columns are in correct order
+          prob_matrix = prob_matrix[, self$state$target_levels, drop = FALSE]
+          return(PredictionClassif$new(task = task, prob = prob_matrix))
         } else {
           response = self$state$target_levels[max.col(prob_matrix, ties.method = "first")]
-          PredictionClassif$new(task = task, response = response)
+          return(PredictionClassif$new(task = task, response = response))
         }
       },
       
