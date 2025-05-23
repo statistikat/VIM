@@ -94,7 +94,8 @@ register_robust_learners <- function() {
         )
         
         if (is.null(model)) {
-          stop(sprintf("Robuste Regression mit lmrob() ist fehlgeschlagen für Zielvariable '%s'", target))
+          warning(sprintf("lmrob() fehlgeschlagen für Zielvariable '%s', keine Imputation", target))
+          return(NULL)
         }
         #new end
         
