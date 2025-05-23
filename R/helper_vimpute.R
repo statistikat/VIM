@@ -197,10 +197,10 @@ register_robust_learners <- function() {
           stop("Design matrix has 0 columns - check factor levels and collinearity")
         }
         
-        # Check for separation
-        if (any(apply(X, 2, function(x) max(abs(tapply(data[[target]], x, mean, na.rm=TRUE)) %in% c(0,1))))) {
-          warning("Perfect separation detected - applying ridge regularization")
-        }
+        # # Check for separation
+        # if (any(apply(X, 2, function(x) max(abs(tapply(data[[target]], x, mean, na.rm=TRUE)) %in% c(0,1))))) {
+        #   warning("Perfect separation detected - applying ridge regularization")
+        # }
         
         
         # Fit with regularization fallback
