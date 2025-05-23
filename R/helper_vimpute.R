@@ -6,8 +6,6 @@ register_robust_learners <- function() {
     inherit = LearnerRegr,
     public = list(
       initialize = function() {
-        
-        # definition hyperparameter
         param_set = ps(
           method = p_fct(c("M", "MM"), default = "MM"),
           psi = p_fct(c("bisquare", "lqq", "optimal"), default = "bisquare"),
@@ -18,15 +16,14 @@ register_robust_learners <- function() {
           k.max = p_int(lower = 1, upper = Inf, default = 200),
           nResample = p_int(lower = 1, upper = Inf, default = 500),
           subsampling = p_fct(c("simple", "nonsingular"), default = "nonsingular"),
-          ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4), 
-          #compute.rd = p_lgl(default = FALSE),
+          ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4),
           refine.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
           solve.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
           trace.lev = p_int(lower = 0, upper = Inf, default = 0)
         )
         
         super$initialize(
-          id = "regr.lm_rob", 
+          id = "regr.lm_rob",
           feature_types = c("numeric", "integer", "factor", "ordered"),
           predict_types = c("response"),
           packages = c("robustbase", "stats"),
@@ -45,7 +42,6 @@ register_robust_learners <- function() {
           nResample = 500,
           subsampling = "nonsingular",
           ridge_lambda = 1e-4,
-          #compute.rd = FALSE,
           refine.tol = 1e-7,
           solve.tol = 1e-7,
           trace.lev = 0
@@ -55,14 +51,11 @@ register_robust_learners <- function() {
     
     private = list(
       .train = function(task) {
-        
-        # train data
-        pv = self$param_set$get_values() 
+        pv = self$param_set$get_values()
         data = as.data.frame(task$data())
         target = task$target_names
         features = task$feature_names
         
-        # handle factors
         factor_cols = sapply(data, is.factor)
         if (any(factor_cols)) {
           for (col in names(data)[factor_cols]) {
@@ -70,68 +63,60 @@ register_robust_learners <- function() {
           }
         }
         
-        # model matrix
         formula = reformulate(features, response = target)
-        #new
         control = do.call(robustbase::lmrob.control, pv)
+        
+        # Versuch robustes Modell
         model = tryCatch(
           robustbase::lmrob(formula, data = data, control = control),
           error = function(e) {
-            warning(sprintf("lmrob() failed for target '%s': %s", target, e$message))
-            return(NULL)
+            warning(sprintf("lmrob() failed for '%s': %s\nFalling back to lm()", target, e$message))
+            NULL
           }
         )
         
         if (is.null(model)) {
-          warning(sprintf("lmrob() fehlgeschlagen für Zielvariable '%s', gebe Dummy-Modell zurück", target))
-          
-          model = list(dummy = TRUE)
-          class(model) = "dummy_model"
-          
-          self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
-          return(model)
+          # Fallback: lm
+          model = lm(formula, data = data)
+          class(model) = c("lm_fallback", class(model))
+          self$state$used_fallback = TRUE
         } else {
-          #new end
-          
-          # store factor levels 
-          self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
-          return(model)
+          self$state$used_fallback = FALSE
         }
+        
+        self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
+        return(model)
       },
       
       .predict = function(task) {
         model = self$model
         newdata = as.data.frame(task$data())
         
-        if (inherits(model, "dummy_model")) {
-          n = nrow(newdata)
-          response = rep(NA_real_, n)
-          return(PredictionRegr$new(task = task, response = response))
-        }
-        
-        # handle factor levels
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
             if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
               new_levels = setdiff(levels(newdata[[var]]), self$state$factor_levels[[var]])
               if (length(new_levels) > 0) {
-                warning(sprintf("New levels (%s) in factor '%s' replaced with NA", 
+                warning(sprintf("New levels (%s) in factor '%s' replaced with NA",
                                 paste(new_levels, collapse = ", "), var))
               }
-              # Faktor mit Trainingslevels forcieren
               newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
             }
           }
         }
-        # Standard prediction
-        response = predict(model, newdata = newdata)
+        
+        response = tryCatch({
+          predict(model, newdata = newdata)
+        }, error = function(e) {
+          warning("Vorhersage fehlgeschlagen: ", e$message)
+          rep(NA_real_, nrow(newdata))
+        })
         
         PredictionRegr$new(task = task, response = response)
       }
     )
   )
   
-  # register the learner
   mlr3::mlr_learners$add("regr.lm_rob", LearnerRegrRobustLM)
   
   
