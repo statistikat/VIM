@@ -1,12 +1,13 @@
 register_robust_learners <- function() {
   
+  # Robust Regression Learner
   LearnerRegrRobustLM = R6::R6Class(
     classname = "LearnerRegrRobustLM",
     inherit = LearnerRegr,
     public = list(
       initialize = function() {
         
-        # Hyperparameter-Definition
+        # definition hyperparameter
         param_set = ps(
           method = p_fct(c("M", "MM"), default = "MM"),
           psi = p_fct(c("bisquare", "lqq", "optimal"), default = "bisquare"),
@@ -18,10 +19,10 @@ register_robust_learners <- function() {
           nResample = p_int(lower = 1, upper = Inf, default = 500),
           subsampling = p_fct(c("simple", "nonsingular"), default = "nonsingular"),
           ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4), 
+          #compute.rd = p_lgl(default = FALSE),
           refine.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
           solve.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
-          trace.lev = p_int(lower = 0, upper = Inf, default = 0),
-          fallback_to_lm = p_lgl(default = TRUE)  # new
+          trace.lev = p_int(lower = 0, upper = Inf, default = 0)
         )
         
         super$initialize(
@@ -44,22 +45,24 @@ register_robust_learners <- function() {
           nResample = 500,
           subsampling = "nonsingular",
           ridge_lambda = 1e-4,
+          #compute.rd = FALSE,
           refine.tol = 1e-7,
           solve.tol = 1e-7,
-          trace.lev = 0,
-          fallback_to_lm = TRUE
+          trace.lev = 0
         )
       }
     ),
     
     private = list(
       .train = function(task) {
+        
+        # train data
         pv = self$param_set$get_values() 
         data = as.data.frame(task$data())
         target = task$target_names
         features = task$feature_names
         
-        # factors
+        # handle factors
         factor_cols = sapply(data, is.factor)
         if (any(factor_cols)) {
           for (col in names(data)[factor_cols]) {
@@ -67,45 +70,35 @@ register_robust_learners <- function() {
           }
         }
         
+        # model matrix
         formula = reformulate(features, response = target)
-        control = do.call(robustbase::lmrob.control, pv[names(pv) != "fallback_to_lm"])
-        
-        # Robust Regression
+        #new
+        # control = robustbase::lmrob.control(
+        #   method = pv$method,
+        #   psi = pv$psi,
+        #   tuning.chi = pv$tuning.chi,
+        #   tuning.psi = pv$tuning.psi,
+        #   setting = pv$setting,
+        #   max.it = pv$max.it,
+        #   k.max = pv$k.max,
+        #   nResample = pv$nResample,
+        #   subsampling = pv$subsampling
+        # )
+        control = do.call(robustbase::lmrob.control, pv)
         model = tryCatch(
-          {
-            robustbase::lmrob(formula, data = data, control = control)
-          },
+          robustbase::lmrob(formula, data = data, control = control),
           error = function(e) {
-            if (pv$fallback_to_lm) {
-              warning(sprintf("lmrob() failed for target '%s', falling back to lm(). Error: %s", 
-                              target, e$message))
-              tryCatch(
-                {
-                  stats::lm(formula, data = data)
-                },
-                error = function(e) {
-                  warning(sprintf("Fallback lm() also failed for target '%s': %s", target, e$message))
-                  NULL
-                }
-              )
-            } else {
-              warning(sprintf("lmrob() failed for target '%s' and fallback disabled: %s", 
-                              target, e$message))
-              NULL
-            }
+            warning(sprintf("lmrob() failed for target '%s': %s", target, e$message))
+            return(NULL)
           }
         )
         
         if (is.null(model)) {
-          warning(sprintf("All models failed for target '%s', returning dummy model", target))
-          model = list(dummy = TRUE, fallback_used = FALSE)
-          class(model) = "dummy_model"
-        } else {
-          # Fallback
-          model$fallback_used = inherits(model, "lm") && !inherits(model, "lmrob")
+          stopf("Robuste Regression mit lmrob() ist fehlgeschlagen für Zielvariable '%s'", target)
         }
+        #new end
         
-        # save factor levels
+        # store factor levels 
         self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
         return(model)
       },
@@ -114,12 +107,7 @@ register_robust_learners <- function() {
         model = self$model
         newdata = as.data.frame(task$data())
         
-        if (inherits(model, "dummy_model")) {
-          n = nrow(newdata)
-          return(PredictionRegr$new(task = task, response = rep(NA_real_, n)))
-        }
-        
-        # factor levels
+        # handle factor levels
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
             if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
@@ -128,56 +116,86 @@ register_robust_learners <- function() {
                 warning(sprintf("New levels (%s) in factor '%s' replaced with NA", 
                                 paste(new_levels, collapse = ", "), var))
               }
+              # Faktor mit Trainingslevels forcieren
               newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
             }
           }
         }
-        
+        # Standard prediction
         response = predict(model, newdata = newdata)
+        
         PredictionRegr$new(task = task, response = response)
       }
     )
   )
   
-  # Learner 
+  #       # prediction
+  #       if (inherits(model, "ridge_lm")) {
+  #         X_new = model.matrix(delete.response(terms(model)), newdata) #Falls das Modell eine Ridge-Regression (ridge_lm) ist
+  #         response = X_new %*% model$coefficients
+  #       } else {
+  #         response = predict(model, newdata = newdata)
+  #       }
+  #       
+  #       PredictionRegr$new(task = task, response = response)
+  #     }
+  #   )
+  # )
+  # register the learner
   mlr3::mlr_learners$add("regr.lm_rob", LearnerRegrRobustLM)
   
+  
+  
+  # robust Classification Learner
   LearnerClassifGlmRob <- R6::R6Class(
     classname = "LearnerClassifGlmRob",
     inherit = LearnerClassif,
     public = list(
       initialize = function() {
-        param_set = ps(
-          method = p_fct(c("Mqle", "WBY"), default = "Mqle"),
-          acc = p_dbl(lower = 0, upper = Inf, default = 1e-4),
-          test.acc = p_fct(c("coef", "resid"), default = "coef"),
-          family = p_fct(c("binomial", "poisson", "Gamma"), default = "binomial"),
-          maxit = p_int(lower = 1, upper = 500, default = 50),
-          tcc = p_dbl(lower = 1, upper = 2, default = 1.345),
-          ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4),
-          handle_categorical = p_lgl(default = TRUE)
-        )
         
+        # parameter
+        param_set = ps(
+          method = p_fct(c("Mqle", "WBY"), default = "Mqle"), #standard = Maximum Quasi-Likelihood Estimation, Weighted Bianco-Yohai Estimator = especially recommended for binary data
+          #psi = p_fct(c("bisquare", "lqq", "hampel", "optimal"), default = "bisquare"), #Funktion für die Gewichtung der Residuen
+          #tuning.chi = p_dbl(lower = 0, upper = Inf, default = 1.547), #Tuning-Parameter χ-function
+          #tuning.psi = p_dbl(lower = 0, upper = Inf, default = 1.547), #Tuning-Parameter  ψ-function
+          acc = p_dbl(lower = 0, upper = Inf, default = 1e-4), #Tolerance for the convergence of the algorithm. The algorithm stops if the changes in the estimates are smaller than this value
+          test.acc = p_fct(c("coef", "resid"), default = "coef"), #Criterion for the convergence test, based on the changes in the coefficients vs. residuals
+          #max.it = p_int(lower = 1, upper = Inf, default = 50), 
+          #trace.lev = p_int(lower = 0, upper = 10, default = 0), 
+          #weights.on.x = p_fct(c("none", "hat", "robCov"), default = "none"), 
+          family = p_fct(c("binomial", "poisson", "Gamma"), default = "binomial"),  
+          maxit = p_int(lower = 1, upper = 500, default = 50), # Maximum number of iterations that the algorithm may perform to find a solution.
+          tcc = p_dbl (lower = 1, upper = 2, default = 1.345), #Tuning constant
+          ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4)
+        )
+        #param_set
         super$initialize(
           id = "classif.glm_rob",
           feature_types = c("numeric", "integer", "factor", "ordered"),
           predict_types = c("response", "prob"),
-          packages = c("robustbase", "MASS"),
-          properties = c("twoclass"),
+          packages = c("robustbase"),
+          properties = c( "twoclass"),
           man = "robustbase::glmrob",
           param_set = param_set
         )
         
         self$param_set$values = list(
           method = "Mqle",
+          #psi = "bisquare",
+          #tuning.chi = 1.548,
+          #tuning.psi = 4.685,
           acc = 1e-4,
           test.acc = "coef",
+          #max.it = 100,
+          #trace.lev = 0,
+          #weights.on.x = "none",
           family = "binomial",
           maxit = 50,
           tcc = 1.345,
-          ridge_lambda = 1e-4,
-          handle_categorical = TRUE
+          ridge_lambda = 1e-4 
         )
+        
       }
     ),
     
@@ -187,76 +205,35 @@ register_robust_learners <- function() {
         data = as.data.frame(task$data())
         target = task$target_names
         features = task$feature_names
+        features <- setdiff(features, target)
         
-        # Save original column names
-        self$state$original_columns = colnames(data)
-        
-        # Save factor levels
+        # Handle factors properly
         factor_cols = sapply(data, is.factor)
-        self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
         
-        if (pv$handle_categorical) {
-          # Handle ordered factors: convert to numeric
-          ordered_cols = sapply(data, is.ordered)
-          if (any(ordered_cols)) {
-            data[ordered_cols] = lapply(data[ordered_cols], as.numeric)
-          }
-          
-          # Handle unordered factors by model.matrix
-          factor_cols = sapply(data, is.factor) & !ordered_cols
-          if (any(factor_cols)) {
-            formula = reformulate(features, response = target)
-            X = model.matrix(
-              formula,
-              data,
-              contrasts.arg = lapply(
-                data[, factor_cols, drop = FALSE],
-                contrasts, contrasts = FALSE
-              )
-            )
-            
-            # Store the full model matrix structure
-            self$state$model_structure = list(
-              columns = colnames(X),
-              terms = terms(formula),
-              contrasts = attr(X, "contrasts")
-            )
-            
-            # Remove intercept column if present
-            if ("(Intercept)" %in% colnames(X)) {
-              X = X[, colnames(X) != "(Intercept)", drop = FALSE]
-            }
-            
-            # Combine target, non-factor features, and expanded factor matrix
-            non_factor_data = data[, !factor_cols & colnames(data) != target, drop = FALSE]
-            data = cbind(data[target], non_factor_data, X)
-            features = setdiff(colnames(data), target)
-          }
-        }
-        
+        # Designmatrix
         formula = reformulate(features, response = target)
+        X = tryCatch({
+          model.matrix(formula, data)
+        }, error = function(e) {
+          stop("Failed to create design matrix: ", e$message)
+        })
         
-        # Store final formula
-        self$state$final_formula = formula
-        
-        # Separation check (for factors)
-        if (any(sapply(data[features], function(x) {
-          if (is.numeric(x)) return(FALSE)
-          tab = table(data[[target]], x)
-          any(apply(tab, 2, function(col) any(col == 0)))
-        }))) {
-          warning("Perfect separation detected - applying ridge regularization")
-          pv$ridge_lambda = max(pv$ridge_lambda, 1e-3)
+        if (ncol(X) == 0) {
+          stop("Design matrix has 0 columns - check factor levels and collinearity")
         }
         
+        # Check for separation
+        if (any(apply(X, 2, function(x) max(abs(tapply(data[[target]], x, mean, na.rm=TRUE)) %in% c(0,1))))) {
+          warning("Perfect separation detected - applying ridge regularization")
+        }
+        
+        
+        # Fit with regularization fallback
         model = tryCatch({
           robustbase::glmrob(
             formula,
             data = data,
-            family = switch(pv$family,
-                            binomial = binomial(),
-                            poisson = poisson(),
-                            Gamma = Gamma()),
+            family = binomial(),
             method = pv$method,
             control = glmrobMqle.control(
               acc = pv$acc,
@@ -267,11 +244,18 @@ register_robust_learners <- function() {
           )
         }, error = function(e) {
           warning("Falling back to ridge-regularized solution: ", e$message)
+          
+          # Manual ridge implementation
           y = as.numeric(data[[target]]) - 1
-          X = model.matrix(formula, data)
-          lambda = pv$ridge_lambda
+          if (ncol(X) == 0) stop("No features available for ridge regression")
+          lambda = ifelse(is.null(pv$ridge_lambda), 1e-4, pv$ridge_lambda)
           XtX = crossprod(X)
           diag(XtX) = diag(XtX) + lambda
+          
+          print("lambda: ")
+          print(lambda)
+          
+          # Ridge penalty
           beta = tryCatch(
             solve(XtX, crossprod(X, y)),
             error = function(e) {
@@ -279,23 +263,22 @@ register_robust_learners <- function() {
               MASS::ginv(XtX) %*% crossprod(X, y)
             }
           )
+          
+          # Create dummy model object
           structure(
             list(
               coefficients = beta,
               fitted.values = plogis(X %*% beta),
               formula = formula,
               data = data,
-              levels = levels(data[[target]]),
-              ridge = TRUE,
-              model_structure = list(
-                columns = colnames(X),
-                terms = terms(formula),
-                contrasts = attr(X, "contrasts")
-              )
+              levels = levels(data[[target]])
             ),
             class = "ridge_glm"
           )
         })
+        
+        # Store factor levels
+        self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
         
         return(model)
       },
@@ -304,100 +287,49 @@ register_robust_learners <- function() {
         model = self$model
         newdata = as.data.frame(task$data())
         
-        # Ensure all original columns are present (fill with NA if missing)
-        missing_cols = setdiff(self$state$original_columns, colnames(newdata))
-        if (length(missing_cols) > 0) {
-          for (col in missing_cols) {
-            newdata[[col]] = NA
-          }
-        }
-        
-        # Restore factor levels and handle new levels
+        # unknown levels
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
             if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
-              # Handle new levels
               new_levels = setdiff(levels(newdata[[var]]), self$state$factor_levels[[var]])
               if (length(new_levels) > 0) {
-                mode_level = names(which.max(table(model$data[[var]])))
-                newdata[[var]] = ifelse(
-                  as.character(newdata[[var]]) %in% new_levels,
-                  mode_level,
-                  as.character(newdata[[var]])
-                )
+                # max level
+                mode_level = names(which.max(table(self$model$data[[var]])))
+                newdata[[var]] = ifelse(newdata[[var]] %in% new_levels, 
+                                        mode_level, 
+                                        as.character(newdata[[var]]))
+                newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
               }
-              newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
             }
           }
         }
         
-        # Convert ordered factors to numeric
-        ordered_cols = sapply(newdata, is.ordered)
-        if (any(ordered_cols)) {
-          newdata[ordered_cols] = lapply(newdata[ordered_cols], as.numeric)
-        }
-        
-        # Create model matrix with EXACTLY the same structure as training
-        model_struct = if (inherits(model, "ridge_glm")) model$model_structure else self$state$model_structure
-        
-        tryCatch({
-          tt = model_struct$terms
-          Terms = delete.response(tt)
-          mf = model.frame(Terms, newdata, na.action = na.pass,
-                           xlev = self$state$factor_levels)
-          
-          # Recreate the EXACT same contrasts as training
-          mm = model.matrix(Terms, mf, contrasts.arg = model_struct$contrasts)
-          
-          # Ensure all columns from training are present
-          missing_cols = setdiff(model_struct$columns, colnames(mm))
-          if (length(missing_cols) > 0) {
-            zero_mat = matrix(0, nrow = nrow(mm), ncol = length(missing_cols))
-            colnames(zero_mat) = missing_cols
-            mm = cbind(mm, zero_mat)
-          }
-          
-          # Reorder columns to match training exactly
-          mm = mm[, model_struct$columns, drop = FALSE]
-          
-          # For ridge models, remove intercept if needed
-          if (inherits(model, "ridge_glm") && model$ridge) {
-            if ("(Intercept)" %in% colnames(mm)) {
-              mm = mm[, colnames(mm) != "(Intercept)", drop = FALSE]
-            }
-          }
-          
-          # Verify dimensions
-          if (ncol(mm) != length(model$coefficients)) {
-            stop(sprintf("Dimension mismatch: model has %d coefficients but prediction matrix has %d columns",
-                         length(model$coefficients), ncol(mm)))
-          }
-          
-          # Make predictions
-          prob = plogis(mm %*% model$coefficients)
-          
-          # Create prediction object
-          prob_matrix = cbind(1 - prob, prob)
-          colnames(prob_matrix) = levels(task$truth())
-          
-          PredictionClassif$new(
-            task = task,
-            response = ifelse(prob > 0.5, levels(task$truth())[2], levels(task$truth())[1]),
-            prob = prob_matrix
+        if (inherits(model, "ridge_glm")) {
+          X_new = tryCatch(
+            model.matrix(delete.response(terms(model$formula)), newdata),
+            error = function(e) stop("Prediction matrix creation failed: ", e$message)
           )
-        }, error = function(e) {
-          stop(sprintf("Prediction failed: %s\nMissing variables: %s\nExpected columns: %s",
-                       e$message,
-                       paste(setdiff(all.vars(model$formula), colnames(newdata)), collapse = ", "),
-                       paste(model_struct$columns, collapse = ", ")))
-        })
+          prob = plogis(X_new %*% model$coefficients)
+        } else {
+          prob = predict(model, newdata = newdata, type = "response")
+        }
+        
+        # prediction
+        prob_matrix = cbind(1 - prob, prob)
+        colnames(prob_matrix) = levels(task$truth())
+        
+        PredictionClassif$new(
+          task = task,
+          response = ifelse(prob > 0.5, levels(task$truth())[2], levels(task$truth())[1]),
+          prob = prob_matrix
+        )
       }
     )
   )
-  
-  # Register the learner
+  # Register the robust classification learner
   mlr3::mlr_learners$add("classif.glm_rob", LearnerClassifGlmRob)
 }
+
 
 ### +++++++++++++++++++++++++++++++++ Helper Functions +++++++++++++++++++++++++++++++++ ###
 #
