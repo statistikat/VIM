@@ -166,7 +166,9 @@ register_robust_learners <- function() {
     private = list(
       .train = function(task) {
         pv = self$param_set$get_values()
-        data = task$data()
+        data = as.data.table(task$data())
+        print("data")
+        print(data)
         target = task$target_names
         n_classes = length(unique(task$truth()))
         
@@ -274,6 +276,10 @@ register_robust_learners <- function() {
           }
           
           X_new = X_new[, self$state$train_matrix_colnames, drop = FALSE]
+          
+          print("X_new")
+          print(X_new)
+          
           stopifnot(identical(colnames(X_new), self$state$train_matrix_colnames))
           
           prob = predict(model, newx = X_new, type = "response", s = 0.1)
