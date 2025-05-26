@@ -223,28 +223,64 @@ register_robust_learners <- function() {
       
       
       .fallback_model_glmnet = function(task) {
-        learner = mlr3::lrn("classif.glmnet",
-                            alpha = 0,
-                            lambda = 0.1,
-                            predict_type = self$predict_type)
-
-        learner$train(task)
-        # Store factor levels from the task
+        
         data = task$data(cols = task$feature_names)
-        factor_cols = sapply(data, is.factor)
-        if (any(factor_cols)) {
-          factor_col_names = names(which(factor_cols))
-          self$state$factor_levels = lapply(data[, factor_col_names, drop = FALSE], levels)
-        } else {
+        
+        # Prüfen, ob Faktoren in Features vorhanden sind
+        if (any(sapply(data, is.factor))) {
+          # Faktoren finden und dummy-encoden
+          X = model.matrix(~ . - 1, data = data)
+          data_encoded = as.data.frame(X)
+          
+          # Zielvariable anhängen
+          target = task$data(cols = task$target_names)
+          data_encoded[[task$target_names]] = target[[1]]
+          
+          # Neuer Task mit numerischen Features
+          task_encoded = mlr3::TaskClassif$new(
+            id = paste0(task$id, "_encoded"),
+            backend = data_encoded,
+            target = task$target_names,
+            positive = ifelse(length(task$class_names) == 2, task$class_names[2], NULL)
+          )
+          
+          learner = mlr3::lrn("classif.glmnet",
+                              alpha = 0,
+                              lambda = 0.1,
+                              predict_type = self$predict_type)
+          learner$train(task_encoded)
+          
+          # Speichern der Spaltennamen
+          self$state$train_matrix_colnames = colnames(X)
           self$state$factor_levels = NULL
+          
+          model = learner$model
+          class(model) = c("glmnet_fallback", class(model))
+          return(model)
+        } else {
+          learner = mlr3::lrn("classif.glmnet",
+                              alpha = 0,
+                              lambda = 0.1,
+                              predict_type = self$predict_type)
+          
+          learner$train(task)
+          # Store factor levels from the task
+          data = task$data(cols = task$feature_names)
+          factor_cols = sapply(data, is.factor)
+          if (any(factor_cols)) {
+            factor_col_names = names(which(factor_cols))
+            self$state$factor_levels = lapply(data[, factor_col_names, drop = FALSE], levels)
+          } else {
+            self$state$factor_levels = NULL
+          }
+          
+          model_matrix = model.matrix(~ ., data)[, -1, drop = FALSE]
+          self$state$train_matrix_colnames = colnames(model_matrix)
+          
+          model = learner$model
+          class(model) = c("glmnet_fallback", class(model))
+          return(model)
         }
-        
-        model_matrix = model.matrix(~ ., data)[, -1, drop = FALSE]
-        self$state$train_matrix_colnames = colnames(model_matrix)
-        
-        model = learner$model
-        class(model) = c("glmnet_fallback", class(model))
-        return(model)
       },
       
       .predict = function(task) {
