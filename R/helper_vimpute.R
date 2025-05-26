@@ -176,7 +176,9 @@ register_robust_learners <- function() {
         
         if (self$state$is_multiclass) {
           message("Target has more than 2 classes. Falling back to classif.glmnet.")
-          return(private$.fallback_model_glmnet(task))
+          #return(private$.fallback_model_glmnet(task))
+          model = private$.fallback_model_glmnet(task)
+          return(list(model))
         }
         
         formula = task$formula()
@@ -223,7 +225,8 @@ register_robust_learners <- function() {
         }
         
         self$model = model
-        return(model)
+        return(list(model))
+        #return(model)
       },
       
       
