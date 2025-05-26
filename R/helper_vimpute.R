@@ -353,11 +353,11 @@ register_robust_learners <- function() {
 }
 
 
-task = mlr3::tsk("iris")$filter(1:1000)  # binary classification
-learner = mlr3::lrn("classif.glm_rob", predict_type = "prob")
-learner$train(task)
-pred = learner$predict(task)
-print(pred)
+# task = mlr3::tsk("iris")$filter(1:1000)  # binary classification
+# learner = mlr3::lrn("classif.glm_rob", predict_type = "prob")
+# learner$train(task)
+# pred = learner$predict(task)
+# print(pred)
 
 ### +++++++++++++++++++++++++++++++++ Helper Functions +++++++++++++++++++++++++++++++++ ###
 #
