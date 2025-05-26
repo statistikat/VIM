@@ -71,7 +71,6 @@ register_robust_learners <- function() {
         formula = reformulate(features, response = target)
         control = do.call(robustbase::lmrob.control, pv)
         
-        # Versuch robustes Modell
         model = tryCatch(
           robustbase::lmrob(formula, data = data, control = control),
           error = function(e) {
@@ -126,7 +125,6 @@ register_robust_learners <- function() {
   mlr3::mlr_learners$add("regr.lm_rob", LearnerRegrRobustLM)
   
   
-  
   # robust Classification Learner
   LearnerClassifGlmRob <- R6::R6Class(
     classname = "LearnerClassifGlmRob",
@@ -168,9 +166,6 @@ register_robust_learners <- function() {
         pv = self$param_set$get_values()
         data = task$data()
         data = as.data.frame(data)
-        
-        print("data")
-        print(class(data))
         
         target = task$target_names
         n_classes = length(unique(task$truth()))
@@ -252,7 +247,6 @@ register_robust_learners <- function() {
         return(model)
       },
       
-      
       .predict = function(task) {
         if (is.null(self$model)) {
           stop("Learner has not been trained yet")
@@ -281,9 +275,6 @@ register_robust_learners <- function() {
           }
           
           X_new = X_new[, self$state$train_matrix_colnames, drop = FALSE]
-          
-          print("X_new")
-          print(X_new)
           
           stopifnot(identical(colnames(X_new), self$state$train_matrix_colnames))
           
