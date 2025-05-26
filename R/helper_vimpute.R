@@ -167,6 +167,7 @@ register_robust_learners <- function() {
       .train = function(task) {
         pv = self$param_set$get_values()
         data = task$data()
+        data = as.data.frame(data)
         
         print("data")
         print(class(data))
