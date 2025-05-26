@@ -204,6 +204,11 @@ register_robust_learners <- function() {
           NULL
         })
         
+        if (is.null(model) || is.null(model$fitted.values) || length(model$fitted.values) == 0) {
+          message("glmrob returned invalid model. Falling back to glmnet.")
+          model = private$.fallback_model_glmnet(task)
+        }
+        
         if (is.null(model)) {
           message("Falling back to glmnet due to glmrob issues")
           model = private$.fallback_model_glmnet(task)
@@ -329,7 +334,16 @@ register_robust_learners <- function() {
           }
         } else {
           # Handle regular glmrob prediction
-          prob = predict(self$model, newdata = newdata, type = "response")
+          prob = tryCatch({
+            predict(self$model, newdata = newdata, type = "response")
+          }, error = function(e) {
+            message("Error in glmrob prediction: ", e$message)
+            return(NULL)
+          })
+          
+          if (is.null(prob) || length(prob) == 0) {
+            stop("Prediction failed: glmrob returned no probabilities.")
+          }
           
           # For binary classification, create a two-column matrix
           if (length(self$state$target_levels) == 2) {
