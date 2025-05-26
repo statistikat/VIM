@@ -215,7 +215,8 @@ register_robust_learners <- function() {
         
         factor_cols = sapply(data, is.factor)
         if (any(factor_cols)) {
-          self$state$factor_levels = lapply(data[, ..names(which(factor_cols)), drop = FALSE], levels)
+          factor_col_names = names(which(factor_cols))
+          self$state$factor_levels = lapply(data[, factor_col_names, drop = FALSE], levels)
         } else {
           self$state$factor_levels = NULL
         }
