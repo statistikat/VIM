@@ -90,7 +90,7 @@ register_robust_learners <- function() {
         }
         
         factor_col_names = names(data)[factor_cols]  # Namen der Faktor-Spalten
-        self$state$factor_levels = lapply(data[, factor_col_names, with = FALSE, drop = FALSE], levels)
+        self$state$factor_levels = lapply(data[, factor_col_names, drop = FALSE], levels)
         return(model)
       },
       
@@ -236,7 +236,8 @@ register_robust_learners <- function() {
         data = task$data(cols = task$feature_names)
         factor_cols = sapply(data, is.factor)
         if (any(factor_cols)) {
-          self$state$factor_levels = lapply(data[, names(which(factor_cols)), drop = FALSE], levels)
+          factor_col_names = names(which(factor_cols))
+          self$state$factor_levels = lapply(data[, factor_col_names, drop = FALSE], levels)
         } else {
           self$state$factor_levels = NULL
         }
@@ -352,7 +353,7 @@ register_robust_learners <- function() {
   
 }
 
-
+# 
 # task = mlr3::tsk("iris")$filter(1:1000)  # binary classification
 # learner = mlr3::lrn("classif.glm_rob", predict_type = "prob")
 # learner$train(task)
