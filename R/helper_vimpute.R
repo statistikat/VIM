@@ -166,9 +166,11 @@ register_robust_learners <- function() {
     private = list(
       .train = function(task) {
         pv = self$param_set$get_values()
-        data = as.data.table(task$data())
+        data = task$data()
+        
         print("data")
-        print(data)
+        print(class(data))
+        
         target = task$target_names
         n_classes = length(unique(task$truth()))
         
@@ -234,7 +236,7 @@ register_robust_learners <- function() {
         data = task$data(cols = task$feature_names)
         factor_cols = sapply(data, is.factor)
         if (any(factor_cols)) {
-          self$state$factor_levels = lapply(data[, ..names(which(factor_cols)), drop = FALSE], levels)
+          self$state$factor_levels = lapply(data[, names(which(factor_cols)), drop = FALSE], levels)
         } else {
           self$state$factor_levels = NULL
         }
@@ -351,11 +353,11 @@ register_robust_learners <- function() {
 }
 
 
-# task = mlr3::tsk("iris")$filter(1:1000)  # binary classification
-# learner = mlr3::lrn("classif.glm_rob", predict_type = "prob")
-# learner$train(task)
-# pred = learner$predict(task)
-# print(pred)
+task = mlr3::tsk("iris")$filter(1:1000)  # binary classification
+learner = mlr3::lrn("classif.glm_rob", predict_type = "prob")
+learner$train(task)
+pred = learner$predict(task)
+print(pred)
 
 ### +++++++++++++++++++++++++++++++++ Helper Functions +++++++++++++++++++++++++++++++++ ###
 #
