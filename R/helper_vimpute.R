@@ -89,7 +89,8 @@ register_robust_learners <- function() {
           self$state$used_fallback = FALSE
         }
         
-        self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
+        factor_col_names = names(data)[factor_cols]  # Namen der Faktor-Spalten
+        self$state$factor_levels = lapply(data[, factor_col_names, with = FALSE, drop = FALSE], levels)
         return(model)
       },
       
