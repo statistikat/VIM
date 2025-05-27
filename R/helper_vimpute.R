@@ -232,63 +232,51 @@ register_robust_learners <- function() {
       
       .fallback_model_glmnet = function(task) {
         
-        data = task$data(cols = task$feature_names)
+        data = as.data.frame(task$data(cols = task$feature_names))
+        target = task$target_names
+        # features = task$feature_names
         
         # Prüfen, ob Faktoren in Features vorhanden sind
         if (any(sapply(data, is.factor))) {
-          # Faktoren finden und dummy-encoden
           X = model.matrix(~ . - 1, data = data)
           data_encoded = as.data.frame(X)
+          data_encoded[[target]] = task$data(cols = target)[[1]]
           
           # Zielvariable anhängen
-          target = task$data(cols = task$target_names)
-          data_encoded[[task$target_names]] = target[[1]]
+          # target = task$data(cols = task$target_names)
+          # data_encoded[[task$target_names]] = target[[1]]
           
           # Neuer Task mit numerischen Features
           task_encoded = mlr3::TaskClassif$new(
             id = paste0(task$id, "_encoded"),
             backend = data_encoded,
-            target = task$target_names,
+            target = target,
             positive = ifelse(length(task$class_names) == 2, task$class_names[2], NULL)
           )
-          family = if (length(task$class_names) > 2) "multinomial" else "binomial"
-          learner = mlr3::lrn("classif.glmnet",
-                              alpha = 0,
-                              lambda = 0.1,
-                              predict_type = self$predict_type)
-          learner$train(task_encoded)
-          learner$param_set$values$family = family
           
-          # Speichern der Spaltennamen
+          # Store column names for prediction alignment
           self$state$train_matrix_colnames = colnames(X)
-          self$state$factor_levels = NULL
-          
-          model = learner$model
-          class(model) = c("glmnet_fallback", class(model))
-          return(model)
+          self$state$factor_levels = NULL  # Not needed for encoded data
         } else {
-          learner = mlr3::lrn("classif.glmnet",
-                              alpha = 0,
-                              lambda = 0.1,
-                              predict_type = self$predict_type)
-          
-          learner$train(task)
-          # Store factor levels from the task
-          data = task$data(cols = task$feature_names)
+          task_encoded = task$clone()
+          # Store factor levels for non-encoded data
           factor_cols = sapply(data, is.factor)
           if (any(factor_cols)) {
-            factor_col_names = names(which(factor_cols))
-            self$state$factor_levels = lapply(data[, factor_col_names, drop = FALSE], levels)
-          } else {
-            self$state$factor_levels = NULL
-          }
+            self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
           
+          }
+          # Store column names from model matrix
           model_matrix = model.matrix(~ ., data)[, -1, drop = FALSE]
           self$state$train_matrix_colnames = colnames(model_matrix)
-          
-          model = learner$model
-          class(model) = c("glmnet_fallback", class(model))
-          return(model)
+        }
+        
+        learner = mlr3::lrn("classif.glmnet",
+                              alpha = 0,
+                              lambda = 0.1,
+                              family = ifelse(length(task$class_names) > 2, "multinomial", "binomial"),
+                              predict_type = self$predict_type)
+        learner$train(task_encoded)
+        return(learner)
         }
       },
       
@@ -308,7 +296,7 @@ register_robust_learners <- function() {
           }
         }
         
-        if (inherits(self$model, "glmnet_fallback")) {
+        if (inherits(self$model, "Learner")) {
           X_new = model.matrix(~ ., newdata)[, -1, drop = FALSE]
           
           # Align columns
