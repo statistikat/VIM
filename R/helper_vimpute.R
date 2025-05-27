@@ -251,12 +251,13 @@ register_robust_learners <- function() {
             target = task$target_names,
             positive = ifelse(length(task$class_names) == 2, task$class_names[2], NULL)
           )
-          
+          family = if (length(task$class_names) > 2) "multinomial" else "binomial"
           learner = mlr3::lrn("classif.glmnet",
                               alpha = 0,
                               lambda = 0.1,
                               predict_type = self$predict_type)
           learner$train(task_encoded)
+          learner$param_set$values$family = family
           
           # Speichern der Spaltennamen
           self$state$train_matrix_colnames = colnames(X)
@@ -327,10 +328,12 @@ register_robust_learners <- function() {
           # Handle glmnet's 3D array output
           if (length(dim(prob)) == 3) {
             prob_matrix = prob[, , 1]  # Take the first (and only) lambda
+            print(prob_matrix)
           } else {
             if (length(self$state$target_levels) == 2) {
               prob_matrix = cbind(1 - prob, prob)
               colnames(prob_matrix) = self$state$target_levels
+              print(prob_matrix)
             } else {
               stop("Mismatch between predicted probabilities and target levels")
             }
@@ -352,6 +355,7 @@ register_robust_learners <- function() {
           if (length(self$state$target_levels) == 2) {
             prob_matrix = cbind(1 - prob, prob)
             colnames(prob_matrix) = self$state$target_levels
+            print(prob_matrix)
           } else {
             stop("Multiclass prediction not implemented for glmrob")
           }
@@ -364,9 +368,11 @@ register_robust_learners <- function() {
         
         if (self$predict_type == "prob") {
           prob_matrix = prob_matrix[, self$state$target_levels, drop = FALSE]
+          print(prob_matrix)
           return(mlr3::PredictionClassif$new(task = task, prob = prob_matrix))
         } else {
           response = self$state$target_levels[max.col(prob_matrix, ties.method = "first")]
+          print(prob_matrix)
           return(mlr3::PredictionClassif$new(task = task, response = response))
         }
       },
