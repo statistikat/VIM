@@ -178,7 +178,7 @@ register_robust_learners <- function() {
           message("Target has more than 2 classes. Falling back to classif.glmnet.")
           #return(private$.fallback_model_glmnet(task))
           model = private$.fallback_model_glmnet(task)
-          return(list(model))
+          return(model)
         }
         
         formula = task$formula()
@@ -225,7 +225,7 @@ register_robust_learners <- function() {
         }
         
         self$model = model
-        return(list(model))
+        return(model)
         #return(model)
       },
       
@@ -263,7 +263,8 @@ register_robust_learners <- function() {
           factor_cols = sapply(data, is.factor)
           if (any(factor_cols)) {
             self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
-          
+          } else {
+            self$state$factor_levels = NULL
           }
           # Store column names from model matrix
           model_matrix = model.matrix(~ ., data)[, -1, drop = FALSE]
@@ -273,95 +274,68 @@ register_robust_learners <- function() {
         learner = mlr3::lrn("classif.glmnet",
                               alpha = 0,
                               lambda = 0.1,
-                              family = ifelse(length(task$class_names) > 2, "multinomial", "binomial"),
                               predict_type = self$predict_type)
         learner$train(task_encoded)
         return(learner)
-        }
-      },
+        },
+      
       
       .predict = function(task) {
-        if (is.null(self$model)) {
-          stop("Learner has not been trained yet")
-        }
+        if (is.null(self$model)) stop("Learner has not been trained yet")
         
-        model = self$model
         newdata = task$data()
         
+        # Faktor-Levels korrekt setzen, um Konsistenz mit Trainingsdaten sicherzustellen
         if (!is.null(self$state$factor_levels)) {
           for (colname in names(self$state$factor_levels)) {
             if (colname %in% colnames(newdata)) {
-              newdata[[colname]] = factor(newdata[[colname]], levels = self$state$factor_levels[[colname]])
+              lvls = self$state$factor_levels[[colname]]
+              newdata[[colname]] = factor(as.character(newdata[[colname]]), levels = lvls)
             }
           }
         }
         
+        # Wenn das Modell ein mlr3-Learner ist (z. B. glmnet fallback)
         if (inherits(self$model, "Learner")) {
-          X_new = model.matrix(~ ., newdata)[, -1, drop = FALSE]
           
-          # Align columns
-          missing_cols = setdiff(self$state$train_matrix_colnames, colnames(X_new))
-          if (length(missing_cols) > 0) {
-            for (col in missing_cols) {
-              X_new[, col] = 0
+          # Repliziere die Struktur der Trainingsdaten (Matrix-Kodierung)
+          if (!is.null(self$state$train_matrix_colnames)) {
+            mm = model.matrix(~ . - 1, data = newdata)  # ohne Intercept
+            X_new = as.matrix(mm)
+            
+            # Fehlende Spalten mit 0 auffüllen
+            missing_cols = setdiff(self$state$train_matrix_colnames, colnames(X_new))
+            if (length(missing_cols) > 0) {
+              X_new = cbind(X_new, matrix(0, nrow = nrow(X_new), ncol = length(missing_cols),
+                                          dimnames = list(NULL, missing_cols)))
             }
+            
+            # Spaltenreihenfolge anpassen
+            X_new = X_new[, self$state$train_matrix_colnames, drop = FALSE]
+            newdata = as.data.frame(X_new)
           }
           
-          X_new = X_new[, self$state$train_matrix_colnames, drop = FALSE]
+          # Vorhersage durch mlr3 Learner
+          pred = self$model$predict_newdata(newdata)
           
-          stopifnot(identical(colnames(X_new), self$state$train_matrix_colnames))
-          
-          prob = predict(model, newx = X_new, type = "response", s = 0.1)
-          
-          # Handle glmnet's 3D array output
-          if (length(dim(prob)) == 3) {
-            prob_matrix = prob[, , 1]  # Take the first (and only) lambda
-            print(prob_matrix)
+          if (self$predict_type == "prob") {
+            return(mlr3::PredictionClassif$new(task = task, prob = pred$prob))
           } else {
-            if (length(self$state$target_levels) == 2) {
-              prob_matrix = cbind(1 - prob, prob)
-              colnames(prob_matrix) = self$state$target_levels
-              print(prob_matrix)
-            } else {
-              stop("Mismatch between predicted probabilities and target levels")
-            }
+            return(mlr3::PredictionClassif$new(task = task, response = pred$response))
           }
+          
         } else {
-          # Handle regular glmrob prediction
-          prob = tryCatch({
-            predict(self$model, newdata = newdata, type = "response")
-          }, error = function(e) {
-            message("Error in glmrob prediction: ", e$message)
-            return(NULL)
-          })
-          
-          if (is.null(prob) || length(prob) == 0) {
-            stop("Prediction failed: glmrob returned no probabilities.")
-          }
-          
-          # For binary classification, create a two-column matrix
-          if (length(self$state$target_levels) == 2) {
-            prob_matrix = cbind(1 - prob, prob)
-            colnames(prob_matrix) = self$state$target_levels
-            print(prob_matrix)
-          } else {
-            stop("Multiclass prediction not implemented for glmrob")
-          }
-        }
-        
-        # Ensure column names are set
-        if (is.null(colnames(prob_matrix))) {
+          # Klassische Vorhersage über glmrob-Modell (nur binär)
+          prob = predict(self$model, newdata = newdata, type = "response")
+          prob_matrix = cbind(1 - prob, prob)
           colnames(prob_matrix) = self$state$target_levels
-        }
-        
-        if (self$predict_type == "prob") {
-          prob_matrix = prob_matrix[, self$state$target_levels, drop = FALSE]
-          print(prob_matrix)
-          return(mlr3::PredictionClassif$new(task = task, prob = prob_matrix))
-        } else {
-          response = self$state$target_levels[max.col(prob_matrix, ties.method = "first")]
-          print(prob_matrix)
-          return(mlr3::PredictionClassif$new(task = task, response = response))
+          
+          if (self$predict_type == "prob") {
+            return(mlr3::PredictionClassif$new(task = task, prob = prob_matrix))
+          } else {
+            response = ifelse(prob > 0.5, self$state$target_levels[2], self$state$target_levels[1])
+            return(mlr3::PredictionClassif$new(task = task, response = response))
+          }
         }
       },
       
