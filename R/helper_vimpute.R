@@ -247,12 +247,20 @@ register_robust_learners <- function() {
           # data_encoded[[task$target_names]] = target[[1]]
           
           # Neuer Task mit numerischen Features
-          task_encoded = mlr3::TaskClassif$new(
-            id = paste0(task$id, "_encoded"),
-            backend = data_encoded,
-            target = target,
-            positive = ifelse(length(task$class_names) == 2, task$class_names[2], NULL)
-          )
+          if (length(task$class_names) == 2) {
+            task_encoded = mlr3::TaskClassif$new(
+              id = paste0(task$id, "_encoded"),
+              backend = data_encoded,
+              target = target,
+              positive = task$class_names[2]
+              )
+          } else {
+            task_encoded = mlr3::TaskClassif$new(
+              id = paste0(task$id, "_encoded"),
+              backend = data_encoded,
+              target = target
+            )
+          }
           
           # Store column names for prediction alignment
           self$state$train_matrix_colnames = colnames(X)
