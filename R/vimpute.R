@@ -905,21 +905,24 @@ vimpute <- function(
 ### Identify NAs End ###
         
 ### *****Select suitable task type Start***** ###################################################################################################
-        if (is.numeric(data_temp[[target_col]])) {
-          pred_task <- TaskRegr$new(
-            id = target_col,
-            backend =  backend_data,
-            target = target_col
-          )
-        } else if (is.factor(data_temp[[target_col]])) {
-          pred_task <- TaskClassif$new(
-            id = target_col,
-            backend =  backend_data,
-            target = target_col
-          )
-        } else {
-          stop("Error: Target variable is neither numeric nor a factor!")
+        if (!is_sc) {
+          if (is.numeric(data_temp[[target_col]])) {
+            pred_task <- TaskRegr$new(
+              id = target_col,
+              backend =  backend_data,
+              target = target_col
+            )
+          } else if (is.factor(data_temp[[target_col]])) {
+            pred_task <- TaskClassif$new(
+              id = target_col,
+              backend =  backend_data,
+              target = target_col
+            )
+          } else {
+            stop("Error: Target variable is neither numeric nor a factor!")
+          }
         }
+
 ### Select suitable task type End ####
         
 ### *****Predict Start***** ###################################################################################################
