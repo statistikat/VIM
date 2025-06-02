@@ -126,7 +126,7 @@ register_robust_learners <- function() {
     public = list(
       initialize = function() {
         super$initialize(
-          id = "classif.logreg_multinom",
+          id = "classif.glm_rob",
           feature_types = c("numeric", "integer", "factor", "ordered"),
           predict_types = c("response", "prob"),
           packages = c("mlr3learners"),
@@ -155,7 +155,7 @@ register_robust_learners <- function() {
     )
   )
   
-  mlr3::mlr_learners$add("classif.logreg_multinom", LearnerClassifGlmRob)
+  mlr3::mlr_learners$add("classif.glm_rob", LearnerClassifGlmRob)
   
 }
 
