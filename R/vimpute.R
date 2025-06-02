@@ -874,6 +874,8 @@ vimpute <- function(
           
           # Prädiktoren ohne var und zero_flag_col
           feature_cols <- setdiff(colnames(data_temp), c(var, zero_flag_col))
+          print("feature_cols")
+          print(feature_cols)
           
           if (!isFALSE(selected_formula)) {
             # Mit Formel: nutze Modellmatrix für Klassifikation
@@ -885,6 +887,9 @@ vimpute <- function(
             
           } else {
             # Ohne Formel: nur Prädiktoren ohne var und zero_flag_col
+            print("data_temp")
+            print(data_temp)
+            
             class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
             
             if (!supports_missing && any(is.na(class_pred_data))) {
