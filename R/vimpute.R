@@ -633,60 +633,59 @@ vimpute <- function(
           # Klassifikation-Learner-ID ableiten:
           classif_learner_id <- sub("^regr\\.", "classif.", base_learner_id)
           regr_learner_id <- base_learner_id
+          
           classif_learner <- lrn(classif_learner_id)
           regr_learner <- lrn(regr_learner_id)
           
-          # Basis-Pipeline - classification
-          class_pipeline <- classif_learner
+          # Prüfe Unterstützung für Missing Values bei Klassifikation
+          supports_missing_classif <- "missings" %in% classif_learner$properties
+          if (method_var == "ranger") supports_missing_classif <- FALSE
           
-          # Handlingmissing values - classification
-          if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) {
-            class_pipeline <- po_x_miss %>>% class_pipeline
+          
+          # Klassifikations-po_x_miss prüfen oder neu erzeugen, falls nötig
+          po_x_miss_classif <- NULL
+          if (sum(is.na(data_temp[[var]])) > 0 && supports_missing_classif && method_var != "xgboost") {
+            po_x_miss_classif <- po("missind", param_vals = list(
+              affect_columns = mlr3pipelines::selector_all(),
+              which = "all",
+              type = "factor"
+            ))
           }
           
-          # GraphLearner - classification
+          
+          class_pipeline <- if (!is.null(po_x_miss_classif)) po_x_miss_classif %>>% classif_learner else classif_learner
           class_learner <- GraphLearner$new(class_pipeline)
           
-          # Hyperparameter-Cache - classification 
+
+          # Hyperparameter-Cache für Klassifikation
           if (isTRUE(tuning_status[[var]]) && !is.null(tuning_status[[zero_flag_col]]) && isTRUE(tuning_status[[zero_flag_col]])) {
             if (!is.null(hyperparameter_cache[[zero_flag_col]]) && isTRUE(hyperparameter_cache[[zero_flag_col]]$is_tuned)) {
               params <- hyperparameter_cache[[zero_flag_col]]$params
               cat(sprintf("Use optimized parameters from the cache for %s\n", zero_flag_col))
               
-              # Parameter withour Prefix
+              # Ohne Prefix
               pipeline_valid <- intersect(names(params), class_pipeline$param_set$ids())
-              class_pipeline$param_set$values <- modifyList(
-                class_pipeline$param_set$values,
-                params[pipeline_valid]
-              )
+              class_pipeline$param_set$values <- modifyList(class_pipeline$param_set$values, params[pipeline_valid])
               
-              # Parameter with Prefix
-              prefixed_names <- paste0(default_learner$id, ".", names(params))
+              # Mit Prefix
+              prefixed_names <- paste0(best_learner$id, ".", names(params))
               learner_valid <- prefixed_names %in% class_learner$param_set$ids()
               if (any(learner_valid)) {
                 prefixed_params <- setNames(params[learner_valid], prefixed_names[learner_valid])
-                class_learner$param_set$values <- modifyList(
-                  class_learner$param_set$values,
-                  prefixed_params
-                )
+                class_learner$param_set$values <- modifyList(class_learner$param_set$values, prefixed_params)
               }
               
-              # warning if missing parameters
+              # Warnungen bei fehlenden Parametern
               missing_in_pipeline <- setdiff(names(params), class_pipeline$param_set$ids())
               missing_in_learner <- setdiff(names(params), 
-                                            sub(paste0("^", default_learner$id, "\\."), "", 
-                                                class_learner$param_set$ids()[startsWith(class_learner$param_set$ids(), default_learner$id)]))
-              
-              if (length(missing_in_pipeline) > 0) {
-                warning("Missing in Pipeline (classification): ", paste(missing_in_pipeline, collapse = ", "))
-              }
-              if (length(missing_in_learner) > 0) {
-                warning("Missing in Learner (classification): ", paste(missing_in_learner, collapse = ", "))
-              }
+                                            sub(paste0("^", best_learner$id, "\\."), "", 
+                                                class_learner$param_set$ids()[startsWith(class_learner$param_set$ids(), best_learner$id)]))
+              if (length(missing_in_pipeline) > 0) warning("Missing in Pipeline (classification): ", paste(missing_in_pipeline, collapse = ", "))
+              if (length(missing_in_learner) > 0) warning("Missing in Learner (classification): ", paste(missing_in_learner, collapse = ", "))
             }
           }
           
-          # predict_type for classification
+          # Predict-Type für Klassifikation
           if ("prob" %in% class_learner$predict_types) {
             class_learner$predict_type <- "prob"
           } else {
@@ -694,67 +693,58 @@ vimpute <- function(
             warning(sprintf("predict_type 'prob' not supported by learner '%s'; fallback to 'response'", class_learner$id))
           }
           
-          # train
+          # Trainiere Klassifikationsmodell
           class_learner$train(class_task)
           
           
-          # 2) Regression: only positive values
+          # 2) Regression: nur positive Werte
           reg_data <- data_temp[data_temp[[var]] > 0, , drop = FALSE]
           reg_task <- TaskRegr$new(id = var, backend = reg_data, target = var)
           
-          # Basis-Pipeline - regression
-          reg_pipeline <- regr_learner
+          supports_missing <- "missings" %in% regr_learner$properties
+          if (method_var == "ranger") supports_missing <- FALSE
           
-          # Handling  missing values - regression
-          if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) {
-            reg_pipeline <- po_x_miss %>>% reg_pipeline
+          po_x_miss_reg <- NULL
+          if (sum(is.na(reg_data[[var]])) > 0 && supports_missing && method_var != "xgboost") {
+            po_x_miss_reg <- po("missind", param_vals = list(
+              affect_columns = mlr3pipelines::selector_all(),
+              which = "all",
+              type = "factor"
+            ))
           }
           
-          # GraphLearner - regression
+          reg_pipeline <- if (!is.null(po_x_miss_reg)) po_x_miss_reg %>>% regr_learner else regr_learner
           reg_learner <- GraphLearner$new(reg_pipeline)
           
-          # Hyperparameter-Cache - regression
+          # Hyperparameter-Cache für Regression
           if (isTRUE(tuning_status[[var]]) && !is.null(tuning_status[[zero_flag_col]]) && isTRUE(tuning_status[[zero_flag_col]])) {
             if (!is.null(hyperparameter_cache[[var]]) && isTRUE(hyperparameter_cache[[var]]$is_tuned)) {
               params <- hyperparameter_cache[[var]]$params
               cat(sprintf("Use optimized parameters from the cache for %s\n", var))
               
-              # Parameter without Prefix
               pipeline_valid <- intersect(names(params), reg_pipeline$param_set$ids())
-              reg_pipeline$param_set$values <- modifyList(
-                reg_pipeline$param_set$values,
-                params[pipeline_valid]
-              )
+              reg_pipeline$param_set$values <- modifyList(reg_pipeline$param_set$values, params[pipeline_valid])
               
-              # Parameter with Prefix
-              prefixed_names <- paste0(current_learner$id, ".", names(params))
+              prefixed_names <- paste0(best_learner$id, ".", names(params))
               learner_valid <- prefixed_names %in% reg_learner$param_set$ids()
               if (any(learner_valid)) {
                 prefixed_params <- setNames(params[learner_valid], prefixed_names[learner_valid])
-                reg_learner$param_set$values <- modifyList(
-                  reg_learner$param_set$values,
-                  prefixed_params
-                )
+                reg_learner$param_set$values <- modifyList(reg_learner$param_set$values, prefixed_params)
               }
               
               missing_in_pipeline <- setdiff(names(params), reg_pipeline$param_set$ids())
               missing_in_learner <- setdiff(names(params), 
-                                            sub(paste0("^", current_learner$id, "\\."), "", 
-                                                reg_learner$param_set$ids()[startsWith(reg_learner$param_set$ids(), current_learner$id)]))
-              
-              if (length(missing_in_pipeline) > 0) {
-                warning("Missing in Pipeline (regression): ", paste(missing_in_pipeline, collapse = ", "))
-              }
-              if (length(missing_in_learner) > 0) {
-                warning("Missing in Learner (regression): ", paste(missing_in_learner, collapse = ", "))
-              }
+                                            sub(paste0("^", best_learner$id, "\\."), "", 
+                                                reg_learner$param_set$ids()[startsWith(reg_learner$param_set$ids(), best_learner$id)]))
+              if (length(missing_in_pipeline) > 0) warning("Missing in Pipeline (regression): ", paste(missing_in_pipeline, collapse = ", "))
+              if (length(missing_in_learner) > 0) warning("Missing in Learner (regression): ", paste(missing_in_learner, collapse = ", "))
             }
           }
           
-          # train
+          # Trainiere Regressionsmodell
           reg_learner$train(reg_task)
           
-          # save models
+          # Speichere beide Modelle
           learner <- list(classifier = class_learner, regressor = reg_learner)
           
           # if not semicontinous
@@ -828,14 +818,14 @@ vimpute <- function(
           message("***** Identidy missing values *****")
         }
         
-        # Function for imputing missing values
+        # Funktion zum Imputieren fehlender Werte
         impute_missing_values <- function(data, ref_data) {
           for (col in colnames(data)) {
             if (any(is.na(data[[col]]))) {
               if (is.numeric(ref_data[[col]])) {
-                data[[col]][is.na(data[[col]])] <- median(ref_data[[col]], na.rm = TRUE) # Median
+                data[[col]][is.na(data[[col]])] <- median(ref_data[[col]], na.rm = TRUE)  # Median
               } else if (is.factor(ref_data[[col]])) {
-                mode_value <- names(which.max(table(ref_data[[col]], useNA = "no"))) # Modus
+                mode_value <- names(which.max(table(ref_data[[col]], useNA = "no")))      # Modus
                 data[[col]][is.na(data[[col]])] <- mode_value
               }
             }
@@ -843,37 +833,71 @@ vimpute <- function(
           return(data)
         }
         
-        # Row indices with missing values in `var`
+        # Fehlende Indizes für die Variable `var`
         missing_idx <- missing_indices[[var]]
         if (length(missing_idx) == 0) {
           return(NULL)
         }
         
-        # Determine the predictor variables (all except `var`if NO formula is specified)
-        variables <- colnames(data_temp)
-        feature_cols <- setdiff(variables, var)
-        
-        # Differentiation: Is a `selected_formula` available?
-        if (!isFALSE(selected_formula)) {
+        if (!is_sc) {
+          # Normaler Fall: Einfach zu imputierende Variablen
           
-          # Extract missing rows from the design matrix
-          backend_data <- mm_data[missing_idx, , drop = FALSE]
+          # Prädiktoren ohne die Zielvariable
+          variables <- colnames(data_temp)
+          feature_cols <- setdiff(variables, var)
           
-          # Check whether `backend_data` itself contains missing values
-          if (any(is.na(backend_data))) {
-            backend_data <- impute_missing_values(backend_data, data_temp)
+          if (!isFALSE(selected_formula)) {
+            # Mit Formel: nutze Modellmatrix mm_data (Design Matrix)
+            backend_data <- mm_data[missing_idx, , drop = FALSE]
+            
+            # Impute falls NA in backend_data
+            if (any(is.na(backend_data))) {
+              backend_data <- impute_missing_values(backend_data, data_temp)
+            }
+            
+          } else {
+            # Ohne Formel: benutze alle Prädiktoren plus Zielvariable (für Trainingsdaten)
+            backend_cols <- union(feature_cols, var)
+            backend_data <- data_temp[missing_idx, backend_cols, with = FALSE]
+            
+            if (!supports_missing) {
+              backend_data <- impute_missing_values(backend_data, data_y_fill)
+            }
           }
           
         } else {
+          # Semikontinuierlicher Fall: Klassifikation für zero_flag
           
-          # If no formula, use the original data without `var`.
-          backend_cols <- union(feature_cols, var)
-          backend_data <- data_temp[missing_idx, backend_cols, with = FALSE]
+          zero_flag_col <- paste0(var, "_zero_flag")
           
-          # If the learner does not support `NA`s, these must be imputed
-          if (!supports_missing) {
-            backend_data <- impute_missing_values(backend_data, data_y_fill)
+          # Prädiktoren ohne var und zero_flag_col
+          feature_cols <- setdiff(colnames(data_temp), c(var, zero_flag_col))
+          
+          if (!isFALSE(selected_formula)) {
+            # Mit Formel: nutze Modellmatrix für Klassifikation
+            class_pred_data <- mm_data[missing_idx, , drop = FALSE]
+            
+            if (any(is.na(class_pred_data))) {
+              class_pred_data <- impute_missing_values(class_pred_data, data_temp)
+            }
+            
+          } else {
+            # Ohne Formel: nur Prädiktoren ohne var und zero_flag_col
+            class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
+            
+            if (!supports_missing && any(is.na(class_pred_data))) {
+              class_pred_data <- impute_missing_values(class_pred_data, data_temp)
+            }
           }
+          
+          # Regressionsteil: nur positive Werte für Regression
+          reg_pred_data <- data_temp[data_temp[[var]] > 0, , drop = FALSE]
+          
+          # Auch hier Imputation, falls nötig (optional)
+          if (!supports_missing && any(is.na(reg_pred_data))) {
+            reg_pred_data <- impute_missing_values(reg_pred_data, data_temp)
+          }
+          
         }
         
 ### Identify NAs End ###
@@ -901,24 +925,45 @@ vimpute <- function(
           message(paste("***** Predict"))
         }
         
-        # semicontinous
+        # Hilfsfunktion: inverse Transformation
+        inverse_transform <- function(x, method) {
+          switch(method,
+                 exp = log(x),
+                 log = exp(x),
+                 sqrt = x^2,
+                 inverse = 1 / x,
+                 stop("Unknown transformation: ", method)
+          )
+        }
+        
+        # Hilfsfunktion: Dezimalstellen ermitteln
+        get_decimal_places <- function(x) {
+          if (is.na(x)) return(0)
+          if (x == floor(x)) return(0)
+          nchar(sub(".*\\.", "", as.character(x)))
+        }
+        
         if (is_sc) {
           zero_flag_col <- paste0(var, "_zero_flag")
           
-          # 1) Classification: null vs positive
+          # 1) Klassifikation (null vs positive)
           class_learner <- learner$classifier
           
-          # task
-          class_pred_task <- TaskClassif$new(id = paste0(zero_flag_col, "_pred"), backend = data_temp, target = zero_flag_col)
-          
-          # predict_type: "prob"
-          pred_probs <- class_learner$predict(class_pred_task)$prob
-          
-          if (is.null(pred_probs)) {
-            stop("Errors in the calculation of prediction probabilities for classifier.")
+          # Sicherstellen: Keine NAs in Prädiktor-Daten
+          if (any(is.na(class_pred_data))) {
+            class_pred_data <- impute_missing_values(class_pred_data, data_temp)
           }
           
-          # Stochastic or deterministic class assignment
+          class_pred_task <- TaskClassif$new(id = paste0(zero_flag_col, "_pred"),
+                                             backend = class_pred_data,
+                                             target = zero_flag_col)
+          
+          pred_probs <- class_learner$predict(class_pred_task)$prob
+          if (is.null(pred_probs)) {
+            stop("Fehler bei der Berechnung der Wahrscheinlichkeiten im Klassifikator.")
+          }
+          
+          # Stochastische oder deterministische Klassenzuordnung
           if (isFALSE(seq) || i == nseq) {
             preds_class <- apply(pred_probs, 1, function(probs) {
               sample(levels(data_temp[[zero_flag_col]]), size = 1, prob = probs)
@@ -928,135 +973,67 @@ vimpute <- function(
             preds_class <- levels(data_temp[[zero_flag_col]])[preds_class]
           }
           
-          # 2) Regression: only for positive values
+          # 2) Regression nur für positive Werte
           reg_learner <- learner$regressor
           
-          # Prediction-Task with only positive values
           reg_pred_data <- data_temp[data_temp[[var]] > 0, , drop = FALSE]
-          reg_pred_task <- TaskRegr$new(id = paste0(var, "_pred"), backend = reg_pred_data, target = var)
+          reg_pred_task <- TaskRegr$new(id = paste0(var, "_pred"),
+                                        backend = reg_pred_data,
+                                        target = var)
           
           preds_reg <- reg_learner$predict(reg_pred_task)$response
           
-          # preds vector (initialize with NA)
-          preds <- vector(mode = "numeric", length = nrow(data_temp))
-          preds[] <- NA_real_
+          # Gesamtes Vorhersagevektor initialisieren mit NA
+          preds <- rep(NA_real_, nrow(data_temp))
           
-          # for null values prediction = 0
-          preds[data_temp[[var]] == 0] <- 0
-          
-          # for positive values preds from regression
-          preds[data_temp[[var]] > 0] <- preds_reg
-          
-          
-          ### Backtransformation and round ###
-          
-          # Back-transformation der Vorhersagen (falls notwendig)
-          if (!is.null(lhs_transformation)) {
-            if (lhs_transformation == "exp") {
-              inverse_transformation <- function(x) log(x)
-            } else if (lhs_transformation == "log") {
-              inverse_transformation <- function(x) exp(x)
-            } else if (lhs_transformation == "sqrt") {
-              inverse_transformation <- function(x) x^2
-            } else if (lhs_transformation == "inverse") {
-              inverse_transformation <- function(x) 1 / x
-            } else {
-              stop("Unknown transformation: ", lhs_transformation)
-            }
-            preds <- inverse_transformation(preds)
-          }
-          
-          # Funktion, um Dezimalstellen zu bestimmen
-          if (inherits(preds, "numeric")) {
-            
-            get_decimal_places <- function(x) {
-              if (is.na(x)) return(0)
-              if (x == floor(x)) return(0)
-              nchar(sub(".*\\.", "", as.character(x)))
-            }
-            
-            # Dezimalstellen wie im Originaldatensatz
-            decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
-            preds <- round(preds, decimal_places)
-          }
+          preds[data_temp[[var]] == 0] <- 0            # Nullwerte direkt 0
+          preds[data_temp[[var]] > 0] <- preds_reg    # Positive Werte aus Regression
           
         } else {
+          # Normaler Fall (keine semikontinuierlichen Daten)
+          
+          # Klassifikation oder Regression abhängig von Zielvariable
           if (is.factor(data_temp[[target_col]])) {
             
-            if (method_var == "ranger") {
-              mod <- "classif.ranger"
-            }
-            
-            if (method_var == "xgboost") {
-              mod <- "classif.xgboost"
-            }
-            
-            if (method_var == "regularized") {
-              mod <- "classif.glmnet"
-            }
-            
-            if (method_var == "robust") {
-              mod <- "classif.glm_rob"
-            }
+            # Lernermodelle nach Methode auswählen
+            mod <- switch(method_var,
+                          ranger = "classif.ranger",
+                          xgboost = "classif.xgboost",
+                          regularized = "classif.glmnet",
+                          robust = "classif.glm_rob",
+                          stop("Unbekannte Methode für Klassifikation:", method_var))
             
             learner$model[[mod]]$param_set$values$predict_type <- "prob"
-            #print(learner$model[[mod]]$param_set$values)
             
             pred_probs <- learner$predict(pred_task)$prob
-            
-            formatted_output <- capture.output(print(pred_probs))
-            #print(paste("pred probs: ", formatted_output))
-            
             if (is.null(pred_probs)) {
-              stop("Errors in the calculation of prediction probabilities.")
+              stop("Fehler bei der Berechnung der Wahrscheinlichkeiten.")
             }
             
             if (isFALSE(seq) || i == nseq) {
-              # print(paste("Stochastic class assignment"))
               preds <- apply(pred_probs, 1, function(probs) {
-                sample(levels(data_temp[[target_col]]), size = 1, prob = probs) # at last iteration: stochastic class assignment
+                sample(levels(data_temp[[target_col]]), size = 1, prob = probs)
               })
             } else {
-              # In all other iterations, the class with the highest probability is selected
-              preds <- apply(pred_probs, 1, which.max) 
+              preds <- apply(pred_probs, 1, which.max)
               preds <- levels(data_temp[[target_col]])[preds]
             }
             
           } else {
-            # For numeric variables: Normal prediction
-            preds <- learner$predict(pred_task)$response 
+            # Numerische Variable: normale Regression
+            preds <- learner$predict(pred_task)$response
           }
-          
-          # Back-transformation of the predictions (if necessary)
-          if (!is.null(lhs_transformation)) {
-            if (lhs_transformation == "exp") {
-              inverse_transformation <- function(x) log(x)
-            } else if (lhs_transformation == "log") {
-              inverse_transformation <- function(x) exp(x)
-            } else if (lhs_transformation == "sqrt") {
-              inverse_transformation <- function(x) x^2
-            } else if (lhs_transformation == "inverse") {
-              inverse_transformation <- function(x) 1 / x
-            } else {
-              stop("Unknown transformation: ", lhs_transformation)
-            }
-            preds <- inverse_transformation(preds)
-          }
-          
-          # Function to determine the number of decimal places
-          if (inherits(preds,"numeric")) {
-            
-            get_decimal_places <- function(x) {
-              if (is.na(x)) return(0)
-              if (x == floor(x)) return(0)
-              nchar(sub(".*\\.", "", as.character(x)))
-            }
-            
-            # decimal places as in the original data set
-            decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
-            preds <- round(preds, decimal_places)
-          }
-          
+        }
+        
+        # Back-Transformation der Vorhersagen (wenn spezifiziert)
+        if (!is.null(lhs_transformation)) {
+          preds <- inverse_transform(preds, lhs_transformation)
+        }
+        
+        # Dezimalstellen entsprechend Originaldaten runden (nur bei numerisch)
+        if (inherits(preds, "numeric")) {
+          decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
+          preds <- round(preds, decimal_places)
         }
         
 
