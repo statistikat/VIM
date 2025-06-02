@@ -628,8 +628,16 @@ vimpute <- function(
           data_temp[[zero_flag_col]] <- factor(ifelse(data_temp[[var]] == 0, "zero", "positive"))
           class_task <- TaskClassif$new(id = zero_flag_col, backend = data_temp, target = zero_flag_col)
           
+          base_learner_id <- best_learner$id  
+          
+          # Klassifikation-Learner-ID ableiten:
+          classif_learner_id <- sub("^regr\\.", "classif.", base_learner_id)
+          regr_learner_id <- base_learner_id
+          classif_learner <- lrn(classif_learner_id)
+          regr_learner <- lrn(regr_learner_id)
+          
           # Basis-Pipeline - classification
-          class_pipeline <- current_learner
+          class_pipeline <- classif_learner
           
           # Handlingmissing values - classification
           if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) {
@@ -679,7 +687,12 @@ vimpute <- function(
           }
           
           # predict_type for classification
-          class_learner$predict_type <- "prob"
+          if ("prob" %in% class_learner$predict_types) {
+            class_learner$predict_type <- "prob"
+          } else {
+            class_learner$predict_type <- "response"
+            warning(sprintf("predict_type 'prob' not supported by learner '%s'; fallback to 'response'", class_learner$id))
+          }
           
           # train
           class_learner$train(class_task)
@@ -690,7 +703,7 @@ vimpute <- function(
           reg_task <- TaskRegr$new(id = var, backend = reg_data, target = var)
           
           # Basis-Pipeline - regression
-          reg_pipeline <- current_learner
+          reg_pipeline <- regr_learner
           
           # Handling  missing values - regression
           if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) {
