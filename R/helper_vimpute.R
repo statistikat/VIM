@@ -125,251 +125,40 @@ register_robust_learners <- function() {
   
   # robust Classification Learner
   LearnerClassifGlmRob <- R6::R6Class(
-    classname = "LearnerClassifGlmRob",
     inherit = mlr3::LearnerClassif,
     public = list(
       initialize = function() {
-        param_set = ps(
-          method = p_fct(c("Mqle", "WBY"), default = "Mqle"),
-          acc = p_dbl(lower = 0, upper = Inf, default = 1e-4),
-          test.acc = p_fct(c("coef", "resid"), default = "coef"),
-          family = p_fct(c("binomial"), default = "binomial"),
-          maxit = p_int(lower = 1, upper = 500, default = 50),
-          tcc = p_dbl(lower = 1, upper = 2, default = 1.345)
-        )
-        
         super$initialize(
-          id = "classif.glm_rob",
+          id = "classif.logreg_multinom",
           feature_types = c("numeric", "integer", "factor", "ordered"),
           predict_types = c("response", "prob"),
-          packages = c("robustbase", "nnet", "MASS"),
-          properties = c("twoclass", "multiclass"),
-          man = "robustbase::glmrob",
-          param_set = param_set
+          packages = c("mlr3learners"),
+          properties = c("twoclass", "multiclass")
         )
-        
-        self$param_set$values = list(
-          method = "Mqle",
-          acc = 1e-4,
-          test.acc = "coef",
-          family = "binomial",
-          maxit = 50,
-          tcc = 1.345
-        )
+        self$state$learner = NULL
       }
     ),
     
     private = list(
       .train = function(task) {
-        pv = self$param_set$get_values()
-        data = task$data()
-        data = as.data.frame(data)
-        
-        target = task$target_names
-        n_classes = length(unique(task$truth()))
-        
-        self$state$n_classes = n_classes
-        self$state$is_multiclass = n_classes > 2
-        self$state$target_levels = task$class_names
-        
-        if (self$state$is_multiclass) {
-          message("Target has more than 2 classes. Falling back to classif.glmnet.")
-          #return(private$.fallback_model_glmnet(task))
-          model = private$.fallback_model_glmnet(task)
-          return(model)
-        }
-        
-        formula = task$formula()
-        family_fun = match.fun(pv$family)
-        family_obj = family_fun()
-        
-        model = tryCatch({
-          robustbase::glmrob(
-            formula,
-            data = data,
-            family = family_obj,
-            method = pv$method,
-            control = robustbase::glmrobMqle.control(
-              acc = pv$acc,
-              test.acc = pv$test.acc,
-              maxit = pv$maxit,
-              tcc = pv$tcc
-            )
-          )
-        }, warning = function(w) {
-          message("Warning in glmrob: ", w$message)
-          NULL
-        }, error = function(e) {
-          message("Error in glmrob: ", e$message)
-          NULL
-        })
-        
-        if (is.null(model) || is.null(model$fitted.values) || length(model$fitted.values) == 0) {
-          message("glmrob returned invalid model. Falling back to glmnet.")
-          model = private$.fallback_model_glmnet(task)
-        }
-        
-        if (is.null(model)) {
-          message("Falling back to glmnet due to glmrob issues")
-          model = private$.fallback_model_glmnet(task)
-        }
-        
-        factor_cols = sapply(data, is.factor)
-        if (any(factor_cols)) {
-          factor_col_names = names(which(factor_cols))
-          self$state$factor_levels = lapply(data[, factor_col_names, drop = FALSE], levels)
+        n_classes = length(task$class_names)
+        if (n_classes == 2) {
+          self$state$learner = mlr3::lrn("classif.log_reg", predict_type = self$predict_type)
         } else {
-          self$state$factor_levels = NULL
+          self$state$learner = mlr3::lrn("classif.multinom", predict_type = self$predict_type)
         }
-        
-        self$model = model
-        return(model)
-        #return(model)
+        self$state$learner$train(task)
       },
-      
-      
-      .fallback_model_glmnet = function(task) {
-        
-        data = as.data.frame(task$data(cols = task$feature_names))
-        target = task$target_names
-        # features = task$feature_names
-        
-        # Prüfen, ob Faktoren in Features vorhanden sind
-        if (any(sapply(data, is.factor))) {
-          X = model.matrix(~ . - 1, data = data)
-          data_encoded = as.data.frame(X)
-          data_encoded[[target]] = task$data(cols = target)[[1]]
-          
-          # Zielvariable anhängen
-          # target = task$data(cols = task$target_names)
-          # data_encoded[[task$target_names]] = target[[1]]
-          
-          # Neuer Task mit numerischen Features
-          if (length(task$class_names) == 2) {
-            task_encoded = mlr3::TaskClassif$new(
-              id = paste0(task$id, "_encoded"),
-              backend = data_encoded,
-              target = target,
-              positive = task$class_names[2]
-              )
-          } else {
-            task_encoded = mlr3::TaskClassif$new(
-              id = paste0(task$id, "_encoded"),
-              backend = data_encoded,
-              target = target
-            )
-          }
-          
-          # Store column names for prediction alignment
-          self$state$train_matrix_colnames = colnames(X)
-          self$state$factor_levels = NULL  # Not needed for encoded data
-        } else {
-          task_encoded = task$clone()
-          # Store factor levels for non-encoded data
-          factor_cols = sapply(data, is.factor)
-          if (any(factor_cols)) {
-            self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
-          } else {
-            self$state$factor_levels = NULL
-          }
-          # Store column names from model matrix
-          model_matrix = model.matrix(~ ., data)[, -1, drop = FALSE]
-          self$state$train_matrix_colnames = colnames(model_matrix)
-        }
-        
-        learner = mlr3::lrn("classif.glmnet",
-                              alpha = 0,
-                              lambda = 0.1,
-                              predict_type = self$predict_type)
-        learner$train(task_encoded)
-        return(learner)
-        },
-      
       
       .predict = function(task) {
-        if (is.null(self$model)) stop("Learner has not been trained yet")
-        
-        newdata = task$data()
-        
-        # Faktor-Levels korrekt setzen, um Konsistenz mit Trainingsdaten sicherzustellen
-        if (!is.null(self$state$factor_levels)) {
-          for (colname in names(self$state$factor_levels)) {
-            if (colname %in% colnames(newdata)) {
-              lvls = self$state$factor_levels[[colname]]
-              newdata[[colname]] = factor(as.character(newdata[[colname]]), levels = lvls)
-            }
-          }
-        }
-        
-        # Wenn das Modell ein mlr3-Learner ist (z. B. glmnet fallback)
-        if (inherits(self$model, "Learner")) {
-          
-          # Repliziere die Struktur der Trainingsdaten (Matrix-Kodierung)
-          if (!is.null(self$state$train_matrix_colnames)) {
-            mm = model.matrix(~ . - 1, data = newdata)  # ohne Intercept
-            X_new = as.matrix(mm)
-            
-            # Fehlende Spalten mit 0 auffüllen
-            missing_cols = setdiff(self$state$train_matrix_colnames, colnames(X_new))
-            if (length(missing_cols) > 0) {
-              X_new = cbind(X_new, matrix(0, nrow = nrow(X_new), ncol = length(missing_cols),
-                                          dimnames = list(NULL, missing_cols)))
-            }
-            
-            # Spaltenreihenfolge anpassen
-            X_new = X_new[, self$state$train_matrix_colnames, drop = FALSE]
-            newdata = as.data.frame(X_new)
-          }
-          
-          # Vorhersage durch mlr3 Learner
-          pred = self$model$predict_newdata(newdata)
-          
-          if (self$predict_type == "prob") {
-            return(mlr3::PredictionClassif$new(task = task, prob = pred$prob))
-          } else {
-            return(mlr3::PredictionClassif$new(task = task, response = pred$response))
-          }
-          
-        } else {
-          # Klassische Vorhersage über glmrob-Modell (nur binär)
-          prob = predict(self$model, newdata = newdata, type = "response")
-          prob_matrix = cbind(1 - prob, prob)
-          colnames(prob_matrix) = self$state$target_levels
-          
-          if (self$predict_type == "prob") {
-            return(mlr3::PredictionClassif$new(task = task, prob = prob_matrix))
-          } else {
-            response = ifelse(prob > 0.5, self$state$target_levels[2], self$state$target_levels[1])
-            return(mlr3::PredictionClassif$new(task = task, response = response))
-          }
-        }
-      },
-      
-      .handle_new_levels = function(newdata) {
-        if (is.null(self$state$factor_levels)) return(newdata)
-        
-        for (var in names(self$state$factor_levels)) {
-          if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
-            current_levels = levels(newdata[[var]])
-            valid_levels = self$state$factor_levels[[var]]
-            new_levels = setdiff(current_levels, valid_levels)
-            
-            if (length(new_levels) > 0) {
-              # Replace new levels with the most common level
-              mode_level = names(which.max(table(newdata[[var]][newdata[[var]] %in% valid_levels])))
-              newdata[[var]] = as.character(newdata[[var]])
-              newdata[[var]][newdata[[var]] %in% new_levels] = mode_level
-              newdata[[var]] = factor(newdata[[var]], levels = valid_levels)
-            }
-          }
-        }
-        return(newdata)
+        if (is.null(self$state$learner)) stop("Model not trained yet")
+        pred = self$state$learner$predict(task)
+        return(pred)
       }
     )
   )
   
-  # Register the learner
-  mlr3::mlr_learners$add("classif.glm_rob", LearnerClassifGlmRob)
+  mlr3::mlr_learners$add("classif.logreg_multinom", LearnerClassifGlmRob)
   
 }
 
@@ -614,3 +403,383 @@ precheck <- function(
   message("Precheck done.")
   return(list(data=data, variables=variables, variables_NA=variables_NA, method=method))
 }
+
+
+
+
+
+
+
+
+# ## alt
+# register_robust_learners <- function() {
+#   
+#   # Robust Regression Learner
+#   LearnerRegrRobustLM = R6::R6Class(
+#     classname = "LearnerRegrRobustLM",
+#     inherit = LearnerRegr,
+#     public = list(
+#       initialize = function() {
+#         param_set = ps(
+#           method = p_fct(c("M", "MM"), default = "MM"),
+#           psi = p_fct(c("bisquare", "lqq", "optimal"), default = "bisquare"),
+#           tuning.chi = p_dbl(lower = 0, upper = Inf, default = 1.55),
+#           tuning.psi = p_dbl(lower = 0, upper = Inf, default = 4.69),
+#           setting = p_fct(c("KS2014", "KS2011"), default = "KS2014"),
+#           max.it = p_int(lower = 1, upper = Inf, default = 50),
+#           k.max = p_int(lower = 1, upper = Inf, default = 200),
+#           nResample = p_int(lower = 1, upper = Inf, default = 500),
+#           subsampling = p_fct(c("simple", "nonsingular"), default = "nonsingular"),
+#           ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4),
+#           refine.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
+#           solve.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
+#           trace.lev = p_int(lower = 0, upper = Inf, default = 0)
+#         )
+#         
+#         super$initialize(
+#           id = "regr.lm_rob",
+#           feature_types = c("numeric", "integer", "factor", "ordered"),
+#           predict_types = c("response"),
+#           packages = c("robustbase", "stats"),
+#           man = "robustbase::lmrob",
+#           param_set = param_set
+#         )
+#         
+#         self$param_set$values = list(
+#           method = "MM",
+#           psi = "bisquare",
+#           tuning.chi = 1.55,
+#           tuning.psi = 4.69,
+#           setting = "KS2014",
+#           max.it = 50,
+#           k.max = 200,
+#           nResample = 500,
+#           subsampling = "nonsingular",
+#           ridge_lambda = 1e-4,
+#           refine.tol = 1e-7,
+#           solve.tol = 1e-7,
+#           trace.lev = 0
+#         )
+#       }
+#     ),
+#     
+#     private = list(
+#       .train = function(task) {
+#         pv = self$param_set$get_values()
+#         data = as.data.frame(task$data())
+#         target = task$target_names
+#         features = task$feature_names
+#         
+#         factor_cols = sapply(data, is.factor)
+#         if (any(factor_cols)) {
+#           for (col in names(data)[factor_cols]) {
+#             data[[col]] = droplevels(data[[col]])
+#           }
+#         }
+#         
+#         formula = reformulate(features, response = target)
+#         control = do.call(robustbase::lmrob.control, pv)
+#         
+#         model = tryCatch(
+#           robustbase::lmrob(formula, data = data, control = control),
+#           error = function(e) {
+#             warning(sprintf("lmrob() failed for '%s': %s\nFalling back to lm()", target, e$message))
+#             NULL
+#           }
+#         )
+#         
+#         if (is.null(model)) {
+#           # Fallback: lm
+#           model = lm(formula, data = data)
+#           class(model) = c("lm_fallback", class(model))
+#           self$state$used_fallback = TRUE
+#         } else {
+#           self$state$used_fallback = FALSE
+#         }
+#         
+#         factor_col_names = names(data)[factor_cols]  # Namen der Faktor-Spalten
+#         self$state$factor_levels = lapply(data[, factor_col_names, drop = FALSE], levels)
+#         return(model)
+#       },
+#       
+#       .predict = function(task) {
+#         model = self$model
+#         newdata = as.data.frame(task$data())
+#         
+#         if (!is.null(self$state$factor_levels)) {
+#           for (var in names(self$state$factor_levels)) {
+#             if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
+#               new_levels = setdiff(levels(newdata[[var]]), self$state$factor_levels[[var]])
+#               if (length(new_levels) > 0) {
+#                 warning(sprintf("New levels (%s) in factor '%s' replaced with NA",
+#                                 paste(new_levels, collapse = ", "), var))
+#               }
+#               newdata[[var]] = factor(newdata[[var]], levels = self$state$factor_levels[[var]])
+#             }
+#           }
+#         }
+#         
+#         response = tryCatch({
+#           predict(model, newdata = newdata)
+#         }, error = function(e) {
+#           warning("Vorhersage fehlgeschlagen: ", e$message)
+#           rep(NA_real_, nrow(newdata))
+#         })
+#         
+#         PredictionRegr$new(task = task, response = response)
+#       }
+#     )
+#   )
+#   
+#   mlr3::mlr_learners$add("regr.lm_rob", LearnerRegrRobustLM)
+#   
+#   
+#   # robust Classification Learner
+#   LearnerClassifGlmRob <- R6::R6Class(
+#     classname = "LearnerClassifGlmRob",
+#     inherit = mlr3::LearnerClassif,
+#     public = list(
+#       initialize = function() {
+#         param_set = ps(
+#           method = p_fct(c("Mqle", "WBY"), default = "Mqle"),
+#           acc = p_dbl(lower = 0, upper = Inf, default = 1e-4),
+#           test.acc = p_fct(c("coef", "resid"), default = "coef"),
+#           family = p_fct(c("binomial"), default = "binomial"),
+#           maxit = p_int(lower = 1, upper = 500, default = 50),
+#           tcc = p_dbl(lower = 1, upper = 2, default = 1.345)
+#         )
+#         
+#         super$initialize(
+#           id = "classif.glm_rob",
+#           feature_types = c("numeric", "integer", "factor", "ordered"),
+#           predict_types = c("response", "prob"),
+#           packages = c("robustbase", "nnet", "MASS"),
+#           properties = c("twoclass", "multiclass"),
+#           man = "robustbase::glmrob",
+#           param_set = param_set
+#         )
+#         
+#         self$param_set$values = list(
+#           method = "Mqle",
+#           acc = 1e-4,
+#           test.acc = "coef",
+#           family = "binomial",
+#           maxit = 50,
+#           tcc = 1.345
+#         )
+#       }
+#     ),
+#     
+#     private = list(
+#       .train = function(task) {
+#         pv = self$param_set$get_values()
+#         data = task$data()
+#         data = as.data.frame(data)
+#         
+#         target = task$target_names
+#         n_classes = length(unique(task$truth()))
+#         
+#         self$state$n_classes = n_classes
+#         self$state$is_multiclass = n_classes > 2
+#         self$state$target_levels = task$class_names
+#         
+#         if (self$state$is_multiclass) {
+#           message("Target has more than 2 classes. Falling back to classif.glmnet.")
+#           #return(private$.fallback_model_glmnet(task))
+#           model = private$.fallback_model_glmnet(task)
+#           return(model)
+#         }
+#         
+#         formula = task$formula()
+#         family_fun = match.fun(pv$family)
+#         family_obj = family_fun()
+#         
+#         model = tryCatch({
+#           robustbase::glmrob(
+#             formula,
+#             data = data,
+#             family = family_obj,
+#             method = pv$method,
+#             control = robustbase::glmrobMqle.control(
+#               acc = pv$acc,
+#               test.acc = pv$test.acc,
+#               maxit = pv$maxit,
+#               tcc = pv$tcc
+#             )
+#           )
+#         }, warning = function(w) {
+#           message("Warning in glmrob: ", w$message)
+#           NULL
+#         }, error = function(e) {
+#           message("Error in glmrob: ", e$message)
+#           NULL
+#         })
+#         
+#         if (is.null(model) || is.null(model$fitted.values) || length(model$fitted.values) == 0) {
+#           message("glmrob returned invalid model. Falling back to glmnet.")
+#           model = private$.fallback_model_glmnet(task)
+#         }
+#         
+#         if (is.null(model)) {
+#           message("Falling back to glmnet due to glmrob issues")
+#           model = private$.fallback_model_glmnet(task)
+#         }
+#         
+#         factor_cols = sapply(data, is.factor)
+#         if (any(factor_cols)) {
+#           factor_col_names = names(which(factor_cols))
+#           self$state$factor_levels = lapply(data[, factor_col_names, drop = FALSE], levels)
+#         } else {
+#           self$state$factor_levels = NULL
+#         }
+#         
+#         self$model = model
+#         return(model)
+#         #return(model)
+#       },
+#       
+#       
+#       .fallback_model_glmnet = function(task) {
+#         
+#         data = as.data.frame(task$data(cols = task$feature_names))
+#         target = task$target_names
+#         # features = task$feature_names
+#         
+#         # Prüfen, ob Faktoren in Features vorhanden sind
+#         if (any(sapply(data, is.factor))) {
+#           X = model.matrix(~ . - 1, data = data)
+#           data_encoded = as.data.frame(X)
+#           data_encoded[[target]] = task$data(cols = target)[[1]]
+#           
+#           # Zielvariable anhängen
+#           # target = task$data(cols = task$target_names)
+#           # data_encoded[[task$target_names]] = target[[1]]
+#           
+#           # Neuer Task mit numerischen Features
+#           if (length(task$class_names) == 2) {
+#             task_encoded = mlr3::TaskClassif$new(
+#               id = paste0(task$id, "_encoded"),
+#               backend = data_encoded,
+#               target = target,
+#               positive = task$class_names[2]
+#             )
+#           } else {
+#             task_encoded = mlr3::TaskClassif$new(
+#               id = paste0(task$id, "_encoded"),
+#               backend = data_encoded,
+#               target = target
+#             )
+#           }
+#           
+#           # Store column names for prediction alignment
+#           self$state$train_matrix_colnames = colnames(X)
+#           self$state$factor_levels = NULL  # Not needed for encoded data
+#         } else {
+#           task_encoded = task$clone()
+#           # Store factor levels for non-encoded data
+#           factor_cols = sapply(data, is.factor)
+#           if (any(factor_cols)) {
+#             self$state$factor_levels = lapply(data[, factor_cols, drop = FALSE], levels)
+#           } else {
+#             self$state$factor_levels = NULL
+#           }
+#           # Store column names from model matrix
+#           model_matrix = model.matrix(~ ., data)[, -1, drop = FALSE]
+#           self$state$train_matrix_colnames = colnames(model_matrix)
+#         }
+#         
+#         learner = mlr3::lrn("classif.glmnet",
+#                             alpha = 0,
+#                             lambda = 0.1,
+#                             predict_type = self$predict_type)
+#         learner$train(task_encoded)
+#         return(learner)
+#       },
+#       
+#       
+#       .predict = function(task) {
+#         if (is.null(self$model)) stop("Learner has not been trained yet")
+#         
+#         newdata = task$data()
+#         
+#         # Faktor-Levels korrekt setzen, um Konsistenz mit Trainingsdaten sicherzustellen
+#         if (!is.null(self$state$factor_levels)) {
+#           for (colname in names(self$state$factor_levels)) {
+#             if (colname %in% colnames(newdata)) {
+#               lvls = self$state$factor_levels[[colname]]
+#               newdata[[colname]] = factor(as.character(newdata[[colname]]), levels = lvls)
+#             }
+#           }
+#         }
+#         
+#         # Wenn das Modell ein mlr3-Learner ist (z. B. glmnet fallback)
+#         if (inherits(self$model, "Learner")) {
+#           
+#           # Repliziere die Struktur der Trainingsdaten (Matrix-Kodierung)
+#           if (!is.null(self$state$train_matrix_colnames)) {
+#             mm = model.matrix(~ . - 1, data = newdata)  # ohne Intercept
+#             X_new = as.matrix(mm)
+#             
+#             # Fehlende Spalten mit 0 auffüllen
+#             missing_cols = setdiff(self$state$train_matrix_colnames, colnames(X_new))
+#             if (length(missing_cols) > 0) {
+#               X_new = cbind(X_new, matrix(0, nrow = nrow(X_new), ncol = length(missing_cols),
+#                                           dimnames = list(NULL, missing_cols)))
+#             }
+#             
+#             # Spaltenreihenfolge anpassen
+#             X_new = X_new[, self$state$train_matrix_colnames, drop = FALSE]
+#             newdata = as.data.frame(X_new)
+#           }
+#           
+#           # Vorhersage durch mlr3 Learner
+#           pred = self$model$predict_newdata(newdata)
+#           
+#           if (self$predict_type == "prob") {
+#             return(mlr3::PredictionClassif$new(task = task, prob = pred$prob))
+#           } else {
+#             return(mlr3::PredictionClassif$new(task = task, response = pred$response))
+#           }
+#           
+#         } else {
+#           # Klassische Vorhersage über glmrob-Modell (nur binär)
+#           prob = predict(self$model, newdata = newdata, type = "response")
+#           prob_matrix = cbind(1 - prob, prob)
+#           colnames(prob_matrix) = self$state$target_levels
+#           
+#           if (self$predict_type == "prob") {
+#             return(mlr3::PredictionClassif$new(task = task, prob = prob_matrix))
+#           } else {
+#             response = ifelse(prob > 0.5, self$state$target_levels[2], self$state$target_levels[1])
+#             return(mlr3::PredictionClassif$new(task = task, response = response))
+#           }
+#         }
+#       },
+#       
+#       .handle_new_levels = function(newdata) {
+#         if (is.null(self$state$factor_levels)) return(newdata)
+#         
+#         for (var in names(self$state$factor_levels)) {
+#           if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
+#             current_levels = levels(newdata[[var]])
+#             valid_levels = self$state$factor_levels[[var]]
+#             new_levels = setdiff(current_levels, valid_levels)
+#             
+#             if (length(new_levels) > 0) {
+#               # Replace new levels with the most common level
+#               mode_level = names(which.max(table(newdata[[var]][newdata[[var]] %in% valid_levels])))
+#               newdata[[var]] = as.character(newdata[[var]])
+#               newdata[[var]][newdata[[var]] %in% new_levels] = mode_level
+#               newdata[[var]] = factor(newdata[[var]], levels = valid_levels)
+#             }
+#           }
+#         }
+#         return(newdata)
+#       }
+#     )
+#   )
+#   
+#   # Register the learner
+#   mlr3::mlr_learners$add("classif.glm_rob", LearnerClassifGlmRob)
+#   
+# }
