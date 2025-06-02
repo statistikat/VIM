@@ -626,7 +626,9 @@ vimpute <- function(
           # 1) Classification: 0 or > 0
           zero_flag_col <- paste0(var, "_zero_flag")
           data_temp[[zero_flag_col]] <- factor(ifelse(data_temp[[var]] == 0, "zero", "positive"))
-          class_task <- TaskClassif$new(id = zero_flag_col, backend = data_temp, target = zero_flag_col)
+          
+          class_data <- data_temp[!is.na(data_temp[[var]]), , drop = FALSE]
+          class_task <- TaskClassif$new(id = zero_flag_col, backend = class_data, target = zero_flag_col)
           
           base_learner_id <- best_learner$id  
           
