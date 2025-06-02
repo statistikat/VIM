@@ -640,7 +640,7 @@ vimpute <- function(
           class_learner <- GraphLearner$new(class_pipeline)
           
           # Hyperparameter-Cache - classification 
-          if (isTRUE(tuning_status[[zero_flag_col]])) {
+          if (isTRUE(tuning_status[[var]]) && !is.null(tuning_status[[zero_flag_col]]) && isTRUE(tuning_status[[zero_flag_col]])) {
             if (!is.null(hyperparameter_cache[[zero_flag_col]]) && isTRUE(hyperparameter_cache[[zero_flag_col]]$is_tuned)) {
               params <- hyperparameter_cache[[zero_flag_col]]$params
               cat(sprintf("Use optimized parameters from the cache for %s\n", zero_flag_col))
@@ -701,7 +701,7 @@ vimpute <- function(
           reg_learner <- GraphLearner$new(reg_pipeline)
           
           # Hyperparameter-Cache - regression
-          if (isTRUE(tuning_status[[var]])) {
+          if (isTRUE(tuning_status[[var]]) && !is.null(tuning_status[[zero_flag_col]]) && isTRUE(tuning_status[[zero_flag_col]])) {
             if (!is.null(hyperparameter_cache[[var]]) && isTRUE(hyperparameter_cache[[var]]$is_tuned)) {
               params <- hyperparameter_cache[[var]]$params
               cat(sprintf("Use optimized parameters from the cache for %s\n", var))
