@@ -401,7 +401,17 @@ precheck <- function(
   return(list(data=data, variables=variables, variables_NA=variables_NA, method=method))
 }
 
-
+#
+#
+#
+# Semicontinous variables
+is_semicontinuous <- function(x) {
+  # z.B. viele Nullen und positive Werte > 0
+  is.numeric(x) &&
+    any(x == 0, na.rm = TRUE) &&
+    any(x > 0, na.rm = TRUE) &&
+    sum(x == 0, na.rm = TRUE) / sum(!is.na(x)) > 0.1
+}
 
 
 

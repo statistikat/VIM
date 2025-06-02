@@ -618,96 +618,196 @@ vimpute <- function(
           message("***** Train Model")
         }
         
-        # if (!is.null(lhs_transformation)) {
-        #   print(paste("Erkannte Transformation:", lhs_transformation))
-        # } else {
-        #   print("Keine Transformation erkannt (lhs_transformation nicht gefunden).")
-        # }
+        # Check semikontinuierlich
+        is_sc <- is_semicontinuous(data_temp[[var]])
         
-        # Basis-Pipeline with best learner
-        full_pipeline <- default_learner
-        
-        # Handling of missing values
-        if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) { #xgboost can handle NAs directly, support_missings are learners that can handle missings if they are marked as such
-          full_pipeline <- po_x_miss %>>% full_pipeline
-        }
-        
-        # param set of tuning
-        # print("best_learner$param_set$values") 
-        # print(best_learner$param_set$values) 
-        # print("full_pipeline$param_set$values")
-        # print(full_pipeline$param_set$values)
-        
-        
-        # create and train graphLearner 
-        learner <- GraphLearner$new(full_pipeline)
-        
-        if (isTRUE(tuning_status[[var]])) {
-          # if tuning was done
-          if (!is.null(hyperparameter_cache[[var]]) && isTRUE(hyperparameter_cache[[var]]$is_tuned)) {
-            # If optimized parameters exist in the cache
-            params <- hyperparameter_cache[[var]]$params
-            cat(sprintf("Use optimized parameters from the cache for %s\n", var))
-            
-            # Set parameter in full_pipeline (without prefix)
-            pipeline_valid <- intersect(names(params), full_pipeline$param_set$ids())
-            full_pipeline$param_set$values <- modifyList(
-              full_pipeline$param_set$values,
-              params[pipeline_valid]
-            )
-            
-            # Set parameters in GraphLearner (with prefix)
-            prefixed_names <- paste0(best_learner$id, ".", names(params))
-            learner_valid <- prefixed_names %in% learner$param_set$ids()
-            
-            if (any(learner_valid)) {
-              prefixed_params <- setNames(params[learner_valid], prefixed_names[learner_valid])
-              learner$param_set$values <- modifyList(
-                learner$param_set$values,
-                prefixed_params
+        if (is_sc) {
+
+          # 1) Classification: 0 or > 0
+          zero_flag_col <- paste0(var, "_zero_flag")
+          data_temp[[zero_flag_col]] <- factor(ifelse(data_temp[[var]] == 0, "zero", "positive"))
+          class_task <- TaskClassif$new(id = zero_flag_col, backend = data_temp, target = zero_flag_col)
+          
+          # Basis-Pipeline - classification
+          class_pipeline <- current_learner
+          
+          # Handlingmissing values - classification
+          if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) {
+            class_pipeline <- po_x_miss %>>% class_pipeline
+          }
+          
+          # GraphLearner - classification
+          class_learner <- GraphLearner$new(class_pipeline)
+          
+          # Hyperparameter-Cache - classification 
+          if (isTRUE(tuning_status[[zero_flag_col]])) {
+            if (!is.null(hyperparameter_cache[[zero_flag_col]]) && isTRUE(hyperparameter_cache[[zero_flag_col]]$is_tuned)) {
+              params <- hyperparameter_cache[[zero_flag_col]]$params
+              cat(sprintf("Use optimized parameters from the cache for %s\n", zero_flag_col))
+              
+              # Parameter withour Prefix
+              pipeline_valid <- intersect(names(params), class_pipeline$param_set$ids())
+              class_pipeline$param_set$values <- modifyList(
+                class_pipeline$param_set$values,
+                params[pipeline_valid]
               )
+              
+              # Parameter with Prefix
+              prefixed_names <- paste0(default_learner$id, ".", names(params))
+              learner_valid <- prefixed_names %in% class_learner$param_set$ids()
+              if (any(learner_valid)) {
+                prefixed_params <- setNames(params[learner_valid], prefixed_names[learner_valid])
+                class_learner$param_set$values <- modifyList(
+                  class_learner$param_set$values,
+                  prefixed_params
+                )
+              }
+              
+              # warning if missing parameters
+              missing_in_pipeline <- setdiff(names(params), class_pipeline$param_set$ids())
+              missing_in_learner <- setdiff(names(params), 
+                                            sub(paste0("^", default_learner$id, "\\."), "", 
+                                                class_learner$param_set$ids()[startsWith(class_learner$param_set$ids(), default_learner$id)]))
+              
+              if (length(missing_in_pipeline) > 0) {
+                warning("Missing in Pipeline (classification): ", paste(missing_in_pipeline, collapse = ", "))
+              }
+              if (length(missing_in_learner) > 0) {
+                warning("Missing in Learner (classification): ", paste(missing_in_learner, collapse = ", "))
+              }
             }
-            
-            # Output of the set parameters
-            # cat("In Pipeline gesetzt:\n")
-            # print(full_pipeline$param_set$values[pipeline_valid])
-            # cat("In Learner gesetzt:\n")
-            # print(learner$param_set$values[prefixed_names[learner_valid]])
-            
-            # Warning for non existent parameters
-            missing_in_pipeline <- setdiff(names(params), full_pipeline$param_set$ids())
-            missing_in_learner <- setdiff(names(params), 
-                                          sub(paste0("^", best_learner$id, "\\."), "", 
-                                              learner$param_set$ids()[startsWith(learner$param_set$ids(), best_learner$id)]))
-            
-            if (length(missing_in_pipeline) > 0) {
-              warning("Missing in Pipeline: ", paste(missing_in_pipeline, collapse = ", "))
+          }
+          
+          # predict_type for classification
+          class_learner$predict_type <- "prob"
+          
+          # train
+          class_learner$train(class_task)
+          
+          
+          # 2) Regression: only positive values
+          reg_data <- data_temp[data_temp[[var]] > 0, , drop = FALSE]
+          reg_task <- TaskRegr$new(id = var, backend = reg_data, target = var)
+          
+          # Basis-Pipeline - regression
+          reg_pipeline <- current_learner
+          
+          # Handling  missing values - regression
+          if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) {
+            reg_pipeline <- po_x_miss %>>% reg_pipeline
+          }
+          
+          # GraphLearner - regression
+          reg_learner <- GraphLearner$new(reg_pipeline)
+          
+          # Hyperparameter-Cache - regression
+          if (isTRUE(tuning_status[[var]])) {
+            if (!is.null(hyperparameter_cache[[var]]) && isTRUE(hyperparameter_cache[[var]]$is_tuned)) {
+              params <- hyperparameter_cache[[var]]$params
+              cat(sprintf("Use optimized parameters from the cache for %s\n", var))
+              
+              # Parameter without Prefix
+              pipeline_valid <- intersect(names(params), reg_pipeline$param_set$ids())
+              reg_pipeline$param_set$values <- modifyList(
+                reg_pipeline$param_set$values,
+                params[pipeline_valid]
+              )
+              
+              # Parameter with Prefix
+              prefixed_names <- paste0(current_learner$id, ".", names(params))
+              learner_valid <- prefixed_names %in% reg_learner$param_set$ids()
+              if (any(learner_valid)) {
+                prefixed_params <- setNames(params[learner_valid], prefixed_names[learner_valid])
+                reg_learner$param_set$values <- modifyList(
+                  reg_learner$param_set$values,
+                  prefixed_params
+                )
+              }
+              
+              missing_in_pipeline <- setdiff(names(params), reg_pipeline$param_set$ids())
+              missing_in_learner <- setdiff(names(params), 
+                                            sub(paste0("^", current_learner$id, "\\."), "", 
+                                                reg_learner$param_set$ids()[startsWith(reg_learner$param_set$ids(), current_learner$id)]))
+              
+              if (length(missing_in_pipeline) > 0) {
+                warning("Missing in Pipeline (regression): ", paste(missing_in_pipeline, collapse = ", "))
+              }
+              if (length(missing_in_learner) > 0) {
+                warning("Missing in Learner (regression): ", paste(missing_in_learner, collapse = ", "))
+              }
             }
-            if (length(missing_in_learner) > 0) {
-              warning("Missing in Learner: ", paste(missing_in_learner, collapse = ", "))
-            }
-            
+          }
+          
+          # train
+          reg_learner$train(reg_task)
+          
+          # save models
+          learner <- list(classifier = class_learner, regressor = reg_learner)
+          
+          # if not semicontinous
+        } else {
+          
+          # Basis-Pipeline with best learner
+          full_pipeline <- current_learner
+          
+          # Handling of missing values
+          if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) { #xgboost can handle NAs directly, support_missings are learners that can handle missings if they are marked as such
+            full_pipeline <- po_x_miss %>>% full_pipeline
+          }
+          
+          # create and train graphLearner 
+          learner <- GraphLearner$new(full_pipeline)
+          
+          if (isTRUE(tuning_status[[var]])) {
+            # if tuning was done
+            if (!is.null(hyperparameter_cache[[var]]) && isTRUE(hyperparameter_cache[[var]]$is_tuned)) {
+              # If optimized parameters exist in the cache
+              params <- hyperparameter_cache[[var]]$params
+              cat(sprintf("Use optimized parameters from the cache for %s\n", var))
+              
+              # Set parameter in full_pipeline (without prefix)
+              pipeline_valid <- intersect(names(params), full_pipeline$param_set$ids())
+              full_pipeline$param_set$values <- modifyList(
+                full_pipeline$param_set$values,
+                params[pipeline_valid]
+              )
+              
+              # Set parameters in GraphLearner (with prefix)
+              prefixed_names <- paste0(best_learner$id, ".", names(params))
+              learner_valid <- prefixed_names %in% learner$param_set$ids()
+              
+              if (any(learner_valid)) {
+                prefixed_params <- setNames(params[learner_valid], prefixed_names[learner_valid])
+                learner$param_set$values <- modifyList(
+                  learner$param_set$values,
+                  prefixed_params
+                )
+              }
+              
+              # Warning for non existent parameters
+              missing_in_pipeline <- setdiff(names(params), full_pipeline$param_set$ids())
+              missing_in_learner <- setdiff(names(params), 
+                                            sub(paste0("^", best_learner$id, "\\."), "", 
+                                                learner$param_set$ids()[startsWith(learner$param_set$ids(), best_learner$id)]))
+              
+              if (length(missing_in_pipeline) > 0) {
+                warning("Missing in Pipeline: ", paste(missing_in_pipeline, collapse = ", "))
+              }
+              if (length(missing_in_learner) > 0) {
+                warning("Missing in Learner: ", paste(missing_in_learner, collapse = ", "))
+              }
+              
+            } 
           } 
-          # else {
-          #   # if no cache or no tuning
-          #   cat("No optimized parameters found in the cache, use standard parameters\n")
-          # }
-        } 
-        # else {
-        #   cat("No hyperparameter tuning performed, use standard parameters\n")
-        # }
-        
-        # Set predict type for classification problems
-        if (exists("target_col") && is.factor(data_temp[[target_col]])) {
-          learner$predict_type <- "prob"
+          
+          # Set predict type for classification problems
+          if (exists("target_col") && is.factor(data_temp[[target_col]])) {
+            learner$predict_type <- "prob"
+          }
+          
+          learner$train(task)
+          
         }
-        
-        # Debug
-        #print("Aktuelle Learner-Parameter:")
-        #print(learner$param_set$values)
-        
-        learner$train(task)
-        
 ### Train Model End ###
         
 ### *****Identify NAs Start***** ###################################################################################################
@@ -788,81 +888,165 @@ vimpute <- function(
           message(paste("***** Predict"))
         }
         
-        if (is.factor(data_temp[[target_col]])) {
+        # semicontinous
+        if (is_sc) {
+          zero_flag_col <- paste0(var, "_zero_flag")
           
-          if (method_var == "ranger") {
-            mod <- "classif.ranger"
-          }
+          # 1) Classification: null vs positive
+          class_learner <- learner$classifier
           
-          if (method_var == "xgboost") {
-            mod <- "classif.xgboost"
-          }
+          # task
+          class_pred_task <- TaskClassif$new(id = paste0(zero_flag_col, "_pred"), backend = data_temp, target = zero_flag_col)
           
-          if (method_var == "regularized") {
-            mod <- "classif.glmnet"
-          }
-          
-          if (method_var == "robust") {
-            mod <- "classif.glm_rob"
-          }
-          
-          learner$model[[mod]]$param_set$values$predict_type <- "prob"
-          #print(learner$model[[mod]]$param_set$values)
-          
-          pred_probs <- learner$predict(pred_task)$prob
-          
-          formatted_output <- capture.output(print(pred_probs))
-          #print(paste("pred probs: ", formatted_output))
+          # predict_type: "prob"
+          pred_probs <- class_learner$predict(class_pred_task)$prob
           
           if (is.null(pred_probs)) {
-            stop("Errors in the calculation of prediction probabilities.")
+            stop("Errors in the calculation of prediction probabilities for classifier.")
           }
           
+          # Stochastic or deterministic class assignment
           if (isFALSE(seq) || i == nseq) {
-            # print(paste("Stochastic class assignment"))
-            preds <- apply(pred_probs, 1, function(probs) {
-              sample(levels(data_temp[[target_col]]), size = 1, prob = probs) # at last iteration: stochastic class assignment
+            preds_class <- apply(pred_probs, 1, function(probs) {
+              sample(levels(data_temp[[zero_flag_col]]), size = 1, prob = probs)
             })
           } else {
-            # In all other iterations, the class with the highest probability is selected
-            preds <- apply(pred_probs, 1, which.max) 
-            preds <- levels(data_temp[[target_col]])[preds]
+            preds_class <- apply(pred_probs, 1, which.max)
+            preds_class <- levels(data_temp[[zero_flag_col]])[preds_class]
+          }
+          
+          # 2) Regression: only for positive values
+          reg_learner <- learner$regressor
+          
+          # Prediction-Task with only positive values
+          reg_pred_data <- data_temp[data_temp[[var]] > 0, , drop = FALSE]
+          reg_pred_task <- TaskRegr$new(id = paste0(var, "_pred"), backend = reg_pred_data, target = var)
+          
+          preds_reg <- reg_learner$predict(reg_pred_task)$response
+          
+          # preds vector (initialize with NA)
+          preds <- vector(mode = "numeric", length = nrow(data_temp))
+          preds[] <- NA_real_
+          
+          # for null values prediction = 0
+          preds[data_temp[[var]] == 0] <- 0
+          
+          # for positive values preds from regression
+          preds[data_temp[[var]] > 0] <- preds_reg
+          
+          
+          ### Backtransformation and round ###
+          
+          # Back-transformation der Vorhersagen (falls notwendig)
+          if (!is.null(lhs_transformation)) {
+            if (lhs_transformation == "exp") {
+              inverse_transformation <- function(x) log(x)
+            } else if (lhs_transformation == "log") {
+              inverse_transformation <- function(x) exp(x)
+            } else if (lhs_transformation == "sqrt") {
+              inverse_transformation <- function(x) x^2
+            } else if (lhs_transformation == "inverse") {
+              inverse_transformation <- function(x) 1 / x
+            } else {
+              stop("Unknown transformation: ", lhs_transformation)
+            }
+            preds <- inverse_transformation(preds)
+          }
+          
+          # Funktion, um Dezimalstellen zu bestimmen
+          if (inherits(preds, "numeric")) {
+            
+            get_decimal_places <- function(x) {
+              if (is.na(x)) return(0)
+              if (x == floor(x)) return(0)
+              nchar(sub(".*\\.", "", as.character(x)))
+            }
+            
+            # Dezimalstellen wie im Originaldatensatz
+            decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
+            preds <- round(preds, decimal_places)
           }
           
         } else {
-          # For numeric variables: Normal prediction
-          preds <- learner$predict(pred_task)$response 
-        }
-        
-        # Back-transformation of the predictions (if necessary)
-        if (!is.null(lhs_transformation)) {
-          if (lhs_transformation == "exp") {
-            inverse_transformation <- function(x) log(x)
-          } else if (lhs_transformation == "log") {
-            inverse_transformation <- function(x) exp(x)
-          } else if (lhs_transformation == "sqrt") {
-            inverse_transformation <- function(x) x^2
-          } else if (lhs_transformation == "inverse") {
-            inverse_transformation <- function(x) 1 / x
+          if (is.factor(data_temp[[target_col]])) {
+            
+            if (method_var == "ranger") {
+              mod <- "classif.ranger"
+            }
+            
+            if (method_var == "xgboost") {
+              mod <- "classif.xgboost"
+            }
+            
+            if (method_var == "regularized") {
+              mod <- "classif.glmnet"
+            }
+            
+            if (method_var == "robust") {
+              mod <- "classif.glm_rob"
+            }
+            
+            learner$model[[mod]]$param_set$values$predict_type <- "prob"
+            #print(learner$model[[mod]]$param_set$values)
+            
+            pred_probs <- learner$predict(pred_task)$prob
+            
+            formatted_output <- capture.output(print(pred_probs))
+            #print(paste("pred probs: ", formatted_output))
+            
+            if (is.null(pred_probs)) {
+              stop("Errors in the calculation of prediction probabilities.")
+            }
+            
+            if (isFALSE(seq) || i == nseq) {
+              # print(paste("Stochastic class assignment"))
+              preds <- apply(pred_probs, 1, function(probs) {
+                sample(levels(data_temp[[target_col]]), size = 1, prob = probs) # at last iteration: stochastic class assignment
+              })
+            } else {
+              # In all other iterations, the class with the highest probability is selected
+              preds <- apply(pred_probs, 1, which.max) 
+              preds <- levels(data_temp[[target_col]])[preds]
+            }
+            
           } else {
-            stop("Unknown transformation: ", lhs_transformation)
+            # For numeric variables: Normal prediction
+            preds <- learner$predict(pred_task)$response 
           }
-          preds <- inverse_transformation(preds)
+          
+          # Back-transformation of the predictions (if necessary)
+          if (!is.null(lhs_transformation)) {
+            if (lhs_transformation == "exp") {
+              inverse_transformation <- function(x) log(x)
+            } else if (lhs_transformation == "log") {
+              inverse_transformation <- function(x) exp(x)
+            } else if (lhs_transformation == "sqrt") {
+              inverse_transformation <- function(x) x^2
+            } else if (lhs_transformation == "inverse") {
+              inverse_transformation <- function(x) 1 / x
+            } else {
+              stop("Unknown transformation: ", lhs_transformation)
+            }
+            preds <- inverse_transformation(preds)
+          }
+          
+          # Function to determine the number of decimal places
+          if (inherits(preds,"numeric")) {
+            
+            get_decimal_places <- function(x) {
+              if (is.na(x)) return(0)
+              if (x == floor(x)) return(0)
+              nchar(sub(".*\\.", "", as.character(x)))
+            }
+            
+            # decimal places as in the original data set
+            decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
+            preds <- round(preds, decimal_places)
+          }
+          
         }
         
-        # Function to determine the number of decimal places
-        if (inherits(preds,"numeric")) {
-          
-          get_decimal_places <- function(x) {
-            if (is.na(x)) return(0)
-            if (x == floor(x)) return(0)
-            nchar(sub(".*\\.", "", as.character(x)))
-          }
-          
-          # decimal places as in the original data set
-          decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
-          preds <- round(preds, decimal_places)
-        }
+
         
 ### Predict End ###################################################################################################
         
@@ -883,7 +1067,6 @@ vimpute <- function(
             observed_values[which.min(abs(observed_values - x))]
           })
         }
-        #cat(paste("prediction for variable:", var, "in iteration:", i, "PRED after PMM:", preds, "\n"))
 ### PMM End ###  
         
 ### *****Prediction History Start***** ###################################################################################################
@@ -898,7 +1081,6 @@ vimpute <- function(
             predicted_values = preds
           )
         }
-        #print(paste("prediction History:", history))
 ### Prediction History End ###
         
 ### *****Replace missing values with predicted values Start***** ###################################################################################################
@@ -1036,7 +1218,6 @@ vimpute <- function(
               pred_probs <- learner$predict(pred_task)$prob
               
               formatted_output <- capture.output(print(pred_probs))
-              #print(paste("pred probs: ", formatted_output))
               
               if (is.null(pred_probs)) {
                 stop("Error in the calculation of prediction probabilities.")
@@ -1056,20 +1237,6 @@ vimpute <- function(
         no_change_counter <- 0
       }
     }
-    # if (tune) {
-    #   print(paste("Number of cases in which the tuned model was better:", count_tuned_better))
-    #   print(paste("Number of cases in which the default model was better:", count_default_better))
-    # }
-    
-    # if (tune) {
-    #   message("Tuning:")
-    #   for (var in names(hyperparameter_cache)) {
-    #     if (!is.null(hyperparameter_cache[[var]])) {
-    #       message(paste("Variable:", var, "- Parameter:", 
-    #                     paste(names(hyperparameter_cache[[var]]), hyperparameter_cache[[var]], sep = "=", collapse = ", ")))
-    #     }
-    #   }
-    # }
     
 ### Stop Kriterium END ###
     
@@ -1086,3 +1253,7 @@ vimpute <- function(
     
   }
   
+
+
+
+
