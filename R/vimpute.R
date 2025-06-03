@@ -625,19 +625,21 @@ vimpute <- function(
 
           # 1) Classification: 0 or > 0
           zero_flag_col <- paste0(var, "_zero_flag")
+
           data_temp[[zero_flag_col]] <- factor(ifelse(data_temp[[var]] == 0, "zero", "positive"))
-          
           class_data <- data_temp[!is.na(data_temp[[var]]), , drop = FALSE]
-          backend_data <- class_data 
-          print("backend_data")
-          print(backend_data)
+          train_data <- class_data 
+          print("train_data")
+          print(train_data)
           
+          feature_cols <- setdiff(names(train_data), c(var, zero_flag_col))
           # classification task
           class_task <- TaskClassif$new(
             id = paste0(zero_flag_col, "_task"),
-            backend = backend_data,
+            backend = train_data,
             target = zero_flag_col
           )
+          class_task$select(setdiff(names(train_data), c(var, zero_flag_col)))
           
           # base_learner_id <- best_learner$id  
           
@@ -710,6 +712,7 @@ vimpute <- function(
           # 2) Regression: nur positive Werte
           reg_data <- data_temp[data_temp[[var]] > 0, , drop = FALSE]
           reg_task <- TaskRegr$new(id = var, backend = reg_data, target = var)
+          reg_task$select(setdiff(names(reg_data), c(var, zero_flag_col)))
           
           supports_missing <- "missings" %in% regr_learner$properties
           if (method_var == "ranger") supports_missing <- FALSE
@@ -879,16 +882,15 @@ vimpute <- function(
           # Semikontinuierlicher Fall: Klassifikation für zero_flag
           
           zero_flag_col <- paste0(var, "_zero_flag")
+          variables <- colnames(data_temp)
+          feature_cols <- setdiff(variables, c(var, zero_flag_col))
           
-          # Prädiktoren ohne var und zero_flag_col
-          feature_cols <- setdiff(colnames(data_temp), c(var, zero_flag_col))
           print("feature_cols")
           print(feature_cols)
           
           if (!isFALSE(selected_formula)) {
-            # Mit Formel: nutze Modellmatrix für Klassifikation
+            # Mit Formel: Modellmatrix für Klassifikation (Vorhersage)
             class_pred_data <- mm_data[missing_idx, , drop = FALSE]
-            
             if (any(is.na(class_pred_data))) {
               class_pred_data <- impute_missing_values(class_pred_data, data_temp)
             }
@@ -898,7 +900,7 @@ vimpute <- function(
             print("data_temp")
             print(data_temp)
             
-            class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
+            class_pred_data <- data_temp[missing_idx, c(feature_cols, zero_flag_col), with = FALSE]
             
             if (!supports_missing && any(is.na(class_pred_data))) {
               class_pred_data <- impute_missing_values(class_pred_data, data_temp)
@@ -963,17 +965,22 @@ vimpute <- function(
         
         if (is_sc) {
           zero_flag_col <- paste0(var, "_zero_flag")
+          variables <- colnames(data_temp)
+          feature_cols <- setdiff(variables, c(var, zero_flag_col))
+          
+          # Nur fehlende Werte in var bearbeiten
+          #missing_idx <- which(is.na(data_temp[[var]]))
           
           # 1) Klassifikation (null vs positive)
           class_learner <- learner$classifier
           
           # Sicherstellen: Keine NAs in Prädiktor-Daten
-          class_pred_data <- data_temp[, feature_cols, with = FALSE]
+          class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
           if (anyNA(class_pred_data)) {
             class_pred_data <- impute_missing_values(class_pred_data, data_temp)
           }
-          print("backend_data")
-          print(backend_data)
+          # print("backend_data")
+          # print(backend_data)
           
           print("class_pred_data")
           print(class_pred_data)
@@ -990,24 +997,34 @@ vimpute <- function(
             preds_class <- colnames(pred_probs)[max.col(pred_probs)]
           }
           
+          levels_zero_flag <- levels(data_temp[[zero_flag_col]])
+          data_temp[[zero_flag_col]][missing_idx] <- ifelse(preds_class == "positive",
+                                                            levels_zero_flag[levels_zero_flag == "positive"],
+                                                            levels_zero_flag[levels_zero_flag == "zero"])
+          
           # 2) Regression: nur für positive Vorhersagen
+          #data_temp[[zero_flag_col]] <- ifelse(preds_class == "positive", 1L, 0L)
           reg_learner <- learner$regressor
           
           # Nur die Daten, bei denen Prädiktion "positive" ist
-          reg_rows <- which(preds_class == "positive")
-          reg_pred_data <- data_temp[reg_rows, feature_cols, with = FALSE]
-          
-          # Sicherstellen, dass keine NAs in Prädiktordaten
-          if (anyNA(reg_pred_data)) {
-            reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
+          reg_rows <- missing_idx[which(data_temp[[zero_flag_col]][missing_idx] == "positive")]
+          if (length(reg_rows) > 0) {
+            reg_pred_data <- data_temp[reg_rows, feature_cols, with = FALSE]
+            
+            if (anyNA(reg_pred_data)) {
+              reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
+            }
+            
+            preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
+          } else {
+            preds_reg <- numeric(0)
           }
           
-          # Regression ohne Zielvariable → predict_newdata
-          preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
-          
-          # Zusammensetzen
-          preds <- rep(0, nrow(data_temp))  # Default = 0
-          preds[reg_rows] <- preds_reg      # Für positive: Regressionswert
+          preds <- data_temp[[var]]  # Bestehende Werte behalten
+          preds[missing_idx] <- 0    # Default 0 für fehlende
+          preds[reg_rows] <- preds_reg  # Regressionsergebnisse einfügen
+          preds <- preds[missing_idx]   
+          # preds <- preds[missing_idx]
           
         } else {
           # Normaler Fall (keine semikontinuierlichen Daten)
@@ -1097,6 +1114,7 @@ vimpute <- function(
         if(verbose){
           message(paste("***** Replace values with new predictions"))
         }
+
         if (length(missing_idx) > 0) {
           if (is.numeric(data_prev[[var]])) {  
             data[missing_idx, (var) := as.numeric(preds)]
@@ -1107,7 +1125,6 @@ vimpute <- function(
           }
           data <- copy(data)
         }
-        
 ### Replace missing values with predicted values Start End ###
         
 ### *****Import Variable Start***** ###################################################################################################
