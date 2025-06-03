@@ -972,6 +972,11 @@ vimpute <- function(
           if (anyNA(class_pred_data)) {
             class_pred_data <- impute_missing_values(class_pred_data, data_temp)
           }
+          print("backend_data")
+          print(backend_data)
+          
+          print("class_pred_data")
+          print(class_pred_data)
           
           # Prediction ohne Task (weil Zielvariable nicht vorhanden)
           pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
