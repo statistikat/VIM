@@ -788,6 +788,11 @@ vimpute <- function(
           
           # Basis-Pipeline with best learner
           full_pipeline <- current_learner
+          if (grepl("xgboost", best_learner$id)) {
+            current_learner$param_set$values <- modifyList(current_learner$param_set$values, xgboost_params)
+          } else if (grepl("ranger", best_learner$id)) {
+            current_learner$param_set$values <- modifyList(current_learner$param_set$values, ranger_params)
+          }
           
           # Handling of missing values
           if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) { #xgboost can handle NAs directly, support_missings are learners that can handle missings if they are marked as such
