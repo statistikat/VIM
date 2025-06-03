@@ -959,44 +959,41 @@ vimpute <- function(
           class_learner <- learner$classifier
           
           # Sicherstellen: Keine NAs in Prädiktor-Daten
-          if (any(is.na(class_pred_data))) {
+          class_pred_data <- data_temp[, feature_cols, with = FALSE]
+          if (anyNA(class_pred_data)) {
             class_pred_data <- impute_missing_values(class_pred_data, data_temp)
           }
           
-          class_pred_task <- TaskClassif$new(id = paste0(zero_flag_col, "_pred"),
-                                             backend = class_pred_data,
-                                             target = zero_flag_col)
+          # Prediction ohne Task (weil Zielvariable nicht vorhanden)
+          pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
           
-          pred_probs <- class_learner$predict(class_pred_task)$prob
-          if (is.null(pred_probs)) {
-            stop("Fehler bei der Berechnung der Wahrscheinlichkeiten im Klassifikator.")
-          }
-          
-          # Stochastische oder deterministische Klassenzuordnung
+          # Stochastische oder deterministische Vorhersage
           if (isFALSE(seq) || i == nseq) {
             preds_class <- apply(pred_probs, 1, function(probs) {
-              sample(levels(data_temp[[zero_flag_col]]), size = 1, prob = probs)
+              sample(colnames(pred_probs), size = 1, prob = probs)
             })
           } else {
-            preds_class <- apply(pred_probs, 1, which.max)
-            preds_class <- levels(data_temp[[zero_flag_col]])[preds_class]
+            preds_class <- colnames(pred_probs)[max.col(pred_probs)]
           }
           
-          # 2) Regression nur für positive Werte
+          # 2) Regression: nur für positive Vorhersagen
           reg_learner <- learner$regressor
           
-          reg_pred_data <- data_temp[data_temp[[var]] > 0, , drop = FALSE]
-          reg_pred_task <- TaskRegr$new(id = paste0(var, "_pred"),
-                                        backend = reg_pred_data,
-                                        target = var)
+          # Nur die Daten, bei denen Prädiktion "positive" ist
+          reg_rows <- which(preds_class == "positive")
+          reg_pred_data <- data_temp[reg_rows, feature_cols, with = FALSE]
           
-          preds_reg <- reg_learner$predict(reg_pred_task)$response
+          # Sicherstellen, dass keine NAs in Prädiktordaten
+          if (anyNA(reg_pred_data)) {
+            reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
+          }
           
-          # Gesamtes Vorhersagevektor initialisieren mit NA
-          preds <- rep(NA_real_, nrow(data_temp))
+          # Regression ohne Zielvariable → predict_newdata
+          preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
           
-          preds[data_temp[[var]] == 0] <- 0            # Nullwerte direkt 0
-          preds[data_temp[[var]] > 0] <- preds_reg    # Positive Werte aus Regression
+          # Zusammensetzen
+          preds <- rep(0, nrow(data_temp))  # Default = 0
+          preds[reg_rows] <- preds_reg      # Für positive: Regressionswert
           
         } else {
           # Normaler Fall (keine semikontinuierlichen Daten)
