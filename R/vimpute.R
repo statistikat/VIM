@@ -651,9 +651,9 @@ vimpute <- function(
           classif_learner <- lrn("classif.log_reg")
           regr_learner <- lrn(regr_learner_id)
           if (grepl("xgboost", best_learner$id)) {
-            regr_learner$param_set$values <- modifyList(best_learner$param_set$values, xgboost_params)
+            regr_learner$param_set$values <- modifyList(regr_learner$param_set$values, xgboost_params)
           } else if (grepl("ranger", best_learner$id)) {
-            regr_learner$param_set$values <- modifyList(best_learner$param_set$values, ranger_params)
+            regr_learner$param_set$values <- modifyList(regr_learner$param_set$values, ranger_params)
           }
           
           # Prüfe Unterstützung für Missing Values bei Klassifikation
