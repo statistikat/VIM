@@ -630,11 +630,11 @@ vimpute <- function(
           class_data <- data_temp[!is.na(data_temp[[var]]), , drop = FALSE]
           class_task <- TaskClassif$new(id = zero_flag_col, backend = class_data, target = zero_flag_col)
           
-          base_learner_id <- best_learner$id  
+          # base_learner_id <- best_learner$id  
           
           # Klassifikation-Learner-ID ableiten:
           # classif_learner_id <- sub("^regr\\.", "classif.", base_learner_id)
-          # regr_learner_id <- base_learner_id
+          regr_learner_id <- best_learner$id
           
           classif_learner <- lrn("classif.log_reg")
           regr_learner <- lrn(regr_learner_id)
