@@ -627,7 +627,9 @@ vimpute <- function(
           zero_flag_col <- paste0(var, "_zero_flag")
 
           data_temp[[zero_flag_col]] <- factor(ifelse(data_temp[[var]] == 0, "zero", "positive"))
-          class_data <- data_temp[!is.na(data_temp[[var]]), , drop = FALSE]
+          relevant_features <- setdiff(names(data_temp), c(var, zero_flag_col))
+          class_data <- data_temp[!is.na(data_temp[[var]]) & complete.cases(data_temp[, ..relevant_features]), , drop = FALSE]
+          # class_data <- data_temp[!is.na(data_temp[[var]]), , drop = FALSE]
           train_data <- class_data 
           print("train_data")
           print(train_data)
@@ -711,14 +713,20 @@ vimpute <- function(
           
           # 2) Regression: nur positive Werte
           reg_data <- data_temp[data_temp[[var]] > 0, , drop = FALSE]
-          reg_task <- TaskRegr$new(id = var, backend = reg_data, target = var)
-          reg_task$select(setdiff(names(reg_data), c(var, zero_flag_col)))
+          # Nur echte Prädiktoren (ohne Zielvariable und ggf. zero_flag)
+          reg_features <- setdiff(names(reg_data), c(var, zero_flag_col))
+          # Entferne Zeilen mit NA in der Zielvariable (immer notwendig!)
+          reg_data <- reg_data[!is.na(reg_data[[var]]), , drop = FALSE]
+          # Prüfen, ob Prädiktoren fehlende Werte enthalten
+          has_na_in_features <- anyNA(reg_data[, ..reg_features])
           
+          # Prüfen, ob der Learner fehlende Werte unterstützt
           supports_missing <- "missings" %in% regr_learner$properties
           if (method_var == "ranger") supports_missing <- FALSE
           
+          # Optional: Missings als Indikator-Variablen kodieren
           po_x_miss_reg <- NULL
-          if (sum(is.na(reg_data[[var]])) > 0 && supports_missing && method_var != "xgboost") {
+          if (has_na_in_features && supports_missing && method_var != "xgboost") {
             po_x_miss_reg <- po("missind", param_vals = list(
               affect_columns = mlr3pipelines::selector_all(),
               which = "all",
@@ -726,6 +734,17 @@ vimpute <- function(
             ))
           }
           
+          # Fallback: Wenn der Learner keine Missings unterstützt → na.omit auf Features
+          if (has_na_in_features && !supports_missing) {
+            cols <- c(reg_features, var)
+            reg_data <- na.omit(reg_data[, ..cols])
+          }
+          
+          # Task erstellen mit Prädiktoren
+          reg_task <- TaskRegr$new(id = var, backend = reg_data, target = var)
+          reg_task$select(reg_features)
+          
+          # Pipeline bauen
           reg_pipeline <- if (!is.null(po_x_miss_reg)) po_x_miss_reg %>>% regr_learner else regr_learner
           reg_learner <- GraphLearner$new(reg_pipeline)
           
@@ -1073,9 +1092,6 @@ vimpute <- function(
           decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
           preds <- round(preds, decimal_places)
         }
-        
-
-        
 ### Predict End ###################################################################################################
         
 ### *****PMM Start***** ###################################################################################################
