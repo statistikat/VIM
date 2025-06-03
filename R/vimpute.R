@@ -633,10 +633,10 @@ vimpute <- function(
           base_learner_id <- best_learner$id  
           
           # Klassifikation-Learner-ID ableiten:
-          classif_learner_id <- sub("^regr\\.", "classif.", base_learner_id)
-          regr_learner_id <- base_learner_id
+          # classif_learner_id <- sub("^regr\\.", "classif.", base_learner_id)
+          # regr_learner_id <- base_learner_id
           
-          classif_learner <- lrn(classif_learner_id)
+          classif_learner <- lrn("classif.log_reg")
           regr_learner <- lrn(regr_learner_id)
           
           # Prüfe Unterstützung für Missing Values bei Klassifikation
@@ -663,7 +663,6 @@ vimpute <- function(
           if (isTRUE(tuning_status[[var]]) && !is.null(tuning_status[[zero_flag_col]]) && isTRUE(tuning_status[[zero_flag_col]])) {
             if (!is.null(hyperparameter_cache[[zero_flag_col]]) && isTRUE(hyperparameter_cache[[zero_flag_col]]$is_tuned)) {
               params <- hyperparameter_cache[[zero_flag_col]]$params
-              cat(sprintf("Use optimized parameters from the cache for %s\n", zero_flag_col))
               
               # Ohne Prefix
               pipeline_valid <- intersect(names(params), class_pipeline$param_set$ids())
