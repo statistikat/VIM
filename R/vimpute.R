@@ -897,8 +897,8 @@ vimpute <- function(
             
           } else {
             # Ohne Formel: nur Prädiktoren ohne var und zero_flag_col
-            print("data_temp")
-            print(data_temp)
+            # print("data_temp")
+            # print(data_temp)
             
             class_pred_data <- data_temp[missing_idx, c(feature_cols, zero_flag_col), with = FALSE]
             
@@ -979,11 +979,9 @@ vimpute <- function(
           if (anyNA(class_pred_data)) {
             class_pred_data <- impute_missing_values(class_pred_data, data_temp)
           }
-          # print("backend_data")
-          # print(backend_data)
-          
-          print("class_pred_data")
-          print(class_pred_data)
+
+          # print("class_pred_data")
+          # print(class_pred_data)
           
           # Prediction ohne Task (weil Zielvariable nicht vorhanden)
           pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
@@ -1023,8 +1021,11 @@ vimpute <- function(
           preds <- data_temp[[var]]  # Bestehende Werte behalten
           preds[missing_idx] <- 0    # Default 0 für fehlende
           preds[reg_rows] <- preds_reg  # Regressionsergebnisse einfügen
-          preds <- preds[missing_idx]   
-          # preds <- preds[missing_idx]
+          preds <- preds[missing_idx]
+          
+          print ("preds")
+          print (preds)
+
           
         } else {
           # Normaler Fall (keine semikontinuierlichen Daten)
