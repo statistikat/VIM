@@ -406,11 +406,11 @@ precheck <- function(
 #
 # Semicontinous variables
 is_semicontinuous <- function(x) {
-  # z.B. viele Nullen und positive Werte > 0
   is.numeric(x) &&
     any(x == 0, na.rm = TRUE) &&
     any(x > 0, na.rm = TRUE) &&
-    sum(x == 0, na.rm = TRUE) / sum(!is.na(x)) > 0.1
+    sum(x == 0, na.rm = TRUE) / sum(!is.na(x)) > 0.1 &&
+    !all(na.omit(x) %in% c(0, 1))  # explizit keine binären Variablen
 }
 
 
