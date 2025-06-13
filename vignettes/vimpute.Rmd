@@ -44,7 +44,7 @@ This vignette demonstrates how to use the `vimpute()` function for flexible miss
 To demonstrate the function, the `sleep` dataset from the `VIM` package is used. 
 
 ```{r, echo = FALSE, results='hide', message=FALSE, warning=FALSE}
-library(VIM)
+devtools::load_all("~/R/VIM")
 library(data.table)
 ```
 ```{r setup_2, message = FALSE}
