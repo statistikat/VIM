@@ -1,25 +1,23 @@
-# Run helper script first
-# source("helper_vimpute.R")
 
 #' Impute missing values with prefered Model, sequentially, with hyperparametertuning and with PMM (if wanted)
+#' Need of 'helper_vimpute' script
 
 ## PARAMETERS ##
 #' @param data - Dataset with missing values. Can be provided as a data.table or data.frame.
-#' @param considered_variables - Parameters that should be considered in the model
-#' @param method - Specifies which learner is used for imputation. Provide as a list for each variable.
+#' @param considered_variables - A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process.
+#' @param method - A named list specifying the imputation method for each variable:
 # - ranger
 # - xgboost 
 # - regularized
 # - robust
 #' @param pmm - TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable.
-#' @param formula - If not all variables are to be used as predictors, or if transformations or interactions are required (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized".
-# - Provide as a list for each variable that requires specific conditions.
-# - Example 1: log(Y) ~ exp(X1) + X3 + X4:X5
-# - Example 2: Y ~ sqrt(X1) + I(1/X2) + X3*X5
-# - For X: follows the rules of model.matrix
-# - For Y: transformations supported are log(), exp(), sqrt(), I(1/..). Only applicable for numeric variables.
+#' @param formula - If not all variables are used as predictors, or if transformations or interactions are required (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized". Provide as a list for each variable that requires specific conditions.
+#   - formula format:                     list(variable_1 ~ age + lenght, variable_2 ~ width + country) 
+#   - formula format with transformation: list(log(variable_1) ~ age + inverse(lenght), variable_2 ~ width + country)
+#   - For X: follows the rules of model.matrix
+#   - For Y: transformations supported are log(), exp(), sqrt(), I(1/..). Only applicable for numeric variables.
 #' @param sequential - If TRUE, all variables are imputed sequentially.
-#' @param nseq - Maximum number of iterations.
+#' @param nseq - Maximum number of iterations (if sequential is TRUE).
 #' @param eps - Threshold for convergence.
 #' @param imp_var - If TRUE, the imputed values are stored.
 #' @param pred_history - If TRUE, all predicted values across all iterations are stored.
@@ -29,27 +27,25 @@
 #' @export
 #'
 #' @examples
-#' x <- vimpute(data = sleep, sequential = FALSE, pred_history = FALSE)
-#' y <- vimpute(data = sleep, sequential = TRUE, nseq = 3, pred_history = FALSE)
+#' x <- vimpute(data = sleep, sequential = FALSE)
+#' y <- vimpute(data = sleep, sequential = TRUE, nseq = 3)
 #' z <- vimpute(data = sleep, considered_variables =
-#'        c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE, pred_history = FALSE)
+#'        c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE)
 #########################################################################################
 #########################################################################################
 #########################################################################################
 
 vimpute <- function(
     data,
-    considered_variables = names(data), # other variables will be passed thrpough
+    considered_variables = names(data), 
     method = setNames(as.list(rep("ranger", length(considered_variables))), considered_variables),
     pmm = setNames(as.list(rep(TRUE, length(considered_variables))), considered_variables),
     formula = FALSE, 
-    # formula format:                    list(variable_1 ~ age + lenght, variable_2 ~ width + country) 
-    # formula format with transformation: list(log(variable_1) ~ age + inverse(lenght), variable_2 ~ width + country)
     sequential = TRUE,
     nseq = 10,
-    eps = 0.005, # Stop: if Imputation changes less than 0.5%
+    eps = 0.005, 
     imp_var = TRUE,
-    pred_history = TRUE,
+    pred_history = FALSE,
     tune = FALSE,
     verbose = FALSE
 ) {
@@ -96,7 +92,6 @@ vimpute <- function(
     }
     
     orig_data <- data
-    
 ### Check Data End ###
     
 ### ***** Def missing indices Start ***** ###################################################################################################
@@ -116,7 +111,7 @@ vimpute <- function(
     original_data <- copy(data)  # Saves original structure of data
     
     if (pred_history == TRUE) {
-      history <- list() # save history of predicteten values
+      history <- list() # save history of predicted values
     }
     
     count_tuned_better <- 0
