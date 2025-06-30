@@ -553,6 +553,9 @@ vimpute <- function(
                     params = best_params,
                     is_tuned = TRUE
                   )
+                  if (verbose) {
+                    message(sprintf("Tuned parameters for variable '%s': %s", var, paste(names(best_params), best_params, sep = "=", collapse = ", ")))
+                  }
                   
                 } else {
                   current_learner$param_set$values <- default_learner$param_set$values
@@ -561,6 +564,9 @@ vimpute <- function(
                     params = default_learner$param_set$values,
                     is_tuned = FALSE
                   )
+                  if (verbose) {
+                    message(sprintf("Tuned parameters for variable '%s': %s", var, paste(names(best_params), best_params, sep = "=", collapse = ", ")))
+                  }
                 }
               }
               
