@@ -533,6 +533,9 @@ vimpute <- function(
                     cat(sprintf("Tuned parameters for variable '%s': %s\n", var, paste(names(best_params), best_params, sep = "=", collapse = ", ")))
                     flush.console()
                   }
+                  if(verbose){
+                    message(paste("***** TEST"))
+                  }
 
                 } else {
                   current_learner$param_set$values <- default_learner$param_set$values
