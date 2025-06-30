@@ -124,6 +124,8 @@ vimpute <- function(
     hyperparameter_cache <- setNames(vector("list", length(variables_NA)), variables_NA)
     tuning_status <- setNames(rep(FALSE, length(variables_NA)), variables_NA)
     
+    tuning_log <- list()
+    
     # Iterative Imputation for nseq iterations
     for (i in seq_len(nseq)) {
       if(verbose){
@@ -444,8 +446,6 @@ vimpute <- function(
         if(verbose){
           message(paste("***** Parametertuning"))
         }
-
-        tuning_log <- list()
 
         if (!tuning_status[[var]] && nseq >= 2 && tune) {
           
