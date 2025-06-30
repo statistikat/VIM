@@ -357,9 +357,14 @@ precheck <- function(
   # proove methods
   if (length(method) == 0) {
     message("Methods are empty, no imputation is used.")
-  } else if (is.character(method) && length(method) == 1) {
-    # If `method` is a single string, create a list with this value for all variables
-    method <- setNames(as.list(rep(method, length(variables))), variables)
+  } else if ((is.character(method) && length(method) == 1) ||
+            (is.list(method) && length(method) == 1 && is.character(method[[1]]))) {
+    # If `method` is a single string or a single-element list, set for all variables
+    method_value <- if (is.list(method)) method[[1]] else method
+    if (!(method_value %in% supported_methods)) {
+      stop("Error: The provided method is not supported.")
+    }
+    method <- setNames(as.list(rep(method_value, length(variables))), variables)
   } else if (length(method) == length(variables) || length(method) == length(variables_NA)) {
     # If `method` has the same length as `variables` or the number of variables matches NAs
     if (is.list(method) && all(sapply(method, is.character))) {
@@ -371,7 +376,7 @@ precheck <- function(
       stop("Error: 'method' must be a list of string values.")
     }
   } else {
-    stop("Error: 'method' must either be empty, have the same length as 'variables' or 'considered_variables' (if specified) or the number of variables must match NAs.")
+    stop("Error: 'method' must either be empty, a single string, a single-element list, have the same length as 'variables' or 'considered_variables' (if specified), or the number of variables must match NAs.")
   }
   
   # warning if more than 50% missing values
