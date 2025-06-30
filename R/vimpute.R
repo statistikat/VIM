@@ -517,6 +517,9 @@ vimpute <- function(
               default_result <- resample(task, default_learner, rsmp("cv", folds = 5))
               tuned_result <- resample(task, tuned_learner, rsmp("cv", folds = 5))
               
+              if(verbose){
+                message(paste("***** TEST"))
+              }
               
               # which model is better
               if (task$task_type == "regr") {
@@ -532,9 +535,6 @@ vimpute <- function(
                   if (verbose) {
                     cat(sprintf("Tuned parameters for variable '%s': %s\n", var, paste(names(best_params), best_params, sep = "=", collapse = ", ")))
                     flush.console()
-                  }
-                  if(verbose){
-                    message(paste("***** TEST"))
                   }
 
                 } else {
