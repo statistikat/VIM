@@ -1283,6 +1283,10 @@ vimpute <- function(
     
     result <- as.data.table(if (imp_var) data_new else data)  # Default: Return `data` only
 
+    if (!pred_history && !tune) {
+      return(result)
+    }
+
     output <- list(data = result)   
     
     if (pred_history) {
@@ -1293,7 +1297,7 @@ vimpute <- function(
       output$tuning_log <- tuning_log
 
     } 
-    return(result)    
+    return(output)    
 }
   
 
