@@ -145,7 +145,9 @@ vimpute <- function(
         }
         if (!isFALSE(formula)) {
           selected_formula <- select_formula(formula, var)  # formula on left handsite
-          print(paste("formula: ", selected_formula))
+          if (verbose) {
+            message(paste("Selected formula for variable", var, ":", selected_formula))
+          }
         }
         
 ### ***** Formula Extraction Start ***** ###################################################################################################
@@ -516,7 +518,7 @@ vimpute <- function(
               tuned_result <- resample(task, tuned_learner, rsmp("cv", folds = 5))
               
               
-              # ehich model is better
+              # which model is better
               if (task$task_type == "regr") {
                 if (tuned_result$aggregate(msr("regr.rmse")) < default_result$aggregate(msr("regr.rmse"))) {
                   current_learner$param_set$values <- best_params
@@ -526,7 +528,10 @@ vimpute <- function(
                     params = best_params,
                     is_tuned = TRUE
                   )
-                  
+                  if (verbose) {
+                    message(sprintf("Tuned parameters for variable '%s': %s", var, paste(names(best_params), best_params, sep = "=", collapse = ", ")))
+                  }
+
                 } else {
                   current_learner$param_set$values <- default_learner$param_set$values
                   count_default_better <- count_default_better + 1
@@ -534,6 +539,9 @@ vimpute <- function(
                     params = default_learner$param_set$values,
                     is_tuned = FALSE
                   )
+                  if (verbose) {
+                    message(sprintf("Default parameters for variable '%s': %s", var, paste(names(default_learner$param_set$values), default_learner$param_set$values, sep = "=", collapse = ", ")))
+                  }
                 }
                 
               } else {
