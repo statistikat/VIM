@@ -574,16 +574,6 @@ vimpute <- function(
                   }
                 }
               }
-
-              # tuning_log
-              tuning_log[[length(tuning_log) + 1]] <- list(
-                variable = var,
-                iteration = i,
-                tuned = tuning_status[[var]],
-                params = current_learner$param_set$values,
-                tuned_better = isTRUE(hyperparameter_cache[[var]]$is_tuned)
-                )
-
               
             }, error = function(e) {
               warning(sprintf("Tuning failed for variable '%s': %s. Using default parameters.", var, e$message))
@@ -604,6 +594,15 @@ vimpute <- function(
           # No tuning - use default parameters
           current_learner$param_set$values <- list()
         }
+
+        # tuning_log
+        tuning_log[[length(tuning_log) + 1]] <- list(
+          variable = var,
+          iteration = i,
+          tuned = tuning_status[[var]],
+          params = current_learner$param_set$values,
+          tuned_better = isTRUE(hyperparameter_cache[[var]]$is_tuned)
+          )
 
         if (verbose) {
           #print tuning_log
