@@ -125,7 +125,7 @@ vimpute <- function(
     tuning_status <- setNames(rep(FALSE, length(variables_NA)), variables_NA)
     
     tuning_log <- list()
-    
+
     # Iterative Imputation for nseq iterations
     for (i in seq_len(nseq)) {
       if(verbose){
@@ -596,14 +596,15 @@ vimpute <- function(
         }
 
         # After tuning
-        tuning_log[[length(tuning_log) + 1]] <- list(
-          variable = var,
-          iteration = i,
-          tuned = tuning_status[[var]],
-          params = if (tuning_status[[var]]) best_params else default_learner$param_set$values,
-          tuned_better = isTRUE(hyperparameter_cache[[var]]$is_tuned)
-        )
-        
+        if (tune) {
+          tuning_log[[length(tuning_log) + 1]] <- list(
+            variable = var,
+            iteration = i,
+            tuned = tuning_status[[var]],
+            params = current_learner$param_set$values,
+            tuned_better = isTRUE(hyperparameter_cache[[var]]$is_tuned)
+          )
+        }
 ### Hyperparameter End ###
         
 ### ***** NAs Start***** ###################################################################################################
