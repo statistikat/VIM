@@ -604,6 +604,14 @@ vimpute <- function(
           # No tuning - use default parameters
           current_learner$param_set$values <- list()
         }
+
+        if (verbose) {
+          #print tuning_log
+          if (length(tuning_log) > 0) {
+            print("Tuning Log:")
+            print(tuning_log)
+          }
+        }
 ### Hyperparameter End ###
         
 ### ***** NAs Start***** ###################################################################################################
