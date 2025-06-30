@@ -542,7 +542,7 @@ vimpute <- function(
                     is_tuned = FALSE
                   )
                   if (verbose) {
-                    message(sprintf("Default parameters for variable '%s': %s", var, paste(names(default_learner$param_set$values), default_learner$param_set$values, sep = "=", collapse = ", ")))
+                    cat(sprintf("Default parameters for variable '%s': %s", var, paste(names(default_learner$param_set$values), default_learner$param_set$values, sep = "=", collapse = ", ")))
                     flush.console()
                   }
                   
@@ -570,7 +570,7 @@ vimpute <- function(
                     is_tuned = FALSE
                   )
                   if (verbose) {
-                    message(sprintf("Default parameters for variable '%s': %s", var, paste(names(default_learner$param_set$values), default_learner$param_set$values, sep = "=", collapse = ", ")))
+                    cat(sprintf("Default parameters for variable '%s': %s", var, paste(names(default_learner$param_set$values), default_learner$param_set$values, sep = "=", collapse = ", ")))
                     flush.console()
                   }
                 }
