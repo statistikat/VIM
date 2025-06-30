@@ -49,6 +49,10 @@ vimpute <- function(
     tune = FALSE,
     verbose = FALSE
 ) {
+
+  # save plan
+  old_plan <- future::plan()  # Save current plan
+  on.exit(future::plan(old_plan), add = TRUE)  # Restore on exit, even if error
     
 ### ***** Learner START ***** ################################################################################################### 
     no_change_counter <- 0
@@ -175,6 +179,7 @@ vimpute <- function(
           
           mm_task_na_omit <- po_mm_na_omit$train(list(task_mm_na_omit))[[1]]
           data_temp <- mm_task_na_omit$data()
+          data_temp <- as.data.table(data_temp)
           
           clean_colnames <- function(names) {
             names <- make.names(names, unique = TRUE)
@@ -202,6 +207,7 @@ vimpute <- function(
           pipeline_impute$train(task_mm)
           po_task_mm <- pipeline_impute$predict(task_mm)[[1]]
           mm_data <- po_task_mm$data() # mm_data = transformed data with missings filled in, data_temp = transformed data without missings
+          mm_data <- as.data.table(mm_data)
           setnames(mm_data, clean_colnames(names(mm_data)))
           
           # Identify target transformation
@@ -237,7 +243,7 @@ vimpute <- function(
           target_col <- var
           selected_cols <- c(target_col, feature_cols)
           data <- data[, selected_cols, with = FALSE]
-          data_temp <- data
+          data_temp <- as.data.table(data)
         }
         
         if ("Intercept" %in% colnames(data_temp)) {
@@ -348,7 +354,7 @@ vimpute <- function(
         } else if (is.factor(data_y_fill_final[[target_col]])) {
           task <- TaskClassif$new(id = target_col, backend = data_y_fill_final, target = target_col)
         } else {
-          stop("Fehler: Zielvariable ist weder numerisch noch ein Faktor!")
+          stop("Mistake: Target variable is neither numerical nor a factor!")
         }
         
 ### *****Create Learner Start***** ###################################################################################################
@@ -477,7 +483,7 @@ vimpute <- function(
             #best_learner = learners[[best_learner_id]]
             search_space = search_spaces[[best_learner_id]]
             
-            future::plan("multisession") 
+            #future::plan("multisession") 
             
             tryCatch({
               # train default model
@@ -551,7 +557,13 @@ vimpute <- function(
               }
               
             }, error = function(e) {
-              current_learner$param_set$values <- list() # Fallback Default
+              warning(sprintf("Tuning failed for variable '%s': %s. Using default parameters.", var, e$message))
+              current_learner$param_set$values <- default_learner$param_set$values
+              tuning_status[[var]] <- FALSE
+              hyperparameter_cache[[var]] <- list(
+                params = default_learner$param_set$values,
+                is_tuned = FALSE
+              )
             })
             
             future::plan("sequential")
@@ -602,7 +614,7 @@ vimpute <- function(
 
           data_temp[[zero_flag_col]] <- factor(ifelse(data_temp[[var]] == 0, "zero", "positive"))
           relevant_features <- setdiff(names(data_temp), c(var, zero_flag_col))
-          class_data <- data_temp[!is.na(data_temp[[var]]) & complete.cases(data_temp[, ..relevant_features]), , drop = FALSE]
+          class_data <- data_temp[!is.na(data_temp[[var]]) & complete.cases(data_temp[, ..relevant_features]),]
           train_data <- class_data 
           
           feature_cols <- setdiff(names(train_data), c(var, zero_flag_col))
@@ -684,9 +696,9 @@ vimpute <- function(
           
           
           # 2) Regression
-          reg_data <- data_temp[data_temp[[var]] > 0, , drop = FALSE]
+          reg_data <- data_temp[data_temp[[var]] > 0,]
           reg_features <- setdiff(names(reg_data), c(var, zero_flag_col))
-          reg_data <- reg_data[!is.na(reg_data[[var]]), , drop = FALSE] #only without NA
+          reg_data <- reg_data[!is.na(reg_data[[var]]),] #only without NA
           has_na_in_features <- anyNA(reg_data[, ..reg_features])
           
           # support missings?
@@ -774,7 +786,9 @@ vimpute <- function(
             if (!is.null(hyperparameter_cache[[var]]) && isTRUE(hyperparameter_cache[[var]]$is_tuned)) {
               # If optimized parameters exist in the cache
               params <- hyperparameter_cache[[var]]$params
-              cat(sprintf("Use optimized parameters from the cache for %s\n", var))
+              if (verbose) {
+                cat(sprintf("Use optimized parameters from the cache for %s\n", var))
+              }
               
               # Set parameter in full_pipeline (without prefix)
               pipeline_valid <- intersect(names(params), full_pipeline$param_set$ids())
@@ -844,7 +858,7 @@ vimpute <- function(
         # missing indices
         missing_idx <- missing_indices[[var]]
         if (length(missing_idx) == 0) {
-          return(NULL)
+          next
         }
         
         if (!is_sc) {
@@ -854,7 +868,7 @@ vimpute <- function(
           feature_cols <- setdiff(variables, var)
           
           if (!isFALSE(selected_formula)) {
-            backend_data <- mm_data[missing_idx, , drop = FALSE]
+            backend_data <- mm_data[missing_idx, ]
             
             # Impute if NA in backend_data
             if (any(is.na(backend_data))) {
@@ -881,7 +895,7 @@ vimpute <- function(
           print(feature_cols)
           
           if (!isFALSE(selected_formula)) {
-            class_pred_data <- mm_data[missing_idx, , drop = FALSE]
+            class_pred_data <- mm_data[missing_idx,]
             if (any(is.na(class_pred_data))) {
               class_pred_data <- impute_missing_values(class_pred_data, data_temp)
             }
@@ -894,7 +908,7 @@ vimpute <- function(
             }
           }
           
-          reg_pred_data <- data_temp[data_temp[[var]] > 0, , drop = FALSE]
+          reg_pred_data <- data_temp[data_temp[[var]] > 0, ]
           
           if (!supports_missing && any(is.na(reg_pred_data))) {
             reg_pred_data <- impute_missing_values(reg_pred_data, data_temp)
@@ -965,7 +979,7 @@ vimpute <- function(
           pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
           
           # predict
-          if (isFALSE(seq) || i == nseq) {
+          if (isFALSE(sequential) || i == nseq) {
             preds_class <- apply(pred_probs, 1, function(probs) {
               sample(colnames(pred_probs), size = 1, prob = probs)
             })
@@ -1022,7 +1036,7 @@ vimpute <- function(
               stop("Fehler bei der Berechnung der Wahrscheinlichkeiten.")
             }
             
-            if (isFALSE(seq) || i == nseq) {
+            if (isFALSE(sequential) || i == nseq) {
               preds <- apply(pred_probs, 1, function(probs) {
                 sample(levels(data_temp[[target_col]]), size = 1, prob = probs)
               })
@@ -1088,7 +1102,11 @@ vimpute <- function(
           if (is.numeric(data_prev[[var]])) {  
             data[missing_idx, (var) := as.numeric(preds)]
           } else if (is.factor(data[[var]])) {
-            data[missing_idx, (var) := factor(preds, levels = levels(data_prev[[var]]))]
+            orig_levels <- levels(data_prev[[var]])
+            pred_levels <- unique(as.character(preds))
+            # Add any new levels from preds to the original levels
+            all_levels <- union(orig_levels, pred_levels)
+            data[missing_idx, (var) := factor(preds, levels = all_levels)]
           } else {
             stop(paste("Unknown data type for variable:", var))
           }
@@ -1236,15 +1254,13 @@ vimpute <- function(
 ### Stop criteria END ###
     
     result <- as.data.table(if (imp_var) data_new else data)  # Default: Return `data` only
-    
-    data_all_variables[, names(result) := result]
-    
+       
     if (pred_history) {
       pred_result <- rbindlist(history, fill = TRUE)
-      return(list(data = data_all_variables, pred_history = pred_result))
+      return(list(data = result, pred_history = pred_result))
     }
     
-    return(data_all_variables)
+    return(result)
 }
   
 
