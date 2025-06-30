@@ -1282,17 +1282,18 @@ vimpute <- function(
 ### Stop criteria END ###
     
     result <- as.data.table(if (imp_var) data_new else data)  # Default: Return `data` only
-       
+
+    output <- list(data = result)   
+    
     if (pred_history) {
       pred_result <- rbindlist(history, fill = TRUE)
-      return(list(data = result, pred_history = pred_result))
+      output$pred_history <- pred_result
     }
-
     if (tune) {
-      return(list(data = result, tuning_log = tuning_log))
-    }
-    
-    return(result)
+      output$tuning_log <- tuning_log
+
+    } 
+    return(result)    
 }
   
 
