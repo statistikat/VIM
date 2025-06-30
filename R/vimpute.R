@@ -528,8 +528,10 @@ vimpute <- function(
                     params = best_params,
                     is_tuned = TRUE
                   )
+
                   if (verbose) {
-                    message(sprintf("Tuned parameters for variable '%s': %s", var, paste(names(best_params), best_params, sep = "=", collapse = ", ")))
+                    cat(sprintf("Tuned parameters for variable '%s': %s\n", var, paste(names(best_params), best_params, sep = "=", collapse = ", ")))
+                    flush.console()
                   }
 
                 } else {
@@ -541,7 +543,9 @@ vimpute <- function(
                   )
                   if (verbose) {
                     message(sprintf("Default parameters for variable '%s': %s", var, paste(names(default_learner$param_set$values), default_learner$param_set$values, sep = "=", collapse = ", ")))
+                    flush.console()
                   }
+                  
                 }
                 
               } else {
@@ -554,7 +558,8 @@ vimpute <- function(
                     is_tuned = TRUE
                   )
                   if (verbose) {
-                    message(sprintf("Tuned parameters for variable '%s': %s", var, paste(names(best_params), best_params, sep = "=", collapse = ", ")))
+                    cat(sprintf("Tuned parameters for variable '%s': %s\n", var, paste(names(best_params), best_params, sep = "=", collapse = ", ")))
+                    flush.console()
                   }
                   
                 } else {
@@ -565,7 +570,8 @@ vimpute <- function(
                     is_tuned = FALSE
                   )
                   if (verbose) {
-                    message(sprintf("Tuned parameters for variable '%s': %s", var, paste(names(best_params), best_params, sep = "=", collapse = ", ")))
+                    message(sprintf("Default parameters for variable '%s': %s", var, paste(names(default_learner$param_set$values), default_learner$param_set$values, sep = "=", collapse = ", ")))
+                    flush.console()
                   }
                 }
               }
