@@ -444,9 +444,9 @@ vimpute <- function(
         if(verbose){
           message(paste("***** Parametertuning"))
         }
-        #print(paste("i:", i))
-        
-        
+
+        tuning_log <- list()
+
         if (!tuning_status[[var]] && nseq >= 2 && tune) {
           
           if ((nseq > 2 && i == round(nseq / 2)) || (nseq == 2 && i == 2)) {
@@ -516,11 +516,7 @@ vimpute <- function(
               
               default_result <- resample(task, default_learner, rsmp("cv", folds = 5))
               tuned_result <- resample(task, tuned_learner, rsmp("cv", folds = 5))
-              
-              if(verbose){
-                message(paste("***** TEST"))
-              }
-              
+                            
               # which model is better
               if (task$task_type == "regr") {
                 if (tuned_result$aggregate(msr("regr.rmse")) < default_result$aggregate(msr("regr.rmse"))) {
@@ -598,6 +594,15 @@ vimpute <- function(
           # No tuning - use default parameters
           current_learner$param_set$values <- list()
         }
+
+        # After tuning
+        tuning_log[[length(tuning_log) + 1]] <- list(
+          variable = var,
+          iteration = i,
+          tuned = tuning_status[[var]],
+          params = if (tuning_status[[var]]) best_params else default_learner$param_set$values,
+          tuned_better = isTRUE(hyperparameter_cache[[var]]$is_tuned)
+        )
         
 ### Hyperparameter End ###
         
@@ -1281,6 +1286,10 @@ vimpute <- function(
     if (pred_history) {
       pred_result <- rbindlist(history, fill = TRUE)
       return(list(data = result, pred_history = pred_result))
+    }
+
+    if (tune) {
+      return(list(data = result, tuning_log = tuning_log))
     }
     
     return(result)
