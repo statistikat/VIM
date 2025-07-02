@@ -972,43 +972,26 @@ vimpute <- function(
         
 ### *****Select suitable task type Start***** ###################################################################################################
         if (!is_sc) {
+          # Faktorlevels in backend_data angleichen VOR Task-Erstellung
+          for (col in names(backend_data)) {
+            if (is.factor(backend_data[[col]])) {
+              train_levels <- levels(data_temp[[col]])  # Levels aus Trainingsdaten
+              backend_data[[col]] <- factor(backend_data[[col]], levels = train_levels)
+            }
+          }
+          
           if (is.numeric(data_temp[[target_col]])) {
             pred_task <- TaskRegr$new(
               id = target_col,
-              backend =  backend_data,
+              backend = backend_data,
               target = target_col
             )
-            
-            backend_pred_data <- pred_task$data()
-            
-            for (col in names(backend_pred_data)) {
-              if (is.factor(backend_pred_data[[col]])) {
-                train_levels <- levels(data_temp[[col]])  # or where your train data is stored
-                backend_pred_data[[col]] <- factor(backend_pred_data[[col]], levels = train_levels)
-              }
-            }
-            
-            # Set back corrected data to task
-            pred_task$backend <- backend_pred_data
-            
-            
           } else if (is.factor(data_temp[[target_col]])) {
             pred_task <- TaskClassif$new(
               id = target_col,
-              backend =  backend_data,
+              backend = backend_data,
               target = target_col
             )
-            backend_pred_data <- pred_task$data()
-            
-            for (col in names(backend_pred_data)) {
-              if (is.factor(backend_pred_data[[col]])) {
-                train_levels <- levels(data_temp[[col]])  # or where your train data is stored
-                backend_pred_data[[col]] <- factor(backend_pred_data[[col]], levels = train_levels)
-              }
-            }
-            
-            # Set back corrected data to task
-            pred_task$backend <- backend_pred_data
           } else {
             stop("Error: Target variable is neither numeric nor a factor!")
           }
