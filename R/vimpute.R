@@ -76,6 +76,10 @@ vimpute <- function(
     data_all_variables <- as.data.table(data)
     data <-  as.data.table(data)[, considered_variables, with = FALSE]
     
+    # save factor levels
+    factor_vars <- names(Filter(is.factor, data_all_variables))
+    factor_levels <- lapply(data_all_variables[, ..factor_vars], levels)
+    
 ### ***** Check Data Start ***** ###################################################################################################
     if(verbose){
       message(paste("***** Check Data"))  
@@ -160,11 +164,23 @@ vimpute <- function(
           rewrited_formula <- rewrite_formula (selected_formula, target_col) # write formula in the correct way
           
           # Remove missing values (na.omit)  -> for Training
+          data_clean <- na.omit(data)
+          data_clean <- enforce_factor_levels(data_clean, factor_levels)  # <--- WICHTIG
+          
           is_target_numeric <- is.numeric(data[[target_col]])
+          
           if (is_target_numeric) {
-            task_mm_na_omit <- TaskRegr$new(id = "imputation_task_na_omit", backend = na.omit(data), target = target_col)
+            task_mm_na_omit <- TaskRegr$new(
+              id = "imputation_task_na_omit",
+              backend = data_clean,
+              target = target_col
+            )
           } else {
-            task_mm_na_omit <- TaskClassif$new(id = "imputation_task_na_omit", backend = na.omit(data), target = target_col)
+            task_mm_na_omit <- TaskClassif$new(
+              id = "imputation_task_na_omit",
+              backend = data_clean,
+              target = target_col
+            )
           }
           
           # modelmatrix for x variables
@@ -341,6 +357,7 @@ vimpute <- function(
         
         # If the learner does not support missing values -> use na.omit()
         data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
+        data_y_fill_final <- enforce_factor_levels(data_y_fill_final, factor_levels)
         
         # Create task
         if (is.numeric(data_y_fill_final[[target_col]])) {
@@ -707,6 +724,7 @@ vimpute <- function(
           if (has_na_in_features && !supports_missing) {
             cols <- c(reg_features, var)
             reg_data <- na.omit(reg_data[, ..cols])
+            reg_data <- enforce_factor_levels(reg_data, factor_levels)
           }
           
           # Task

@@ -413,7 +413,18 @@ is_semicontinuous <- function(x) {
     !all(na.omit(x) %in% c(0, 1))  # explizit keine binären Variablen
 }
 
-
+#
+#
+#
+# factor levels
+enforce_factor_levels <- function(df, original_levels) {
+  for (colname in names(df)) {
+    if (is.factor(df[[colname]]) && !is.null(original_levels[[colname]])) {
+      df[[colname]] <- factor(df[[colname]], levels = original_levels[[colname]])
+    }
+  }
+  return(df)
+}
 
 
 
