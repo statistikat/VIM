@@ -423,9 +423,12 @@ is_semicontinuous <- function(x) {
 #
 # factor levels
 enforce_factor_levels <- function(df, original_levels) {
-  for (colname in names(df)) {
-    if (is.factor(df[[colname]]) && !is.null(original_levels[[colname]])) {
-      df[[colname]] <- factor(df[[colname]], levels = original_levels[[colname]])
+  for (colname in names(original_levels)) {
+    if (colname %in% names(df)) {
+      # Only coerce if not numeric/integer/logical
+      if (!is.numeric(df[[colname]]) && !is.integer(df[[colname]]) && !is.logical(df[[colname]])) {
+        df[[colname]] <- factor(df[[colname]], levels = original_levels[[colname]])
+      }
     }
   }
   return(df)
