@@ -951,14 +951,7 @@ vimpute <- function(
             backend_data <- data_temp[missing_idx, backend_cols, with = FALSE]
             backend_data <- enforce_factor_levels(backend_data, factor_levels)
             check_all_factor_levels(backend_data, factor_levels)
-            if (!(method_var %in% c("xgboost"))) {
-              for (col in names(factor_levels)) {
-                if (col %in% names(backend_data) && is.factor(backend_data[[col]]) && col %in% names(data_y_fill_final)) {
-                  valid_levels <- levels(data_y_fill_final[[col]])
-                  backend_data[[col]][!backend_data[[col]] %in% valid_levels & !is.na(backend_data[[col]])] <- NA
-                }
-              }
-            }
+            backend_data <- set_new_levels_to_na(backend_data, factor_levels, data_y_fill_final, method_var)
             
             if (!supports_missing) {
               backend_data <- impute_missing_values(backend_data, data_y_fill)
@@ -1062,14 +1055,8 @@ vimpute <- function(
           # Prediction without Task (weil Zielvariable nicht vorhanden)
           class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
           check_all_factor_levels(class_pred_data, factor_levels)
-          if (!(method_var %in% c("xgboost"))) {
-            for (col in names(factor_levels)) {
-              if (col %in% names(class_pred_data) && is.factor(class_pred_data[[col]]) && col %in% names(data_y_fill_final)) {
-                valid_levels <- levels(data_y_fill_final[[col]])
-                class_pred_data[[col]][!class_pred_data[[col]] %in% valid_levels & !is.na(class_pred_data[[col]])] <- NA
-              }
-            }
-          }
+          class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
+          
           pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
           
           # predict
@@ -1118,14 +1105,8 @@ vimpute <- function(
           # not semicontinous 
           backend_data <- enforce_factor_levels(backend_data, factor_levels)
           check_all_factor_levels(backend_data, factor_levels)
-          if (!(method_var %in% c("xgboost"))) {
-            for (col in names(factor_levels)) {
-              if (col %in% names(backend_data) && is.factor(backend_data[[col]]) && col %in% names(data_y_fill_final)) {
-                valid_levels <- levels(data_y_fill_final[[col]])
-                backend_data[[col]][!backend_data[[col]] %in% valid_levels & !is.na(backend_data[[col]])] <- NA
-              }
-            }
-          }
+          backend_data <- set_new_levels_to_na(backend_data, factor_levels, data_y_fill_final, method_var)
+          
           if (is.factor(data_temp[[target_col]])) {
             pred_task <- TaskClassif$new(
               id = target_col,
