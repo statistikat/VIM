@@ -437,7 +437,7 @@ enforce_factor_levels <- function(df, original_levels) {
 #
 #
 #
-#
+# check levels
 check_all_factor_levels <- function(df, factor_levels) {
   for (var in names(factor_levels)) {
     if (var %in% names(df) && is.factor(df[[var]])) {
@@ -454,6 +454,26 @@ check_all_factor_levels <- function(df, factor_levels) {
     }
   }
 }
+
+#
+#
+#
+# new levels -> NA
+set_new_levels_to_na <- function(df, factor_levels, data_y_fill_final, skip_methods = c("xgboost"), method_var = NULL) {
+  if (!is.null(method_var) && !(method_var %in% skip_methods)) {
+    for (col in names(factor_levels)) {
+      if (col %in% names(df) && is.factor(df[[col]]) && col %in% names(data_y_fill_final)) {
+        valid_levels <- levels(data_y_fill_final[[col]])
+        df[[col]][!df[[col]] %in% valid_levels & !is.na(df[[col]])] <- NA
+      }
+    }
+  }
+  return(df)
+}
+
+
+
+
 
 
 

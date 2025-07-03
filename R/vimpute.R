@@ -938,14 +938,7 @@ vimpute <- function(
             backend_data <- mm_data[missing_idx, ]
             backend_data <- enforce_factor_levels(backend_data, factor_levels)
             check_all_factor_levels(backend_data, factor_levels)
-            if (!(method_var %in% c("xgboost"))) {
-              for (col in names(factor_levels)) {
-                if (col %in% names(backend_data) && is.factor(backend_data[[col]]) && col %in% names(data_y_fill_final)) {
-                  valid_levels <- levels(data_y_fill_final[[col]])
-                  backend_data[[col]][!backend_data[[col]] %in% valid_levels & !is.na(backend_data[[col]])] <- NA
-                }
-              }
-            }
+            backend_data <- set_new_levels_to_na(backend_data, factor_levels, data_y_fill_final, method_var)
             
             # Impute if NA in backend_data
             if (any(is.na(backend_data))) {
@@ -984,14 +977,7 @@ vimpute <- function(
           if (!isFALSE(selected_formula)) {
             class_pred_data <- mm_data[missing_idx,]
             class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
-            if (!(method_var %in% c("xgboost"))) {
-              for (col in names(factor_levels)) {
-                if (col %in% names(class_pred_data) && is.factor(class_pred_data[[col]]) && col %in% names(data_y_fill_final)) {
-                  valid_levels <- levels(data_y_fill_final[[col]])
-                  class_pred_data[[col]][!class_pred_data[[col]] %in% valid_levels & !is.na(class_pred_data[[col]])] <- NA
-                }
-              }
-            }
+            class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
             if (any(is.na(class_pred_data))) {
               class_pred_data <- impute_missing_values(class_pred_data, data_temp)
             }
@@ -1011,8 +997,6 @@ vimpute <- function(
             }
           }
           reg_pred_data <- data_temp[data_temp[[var]] > 0, ]
-          reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
-          check_all_factor_levels(reg_pred_data, factor_levels)
           if (!supports_missing && any(is.na(reg_pred_data))) {
             reg_pred_data <- impute_missing_values(reg_pred_data, data_temp)
           }
@@ -1119,14 +1103,8 @@ vimpute <- function(
             }
             reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
             check_all_factor_levels(reg_pred_data, factor_levels)
-            if (!(method_var %in% c("xgboost"))) {
-              for (col in names(factor_levels)) {
-                if (col %in% names(reg_pred_data) && is.factor(reg_pred_data[[col]]) && col %in% names(data_y_fill_final)) {
-                  valid_levels <- levels(data_y_fill_final[[col]])
-                  reg_pred_data[[col]][!reg_pred_data[[col]] %in% valid_levels & !is.na(reg_pred_data[[col]])] <- NA
-                }
-              }
-            }
+            reg_pred_data <- set_new_levels_to_na(reg_pred_data, factor_levels, data_y_fill_final, method_var = method_var)
+            
             preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
           } else {
             preds_reg <- numeric(0)
