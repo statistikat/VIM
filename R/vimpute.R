@@ -669,7 +669,7 @@ vimpute <- function(
           message("***** Train Model")
         }
         
-        po_fixfactors <- po("fixfactors", levels = factor_levels)
+        po_fixfactors <- po("fixfactors")
         
         # Check semicontinous
         is_sc <- is_semicontinuous(data_temp[[var]])
