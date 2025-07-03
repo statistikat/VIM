@@ -942,9 +942,9 @@ vimpute <- function(
           
           if (!isFALSE(selected_formula)) {
             backend_data <- mm_data[missing_idx, ]
-            backend_data <- enforce_factor_levels(backend_data, factor_levels)
-            check_all_factor_levels(backend_data, factor_levels)
-            backend_data <- set_new_levels_to_na(backend_data, factor_levels, data_y_fill_final, method_var)
+            # backend_data <- enforce_factor_levels(backend_data, factor_levels)
+            # check_all_factor_levels(backend_data, factor_levels)
+            # backend_data <- set_new_levels_to_na(backend_data, factor_levels, data_y_fill_final, method_var)
             
             # Impute if NA in backend_data
             if (any(is.na(backend_data))) {
@@ -955,9 +955,9 @@ vimpute <- function(
             # without formula
             backend_cols <- union(feature_cols, var)
             backend_data <- data_temp[missing_idx, backend_cols, with = FALSE]
-            backend_data <- enforce_factor_levels(backend_data, factor_levels)
-            check_all_factor_levels(backend_data, factor_levels)
-            backend_data <- set_new_levels_to_na(backend_data, factor_levels, data_y_fill_final, method_var)
+            # backend_data <- enforce_factor_levels(backend_data, factor_levels)
+            # check_all_factor_levels(backend_data, factor_levels)
+            # backend_data <- set_new_levels_to_na(backend_data, factor_levels, data_y_fill_final, method_var)
             
             if (!supports_missing) {
               backend_data <- impute_missing_values(backend_data, data_y_fill)
@@ -975,23 +975,23 @@ vimpute <- function(
           
           if (!isFALSE(selected_formula)) {
             class_pred_data <- mm_data[missing_idx,]
-            class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
-            class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
-            if (any(is.na(class_pred_data))) {
+            # class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
+            # class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
+            if (anyNA(class_pred_data)) {
               class_pred_data <- impute_missing_values(class_pred_data, data_temp)
             }
           } else {
             class_pred_data <- data_temp[missing_idx, c(feature_cols, zero_flag_col), with = FALSE]
-            class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
-            class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
-            if (!supports_missing && any(is.na(class_pred_data))) {
+            # class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
+            # class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
+            if (!supports_missing && anyNA(class_pred_data)) {
               class_pred_data <- impute_missing_values(class_pred_data, data_temp)
             }
           }
           reg_pred_data <- data_temp[data_temp[[var]] > 0, ]
-          reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
-          reg_pred_data <- set_new_levels_to_na(reg_pred_data, factor_levels, data_y_fill_final, method_var)
-          if (!supports_missing && any(is.na(reg_pred_data))) {
+          # reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
+          # reg_pred_data <- set_new_levels_to_na(reg_pred_data, factor_levels, data_y_fill_final, method_var)
+          if (!supports_missing && anyNA(reg_pred_data)) {
             reg_pred_data <- impute_missing_values(reg_pred_data, data_temp)
           }
           
@@ -1058,9 +1058,9 @@ vimpute <- function(
           class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
 
           # Prediction without Task (weil Zielvariable nicht vorhanden)
-          class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
-          check_all_factor_levels(class_pred_data, factor_levels)
-          class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
+          # class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
+          # check_all_factor_levels(class_pred_data, factor_levels)
+          # class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
           if (anyNA(class_pred_data)) {
             class_pred_data <- impute_missing_values(class_pred_data, data_temp)
           }
@@ -1087,9 +1087,9 @@ vimpute <- function(
           if (length(reg_rows) > 0) {
             reg_pred_data <- data_temp[reg_rows, feature_cols, with = FALSE]
             
-            reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
-            check_all_factor_levels(reg_pred_data, factor_levels)
-            reg_pred_data <- set_new_levels_to_na(reg_pred_data, factor_levels, data_y_fill_final, method_var = method_var)
+            # reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
+            # check_all_factor_levels(reg_pred_data, factor_levels)
+            # reg_pred_data <- set_new_levels_to_na(reg_pred_data, factor_levels, data_y_fill_final, method_var = method_var)
             if (anyNA(reg_pred_data)) {
               reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
             }
