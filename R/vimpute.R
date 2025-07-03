@@ -1026,6 +1026,7 @@ vimpute <- function(
           message(paste("***** Predict"))
         }
         
+        
         # helper: inverse Transformation
         inverse_transform <- function(x, method) {
           switch(method,
@@ -1054,15 +1055,14 @@ vimpute <- function(
           
           # no NAs
           class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
-          if (anyNA(class_pred_data)) {
-            class_pred_data <- impute_missing_values(class_pred_data, data_temp)
-          }
 
           # Prediction without Task (weil Zielvariable nicht vorhanden)
           class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
           check_all_factor_levels(class_pred_data, factor_levels)
           class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
-          
+          if (anyNA(class_pred_data)) {
+            class_pred_data <- impute_missing_values(class_pred_data, data_temp)
+          }
           pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
           
           # predict
@@ -1086,12 +1086,12 @@ vimpute <- function(
           if (length(reg_rows) > 0) {
             reg_pred_data <- data_temp[reg_rows, feature_cols, with = FALSE]
             
-            if (anyNA(reg_pred_data)) {
-              reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
-            }
             reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
             check_all_factor_levels(reg_pred_data, factor_levels)
             reg_pred_data <- set_new_levels_to_na(reg_pred_data, factor_levels, data_y_fill_final, method_var = method_var)
+            if (anyNA(reg_pred_data)) {
+              reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
+            }
             
             preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
           } else {
@@ -1109,6 +1109,18 @@ vimpute <- function(
           
         } else {
           # not semicontinous 
+          if (anyNA(backend_data$data(cols = feature_cols))) {
+            warning("NAs present in backend_data before Task creation – did fixfactors create new NAs?")
+            print(which(sapply(backend_data$data(cols = feature_cols), function(col) anyNA(col))))
+          }
+          
+          bdt <- as.data.table(backend_data)
+          if (anyNA(bdt)) {
+            bdt <- impute_missing_values(bdt, data_temp)
+            print("impute_missings_beore_pred")
+          }
+          backend_data <- as_data_backend(bdt)
+          
           if (is.factor(data_temp[[target_col]])) {
             pred_task <- TaskClassif$new(
               id = target_col,
