@@ -81,8 +81,14 @@ vimpute <- function(
     data <-  as.data.table(data)[, considered_variables, with = FALSE]
     
     # save factor levels
-    factor_vars <- names(Filter(is.factor, data_all_variables))
-    factor_levels <- lapply(data_all_variables[, ..factor_vars], levels)
+    factor_levels <- list()
+    for (col in names(data)) {
+      if (is.factor(data[[col]])) {
+        factor_levels[[col]] <- levels(data[[col]])
+      } else if (is.character(data[[col]])) {
+        factor_levels[[col]] <- unique(na.omit(data[[col]]))
+      }
+    }
     
 ### ***** Check Data Start ***** ###################################################################################################
     if(verbose){
@@ -1037,6 +1043,7 @@ vimpute <- function(
           }
 
           # Prediction without Task (weil Zielvariable nicht vorhanden)
+          class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
           pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
           
           # predict
@@ -1063,7 +1070,7 @@ vimpute <- function(
             if (anyNA(reg_pred_data)) {
               reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
             }
-            
+            reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
             preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
           } else {
             preds_reg <- numeric(0)
@@ -1080,6 +1087,9 @@ vimpute <- function(
           
         } else {
           # not semicontinous 
+          pred_task$backend$data(rows = NULL) <- enforce_factor_levels(
+            pred_task$backend$data(rows = NULL), factor_levels
+          )
           
           if (is.factor(data_temp[[target_col]])) {
             
@@ -1094,7 +1104,7 @@ vimpute <- function(
             
             pred_probs <- learner$predict(pred_task)$prob
             if (is.null(pred_probs)) {
-              stop("Fehler bei der Berechnung der Wahrscheinlichkeiten.")
+              stop("Error while calculating probabilities.")
             }
             
             if (isFALSE(sequential) || i == nseq) {
