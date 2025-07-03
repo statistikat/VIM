@@ -999,6 +999,7 @@ vimpute <- function(
 ### Identify NAs End ###
         
 ### *****Select suitable task type Start***** ###################################################################################################
+        backend_data <- mlr3::as_data_backend(backend_data)
         if (!is_sc) {
           # Faktorlevels in backend_data angleichen VOR Task-Erstellung
 
