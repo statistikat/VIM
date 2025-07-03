@@ -1185,11 +1185,7 @@ vimpute <- function(
           if (is.numeric(data_prev[[var]])) {  
             data[missing_idx, (var) := as.numeric(preds)]
           } else if (is.factor(data[[var]])) {
-            orig_levels <- levels(data_prev[[var]])
-            pred_levels <- unique(as.character(preds))
-            # Add any new levels from preds to the original levels
-            all_levels <- union(orig_levels, pred_levels)
-            data[missing_idx, (var) := factor(preds, levels = all_levels)]
+            data[missing_idx, (var) := factor(preds, levels = factor_levels[[var]])]
           } else {
             stop(paste("Unknown data type for variable:", var))
           }
