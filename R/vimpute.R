@@ -979,13 +979,7 @@ vimpute <- function(
 ### *****Select suitable task type Start***** ###################################################################################################
         if (!is_sc) {
           # Faktorlevels in backend_data angleichen VOR Task-Erstellung
-          for (col in names(backend_data)) {
-            if (is.factor(backend_data[[col]])) {
-              train_levels <- levels(data_temp[[col]])  # Levels aus Trainingsdaten
-              backend_data[[col]] <- factor(backend_data[[col]], levels = train_levels)
-            }
-          }
-          
+
           if (is.numeric(data_temp[[target_col]])) {
             pred_task <- TaskRegr$new(
               id = target_col,
@@ -1334,6 +1328,7 @@ vimpute <- function(
 ### Stop criteria END ###
     
     result <- as.data.table(if (imp_var) data_new else data)  # Default: Return `data` only
+    result <- enforce_factor_levels(result, factor_levels)
 
     if (!pred_history && !tune) {
       return(result)
