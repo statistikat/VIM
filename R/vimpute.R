@@ -1088,11 +1088,21 @@ vimpute <- function(
         } else {
           # not semicontinous 
           backend_data <- enforce_factor_levels(backend_data, factor_levels)
-          pred_task <- TaskClassif$new(
-            id = target_col,
-            backend = backend_data,
-            target = target_col
-          )
+          if (is.factor(data_temp[[target_col]])) {
+            pred_task <- TaskClassif$new(
+              id = target_col,
+              backend = backend_data,
+              target = target_col
+            )
+          } else if (is.numeric(data_temp[[target_col]])) {
+            pred_task <- TaskRegr$new(
+              id = target_col,
+              backend = backend_data,
+              target = target_col
+            )
+          } else {
+            stop("Target variable must be factor or numeric!")
+          }
           
           if (is.factor(data_temp[[target_col]])) {
             
@@ -1101,7 +1111,7 @@ vimpute <- function(
                           xgboost = "classif.xgboost",
                           regularized = "classif.glmnet",
                           robust = "classif.glm_rob",
-                          stop("Unbekannte Methode für Klassifikation:", method_var))
+                          stop("Unknown method for classification:", method_var))
             
             learner$model[[mod]]$param_set$values$predict_type <- "prob"
             
