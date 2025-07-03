@@ -217,6 +217,7 @@ vimpute <- function(
             return(names)
           }
           setnames(data_temp, clean_colnames(names(data_temp)))
+          data_temp <- enforce_factor_levels(data_temp, factor_levels)  
           
           # Impute missing values (Median/Mode)  -> for prediction 
           if (is_target_numeric) {
@@ -234,6 +235,7 @@ vimpute <- function(
           mm_data <- po_task_mm$data() # mm_data = transformed data with missings filled in, data_temp = transformed data without missings
           mm_data <- as.data.table(mm_data)
           setnames(mm_data, clean_colnames(names(mm_data)))
+          mm_data <- enforce_factor_levels(mm_data, factor_levels)
           
           # Identify target transformation
           lhs_transformation <- identify_lhs_transformation(selected_formula)  # transformations on left handsite 
@@ -269,6 +271,7 @@ vimpute <- function(
           selected_cols <- c(target_col, feature_cols)
           data <- data[, selected_cols, with = FALSE]
           data_temp <- as.data.table(data)
+          data_temp <- enforce_factor_levels(data_temp, factor_levels)
         }
         
         if ("Intercept" %in% colnames(data_temp)) {
