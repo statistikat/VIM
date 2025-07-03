@@ -1119,7 +1119,7 @@ vimpute <- function(
             bdt <- impute_missing_values(bdt, data_temp)
             print("impute_missings_before_pred")
           }
-          backend_data <- as_data_backend(bdt)
+          backend_data <- mlr3::as_data_backend(bdt)
           
           if (is.factor(data_temp[[target_col]])) {
             pred_task <- TaskClassif$new(
