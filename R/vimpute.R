@@ -669,6 +669,8 @@ vimpute <- function(
           message("***** Train Model")
         }
         
+        po_fixfactors <- po("fixfactors", levels = factor_levels)
+        
         # Check semicontinous
         is_sc <- is_semicontinuous(data_temp[[var]])
         
@@ -719,6 +721,7 @@ vimpute <- function(
           }
           
           class_pipeline <- if (!is.null(po_x_miss_classif)) po_x_miss_classif %>>% classif_learner else classif_learner
+          class_pipeline <- po_fixfactors %>>% class_pipeline
           class_learner <- GraphLearner$new(class_pipeline)
           
           # Hyperparameter-Cache for classification
@@ -778,6 +781,7 @@ vimpute <- function(
               which = "all",
               type = "factor"
             ))
+            #po_x_miss_reg <- po_fixfactors %>>% po_x_miss_reg
           }
           
           # Fallback: if learner canot handle missings
@@ -794,6 +798,7 @@ vimpute <- function(
           
           # Pipeline
           reg_pipeline <- if (!is.null(po_x_miss_reg)) po_x_miss_reg %>>% regr_learner else regr_learner
+          reg_pipeline <- po_fixfactors %>>% reg_pipeline
           reg_learner <- GraphLearner$new(reg_pipeline)
           
           # Hyperparameter-Cache
@@ -844,6 +849,7 @@ vimpute <- function(
           if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) { #xgboost can handle NAs directly, support_missings are learners that can handle missings if they are marked as such
             full_pipeline <- po_x_miss %>>% full_pipeline
           }
+          full_pipeline <- po_fixfactors %>>% full_pipeline
           
           # create and train graphLearner 
           learner <- GraphLearner$new(full_pipeline)
@@ -1103,10 +1109,6 @@ vimpute <- function(
           
         } else {
           # not semicontinous 
-          backend_data <- enforce_factor_levels(backend_data, factor_levels)
-          check_all_factor_levels(backend_data, factor_levels)
-          backend_data <- set_new_levels_to_na(backend_data, factor_levels, data_y_fill_final, method_var)
-          
           if (is.factor(data_temp[[target_col]])) {
             pred_task <- TaskClassif$new(
               id = target_col,
