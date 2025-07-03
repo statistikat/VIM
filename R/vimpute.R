@@ -927,6 +927,7 @@ vimpute <- function(
           
           if (!isFALSE(selected_formula)) {
             backend_data <- mm_data[missing_idx, ]
+            backend_data <- enforce_factor_levels(backend_data, factor_levels)
             
             # Impute if NA in backend_data
             if (any(is.na(backend_data))) {
@@ -937,6 +938,7 @@ vimpute <- function(
             # without formula
             backend_cols <- union(feature_cols, var)
             backend_data <- data_temp[missing_idx, backend_cols, with = FALSE]
+            backend_data <- enforce_factor_levels(backend_data, factor_levels)
             
             if (!supports_missing) {
               backend_data <- impute_missing_values(backend_data, data_y_fill)
@@ -954,20 +956,19 @@ vimpute <- function(
           
           if (!isFALSE(selected_formula)) {
             class_pred_data <- mm_data[missing_idx,]
+            class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
             if (any(is.na(class_pred_data))) {
               class_pred_data <- impute_missing_values(class_pred_data, data_temp)
             }
-            
           } else {
             class_pred_data <- data_temp[missing_idx, c(feature_cols, zero_flag_col), with = FALSE]
-            
+            class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
             if (!supports_missing && any(is.na(class_pred_data))) {
               class_pred_data <- impute_missing_values(class_pred_data, data_temp)
             }
           }
-          
           reg_pred_data <- data_temp[data_temp[[var]] > 0, ]
-          
+          reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
           if (!supports_missing && any(is.na(reg_pred_data))) {
             reg_pred_data <- impute_missing_values(reg_pred_data, data_temp)
           }
