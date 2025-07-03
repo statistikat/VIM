@@ -82,14 +82,13 @@ vimpute <- function(
     
     # save factor levels
     factor_levels <- list()
-    for (col in names(data)) {
-      if (is.factor(data[[col]])) {
-        factor_levels[[col]] <- levels(data[[col]])
-      } else if (is.character(data[[col]])) {
-        factor_levels[[col]] <- unique(na.omit(data[[col]]))
+    for (col in names(data_all_variables)) {
+      if (is.factor(data_all_variables[[col]])) {
+        factor_levels[[col]] <- levels(data_all_variables[[col]])
+      } else if (is.character(data_all_variables[[col]])) {
+        factor_levels[[col]] <- unique(na.omit(data_all_variables[[col]]))
       }
     }
-    
 ### ***** Check Data Start ***** ###################################################################################################
     if(verbose){
       message(paste("***** Check Data"))  
