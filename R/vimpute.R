@@ -1109,12 +1109,13 @@ vimpute <- function(
           
         } else {
           # not semicontinous 
-          if (anyNA(as.data.table(backend_data)[, ..feature_cols]))  {
+          if (anyNA(backend_data$data(cols = feature_cols)))  {
             warning("NAs present in backend_data before Task creation – did fixfactors create new NAs?")
             print(which(sapply(backend_data$data(cols = feature_cols), function(col) anyNA(col))))
           }
           
           bdt <- as.data.table(backend_data)
+          
           if (anyNA(bdt)) {
             bdt <- impute_missing_values(bdt, data_temp)
             print("impute_missings_before_pred")
