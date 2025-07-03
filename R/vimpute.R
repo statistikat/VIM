@@ -999,7 +999,7 @@ vimpute <- function(
 ### Identify NAs End ###
         
 ### *****Select suitable task type Start***** ###################################################################################################
-        backend_data <- mlr3::as_data_backend(backend_data)
+        
         if (!is_sc) {
           # Faktorlevels in backend_data angleichen VOR Task-Erstellung
 
@@ -1110,7 +1110,7 @@ vimpute <- function(
           
         } else {
           # not semicontinous 
-          if (anyNA(backend_data$data(cols = feature_cols)))  {
+          if (anyNA(backend_data[, ..feature_cols]))  {
             warning("NAs present in backend_data before Task creation – did fixfactors create new NAs?")
             print(which(sapply(backend_data$data(cols = feature_cols), function(col) anyNA(col))))
           }
