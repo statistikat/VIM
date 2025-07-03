@@ -179,6 +179,7 @@ vimpute <- function(
           # Remove missing values (na.omit)  -> for Training
           data_clean <- na.omit(data)
           data_clean <- enforce_factor_levels(data_clean, factor_levels)  # <--- WICHTIG
+          check_all_factor_levels(data_clean, factor_levels)
           
           is_target_numeric <- is.numeric(data[[target_col]])
           
@@ -218,6 +219,7 @@ vimpute <- function(
           }
           setnames(data_temp, clean_colnames(names(data_temp)))
           data_temp <- enforce_factor_levels(data_temp, factor_levels)  
+          check_all_factor_levels(data_temp, factor_levels)
           
           # Impute missing values (Median/Mode)  -> for prediction 
           if (is_target_numeric) {
@@ -236,6 +238,7 @@ vimpute <- function(
           mm_data <- as.data.table(mm_data)
           setnames(mm_data, clean_colnames(names(mm_data)))
           mm_data <- enforce_factor_levels(mm_data, factor_levels)
+          check_all_factor_levels(mm_data, factor_levels)
           
           # Identify target transformation
           lhs_transformation <- identify_lhs_transformation(selected_formula)  # transformations on left handsite 
@@ -272,6 +275,7 @@ vimpute <- function(
           data <- data[, selected_cols, with = FALSE]
           data_temp <- as.data.table(data)
           data_temp <- enforce_factor_levels(data_temp, factor_levels)
+          check_all_factor_levels(data_temp, factor_levels)
         }
         
         if ("Intercept" %in% colnames(data_temp)) {
@@ -376,6 +380,7 @@ vimpute <- function(
         # If the learner does not support missing values -> use na.omit()
         data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
         data_y_fill_final <- enforce_factor_levels(data_y_fill_final, factor_levels)
+        check_all_factor_levels(data_y_fill_final, factor_levels)
         
         # Create task
         if (is.numeric(data_y_fill_final[[target_col]])) {
@@ -780,6 +785,7 @@ vimpute <- function(
             cols <- c(reg_features, var)
             reg_data <- na.omit(reg_data[, ..cols])
             reg_data <- enforce_factor_levels(reg_data, factor_levels)
+            check_all_factor_levels(reg_data, factor_levels)
           }
           
           # Task
@@ -931,6 +937,7 @@ vimpute <- function(
           if (!isFALSE(selected_formula)) {
             backend_data <- mm_data[missing_idx, ]
             backend_data <- enforce_factor_levels(backend_data, factor_levels)
+            check_all_factor_levels(backend_data, factor_levels)
             
             # Impute if NA in backend_data
             if (any(is.na(backend_data))) {
@@ -942,6 +949,7 @@ vimpute <- function(
             backend_cols <- union(feature_cols, var)
             backend_data <- data_temp[missing_idx, backend_cols, with = FALSE]
             backend_data <- enforce_factor_levels(backend_data, factor_levels)
+            check_all_factor_levels(backend_data, factor_levels)
             
             if (!supports_missing) {
               backend_data <- impute_missing_values(backend_data, data_y_fill)
@@ -972,6 +980,7 @@ vimpute <- function(
           }
           reg_pred_data <- data_temp[data_temp[[var]] > 0, ]
           reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
+          check_all_factor_levels(reg_pred_data, factor_levels)
           if (!supports_missing && any(is.na(reg_pred_data))) {
             reg_pred_data <- impute_missing_values(reg_pred_data, data_temp)
           }
@@ -1041,6 +1050,7 @@ vimpute <- function(
 
           # Prediction without Task (weil Zielvariable nicht vorhanden)
           class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
+          check_all_factor_levels(class_pred_data, factor_levels)
           pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
           
           # predict
@@ -1068,6 +1078,7 @@ vimpute <- function(
               reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
             }
             reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
+            check_all_factor_levels(reg_pred_data, factor_levels)
             preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
           } else {
             preds_reg <- numeric(0)
@@ -1085,6 +1096,7 @@ vimpute <- function(
         } else {
           # not semicontinous 
           backend_data <- enforce_factor_levels(backend_data, factor_levels)
+          check_all_factor_levels(backend_data, factor_levels)
           if (is.factor(data_temp[[target_col]])) {
             pred_task <- TaskClassif$new(
               id = target_col,

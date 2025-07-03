@@ -434,6 +434,26 @@ enforce_factor_levels <- function(df, original_levels) {
   return(df)
 }
 
+#
+#
+#
+#
+check_all_factor_levels <- function(df, factor_levels) {
+  for (var in names(factor_levels)) {
+    if (var %in% names(df) && is.factor(df[[var]])) {
+      missing_levels <- setdiff(levels(df[[var]]), factor_levels[[var]])
+      new_levels <- setdiff(factor_levels[[var]], levels(df[[var]]))
+      if (length(missing_levels) > 0 || length(new_levels) > 0) {
+        stop(sprintf(
+          "Level mismatch in variable '%s':\n  Levels in data: %s\n  Expected levels: %s",
+          var,
+          paste(levels(df[[var]]), collapse = ", "),
+          paste(factor_levels[[var]], collapse = ", ")
+        ))
+      }
+    }
+  }
+}s
 
 
 
