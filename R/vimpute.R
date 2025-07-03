@@ -1087,8 +1087,11 @@ vimpute <- function(
           
         } else {
           # not semicontinous 
-          pred_task$backend$data(rows = NULL) <- enforce_factor_levels(
-            pred_task$backend$data(rows = NULL), factor_levels
+          backend_data <- enforce_factor_levels(backend_data, factor_levels)
+          pred_task <- TaskClassif$new(
+            id = target_col,
+            backend = backend_data,
+            target = target_col
           )
           
           if (is.factor(data_temp[[target_col]])) {
