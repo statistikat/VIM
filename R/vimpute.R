@@ -395,6 +395,7 @@ vimpute <- function(
         
         # If the learner does not support missing values -> use na.omit()
         data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
+        data_y_fill_final <- enforce_factor_levels(data_y_fill_final, factor_levels) 
         
         for (colname in names(factor_levels)) {
           if (colname %in% names(data_y_fill)) {
