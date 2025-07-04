@@ -322,6 +322,8 @@ vimpute <- function(
         if(verbose){
           message(paste("***** OHE"))
         }
+        data_temp <- enforce_factor_levels(data_temp, factor_levels)
+          
         needs_ohe <- any(sapply(learner_candidates, function(lrn) {
           supports_factors <- "factor" %in% lrn$feature_types
           has_factors <- any(sapply(feature_cols, function(col) is.factor(data_temp[[col]])))
@@ -377,8 +379,8 @@ vimpute <- function(
         }
         
         # If NA in target variable --> only train with the data that has no NA in Y
-        data_y_fill <- data_y_fill[!is.na(get(target_col))]
         data_y_fill <- enforce_factor_levels(data_y_fill, factor_levels) # save factor levels
+        data_y_fill <- data_y_fill[!is.na(get(target_col))]
         for (colname in names(factor_levels)) {
           if (colname %in% names(data_y_fill)) {
             # Nur Faktoren prüfen
@@ -712,6 +714,7 @@ vimpute <- function(
           relevant_features <- setdiff(names(data_temp), c(var, zero_flag_col))
           class_data <- data_temp[!is.na(data_temp[[var]]) & complete.cases(data_temp[, ..relevant_features]),]
           train_data <- class_data 
+          train_data <- enforce_factor_levels(train_data , factor_levels)
           
           feature_cols <- setdiff(names(train_data), c(var, zero_flag_col))
           
@@ -796,6 +799,7 @@ vimpute <- function(
           reg_data <- data_temp[data_temp[[var]] > 0,]
           reg_features <- setdiff(names(reg_data), c(var, zero_flag_col))
           reg_data <- reg_data[!is.na(reg_data[[var]]),] #only without NA
+          reg_data <- enforce_factor_levels(reg_data, factor_levels)
           has_na_in_features <- anyNA(reg_data[, ..reg_features])
           
           # support missings?
