@@ -104,7 +104,8 @@ vimpute <- function(
         nseq <- 1
     }
     
-    orig_data <- data
+    #orig_data <- data
+    if (!"BPK" %in% colnames(data)) stop("Spalte BPK fehlt in data!")
 ### Check Data End ###
     
 ### ***** Def missing indices Start ***** ###################################################################################################
