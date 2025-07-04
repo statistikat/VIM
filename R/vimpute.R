@@ -79,14 +79,14 @@ vimpute <- function(
     # only defined variables
     data_all_variables <- as.data.table(data)
     data <-  as.data.table(data)[, considered_variables, with = FALSE]
-    
+                       
     # save factor levels
     factor_levels <- list()
-    for (col in names(data_all_variables)) {
-      if (is.factor(data_all_variables[[col]])) {
-        factor_levels[[col]] <- levels(data_all_variables[[col]])
-      } else if (is.character(data_all_variables[[col]])) {
-        factor_levels[[col]] <- unique(na.omit(data_all_variables[[col]]))
+    for (col in names(data)) {
+      if (is.factor(data[[col]])) {
+        factor_levels[[col]] <- levels(data[[col]])
+      } else if (is.character(data[[col]])) {
+        factor_levels[[col]] <- unique(na.omit(data[[col]]))
       }
     }
 ### ***** Check Data Start ***** ###################################################################################################
@@ -105,8 +105,7 @@ vimpute <- function(
     }
     
     #orig_data <- data
-    print(colnames(data))
-    if (!"BPK" %in% colnames(data)) stop("Spalte BPK fehlt in data!")
+
 ### Check Data End ###
     
 ### ***** Def missing indices Start ***** ###################################################################################################
