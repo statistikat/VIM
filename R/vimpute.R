@@ -177,8 +177,9 @@ vimpute <- function(
           rewrited_formula <- rewrite_formula (selected_formula, target_col) # write formula in the correct way
           
           # Remove missing values (na.omit)  -> for Training
+          data <- enforce_factor_levels(data, factor_levels)  # <--- WICHTIG
           data_clean <- na.omit(data)
-          data_clean <- enforce_factor_levels(data_clean, factor_levels)  # <--- WICHTIG
+          # data_clean <- enforce_factor_levels(data_clean, factor_levels)  # <--- WICHTIG
           check_all_factor_levels(data_clean, factor_levels)
           
           is_target_numeric <- is.numeric(data[[target_col]])
