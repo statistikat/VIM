@@ -105,6 +105,7 @@ vimpute <- function(
     }
     
     #orig_data <- data
+    print(colnames(data))
     if (!"BPK" %in% colnames(data)) stop("Spalte BPK fehlt in data!")
 ### Check Data End ###
     
