@@ -471,6 +471,39 @@ set_new_levels_to_na <- function(df, factor_levels, data_y_fill_final, skip_meth
   return(df)
 }
 
+#
+#
+#
+#
+check_factor_levels <- function(data, original_levels) {
+  for (colname in names(original_levels)) {
+    if (colname %in% names(data)) {
+      if (is.factor(data[[colname]])) {
+        data_levels <- levels(data[[colname]])
+        ref_levels <- original_levels[[colname]]
+        
+        # 1. Fehlende Levels prüfen (Levels im Original, die nicht im aktuellen Datenfaktor sind)
+        missing_levels <- setdiff(ref_levels, data_levels)
+        if (length(missing_levels) > 0) {
+          warning(sprintf("Spalte '%s': Fehlende Levels im Data-Faktor: %s", colname, paste(missing_levels, collapse = ", ")))
+        }
+        
+        # 2. Neue Levels prüfen (Levels im Data-Faktor, die nicht im Original sind)
+        new_levels <- setdiff(data_levels, ref_levels)
+        if (length(new_levels) > 0) {
+          warning(sprintf("Spalte '%s': Neue (unerwartete) Levels im Data-Faktor: %s", colname, paste(new_levels, collapse = ", ")))
+        }
+        
+        # 3. Prüfen, ob Werte im Data-Faktor außerhalb der definierten Levels sind (kann passieren, wenn Faktoren nicht richtig gesetzt)
+        invalid_values <- setdiff(unique(as.character(data[[colname]])), ref_levels)
+        if (length(invalid_values) > 0) {
+          warning(sprintf("Spalte '%s': Ungültige Werte außerhalb der Levels: %s", colname, paste(invalid_values, collapse = ", ")))
+        }
+      }
+    }
+  }
+}
+
 
 
 

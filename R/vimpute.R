@@ -376,11 +376,37 @@ vimpute <- function(
         
         # If NA in target variable --> only train with the data that has no NA in Y
         data_y_fill <- data_y_fill[!is.na(get(target_col))]
+        data_y_fill <- enforce_factor_levels(data_y_fill, factor_levels) # save factor levels
+        for (colname in names(factor_levels)) {
+          if (colname %in% names(data_y_fill)) {
+            # Nur Faktoren prüfen
+            if (is.factor(data_y_fill[[colname]])) {
+              stopifnot(all(levels(data_y_fill[[colname]]) == factor_levels[[colname]]))
+            } else {
+              stop(paste0("Spalte ", colname, " ist kein Faktor in data_y_fill"))
+            }
+          } else {
+            stop(paste0("Spalte ", colname, " fehlt in data_y_fill"))
+          }
+        }
+        
         
         # If the learner does not support missing values -> use na.omit()
         data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
-        data_y_fill_final <- enforce_factor_levels(data_y_fill_final, factor_levels)
-        check_all_factor_levels(data_y_fill_final, factor_levels)
+        
+        for (colname in names(factor_levels)) {
+          if (colname %in% names(data_y_fill)) {
+            # Nur Faktoren prüfen
+            if (is.factor(data_y_fill_final[[colname]])) {
+              stopifnot(all(levels(data_y_fill_final[[colname]]) == factor_levels[[colname]]))
+            } else {
+              stop(paste0("Spalte ", colname, " ist kein Faktor in data_y_fill_final"))
+            }
+          } else {
+            stop(paste0("Spalte ", colname, " fehlt in data_y_fill_final"))
+          }
+        }
+        
         
         # Create task
         if (is.numeric(data_y_fill_final[[target_col]])) {
@@ -721,7 +747,7 @@ vimpute <- function(
           }
           
           class_pipeline <- if (!is.null(po_x_miss_classif)) po_x_miss_classif %>>% classif_learner else classif_learner
-          class_pipeline <- po_fixfactors %>>% class_pipeline
+          # class_pipeline <- po_fixfactors %>>% class_pipeline
           class_learner <- GraphLearner$new(class_pipeline)
           
           # Hyperparameter-Cache for classification
@@ -798,7 +824,7 @@ vimpute <- function(
           
           # Pipeline
           reg_pipeline <- if (!is.null(po_x_miss_reg)) po_x_miss_reg %>>% regr_learner else regr_learner
-          reg_pipeline <- po_fixfactors %>>% reg_pipeline
+          # reg_pipeline <- po_fixfactors %>>% reg_pipeline
           reg_learner <- GraphLearner$new(reg_pipeline)
           
           # Hyperparameter-Cache
@@ -849,7 +875,7 @@ vimpute <- function(
           if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) { #xgboost can handle NAs directly, support_missings are learners that can handle missings if they are marked as such
             full_pipeline <- po_x_miss %>>% full_pipeline
           }
-          full_pipeline <- po_fixfactors %>>% full_pipeline
+          # full_pipeline <- po_fixfactors %>>% full_pipeline
           
           # create and train graphLearner 
           learner <- GraphLearner$new(full_pipeline)
@@ -1058,8 +1084,8 @@ vimpute <- function(
           class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
 
           # Prediction without Task (weil Zielvariable nicht vorhanden)
-          # class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
-          # check_all_factor_levels(class_pred_data, factor_levels)
+          class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
+          check_all_factor_levels(class_pred_data, factor_levels)
           # class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
           if (anyNA(class_pred_data)) {
             class_pred_data <- impute_missing_values(class_pred_data, data_temp)
@@ -1087,8 +1113,8 @@ vimpute <- function(
           if (length(reg_rows) > 0) {
             reg_pred_data <- data_temp[reg_rows, feature_cols, with = FALSE]
             
-            # reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
-            # check_all_factor_levels(reg_pred_data, factor_levels)
+            reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
+            check_all_factor_levels(reg_pred_data, factor_levels)
             # reg_pred_data <- set_new_levels_to_na(reg_pred_data, factor_levels, data_y_fill_final, method_var = method_var)
             if (anyNA(reg_pred_data)) {
               reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
@@ -1116,11 +1142,15 @@ vimpute <- function(
           }
           
           bdt <- as.data.table(backend_data)
+          bdt <- enforce_factor_levels(bdt, factor_levels)
+          check_all_factor_levels(bdt, factor_levels) 
           
           if (anyNA(bdt)) {
             bdt <- impute_missing_values(bdt, data_temp)
             print("impute_missings_before_pred")
           }
+          # bdt <- enforce_factor_levels(bdt, factor_levels)
+          check_factor_levels(bdt, factor_levels) 
           backend_data <- mlr3::as_data_backend(bdt)
           
           if (is.factor(data_temp[[target_col]])) {
