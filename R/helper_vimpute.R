@@ -442,7 +442,7 @@ enforce_factor_levels <- function(df, original_levels) {
     }
   }
   return(df)
-}s
+}
 
 #
 #
