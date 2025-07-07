@@ -425,6 +425,9 @@ vimpute <- function(
         # 3. Dummy-Zeilen einfügen, um alle Levels sichtbar zu machen
         data_y_fill <- ensure_all_factor_levels_present(data_y_fill, factor_levels)
         
+        print("data_y_fill nach dummy")
+        print(data_y_fill)
+        
         # 4. Fehlende Werte entfernen, falls nötig
         data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
         
