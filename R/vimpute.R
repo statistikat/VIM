@@ -430,6 +430,10 @@ vimpute <- function(
         # If the learner does not support missing values -> use na.omit()
         data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
         data_y_fill_final <- enforce_factor_levels(data_y_fill_final, factor_levels) 
+        # Dummy-rows -> so that all factor levels are seen
+        data_y_fill_final <- ensure_all_factor_levels_present(data_y_fill_final, factor_levels)
+        message("data_y_fill_final (ensure_all_factor_levels_present):")
+        message(capture.output(print(data_y_fill_final)))
         
         message("levels in data y fill final")
         levels_list <- sapply(data_y_fill_final, function(col) if (is.factor(col)) levels(col) else NULL)
@@ -448,7 +452,6 @@ vimpute <- function(
           }
         }
         
-        
         # Create task
         if (is.numeric(data_y_fill_final[[target_col]])) {
           task <- TaskRegr$new(id = target_col, backend = data_y_fill_final, target = target_col)
@@ -458,6 +461,8 @@ vimpute <- function(
           stop("Mistake: Target variable is neither numerical nor a factor!")
         }
         
+        data_y_fill_final <- data_y_fill_final[.row_id != -1]
+        data_y_fill_final[, .row_id := NULL]
 ### *****Create Learner Start***** ###################################################################################################
         if(verbose){
           message(paste("***** Create Learner"))
@@ -751,6 +756,7 @@ vimpute <- function(
           class_data <- data_temp[!is.na(data_temp[[var]]) & complete.cases(data_temp[, ..relevant_features]),]
           train_data <- class_data 
           train_data <- enforce_factor_levels(train_data , factor_levels)
+          train_data <- ensure_all_factor_levels_present(train_data, factor_levels)
           
           message("levels in train data")
           levels_list <- sapply(train_data, function(col) if (is.factor(col)) levels(col) else NULL)
@@ -840,6 +846,7 @@ vimpute <- function(
           reg_features <- setdiff(names(reg_data), c(var, zero_flag_col))
           reg_data <- reg_data[!is.na(reg_data[[var]]),] #only without NA
           reg_data <- enforce_factor_levels(reg_data, factor_levels)
+          reg_data <- ensure_all_factor_levels_present(reg_data, factor_levels)
           has_na_in_features <- anyNA(reg_data[, ..reg_features])
           
           message("levels in reg data")
