@@ -423,10 +423,14 @@ is_semicontinuous <- function(x) {
 #
 # factor levels
 enforce_factor_levels <- function(df, original_levels) {
+  if (nrow(df) == 0) {
+    warning("enforce_factor_levels: data has 0 rows – returning unchanged.")
+    return(df)
+  }
+  
   for (colname in names(original_levels)) {
     if (colname %in% names(df)) {
       if (is.factor(df[[colname]]) || is.character(df[[colname]])) {
-        
         vals <- df[[colname]]
         unknown_levels <- setdiff(unique(vals[!is.na(vals)]), original_levels[[colname]])
         
@@ -435,7 +439,6 @@ enforce_factor_levels <- function(df, original_levels) {
                           colname, paste(unknown_levels, collapse = ", ")))
         }
         
-        # Set factor levels, preserve NAs
         df[[colname]] <- factor(vals, levels = original_levels[[colname]])
       }
     }
