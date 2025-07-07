@@ -295,11 +295,19 @@ vimpute <- function(
           data_temp <- as.data.table(data)
           data_temp <- enforce_factor_levels(data_temp, factor_levels)
           check_all_factor_levels(data_temp, factor_levels)
+          
+          message("factor levels data_temp")
+          levels_list <- sapply(data_temp, function(col) if (is.factor(col)) levels(col) else NULL)
+          message(capture.output(print(levels_list)))
         }
         
         if ("Intercept" %in% colnames(data_temp)) {
           data_temp <- data_temp[, !colnames(data_temp) %in% "Intercept", with = FALSE]
           mm_data <- mm_data[, !colnames(mm_data) %in% "Intercept", with = FALSE]
+          
+          message("factor levels data mm")
+          levels_list <- sapply(mm_data, function(col) if (is.factor(col)) levels(col) else NULL)
+          message(capture.output(print(levels_list)))
         }
         
         if (!isFALSE(selected_formula)) {
@@ -309,10 +317,7 @@ vimpute <- function(
         }
         
         method_var <- method[[var]]
-        
-        message("factor levels data mm")
-        levels_list <- sapply(mm_data, function(col) if (is.factor(col)) levels(col) else NULL)
-        message(capture.output(print(levels_list)))
+      
         
         
 ### ***** Select suitable learner Start ***** ###################################################################################################
