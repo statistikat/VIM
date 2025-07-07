@@ -419,6 +419,9 @@ vimpute <- function(
         # 1. Nur vollständige Zielwerte behalten
         data_y_fill <- data_y_fill[!is.na(get(target_col))]
         
+        print("data_y_fill data_y_fill[!is.na(get(target_col))]")
+        print(data_y_fill)
+        
         # 2. Faktor-Levels durchsetzen (vor Dummy-Zeilen)
         data_y_fill <- enforce_factor_levels(data_y_fill, factor_levels)
         
