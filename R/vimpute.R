@@ -349,6 +349,8 @@ vimpute <- function(
         if(verbose){
           message(paste("***** OHE"))
         }
+        print("data temp before factor levels")
+        print(data_temp)
         data_temp <- enforce_factor_levels(data_temp, factor_levels)
           
         needs_ohe <- any(sapply(learner_candidates, function(lrn) {
