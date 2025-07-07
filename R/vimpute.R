@@ -416,37 +416,29 @@ vimpute <- function(
           supports_missing <- FALSE
         }
         
-        # If NA in target variable --> only train with the data that has no NA in Y
+        # 1. Nur vollständige Zielwerte behalten
         data_y_fill <- data_y_fill[!is.na(get(target_col))]
-        for (colname in names(factor_levels)) {
-          if (colname %in% names(data_y_fill)) {
-            # Nur Faktoren prüfen
-            if (is.factor(data_y_fill[[colname]])) {
-              stopifnot(all(levels(data_y_fill[[colname]]) == factor_levels[[colname]]))
-            } else {
-              stop(paste0("Spalte ", colname, " ist kein Faktor in data_y_fill"))
-            }
-          } else {
-            stop(paste0("Spalte ", colname, " fehlt in data_y_fill"))
-          }
-        }
         
+        # 2. Faktor-Levels durchsetzen (vor Dummy-Zeilen)
+        data_y_fill <- enforce_factor_levels(data_y_fill, factor_levels)
         
-        # If the learner does not support missing values -> use na.omit()
+        # 3. Dummy-Zeilen einfügen, um alle Levels sichtbar zu machen
+        data_y_fill <- ensure_all_factor_levels_present(data_y_fill, factor_levels)
+        
+        # 4. Fehlende Werte entfernen, falls nötig
         data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
-        data_y_fill_final <- enforce_factor_levels(data_y_fill_final, factor_levels) 
-        # Dummy-rows -> so that all factor levels are seen
-        data_y_fill_final <- ensure_all_factor_levels_present(data_y_fill_final, factor_levels)
-        message("data_y_fill_final (ensure_all_factor_levels_present):")
+        
+        # 5. Nochmals sicherstellen, dass alle Faktor-Levels korrekt sind
+        message("data_y_fill_final (nach ensure_all_factor_levels_present):")
         message(capture.output(print(data_y_fill_final)))
         
-        message("levels in data y fill final")
+        message("levels in data_y_fill_final")
         levels_list <- sapply(data_y_fill_final, function(col) if (is.factor(col)) levels(col) else NULL)
         message(capture.output(print(levels_list)))
         
+        # 6. Jetzt Level-Check durchführen – NACH enforce + dummy
         for (colname in names(factor_levels)) {
-          if (colname %in% names(data_y_fill)) {
-            # Nur Faktoren prüfen
+          if (colname %in% names(data_y_fill_final)) {
             if (is.factor(data_y_fill_final[[colname]])) {
               stopifnot(all(levels(data_y_fill_final[[colname]]) == factor_levels[[colname]]))
             } else {
@@ -457,7 +449,7 @@ vimpute <- function(
           }
         }
         
-        # Create task
+        # 7. mlr3-Task erzeugen
         if (is.numeric(data_y_fill_final[[target_col]])) {
           task <- TaskRegr$new(id = target_col, backend = data_y_fill_final, target = target_col)
         } else if (is.factor(data_y_fill_final[[target_col]])) {
@@ -466,10 +458,67 @@ vimpute <- function(
           stop("Mistake: Target variable is neither numerical nor a factor!")
         }
         
+        # 8. Cleanup
         if (".row_id" %in% colnames(data_y_fill_final)) {
           data_y_fill_final <- data_y_fill_final[.row_id != -1]
           data_y_fill_final[, .row_id := NULL]
         }
+        
+        # # If NA in target variable --> only train with the data that has no NA in Y
+        # data_y_fill <- data_y_fill[!is.na(get(target_col))]
+        # for (colname in names(factor_levels)) {
+        #   if (colname %in% names(data_y_fill)) {
+        #     # Nur Faktoren prüfen
+        #     if (is.factor(data_y_fill[[colname]])) {
+        #       stopifnot(all(levels(data_y_fill[[colname]]) == factor_levels[[colname]]))
+        #     } else {
+        #       stop(paste0("Spalte ", colname, " ist kein Faktor in data_y_fill"))
+        #     }
+        #   } else {
+        #     stop(paste0("Spalte ", colname, " fehlt in data_y_fill"))
+        #   }
+        # }
+        # 
+        # 
+        # # If the learner does not support missing values -> use na.omit()
+        # data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
+        # data_y_fill_final <- enforce_factor_levels(data_y_fill_final, factor_levels) 
+        # # Dummy-rows -> so that all factor levels are seen
+        # data_y_fill_final <- ensure_all_factor_levels_present(data_y_fill_final, factor_levels)
+        # message("data_y_fill_final (ensure_all_factor_levels_present):")
+        # message(capture.output(print(data_y_fill_final)))
+        # 
+        # message("levels in data y fill final")
+        # levels_list <- sapply(data_y_fill_final, function(col) if (is.factor(col)) levels(col) else NULL)
+        # message(capture.output(print(levels_list)))
+        # 
+        # for (colname in names(factor_levels)) {
+        #   if (colname %in% names(data_y_fill)) {
+        #     # Nur Faktoren prüfen
+        #     if (is.factor(data_y_fill_final[[colname]])) {
+        #       stopifnot(all(levels(data_y_fill_final[[colname]]) == factor_levels[[colname]]))
+        #     } else {
+        #       stop(paste0("Spalte ", colname, " ist kein Faktor in data_y_fill_final"))
+        #     }
+        #   } else {
+        #     stop(paste0("Spalte ", colname, " fehlt in data_y_fill_final"))
+        #   }
+        # }
+        # 
+        # # Create task
+        # if (is.numeric(data_y_fill_final[[target_col]])) {
+        #   task <- TaskRegr$new(id = target_col, backend = data_y_fill_final, target = target_col)
+        # } else if (is.factor(data_y_fill_final[[target_col]])) {
+        #   task <- TaskClassif$new(id = target_col, backend = data_y_fill_final, target = target_col)
+        # } else {
+        #   stop("Mistake: Target variable is neither numerical nor a factor!")
+        # }
+        # 
+        # if (".row_id" %in% colnames(data_y_fill_final)) {
+        #   data_y_fill_final <- data_y_fill_final[.row_id != -1]
+        #   data_y_fill_final[, .row_id := NULL]
+        # }
+        
 ### *****Create Learner Start***** ###################################################################################################
         if(verbose){
           message(paste("***** Create Learner"))
