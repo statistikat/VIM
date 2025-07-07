@@ -461,8 +461,10 @@ vimpute <- function(
           stop("Mistake: Target variable is neither numerical nor a factor!")
         }
         
-        data_y_fill_final <- data_y_fill_final[.row_id != -1]
-        data_y_fill_final[, .row_id := NULL]
+        if (".row_id" %in% colnames(data_y_fill_final)) {
+          data_y_fill_final <- data_y_fill_final[.row_id != -1]
+          data_y_fill_final[, .row_id := NULL]
+        }
 ### *****Create Learner Start***** ###################################################################################################
         if(verbose){
           message(paste("***** Create Learner"))
