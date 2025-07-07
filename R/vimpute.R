@@ -414,25 +414,23 @@ vimpute <- function(
           supports_missing <- FALSE
         }
         
+        # 1. Nur vollständige Zielwerte behalten
+        data_y_fill <- data_y_fill[!is.na(get(target_col))]
+        
         # 2. Faktor-Levels durchsetzen (vor Dummy-Zeilen)
-        data_y_fill <- enforce_factor_levels(data_y_fill, factor_levels)
+        # data_y_fill <- enforce_factor_levels(data_y_fill, factor_levels)
         
         # 3. Dummy-Zeilen einfügen, um alle Levels sichtbar zu machen
         data_y_fill <- ensure_all_factor_levels_present(data_y_fill, factor_levels)
         
         print("data_y_fill nach dummy")
         print(data_y_fill)
-        
-        # 1. Nur vollständige Zielwerte behalten
-        data_y_fill <- data_y_fill[!is.na(get(target_col))]
-        
-        print("data_y_fill data_y_fill[!is.na(get(target_col))]")
-        print(data_y_fill)
-        
 
-        
         # 4. Fehlende Werte entfernen, falls nötig
         data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
+        
+        print("data_y_fill_final na na.omit")
+        print(data_y_fill_final)
         
         # 5. Nochmals sicherstellen, dass alle Faktor-Levels korrekt sind
         message("data_y_fill_final (nach ensure_all_factor_levels_present):")
