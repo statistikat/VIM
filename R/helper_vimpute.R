@@ -423,23 +423,21 @@ is_semicontinuous <- function(x) {
 #
 # factor levels
 enforce_factor_levels <- function(df, original_levels) {
-  if (nrow(df) == 0) {
-    warning("enforce_factor_levels: data has 0 rows – returning unchanged.")
-    return(df)
-  }
-  
   for (colname in names(original_levels)) {
+    levels <- original_levels[[colname]]
+    if (is.null(levels)) next  # 👈 skip numeric variables
+    
     if (colname %in% names(df)) {
       if (is.factor(df[[colname]]) || is.character(df[[colname]])) {
         vals <- df[[colname]]
-        unknown_levels <- setdiff(unique(vals[!is.na(vals)]), original_levels[[colname]])
+        unknown_levels <- setdiff(unique(vals[!is.na(vals)]), levels)
         
         if (length(unknown_levels) > 0) {
           warning(sprintf("Spalte '%s' enthält unbekannte Levels: %s", 
                           colname, paste(unknown_levels, collapse = ", ")))
         }
         
-        df[[colname]] <- factor(vals, levels = original_levels[[colname]])
+        df[[colname]] <- factor(vals, levels = levels)
       }
     }
   }
@@ -520,34 +518,35 @@ check_factor_levels <- function(data, original_levels) {
 #
 # dummy for factor levels
 ensure_all_factor_levels_present <- function(df, factor_levels) {
-  if (nrow(df) == 0) {
-    stop("ensure_all_factor_levels_present: input data has 0 rows – can't create dummy rows.")
-  }
-  
   dummy_rows <- list()
+  
+  # column types
+  col_types <- lapply(df, typeof)
   
   for (colname in names(factor_levels)) {
     levels_needed <- factor_levels[[colname]]
+    
+    # 👉 Prüfen, ob levels_needed überhaupt gesetzt ist
+    if (is.null(levels_needed)) next
+    
     for (lvl in levels_needed) {
-      dummy <- df[1, ][0]  # funktioniert nur, wenn df mindestens 1 Zeile hat
+      dummy <- as.list(rep(NA, length(col_types)))
+      names(dummy) <- names(col_types)
       dummy[[colname]] <- factor(lvl, levels = levels_needed)
       dummy$.row_id <- -1
-      dummy_rows[[paste0(colname, "_", lvl)]] <- dummy
+      dummy_rows[[paste0(colname, "_", lvl)]] <- as.data.table(dummy)
     }
   }
   
   dummy_df <- rbindlist(dummy_rows, fill = TRUE)
   
-  # fehlende Spalten ergänzen
-  for (col in setdiff(names(df), names(dummy_df))) {
-    dummy_df[[col]] <- NA
+  if (!".row_id" %in% names(df)) {
+    df$.row_id <- seq_len(nrow(df))
   }
   
-  df$.row_id <- seq_len(nrow(df))
   full_df <- rbind(df, dummy_df, fill = TRUE)
   return(full_df)
 }
-
 
 
 
