@@ -398,8 +398,6 @@ vimpute <- function(
         message("factor levels data temp")
         levels_list <- sapply(data_temp, function(col) if (is.factor(col)) levels(col) else NULL)
         message(capture.output(print(levels_list)))
-        
-        
 ### OHE End ###
         
 ### *****Create task Start***** ###################################################################################################

@@ -517,12 +517,16 @@ check_factor_levels <- function(data, original_levels) {
 #
 # dummy for factor levels
 ensure_all_factor_levels_present <- function(df, factor_levels) {
+  if (nrow(df) == 0) {
+    stop("ensure_all_factor_levels_present: input data has 0 rows – can't create dummy rows.")
+  }
+  
   dummy_rows <- list()
   
   for (colname in names(factor_levels)) {
     levels_needed <- factor_levels[[colname]]
     for (lvl in levels_needed) {
-      dummy <- df[1, ][0]  # leere Zeile mit korrekten Spalten
+      dummy <- df[1, ][0]  # funktioniert nur, wenn df mindestens 1 Zeile hat
       dummy[[colname]] <- factor(lvl, levels = levels_needed)
       dummy$.row_id <- -1
       dummy_rows[[paste0(colname, "_", lvl)]] <- dummy
