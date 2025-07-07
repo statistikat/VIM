@@ -520,34 +520,48 @@ check_factor_levels <- function(data, original_levels) {
 ensure_all_factor_levels_present <- function(df, factor_levels) {
   dummy_rows <- list()
   
-  # column types
+  # Spaltentypen merken
   col_types <- lapply(df, typeof)
   
+  # Alle Spalten mit Faktor-Levels durchlaufen
   for (colname in names(factor_levels)) {
     levels_needed <- factor_levels[[colname]]
     
-    # 👉 Prüfen, ob levels_needed überhaupt gesetzt ist
+    # Wenn keine Levels definiert sind, überspringen
     if (is.null(levels_needed)) next
     
-    for (lvl in levels_needed) {
+    # Welche Levels fehlen im Datensatz?
+    existing_levels <- unique(df[[colname]])
+    missing_levels <- setdiff(levels_needed, existing_levels)
+    
+    for (lvl in missing_levels) {
+      # Dummy-Row initialisieren
       dummy <- as.list(rep(NA, length(col_types)))
       names(dummy) <- names(col_types)
+      
+      # Faktorwert korrekt setzen
       dummy[[colname]] <- factor(lvl, levels = levels_needed)
+      
+      # .row_id als Marker
       dummy$.row_id <- -1
+      
+      # Liste füllen
       dummy_rows[[paste0(colname, "_", lvl)]] <- as.data.table(dummy)
     }
   }
   
+  # Dummy-Zeilen zusammenführen
   dummy_df <- rbindlist(dummy_rows, fill = TRUE)
   
+  # row_id setzen (falls noch nicht da)
   if (!".row_id" %in% names(df)) {
     df$.row_id <- seq_len(nrow(df))
   }
   
+  # Dummys dranhängen
   full_df <- rbind(df, dummy_df, fill = TRUE)
   return(full_df)
 }
-
 
 
 
