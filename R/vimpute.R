@@ -89,6 +89,10 @@ vimpute <- function(
         factor_levels[[col]] <- unique(na.omit(data[[col]]))
       }
     }
+    
+    message("factor levels:")
+    message(capture.output(print(factor_levels)))
+    
 ### ***** Check Data Start ***** ###################################################################################################
     if(verbose){
       message(paste("***** Check Data"))  
@@ -180,6 +184,11 @@ vimpute <- function(
           # Remove missing values (na.omit)  -> for Training
           data <- enforce_factor_levels(data, factor_levels)  # <--- WICHTIG
           data_clean <- na.omit(data)
+          
+          message("factor levels data clean")
+          levels_list <- sapply(data_clean, function(col) if (is.factor(col)) levels(col) else NULL)
+          message(capture.output(print(levels_list)))
+          
           # data_clean <- enforce_factor_levels(data_clean, factor_levels)  # <--- WICHTIG
           check_all_factor_levels(data_clean, factor_levels)
           
@@ -222,6 +231,11 @@ vimpute <- function(
           setnames(data_temp, clean_colnames(names(data_temp)))
           data_temp <- enforce_factor_levels(data_temp, factor_levels)  
           check_all_factor_levels(data_temp, factor_levels)
+
+          message("factor levels data temp")
+          levels_list <- sapply(data_temp, function(col) if (is.factor(col)) levels(col) else NULL)
+          message(capture.output(print(levels_list)))
+          
           
           # Impute missing values (Median/Mode)  -> for prediction 
           if (is_target_numeric) {
@@ -241,6 +255,7 @@ vimpute <- function(
           setnames(mm_data, clean_colnames(names(mm_data)))
           mm_data <- enforce_factor_levels(mm_data, factor_levels)
           check_all_factor_levels(mm_data, factor_levels)
+          
           
           # Identify target transformation
           lhs_transformation <- identify_lhs_transformation(selected_formula)  # transformations on left handsite 
@@ -266,6 +281,8 @@ vimpute <- function(
             data_temp[[var]] <- transformation(data_temp[[var]])
             mm_data[[var]] <- transformation(mm_data[[var]])
           }
+          
+          
 ### Formula Extraction End ###   
           
         } else {
@@ -292,6 +309,11 @@ vimpute <- function(
         }
         
         method_var <- method[[var]]
+        
+        message("factor levels data mm")
+        levels_list <- sapply(mm_data, function(col) if (is.factor(col)) levels(col) else NULL)
+        message(capture.output(print(levels_list)))
+        
         
 ### ***** Select suitable learner Start ***** ###################################################################################################
         if(verbose){
@@ -365,6 +387,12 @@ vimpute <- function(
           # Apply the encoding to the training data
           data_temp <- po_ohe$predict(list(train_task))[[1]]$data()
         }
+        
+        message("factor levels data temp")
+        levels_list <- sapply(data_temp, function(col) if (is.factor(col)) levels(col) else NULL)
+        message(capture.output(print(levels_list)))
+        
+        
 ### OHE End ###
         
 ### *****Create task Start***** ###################################################################################################
@@ -379,7 +407,6 @@ vimpute <- function(
         }
         
         # If NA in target variable --> only train with the data that has no NA in Y
-        data_y_fill <- enforce_factor_levels(data_y_fill, factor_levels) # save factor levels
         data_y_fill <- data_y_fill[!is.na(get(target_col))]
         for (colname in names(factor_levels)) {
           if (colname %in% names(data_y_fill)) {
@@ -398,6 +425,10 @@ vimpute <- function(
         # If the learner does not support missing values -> use na.omit()
         data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
         data_y_fill_final <- enforce_factor_levels(data_y_fill_final, factor_levels) 
+        
+        message("levels in data y fill final")
+        levels_list <- sapply(data_y_fill_final, function(col) if (is.factor(col)) levels(col) else NULL)
+        message(capture.output(print(levels_list)))
         
         for (colname in names(factor_levels)) {
           if (colname %in% names(data_y_fill)) {
@@ -716,6 +747,10 @@ vimpute <- function(
           train_data <- class_data 
           train_data <- enforce_factor_levels(train_data , factor_levels)
           
+          message("levels in train data")
+          levels_list <- sapply(train_data, function(col) if (is.factor(col)) levels(col) else NULL)
+          message(capture.output(print(levels_list)))
+          
           feature_cols <- setdiff(names(train_data), c(var, zero_flag_col))
           
           # classification task
@@ -802,6 +837,11 @@ vimpute <- function(
           reg_data <- enforce_factor_levels(reg_data, factor_levels)
           has_na_in_features <- anyNA(reg_data[, ..reg_features])
           
+          message("levels in reg data")
+          levels_list <- sapply(reg_data, function(col) if (is.factor(col)) levels(col) else NULL)
+          message(capture.output(print(levels_list)))
+          
+          
           # support missings?
           supports_missing <- "missings" %in% regr_learner$properties
           if (method_var == "ranger") supports_missing <- FALSE
@@ -824,6 +864,11 @@ vimpute <- function(
             reg_data <- enforce_factor_levels(reg_data, factor_levels)
             check_all_factor_levels(reg_data, factor_levels)
           }
+          
+          message("levels in reg data")
+          levels_list <- sapply(reg_data, function(col) if (is.factor(col)) levels(col) else NULL)
+          message(capture.output(print(levels_list)))
+          
           
           # Task
           reg_task <- TaskRegr$new(id = var, backend = reg_data, target = var)
@@ -984,6 +1029,7 @@ vimpute <- function(
               backend_data <- impute_missing_values(backend_data, data_temp)
             }
             check_all_factor_levels(backend_data, factor_levels)
+
             
           } else {
             # without formula
@@ -997,6 +1043,10 @@ vimpute <- function(
               backend_data <- impute_missing_values(backend_data, data_y_fill)
             }
           }
+          
+          message("levels in backend data")
+          levels_list <- sapply(backend_data, function(col) if (is.factor(col)) levels(col) else NULL)
+          message(capture.output(print(levels_list)))
           
         } else {
           # semicontinous
@@ -1014,6 +1064,12 @@ vimpute <- function(
             if (anyNA(class_pred_data)) {
               class_pred_data <- impute_missing_values(class_pred_data, data_temp)
             }
+            
+            message("levels in class pred data")
+            levels_list <- sapply(class_pred_data, function(col) if (is.factor(col)) levels(col) else NULL)
+            message(capture.output(print(levels_list)))
+            
+            
           } else {
             class_pred_data <- data_temp[missing_idx, c(feature_cols, zero_flag_col), with = FALSE]
             class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
@@ -1021,6 +1077,9 @@ vimpute <- function(
             if (!supports_missing && anyNA(class_pred_data)) {
               class_pred_data <- impute_missing_values(class_pred_data, data_temp)
             }
+            message("levels in class pred data")
+            levels_list <- sapply(class_pred_data, function(col) if (is.factor(col)) levels(col) else NULL)
+            message(capture.output(print(levels_list)))
           }
           reg_pred_data <- data_temp[data_temp[[var]] > 0, ]
           reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
@@ -1029,12 +1088,19 @@ vimpute <- function(
             reg_pred_data <- impute_missing_values(reg_pred_data, data_temp)
           }
           
+          message("levels in reg pred data")
+          levels_list <- sapply(reg_pred_data, function(col) if (is.factor(col)) levels(col) else NULL)
+          message(capture.output(print(levels_list)))
+          
         }
 ### Identify NAs End ###
         
 ### *****Select suitable task type Start***** ###################################################################################################
         
         if (!is_sc) {
+          message("levels in reg backend data")
+          levels_list <- sapply(backend_data, function(col) if (is.factor(col)) levels(col) else NULL)
+          message(capture.output(print(levels_list)))
           # Faktorlevels in backend_data angleichen VOR Task-Erstellung
 
           if (is.numeric(data_temp[[target_col]])) {
@@ -1093,6 +1159,12 @@ vimpute <- function(
 
           # Prediction without Task (weil Zielvariable nicht vorhanden)
           class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
+          
+          message("levels in class pred data")
+          levels_list <- sapply(class_pred_data, function(col) if (is.factor(col)) levels(col) else NULL)
+          message(capture.output(print(levels_list)))
+          
+          
           check_all_factor_levels(class_pred_data, factor_levels)
           # class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
           if (anyNA(class_pred_data)) {
@@ -1123,6 +1195,11 @@ vimpute <- function(
             
             reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
             check_all_factor_levels(reg_pred_data, factor_levels)
+            
+            message("levels in reg pred data")
+            levels_list <- sapply(reg_pred_data, function(col) if (is.factor(col)) levels(col) else NULL)
+            message(capture.output(print(levels_list)))
+            
             # reg_pred_data <- set_new_levels_to_na(reg_pred_data, factor_levels, data_y_fill_final, method_var = method_var)
             if (anyNA(reg_pred_data)) {
               reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
@@ -1152,6 +1229,11 @@ vimpute <- function(
           bdt <- as.data.table(backend_data)
           bdt <- enforce_factor_levels(bdt, factor_levels)
           check_all_factor_levels(bdt, factor_levels) 
+          
+          message("levels in backend data/ bdt")
+          levels_list <- sapply(bdt, function(col) if (is.factor(col)) levels(col) else NULL)
+          message(capture.output(print(levels_list)))
+          
           
           if (anyNA(bdt)) {
             bdt <- impute_missing_values(bdt, data_temp)
