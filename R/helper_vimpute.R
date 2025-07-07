@@ -358,7 +358,7 @@ precheck <- function(
   if (length(method) == 0) {
     message("Methods are empty, no imputation is used.")
   } else if ((is.character(method) && length(method) == 1) ||
-            (is.list(method) && length(method) == 1 && is.character(method[[1]]))) {
+             (is.list(method) && length(method) == 1 && is.character(method[[1]]))) {
     # If `method` is a single string or a single-element list, set for all variables
     method_value <- if (is.list(method)) method[[1]] else method
     if (!(method_value %in% supported_methods)) {
@@ -425,15 +425,15 @@ is_semicontinuous <- function(x) {
 enforce_factor_levels <- function(df, original_levels) {
   for (colname in names(original_levels)) {
     if (colname %in% names(df)) {
-
+      
       if (is.factor(df[[colname]]) || is.character(df[[colname]])) {
-
+        
         unknown_levels <- setdiff(unique(df[[colname]]), original_levels[[colname]])
         if (length(unknown_levels) > 0) {
           warning(sprintf("Spalte '%s' enthält unbekannte Levels: %s", 
                           colname, paste(unknown_levels, collapse = ", ")))
         }
-
+        
         df[[colname]] <- factor(df[[colname]], levels = original_levels[[colname]])
       }
     }
@@ -509,6 +509,34 @@ check_factor_levels <- function(data, original_levels) {
       }
     }
   }
+}
+#
+#
+#
+# dummy for factor levels
+ensure_all_factor_levels_present <- function(df, factor_levels) {
+  dummy_rows <- list()
+  
+  for (colname in names(factor_levels)) {
+    levels_needed <- factor_levels[[colname]]
+    for (lvl in levels_needed) {
+      dummy <- df[1, ][0]  # leere Zeile mit korrekten Spalten
+      dummy[[colname]] <- factor(lvl, levels = levels_needed)
+      dummy$.row_id <- -1
+      dummy_rows[[paste0(colname, "_", lvl)]] <- dummy
+    }
+  }
+  
+  dummy_df <- rbindlist(dummy_rows, fill = TRUE)
+  
+  # fehlende Spalten ergänzen
+  for (col in setdiff(names(df), names(dummy_df))) {
+    dummy_df[[col]] <- NA
+  }
+  
+  df$.row_id <- seq_len(nrow(df))
+  full_df <- rbind(df, dummy_df, fill = TRUE)
+  return(full_df)
 }
 
 
