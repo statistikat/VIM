@@ -407,6 +407,9 @@ vimpute <- function(
           message(paste("***** Create task"))
         }
         data_y_fill <- copy(data_temp)
+        print("data temp bei taskerstellung")
+        print(data_temp)
+        
         supports_missing <- all(sapply(learner_candidates, function(lrn) "missings" %in% lrn$properties))
         
         if (method_var == "ranger") {
