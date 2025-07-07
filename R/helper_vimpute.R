@@ -510,6 +510,34 @@ check_factor_levels <- function(data, original_levels) {
     }
   }
 }
+#
+#
+#
+# dummy for factor levels
+ensure_all_factor_levels_present <- function(df, factor_levels) {
+  dummy_rows <- list()
+  
+  for (colname in names(factor_levels)) {
+    levels_needed <- factor_levels[[colname]]
+    for (lvl in levels_needed) {
+      dummy <- df[1, ][0]  # leere Zeile mit korrekten Spalten
+      dummy[[colname]] <- factor(lvl, levels = levels_needed)
+      dummy$.row_id <- -1
+      dummy_rows[[paste0(colname, "_", lvl)]] <- dummy
+    }
+  }
+  
+  dummy_df <- rbindlist(dummy_rows, fill = TRUE)
+  
+  # fehlende Spalten ergänzen
+  for (col in setdiff(names(df), names(dummy_df))) {
+    dummy_df[[col]] <- NA
+  }
+  
+  df$.row_id <- seq_len(nrow(df))
+  full_df <- rbind(df, dummy_df, fill = TRUE)
+  return(full_df)
+}
 
 
 
