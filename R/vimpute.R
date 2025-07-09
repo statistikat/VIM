@@ -704,9 +704,6 @@ vimpute <- function(
       # tuning_log
       tuning_log[[length(tuning_log) + 1]] <- list(
         variable = var,
-        iteration = i,
-        tuned = tuning_status[[var]],
-        params = current_learner$param_set$values,
         tuned_better = isTRUE(hyperparameter_cache[[var]]$is_tuned)
       )
       
