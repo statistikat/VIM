@@ -430,18 +430,18 @@ vimpute <- function(
       # levels_list <- sapply(data_y_fill_final, function(col) if (is.factor(col)) levels(col) else NULL)
       # message(capture.output(print(levels_list)))
       
-      for (colname in names(factor_levels)) {
-        if (colname %in% names(data_y_fill)) {
-          # Nur Faktoren prüfen
-          if (is.factor(data_y_fill_final[[colname]])) {
-            stopifnot(all(levels(data_y_fill_final[[colname]]) == factor_levels[[colname]]))
-          } else {
-            stop(paste0("Spalte ", colname, " ist kein Faktor in data_y_fill_final"))
-          }
-        } else {
-          stop(paste0("Spalte ", colname, " fehlt in data_y_fill_final"))
-        }
-      }
+      # for (colname in names(factor_levels)) {
+      #   if (colname %in% names(data_y_fill)) {
+      #     # Nur Faktoren prüfen
+      #     if (is.factor(data_y_fill_final[[colname]])) {
+      #       stopifnot(all(levels(data_y_fill_final[[colname]]) == factor_levels[[colname]]))
+      #     } else {
+      #       stop(paste0("Spalte ", colname, " ist kein Faktor in data_y_fill_final"))
+      #     }
+      #   } else {
+      #     stop(paste0("Spalte ", colname, " fehlt in data_y_fill_final"))
+      #   }
+      # }
       
       
       # Create task
