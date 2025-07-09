@@ -594,7 +594,7 @@ vimpute <- function(
             instance = TuningInstanceBatchSingleCrit$new(
               task = task,  
               learner = best_learner,
-              resampling = rsmp("cv", folds = 5,repeats = 3),
+              resampling = rsmp("cv"), #, folds = 5,repeats = 3),
               measure = if (task$task_type == "regr") msr("regr.rmse") else msr("classif.acc"),
               search_space = search_space,
               terminator = trm("evals", n_evals = 20)
