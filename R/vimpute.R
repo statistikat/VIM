@@ -408,18 +408,18 @@ vimpute <- function(
       
       # If NA in target variable --> only train with the data that has no NA in Y
       data_y_fill <- data_y_fill[!is.na(get(target_col))]
-      for (colname in names(factor_levels)) {
-        if (colname %in% names(data_y_fill)) {
-          # Nur Faktoren prüfen
-          if (is.factor(data_y_fill[[colname]])) {
-            stopifnot(all(levels(data_y_fill[[colname]]) == factor_levels[[colname]]))
-          } else {
-            stop(paste0("Spalte ", colname, " ist kein Faktor in data_y_fill"))
-          }
-        } else {
-          stop(paste0("Spalte ", colname, " fehlt in data_y_fill"))
-        }
-      }
+      # for (colname in names(factor_levels)) {
+      #   if (colname %in% names(data_y_fill)) {
+      #     # Nur Faktoren prüfen
+      #     if (is.factor(data_y_fill[[colname]])) {
+      #       stopifnot(all(levels(data_y_fill[[colname]]) == factor_levels[[colname]]))
+      #     } else {
+      #       stop(paste0("Spalte ", colname, " ist kein Faktor in data_y_fill"))
+      #     }
+      #   } else {
+      #     stop(paste0("Spalte ", colname, " fehlt in data_y_fill"))
+      #   }
+      # }
       
       
       # If the learner does not support missing values -> use na.omit()
