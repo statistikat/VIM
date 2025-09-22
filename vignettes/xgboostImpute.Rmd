@@ -4,7 +4,7 @@ author: "Birgit Karlhuber"
 date: "2024-07-08"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Imputation Method based on Random Forest Model}
+  %\VignetteIndexEntry{Imputation Method based on xgboost}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
