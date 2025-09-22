@@ -2,7 +2,8 @@
 % Please edit documentation in R/vimpute.R
 \name{vimpute}
 \alias{vimpute}
-\title{Impute missing values with prefered Model, sequentially, with hyperparametertuning and with PMM (if wanted)}
+\title{Impute missing values with prefered Model, sequentially, with hyperparametertuning and with PMM (if wanted)
+Need of 'helper_vimpute' script}
 \usage{
 vimpute(
   data,
@@ -15,7 +16,7 @@ vimpute(
   nseq = 10,
   eps = 0.005,
   imp_var = TRUE,
-  pred_history = TRUE,
+  pred_history = FALSE,
   tune = FALSE,
   verbose = FALSE
 )
@@ -26,11 +27,11 @@ vimpute(
 }}
 
 \item{considered_variables}{\itemize{
-\item Parameters that should be considered in the model
+\item A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process.
 }}
 
 \item{method}{\itemize{
-\item Specifies which learner is used for imputation. Provide as a list for each variable.
+\item A named list specifying the imputation method for each variable:
 }}
 
 \item{pmm}{\itemize{
@@ -38,7 +39,7 @@ vimpute(
 }}
 
 \item{formula}{\itemize{
-\item If not all variables are to be used as predictors, or if transformations or interactions are required (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized".
+\item If not all variables are used as predictors, or if transformations or interactions are required (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized". Provide as a list for each variable that requires specific conditions.
 }}
 
 \item{sequential}{\itemize{
@@ -46,7 +47,7 @@ vimpute(
 }}
 
 \item{nseq}{\itemize{
-\item Maximum number of iterations.
+\item Maximum number of iterations (if sequential is TRUE).
 }}
 
 \item{eps}{\itemize{
@@ -74,10 +75,13 @@ imputed data set or c(imputed data set, prediction history)
 }
 \description{
 Impute missing values with prefered Model, sequentially, with hyperparametertuning and with PMM (if wanted)
+Need of 'helper_vimpute' script
 }
 \examples{
-x <- vimpute(data = sleep, sequential = FALSE, pred_history = FALSE)
-y <- vimpute(data = sleep, sequential = TRUE, nseq = 3, pred_history = FALSE)
+\dontrun{
+x <- vimpute(data = sleep, sequential = FALSE)
+y <- vimpute(data = sleep, sequential = TRUE, nseq = 3)
 z <- vimpute(data = sleep, considered_variables =
-       c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE, pred_history = FALSE)
+       c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE)
+}
 }

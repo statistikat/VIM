@@ -27,10 +27,12 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' x <- vimpute(data = sleep, sequential = FALSE)
 #' y <- vimpute(data = sleep, sequential = TRUE, nseq = 3)
 #' z <- vimpute(data = sleep, considered_variables =
 #'        c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE)
+#' }
 #########################################################################################
 #########################################################################################
 #########################################################################################
@@ -49,7 +51,7 @@ vimpute <- function(
     tune = FALSE,
     verbose = FALSE
 ) {
-  
+  ..cols <- ..feature_cols <- ..reg_features <- ..relevant_features <- NULL
   # save plan
   old_plan <- future::plan()  # Save current plan
   on.exit(future::plan(old_plan), add = TRUE)  # Restore on exit, even if error
@@ -408,42 +410,12 @@ vimpute <- function(
       
       # If NA in target variable --> only train with the data that has no NA in Y
       data_y_fill <- data_y_fill[!is.na(get(target_col))]
-      # for (colname in names(factor_levels)) {
-      #   if (colname %in% names(data_y_fill)) {
-      #     # Nur Faktoren prüfen
-      #     if (is.factor(data_y_fill[[colname]])) {
-      #       stopifnot(all(levels(data_y_fill[[colname]]) == factor_levels[[colname]]))
-      #     } else {
-      #       stop(paste0("Spalte ", colname, " ist kein Faktor in data_y_fill"))
-      #     }
-      #   } else {
-      #     stop(paste0("Spalte ", colname, " fehlt in data_y_fill"))
-      #   }
-      # }
-      
       
       # If the learner does not support missing values -> use na.omit()
       data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
       data_y_fill_final <- enforce_factor_levels(data_y_fill_final, factor_levels) 
       
-      # message("levels in data y fill final")
-      # levels_list <- sapply(data_y_fill_final, function(col) if (is.factor(col)) levels(col) else NULL)
-      # message(capture.output(print(levels_list)))
-      
-      # for (colname in names(factor_levels)) {
-      #   if (colname %in% names(data_y_fill)) {
-      #     # Nur Faktoren prüfen
-      #     if (is.factor(data_y_fill_final[[colname]])) {
-      #       stopifnot(all(levels(data_y_fill_final[[colname]]) == factor_levels[[colname]]))
-      #     } else {
-      #       stop(paste0("Spalte ", colname, " ist kein Faktor in data_y_fill_final"))
-      #     }
-      #   } else {
-      #     stop(paste0("Spalte ", colname, " fehlt in data_y_fill_final"))
-      #   }
-      # }
-      
-      
+     
       # Create task
       if (is.numeric(data_y_fill_final[[target_col]])) {
         task <- TaskRegr$new(id = target_col, backend = data_y_fill_final, target = target_col)
@@ -1222,8 +1194,8 @@ vimpute <- function(
       } else {
         # not semicontinous 
         if (anyNA(backend_data[, ..feature_cols]))  {
-          warning("NAs present in backend_data before Task creation – did fixfactors create new NAs?")
-          print(which(sapply(backend_data$data(cols = feature_cols), function(col) anyNA(col))))
+          warning("NAs present in backend_data before Task creation - did fixfactors create new NAs?")
+          print(which(sapply(backend_data[, ..feature_cols], function(col) anyNA(col))))
         }
         
         bdt <- as.data.table(backend_data)

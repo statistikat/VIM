@@ -45,7 +45,7 @@ This vignette demonstrates how to use the `vimpute()` function for flexible miss
 To demonstrate the function, the `sleep` dataset from the `VIM` package is used. 
 
 ```{r, echo = FALSE, results='hide', message=FALSE, warning=FALSE}
-devtools::load_all("~/R/VIM")
+library(VIM)
 library(data.table)
 ```
 ```{r setup_2, message = FALSE}
@@ -131,7 +131,7 @@ marginplot(dataDS, delimiter = "_imp", main = "Imputation with different Models 
 result_xgboost <- vimpute(
   data = data,
   method = setNames(as.list(rep("xgboost", ncol(data))), names(data)),
-  pred_history = TRUE
+  pred_history = TRUE, verbose = FALSE
   )
 dataDS_xgboost <- as.data.frame(result_xgboost$data[, c("Dream", "Sleep", "Dream_imp", "Sleep_imp")])
 result_regularized <- vimpute(
