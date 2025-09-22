@@ -1,0 +1,141 @@
+---
+title: "Imputation Method based on xgboost"
+author: "Birgit Karlhuber"
+date: "2024-07-08"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Imputation Method based on Random Forest Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height=4,
+  fig.align = "center"
+)
+```
+
+
+This vignette showcases the function `xgboostImpute()`, which can be used to impute missing values based on a random forest model using `[xgboost::xgboost()]. 
+
+### Data
+
+The following example demonstrates the functionality of `xgboostImpute()` using a subset of `sleep`. The columns have been selected deliberately to include some interactions between the missing values
+
+```{r, message=FALSE}
+library(VIM)
+dataset <- sleep[, c("Dream", "NonD", "BodyWgt", "Span")] # dataset with missings
+dataset$BodyWgt <- log(dataset$BodyWgt)
+dataset$Span <- log(dataset$Span)
+aggr(dataset)
+str(dataset)
+```
+
+
+## Imputation
+
+In order to invoke the imputation methods, a formula is used to specify which
+variables are to be estimated and which variables should be used as regressors.First `Dream` will be imputed based on `BodyWgt`. 
+
+```{r, message=FALSE}
+imp_xgboost <- xgboostImpute(formula=Dream~BodyWgt,data = dataset)
+aggr(imp_xgboost, delimiter = "_imp")
+
+```
+
+The plot shows that all missing values of the variable `Dream` were imputed by the `xgboostImpute()` function. 
+
+
+## Diagnosing the result
+
+As we can see in the next plot, the correlation structure of `Dream` and
+`BodyWgt` is preserved by the imputation method. 
+
+```{r, fig.height=5}
+imp_xgboost[, c("Dream", "BodyWgt", "Dream_imp")] |> 
+  marginplot(delimiter = "_imp")
+
+```
+
+
+## Imputing multiple variables
+
+To impute several variables at once, the formula can be specified with more than one column name on the
+left hand side.
+
+```{r, message=FALSE}
+imp_xgboost <- xgboostImpute(Dream+NonD+Span~BodyWgt,data=dataset)
+aggr(imp_xgboost, delimiter = "_imp")
+
+```
+
+
+## Performance of method
+
+In order to validate the performance of `xgboostImpute()` the `iris` dataset is used. Firstly, some values are randomly set to `NA`. 
+
+```{r}
+library(reactable)
+
+data(iris)
+df <- iris
+colnames(df) <- c("S.Length","S.Width","P.Length","P.Width","Species")
+# randomly produce some missing values in the data
+set.seed(1)
+nbr_missing <- 50
+y <- data.frame(row=sample(nrow(iris),size = nbr_missing,replace = T),
+                col=sample(ncol(iris)-1,size = nbr_missing,replace = T))
+y<-y[!duplicated(y),]
+df[as.matrix(y)]<-NA
+
+aggr(df)
+sapply(df, function(x)sum(is.na(x)))
+```
+
+We can see that there are missings in all variables and some observations reveal missing values on several points. In the next step we perform a multiple variable imputation and `Species` serves as a regressor.
+
+```{r, message=FALSE}
+imp_xgboost <- xgboostImpute(S.Length + S.Width + P.Length + P.Width ~ Species, df)
+aggr(imp_xgboost, delimiter = "imp")
+
+```
+
+The plot indicates that all missing values have been imputed by the `xgboostImpute()` algorithm. The following table displays the rounded first five results of the imputation for all variables.  
+
+```{r echo=F,warning=F}
+results <- cbind("TRUE1" = as.numeric(iris[as.matrix(y[which(y$col==1),])]),
+                 "IMPUTED1" = round(as.numeric(imp_xgboost[as.matrix(y[which(y$col==1),])]),2),
+                 "TRUE2" = as.numeric(iris[as.matrix(y[which(y$col==2),])]),
+                 "IMPUTED2" = round(as.numeric(imp_xgboost[as.matrix(y[which(y$col==2),])]),2),
+                 "TRUE3" = as.numeric(iris[as.matrix(y[which(y$col==3),])]),
+                 "IMPUTED3" = round(as.numeric(imp_xgboost[as.matrix(y[which(y$col==3),])]),2),
+                 "TRUE4" = as.numeric(iris[as.matrix(y[which(y$col==4),])]),
+                 "IMPUTED4" = round(as.numeric(imp_xgboost[as.matrix(y[which(y$col==4),])]),2))[1:5,]
+
+reactable(results, columns = list(
+    TRUE1 = colDef(name = "True"),
+    IMPUTED1 = colDef(name = "Imputed"),
+    TRUE2 = colDef(name = "True"),
+    IMPUTED2 = colDef(name = "Imputed"),
+    TRUE3 = colDef(name = "True"),
+    IMPUTED3 = colDef(name = "Imputed"),
+    TRUE4 = colDef(name = "True"),
+    IMPUTED4 = colDef(name = "Imputed")
+  ),
+    columnGroups = list(
+    colGroup(name = "S.Length", columns = c("TRUE1", "IMPUTED1")),
+    colGroup(name = "S.Width", columns = c("TRUE2", "IMPUTED2")),
+    colGroup(name = "P.Length", columns = c("TRUE3", "IMPUTED3")),
+    colGroup(name = "P.Width", columns = c("TRUE4", "IMPUTED4"))
+  ),
+  striped = TRUE,
+  highlight = TRUE,
+  bordered = TRUE
+)
+
+```
