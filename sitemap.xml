@@ -7,6 +7,7 @@
 <url><loc>/articles/index.html</loc></url>
 <url><loc>/articles/irmi.html</loc></url>
 <url><loc>/articles/modelImp.html</loc></url>
+<url><loc>/articles/vimpute.html</loc></url>
 <url><loc>/articles/xgboostImpute.html</loc></url>
 <url><loc>/authors.html</loc></url>
 <url><loc>/index.html</loc></url>
@@ -66,6 +67,7 @@
 <url><loc>/reference/tao.html</loc></url>
 <url><loc>/reference/testdata.html</loc></url>
 <url><loc>/reference/toydataMiss.html</loc></url>
+<url><loc>/reference/vimpute.html</loc></url>
 <url><loc>/reference/wine.html</loc></url>
 <url><loc>/reference/xgboostImpute.html</loc></url>
 </urlset>

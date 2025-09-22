@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">6.2.4</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.0.0</span>
       </span>
     </div>
 
@@ -45,6 +45,9 @@
     </li>
     <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute.html">Imputation Method vimpute</a>
     </li>
     <li>
       <a href="../articles/VisualImp.html">Supportive Graphic Methods</a>
@@ -149,7 +152,8 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 <code><a href="medianSamp.html">medianSamp</a>()</code>,
 <code><a href="rangerImpute.html">rangerImpute</a>()</code>,
 <code><a href="regressionImp.html">regressionImp</a>()</code>,
-<code><a href="sampleCat.html">sampleCat</a>()</code></p></div>
+<code><a href="sampleCat.html">sampleCat</a>()</code>,
+<code><a href="vimpute.html">vimpute</a>()</code></p></div>
     </div>
 
     <div id="ref-examples">
@@ -479,7 +483,7 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 <span class="r-in"><span><span class="va">sleepx</span><span class="op">$</span><span class="va">Pred</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
 <span class="r-in"><span><span class="fu">xgboostImpute</span><span class="op">(</span><span class="va">Pred</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleepx</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger Pred_imp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00   NA    NA   3.3  38.6 645.0    E   5      3     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00   NA    NA   3.3  38.6 645.0    C   5      3     TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.3   2.0   8.3   4.5  42.0    C   1      3    FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50   NA    NA  12.5  14.0  60.0    A   1      1    FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70   NA    NA  16.5    NA  25.0    E   2      3    FALSE</span>
@@ -551,11 +555,11 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Matthias Templ, Alexander Kowarik, Andreas Alfons, Gregor de Cillia, Wolfgang Rannetbauer.</p>
+  <p></p><p>Developed by Matthias Templ, Alexander Kowarik, Andreas Alfons, Johannes Gussenbauer, Nina Niederhametner, Eileen Vattheuer, Gregor de Cillia, Wolfgang Rannetbauer.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
       </footer></div>
