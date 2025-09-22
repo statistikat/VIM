@@ -25,6 +25,7 @@ Other imputation methods:
 \code{\link{rangerImpute}()},
 \code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
+\code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}
 }
 \concept{imputation methods}

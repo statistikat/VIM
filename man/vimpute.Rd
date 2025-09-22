@@ -85,3 +85,17 @@ z <- vimpute(data = sleep, considered_variables =
        c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE)
 }
 }
+\seealso{
+Other imputation methods: 
+\code{\link{hotdeck}()},
+\code{\link{impPCA}()},
+\code{\link{irmi}()},
+\code{\link{kNN}()},
+\code{\link{matchImpute}()},
+\code{\link{medianSamp}()},
+\code{\link{rangerImpute}()},
+\code{\link{regressionImp}()},
+\code{\link{sampleCat}()},
+\code{\link{xgboostImpute}()}
+}
+\concept{imputation methods}

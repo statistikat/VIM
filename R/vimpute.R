@@ -26,6 +26,7 @@
 #' @return imputed data set or c(imputed data set, prediction history)
 #' @export
 #'
+#' @family imputation methods
 #' @examples
 #' \dontrun{
 #' x <- vimpute(data = sleep, sequential = FALSE)
