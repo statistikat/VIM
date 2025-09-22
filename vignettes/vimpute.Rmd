@@ -1,14 +1,11 @@
 ---
-title: "Advanced Data Imputation with vimpute()"
+title: "Imputation Method vimpute"
 author: "Eileen Vattheuer"
-date: "2025-03-27"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Advanced Data Imputation with vimpute()}
+  %\VignetteIndexEntry{Imputation Method vimpute}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  chunk_output_type: console
 ---
 
 ```{r, include=FALSE}
