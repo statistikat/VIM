@@ -27,21 +27,21 @@ variable should be created show the imputation status}
 
 \item{verbose}{Show the number of observations used for training
 and evaluating the RF-Model. This parameter is also passed down to
-\code{\link[xgboost:xgb.train]{xgboost::xgboost()}} to show computation status.}
+\code{\link[xgboost:xgboost]{xgboost::xgboost()}} to show computation status.}
 
 \item{nrounds}{max number of boosting iterations,
-argument passed to \code{\link[xgboost:xgb.train]{xgboost::xgboost()}}}
+argument passed to \code{\link[xgboost:xgboost]{xgboost::xgboost()}}}
 
 \item{objective}{objective for xgboost,
-argument passed to \code{\link[xgboost:xgb.train]{xgboost::xgboost()}}}
+argument passed to \code{\link[xgboost:xgboost]{xgboost::xgboost()}}}
 
-\item{...}{Arguments passed to \code{\link[xgboost:xgb.train]{xgboost::xgboost()}}}
+\item{...}{Arguments passed to \code{\link[xgboost:xgboost]{xgboost::xgboost()}}}
 }
 \value{
 the imputed data set.
 }
 \description{
-Impute missing values based on a random forest model using \code{\link[xgboost:xgb.train]{xgboost::xgboost()}}
+Impute missing values based on a random forest model using \code{\link[xgboost:xgboost]{xgboost::xgboost()}}
 }
 \examples{
 data(sleep)
@@ -64,7 +64,6 @@ Other imputation methods:
 \code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
 \code{\link{regressionImp}()},
-\code{\link{sampleCat}()},
-\code{\link{vimpute}()}
+\code{\link{sampleCat}()}
 }
 \concept{imputation methods}

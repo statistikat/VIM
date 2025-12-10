@@ -20,11 +20,6 @@
 #' @importFrom utils capture.output flush.console head modifyList
 #' @importFrom ranger ranger importance
 #' @importFrom MASS stepAIC lqs polr rlm
-#' @importFrom mlr3 LearnerRegr PredictionRegr LearnerClassif PredictionClassif lrn TaskRegr TaskClassif as_task_regr as_task_classif rsmp msr resample
-#' @importFrom mlr3pipelines PipeOpModelMatrix %>>% GraphLearner po
-#' @importFrom paradox ps p_fct p_dbl p_int
-#' @importFrom mlr3tuning tnr trm TuningInstanceBatchSingleCrit
-#' @importFrom mlr3learners LearnerRegrCVGlmnet
 #' @useDynLib VIM
 NULL
 utils::globalVariables(c("self", "super"))
