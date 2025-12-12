@@ -1,5 +1,5 @@
 Package: VIM
-Version: 6.2.4
+Version: 6.2.6
 Title: Visualization and Imputation of Missing Values
 Authors@R: c(
   person("Matthias", "Templ", email = "matthias.templ@gmail.com", role = c("aut","cre")),
@@ -32,10 +32,15 @@ Suggests:
     dplyr,
     tinytest,
     knitr,
+    mgcv,
     rmarkdown,
     reactable,
     covr,
-    withr
+    withr,
+    pdist,
+    enetLTS,
+    robmixglm,
+    stringr
 Description: New tools for the visualization of missing and/or imputed values
     are introduced, which can be used for exploring the data and the structure of
     the missing and/or imputed values. Depending on this structure of the missing
@@ -51,7 +56,7 @@ License: GPL (>= 2)
 URL: https://github.com/statistikat/VIM
 Repository: CRAN
 LinkingTo: Rcpp
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
