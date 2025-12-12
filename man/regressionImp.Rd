@@ -41,7 +41,8 @@ Impute missing values based on a regression model.
 }
 \details{
 \code{\link[=lm]{lm()}} is used for family "normal" and \code{\link[=glm]{glm()}} for all other families.
-(robust=TRUE: \code{\link[=lmrob]{lmrob()}}, \code{\link[=glmrob]{glmrob()}})
+If \code{robust = TRUE}, \link[robustbase:lmrob]{lmrob()} is used for family "normal"
+and \link[robustbase:glmrob]{glmrob()} for all other families.
 }
 \examples{
 
