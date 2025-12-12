@@ -596,9 +596,15 @@ NULL
 #' handling of the plot methods.  In addition, `VIM` can be used for data
 #' from essentially any field.
 #'
+#' @title The VIM Package
 #' @name VIM-package
 #' @aliases VIM-package VIM
-#' @docType package
+#' @description
+#' VIM provides tools for visualization, imputation, and exploration of missing 
+#' and multivariate data.
+#' @details
+#' This package includes advanced imputation methods, robust statistics, 
+#' and tools for data preprocessing and diagnostics.
 #' @author Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
 #'
 #' Maintainer: Matthias Templ <templ@@tuwien.ac.at>
