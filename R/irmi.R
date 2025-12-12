@@ -591,6 +591,8 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
 ### utility functions
 anyNA <- function(X) any(is.na(X))
 Unit <- function(A) UseMethod("Unit")
+#' @export
+#' @method Unit list
 Unit.list <- function(A) {
   # Units a list of vectors into one vector
   a <- vector()
@@ -600,6 +602,8 @@ Unit.list <- function(A) {
   levels(as.factor(a))
 }
 Inter <- function(A) UseMethod("Inter")
+#' @export
+#' @method Inter list
 Inter.list <- function(A) {
   # common entries from a list of vectors
   a <- Unit(A)
@@ -612,12 +616,12 @@ Inter.list <- function(A) {
   levels(as.factor(a[TF]))
 }
 
-
-
-#' Initialization of missing values
+#' @title Initialization of missing values
+#' @name initialise
 #'
-#' Rough estimation of missing values in a vector according to its type.
+#' @description Rough estimation of missing values in a vector according to its type.
 #'
+#' @details
 #' Missing values are imputed with the mean for vectors of class
 #' `"numeric"`, with the median for vectors of class `"integer"`, and
 #' with the mode for vectors of class `"factor"`.  Hence, `x` should
