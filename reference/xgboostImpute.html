@@ -144,16 +144,16 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
     <div id="see-also">
     <h2>See also</h2>
     <div class="dont-index"><p>Other imputation methods:
-<code><a href="hotdeck.html">hotdeck</a>()</code>,
-<code><a href="impPCA.html">impPCA</a>()</code>,
-<code><a href="irmi.html">irmi</a>()</code>,
-<code><a href="kNN.html">kNN</a>()</code>,
-<code><a href="matchImpute.html">matchImpute</a>()</code>,
-<code><a href="medianSamp.html">medianSamp</a>()</code>,
-<code><a href="rangerImpute.html">rangerImpute</a>()</code>,
-<code><a href="regressionImp.html">regressionImp</a>()</code>,
-<code><a href="sampleCat.html">sampleCat</a>()</code>,
-<code><a href="vimpute.html">vimpute</a>()</code></p></div>
+<code><a href="hotdeck.html">hotdeck()</a></code>,
+<code><a href="impPCA.html">impPCA()</a></code>,
+<code><a href="irmi.html">irmi()</a></code>,
+<code><a href="kNN.html">kNN()</a></code>,
+<code><a href="matchImpute.html">matchImpute()</a></code>,
+<code><a href="medianSamp.html">medianSamp()</a></code>,
+<code><a href="rangerImpute.html">rangerImpute()</a></code>,
+<code><a href="regressionImp.html">regressionImp()</a></code>,
+<code><a href="sampleCat.html">sampleCat()</a></code>,
+<code><a href="vimpute.html">vimpute()</a></code></p></div>
     </div>
 
     <div id="ref-examples">
@@ -161,10 +161,10 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">xgboostImpute</span><span class="op">(</span><span class="va">Dream</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt NonD     Dream Sleep  Span  Gest Pred Exp Danger Dream_imp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00   NA 1.7991470   3.3  38.6 645.0    3   5      3      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00   NA 1.7996682   3.3  38.6 645.0    3   5      3      TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.3 2.0000000   8.3   4.5  42.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50   NA 3.5981774  12.5  14.0  60.0    1   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70   NA 0.9710111  16.5    NA  25.0    5   2      3      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50   NA 3.5961127  12.5  14.0  60.0    1   1      1      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70   NA 0.8757253  16.5    NA  25.0    5   2      3      TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5  2547.000  4603.00  2.1 1.8000000   3.9  69.0 624.0    3   5      4     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6    10.550   179.50  9.1 0.7000000   9.8  27.0 180.0    4   4      4     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 7     0.023     0.30 15.8 3.9000000  19.7  19.0  35.0    1   1      1     FALSE</span>
@@ -174,7 +174,7 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 <span class="r-out co"><span class="r-pr">#&gt;</span> 11    0.425     6.40 11.0 1.5000000  12.5   7.0 112.0    5   4      4     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 12  465.000   423.00  3.2 0.7000000   3.9  30.0 281.0    5   5      5     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 13    0.550     2.40  7.6 2.7000000  10.3    NA    NA    2   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14  187.100   419.00   NA 1.5919796   3.1  40.0 365.0    5   5      5      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14  187.100   419.00   NA 1.7214588   3.1  40.0 365.0    5   5      5      TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 15    0.075     1.20  6.3 2.1000000   8.4   3.5  42.0    1   1      1     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 16    3.000    25.00  8.6 0.0000000   8.6  50.0  28.0    2   2      2     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 17    0.785     3.50  6.6 4.1000000  10.7   6.0  42.0    2   2      2     FALSE</span>
@@ -184,14 +184,14 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 <span class="r-out co"><span class="r-pr">#&gt;</span> 21  529.000   680.00   NA 0.3000000    NA  28.0 400.0    5   5      5     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 22   27.660   115.00  3.3 0.5000000   3.8  20.0 148.0    5   5      5     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 23    0.120     1.00 11.0 3.4000000  14.4   3.9  16.0    3   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24  207.000   406.00   NA 1.5919796  12.0  39.3 252.0    1   4      1      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 24  207.000   406.00   NA 1.8088160  12.0  39.3 252.0    1   4      1      TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 25   85.000   325.00  4.7 1.5000000   6.2  41.0 310.0    1   3      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26   36.330   119.50   NA 0.4998185  13.0  16.2  63.0    1   1      1      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 26   36.330   119.50   NA 0.5030808  13.0  16.2  63.0    1   1      1      TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 27    0.101     4.00 10.4 3.4000000  13.8   9.0  28.0    5   1      3     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 28    1.040     5.50  7.4 0.8000000   8.2   7.6  68.0    5   3      4     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 29  521.000   655.00  2.1 0.8000000   2.9  46.0 336.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30  100.000   157.00   NA 0.9688541  10.8  22.4 100.0    1   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 31   35.000    56.00   NA 4.0075836    NA  16.3  33.0    3   5      4      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 30  100.000   157.00   NA 1.0328215  10.8  22.4 100.0    1   1      1      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 31   35.000    56.00   NA 4.6171999    NA  16.3  33.0    3   5      4      TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 32    0.005     0.14  7.7 1.4000000   9.1   2.6  21.5    5   2      4     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 33    0.010     0.25 17.9 2.0000000  19.9  24.0  50.0    1   1      1     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 34   62.000  1320.00  6.1 1.9000000   8.0 100.0 267.0    1   1      1     FALSE</span>
@@ -207,28 +207,28 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 <span class="r-out co"><span class="r-pr">#&gt;</span> 44    1.620    11.40 11.9 1.8000000  13.7  13.0  17.0    2   1      2     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 45  192.000   180.00  6.5 1.9000000   8.4  27.0 115.0    4   4      4     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 46    2.500    12.10  7.5 0.9000000   8.4  18.0  31.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 47    4.288    39.20   NA 2.4003341  12.5  13.7  63.0    2   2      2      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 47    4.288    39.20   NA 2.4006271  12.5  13.7  63.0    2   2      2      TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 48    0.280     1.90 10.6 2.6000000  13.2   4.7  21.0    3   1      3     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 49    4.235    50.40  7.4 2.4000000   9.8   9.8  52.0    1   1      1     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 50    6.800   179.00  8.4 1.2000000   9.6  29.0 164.0    2   3      2     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 51    0.750    12.30  5.7 0.9000000   6.6   7.0 225.0    2   2      2     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 52    3.600    21.00  4.9 0.5000000   5.4   6.0 225.0    3   2      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 53   14.830    98.20   NA 0.6781464   2.6  17.0 150.0    5   5      5      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 53   14.830    98.20   NA 3.7860343   2.6  17.0 150.0    5   5      5      TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 54   55.500   175.00  3.2 0.6000000   3.8  20.0 151.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 55    1.400    12.50   NA 1.0527972  11.0  12.7  90.0    2   2      2      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 55    1.400    12.50   NA 1.0766708  11.0  12.7  90.0    2   2      2      TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 56    0.060     1.00  8.1 2.2000000  10.3   3.5    NA    3   1      2     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 57    0.900     2.60 11.0 2.3000000  13.3   4.5  60.0    2   1      2     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 58    2.000    12.30  4.9 0.5000000   5.4   7.5 200.0    3   1      3     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 59    0.104     2.50 13.2 2.6000000  15.8   2.3  46.0    3   2      2     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 60    4.190    58.00  9.7 0.6000000  10.3  24.0 210.0    4   3      4     FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 61    3.500     3.90 12.8 6.6000000  19.4   3.0  14.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 62    4.050    17.00   NA 0.5567985    NA  13.0  38.0    3   1      1      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 62    4.050    17.00   NA 0.4989381    NA  13.0  38.0    3   1      1      TRUE</span>
 <span class="r-in"><span><span class="fu">xgboostImpute</span><span class="op">(</span><span class="va">Dream</span><span class="op">+</span><span class="va">NonD</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt      NonD     Dream Sleep  Span  Gest Pred Exp Danger</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  2.100612 1.7991470   3.3  38.6 645.0    3   5      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  2.100814 1.7996682   3.3  38.6 645.0    3   5      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.300000 2.0000000   8.3   4.5  42.0    3   1      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50 10.897229 3.5981774  12.5  14.0  60.0    1   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70  7.107610 0.9710111  16.5    NA  25.0    5   2      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50 10.897091 3.5961127  12.5  14.0  60.0    1   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70  7.186167 0.8757253  16.5    NA  25.0    5   2      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5  2547.000  4603.00  2.100000 1.8000000   3.9  69.0 624.0    3   5      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6    10.550   179.50  9.100000 0.7000000   9.8  27.0 180.0    4   4      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 7     0.023     0.30 15.800000 3.9000000  19.7  19.0  35.0    1   1      1</span>
@@ -238,24 +238,24 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 <span class="r-out co"><span class="r-pr">#&gt;</span> 11    0.425     6.40 11.000000 1.5000000  12.5   7.0 112.0    5   4      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 12  465.000   423.00  3.200000 0.7000000   3.9  30.0 281.0    5   5      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 13    0.550     2.40  7.600000 2.7000000  10.3    NA    NA    2   1      2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14  187.100   419.00  5.839931 1.5919796   3.1  40.0 365.0    5   5      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14  187.100   419.00  5.123134 1.7214588   3.1  40.0 365.0    5   5      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 15    0.075     1.20  6.300000 2.1000000   8.4   3.5  42.0    1   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 16    3.000    25.00  8.600000 0.0000000   8.6  50.0  28.0    2   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 17    0.785     3.50  6.600000 4.1000000  10.7   6.0  42.0    2   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 18    0.200     5.00  9.500000 1.2000000  10.7  10.4 120.0    2   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 19    1.410    17.50  4.800000 1.3000000   6.1  34.0    NA    1   2      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 20   60.000    81.00 12.000000 6.1000000  18.1   7.0    NA    1   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21  529.000   680.00  2.100612 0.3000000    NA  28.0 400.0    5   5      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21  529.000   680.00  2.100814 0.3000000    NA  28.0 400.0    5   5      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 22   27.660   115.00  3.300000 0.5000000   3.8  20.0 148.0    5   5      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 23    0.120     1.00 11.000000 3.4000000  14.4   3.9  16.0    3   1      2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24  207.000   406.00  5.839931 1.5919796  12.0  39.3 252.0    1   4      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 24  207.000   406.00  6.285658 1.8088160  12.0  39.3 252.0    1   4      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 25   85.000   325.00  4.700000 1.5000000   6.2  41.0 310.0    1   3      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26   36.330   119.50  3.302149 0.4998185  13.0  16.2  63.0    1   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 26   36.330   119.50  3.301962 0.5030808  13.0  16.2  63.0    1   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 27    0.101     4.00 10.400000 3.4000000  13.8   9.0  28.0    5   1      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 28    1.040     5.50  7.400000 0.8000000   8.2   7.6  68.0    5   3      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 29  521.000   655.00  2.100000 0.8000000   2.9  46.0 336.0    5   5      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30  100.000   157.00  4.058626 0.9688541  10.8  22.4 100.0    1   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 31   35.000    56.00  6.824033 4.0075836    NA  16.3  33.0    3   5      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 30  100.000   157.00  4.835842 1.0328215  10.8  22.4 100.0    1   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 31   35.000    56.00  9.414713 4.6171999    NA  16.3  33.0    3   5      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 32    0.005     0.14  7.700000 1.4000000   9.1   2.6  21.5    5   2      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 33    0.010     0.25 17.900000 2.0000000  19.9  24.0  50.0    1   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 34   62.000  1320.00  6.100000 1.9000000   8.0 100.0 267.0    1   1      1</span>
@@ -265,28 +265,28 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 <span class="r-out co"><span class="r-pr">#&gt;</span> 38    0.048     0.33 10.800000 2.0000000  12.8   2.0  30.0    4   1      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 39    1.700     6.30 13.800000 5.6000000  19.4   5.0  12.0    2   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 40    3.500    10.80 14.300000 3.1000000  17.4   6.5 120.0    2   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 41  250.000   490.00  5.859960 1.0000000    NA  23.6 440.0    5   5      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 41  250.000   490.00  6.742025 1.0000000    NA  23.6 440.0    5   5      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 42    0.480    15.50 15.200000 1.8000000  17.0  12.0 140.0    2   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 43   10.000   115.00 10.000000 0.9000000  10.9  20.2 170.0    4   4      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 44    1.620    11.40 11.900000 1.8000000  13.7  13.0  17.0    2   1      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 45  192.000   180.00  6.500000 1.9000000   8.4  27.0 115.0    4   4      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 46    2.500    12.10  7.500000 0.9000000   8.4  18.0  31.0    5   5      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 47    4.288    39.20  7.402361 2.4003341  12.5  13.7  63.0    2   2      2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 47    4.288    39.20  7.402267 2.4006271  12.5  13.7  63.0    2   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 48    0.280     1.90 10.600000 2.6000000  13.2   4.7  21.0    3   1      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 49    4.235    50.40  7.400000 2.4000000   9.8   9.8  52.0    1   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 50    6.800   179.00  8.400000 1.2000000   9.6  29.0 164.0    2   3      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 51    0.750    12.30  5.700000 0.9000000   6.6   7.0 225.0    2   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 52    3.600    21.00  4.900000 0.5000000   5.4   6.0 225.0    3   2      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 53   14.830    98.20  8.954710 0.6781464   2.6  17.0 150.0    5   5      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 53   14.830    98.20 10.641701 3.7860343   2.6  17.0 150.0    5   5      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 54   55.500   175.00  3.200000 0.6000000   3.8  20.0 151.0    5   5      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 55    1.400    12.50  3.977688 1.0527972  11.0  12.7  90.0    2   2      2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 55    1.400    12.50  5.010159 1.0766708  11.0  12.7  90.0    2   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 56    0.060     1.00  8.100000 2.2000000  10.3   3.5    NA    3   1      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 57    0.900     2.60 11.000000 2.3000000  13.3   4.5  60.0    2   1      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 58    2.000    12.30  4.900000 0.5000000   5.4   7.5 200.0    3   1      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 59    0.104     2.50 13.200000 2.6000000  15.8   2.3  46.0    3   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 60    4.190    58.00  9.700000 0.6000000  10.3  24.0 210.0    4   3      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 61    3.500     3.90 12.800000 6.6000000  19.4   3.0  14.0    2   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 62    4.050    17.00  4.717938 0.5567985    NA  13.0  38.0    3   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 62    4.050    17.00  5.988167 0.4989381    NA  13.0  38.0    3   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Dream_imp NonD_imp</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1       TRUE     TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2      FALSE    FALSE</span>
@@ -352,10 +352,10 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 <span class="r-out co"><span class="r-pr">#&gt;</span> 62      TRUE     TRUE</span>
 <span class="r-in"><span><span class="fu">xgboostImpute</span><span class="op">(</span><span class="va">Dream</span><span class="op">+</span><span class="va">NonD</span><span class="op">+</span><span class="va">Gest</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt      NonD     Dream Sleep  Span      Gest Pred Exp Danger</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  2.100612 1.7991470   3.3  38.6 645.00000    3   5      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  2.100814 1.7996682   3.3  38.6 645.00000    3   5      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.300000 2.0000000   8.3   4.5  42.00000    3   1      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50 10.897229 3.5981774  12.5  14.0  60.00000    1   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70  7.107610 0.9710111  16.5    NA  25.00000    5   2      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50 10.897091 3.5961127  12.5  14.0  60.00000    1   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70  7.186167 0.8757253  16.5    NA  25.00000    5   2      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5  2547.000  4603.00  2.100000 1.8000000   3.9  69.0 624.00000    3   5      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6    10.550   179.50  9.100000 0.7000000   9.8  27.0 180.00000    4   4      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 7     0.023     0.30 15.800000 3.9000000  19.7  19.0  35.00000    1   1      1</span>
@@ -364,25 +364,25 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 <span class="r-out co"><span class="r-pr">#&gt;</span> 10   52.160   440.00  8.300000 1.4000000   9.7  50.0 230.00000    1   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 11    0.425     6.40 11.000000 1.5000000  12.5   7.0 112.00000    5   4      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 12  465.000   423.00  3.200000 0.7000000   3.9  30.0 281.00000    5   5      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13    0.550     2.40  7.600000 2.7000000  10.3    NA  50.22270    2   1      2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14  187.100   419.00  5.839931 1.5919796   3.1  40.0 365.00000    5   5      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13    0.550     2.40  7.600000 2.7000000  10.3    NA  28.07713    2   1      2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14  187.100   419.00  5.123134 1.7214588   3.1  40.0 365.00000    5   5      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 15    0.075     1.20  6.300000 2.1000000   8.4   3.5  42.00000    1   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 16    3.000    25.00  8.600000 0.0000000   8.6  50.0  28.00000    2   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 17    0.785     3.50  6.600000 4.1000000  10.7   6.0  42.00000    2   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 18    0.200     5.00  9.500000 1.2000000  10.7  10.4 120.00000    2   2      2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19    1.410    17.50  4.800000 1.3000000   6.1  34.0  90.02483    1   2      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20   60.000    81.00 12.000000 6.1000000  18.1   7.0 118.77264    1   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21  529.000   680.00  2.100612 0.3000000    NA  28.0 400.00000    5   5      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 19    1.410    17.50  4.800000 1.3000000   6.1  34.0  80.31452    1   2      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 20   60.000    81.00 12.000000 6.1000000  18.1   7.0 101.52599    1   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21  529.000   680.00  2.100814 0.3000000    NA  28.0 400.00000    5   5      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 22   27.660   115.00  3.300000 0.5000000   3.8  20.0 148.00000    5   5      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 23    0.120     1.00 11.000000 3.4000000  14.4   3.9  16.00000    3   1      2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24  207.000   406.00  5.839931 1.5919796  12.0  39.3 252.00000    1   4      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 24  207.000   406.00  6.285658 1.8088160  12.0  39.3 252.00000    1   4      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 25   85.000   325.00  4.700000 1.5000000   6.2  41.0 310.00000    1   3      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26   36.330   119.50  3.302149 0.4998185  13.0  16.2  63.00000    1   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 26   36.330   119.50  3.301962 0.5030808  13.0  16.2  63.00000    1   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 27    0.101     4.00 10.400000 3.4000000  13.8   9.0  28.00000    5   1      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 28    1.040     5.50  7.400000 0.8000000   8.2   7.6  68.00000    5   3      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 29  521.000   655.00  2.100000 0.8000000   2.9  46.0 336.00000    5   5      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30  100.000   157.00  4.058626 0.9688541  10.8  22.4 100.00000    1   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 31   35.000    56.00  6.824033 4.0075836    NA  16.3  33.00000    3   5      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 30  100.000   157.00  4.835842 1.0328215  10.8  22.4 100.00000    1   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 31   35.000    56.00  9.414713 4.6171999    NA  16.3  33.00000    3   5      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 32    0.005     0.14  7.700000 1.4000000   9.1   2.6  21.50000    5   2      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 33    0.010     0.25 17.900000 2.0000000  19.9  24.0  50.00000    1   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 34   62.000  1320.00  6.100000 1.9000000   8.0 100.0 267.00000    1   1      1</span>
@@ -392,28 +392,28 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 <span class="r-out co"><span class="r-pr">#&gt;</span> 38    0.048     0.33 10.800000 2.0000000  12.8   2.0  30.00000    4   1      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 39    1.700     6.30 13.800000 5.6000000  19.4   5.0  12.00000    2   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 40    3.500    10.80 14.300000 3.1000000  17.4   6.5 120.00000    2   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 41  250.000   490.00  5.859960 1.0000000    NA  23.6 440.00000    5   5      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 41  250.000   490.00  6.742025 1.0000000    NA  23.6 440.00000    5   5      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 42    0.480    15.50 15.200000 1.8000000  17.0  12.0 140.00000    2   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 43   10.000   115.00 10.000000 0.9000000  10.9  20.2 170.00000    4   4      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 44    1.620    11.40 11.900000 1.8000000  13.7  13.0  17.00000    2   1      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 45  192.000   180.00  6.500000 1.9000000   8.4  27.0 115.00000    4   4      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 46    2.500    12.10  7.500000 0.9000000   8.4  18.0  31.00000    5   5      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 47    4.288    39.20  7.402361 2.4003341  12.5  13.7  63.00000    2   2      2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 47    4.288    39.20  7.402267 2.4006271  12.5  13.7  63.00000    2   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 48    0.280     1.90 10.600000 2.6000000  13.2   4.7  21.00000    3   1      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 49    4.235    50.40  7.400000 2.4000000   9.8   9.8  52.00000    1   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 50    6.800   179.00  8.400000 1.2000000   9.6  29.0 164.00000    2   3      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 51    0.750    12.30  5.700000 0.9000000   6.6   7.0 225.00000    2   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 52    3.600    21.00  4.900000 0.5000000   5.4   6.0 225.00000    3   2      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 53   14.830    98.20  8.954710 0.6781464   2.6  17.0 150.00000    5   5      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 53   14.830    98.20 10.641701 3.7860343   2.6  17.0 150.00000    5   5      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 54   55.500   175.00  3.200000 0.6000000   3.8  20.0 151.00000    5   5      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 55    1.400    12.50  3.977688 1.0527972  11.0  12.7  90.00000    2   2      2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 56    0.060     1.00  8.100000 2.2000000  10.3   3.5  19.44205    3   1      2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 55    1.400    12.50  5.010159 1.0766708  11.0  12.7  90.00000    2   2      2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 56    0.060     1.00  8.100000 2.2000000  10.3   3.5  22.96904    3   1      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 57    0.900     2.60 11.000000 2.3000000  13.3   4.5  60.00000    2   1      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 58    2.000    12.30  4.900000 0.5000000   5.4   7.5 200.00000    3   1      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 59    0.104     2.50 13.200000 2.6000000  15.8   2.3  46.00000    3   2      2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 60    4.190    58.00  9.700000 0.6000000  10.3  24.0 210.00000    4   3      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 61    3.500     3.90 12.800000 6.6000000  19.4   3.0  14.00000    2   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 62    4.050    17.00  4.717938 0.5567985    NA  13.0  38.00000    3   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 62    4.050    17.00  5.988167 0.4989381    NA  13.0  38.00000    3   1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Dream_imp NonD_imp Gest_imp</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1       TRUE     TRUE    FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2      FALSE    FALSE    FALSE</span>
@@ -483,7 +483,7 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 <span class="r-in"><span><span class="va">sleepx</span><span class="op">$</span><span class="va">Pred</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
 <span class="r-in"><span><span class="fu">xgboostImpute</span><span class="op">(</span><span class="va">Pred</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleepx</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger Pred_imp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00   NA    NA   3.3  38.6 645.0    C   5      3     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00   NA    NA   3.3  38.6 645.0    D   5      3     TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.3   2.0   8.3   4.5  42.0    C   1      3    FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50   NA    NA  12.5  14.0  60.0    A   1      1    FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70   NA    NA  16.5    NA  25.0    E   2      3    FALSE</span>
@@ -559,7 +559,7 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer></div>

@@ -122,7 +122,7 @@ the results visually.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span>
 <span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">sleep</span>, plot <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">a</span>, numbers <span class="op">=</span> <span class="cn">TRUE</span>, prop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="VIM_files/figure-html/setup-1.png" width="672" style="display: block; margin: auto;"></p>
+<p><img src="VIM_files/figure-html/setup-1.png" class="r-plt" width="672" style="display: block; margin: auto;"></p>
 <p>The left plot shows the amount of missings for each column in the
 dataset <code>sleep</code> and the right plot shows how often each
 combination of missings occur. For example, there are 9 rows wich
@@ -134,7 +134,7 @@ of missings such as <code><a href="../reference/marginplot.html">marginplot()</a
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="va">sleep</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Dream"</span>, <span class="st">"Sleep"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
-<p><img src="VIM_files/figure-html/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;"></p>
+<p><img src="VIM_files/figure-html/unnamed-chunk-2-1.png" class="r-plt" width="672" style="display: block; margin: auto;"></p>
 <p>The <strong><font color="red">red</font></strong> boxplot on the left
 shows the distrubution of all values of <code>Sleep</code> where
 <code>Dream</code> contains a missing value. The
@@ -180,7 +180,7 @@ backend.</li>
 the imputed dataset.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/marginplot.html">marginplot</a></span><span class="op">(</span><span class="va">x_imputed</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="VIM_files/figure-html/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;"></p>
+<p><img src="VIM_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" width="672" style="display: block; margin: auto;"></p>
 <p>In this plot three differnt colors are used in the top-right. These
 colors represent the structure of missings.</p>
 <ul>
@@ -214,7 +214,7 @@ between <code>Dream</code> and <code>Sleep</code>.</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer>
