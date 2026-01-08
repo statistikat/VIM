@@ -5,8 +5,10 @@ date: "2024-07-08"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Imputation Method based on xgboost}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 
@@ -87,10 +89,9 @@ df <- iris
 colnames(df) <- c("S.Length","S.Width","P.Length","P.Width","Species")
 # randomly produce some missing values in the data
 set.seed(1)
-nbr_missing <- 50
-y <- data.frame(row=sample(nrow(iris),size = nbr_missing,replace = T),
-                col=sample(ncol(iris)-1,size = nbr_missing,replace = T))
-y<-y[!duplicated(y),]
+nbr_missing <- 48
+y <- data.frame(row=sample(nrow(iris),size = nbr_missing,replace = FALSE),
+                col=sample(rep(1:4,12)))
 df[as.matrix(y)]<-NA
 
 aggr(df)
