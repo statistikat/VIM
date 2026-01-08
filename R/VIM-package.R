@@ -17,12 +17,17 @@
 #' @importFrom laeken weightedMean
 #' @importFrom graphics Axis abline axTicks axis barplot box hist boxplot layout lcm lines locator par plot.new plot.window points
 #' @importFrom graphics polygon rect strheight strwidth text title
-#' @importFrom utils capture.output flush.console head
+#' @importFrom utils capture.output flush.console head modifyList
 #' @importFrom ranger ranger importance
 #' @importFrom MASS stepAIC lqs polr rlm
+#' @importFrom mlr3 LearnerRegr PredictionRegr LearnerClassif PredictionClassif lrn TaskRegr TaskClassif as_task_regr as_task_classif rsmp msr resample
+#' @importFrom mlr3pipelines PipeOpModelMatrix %>>% GraphLearner po
+#' @importFrom paradox ps p_fct p_dbl p_int
+#' @importFrom mlr3tuning tnr trm TuningInstanceBatchSingleCrit
+#' @importFrom mlr3learners LearnerRegrCVGlmnet
 #' @useDynLib VIM
 NULL
-
+utils::globalVariables(c("self", "super"))
 #' Animals_na
 #'
 #' @description Average log brain and log body weights for 28 Species
@@ -596,7 +601,7 @@ NULL
 #' handling of the plot methods.  In addition, `VIM` can be used for data
 #' from essentially any field.
 #'
-#' @title The VIM Package
+#' @title The VIM Package: Visualization and Imputation of Missing Values
 #' @name VIM-package
 #' @aliases VIM-package VIM
 #' @description
@@ -607,16 +612,25 @@ NULL
 #' and tools for data preprocessing and diagnostics.
 #' @author Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
 #'
-#' Maintainer: Matthias Templ <templ@@tuwien.ac.at>
-#' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
+#' Maintainer: Matthias Templ <matthias.templ@@gmail.com>
+#' @references 
+#' M. Templ (2023) *Visualization and Imputation of Missing Values*. Springer Publishing.
+#' Series in Computational Statistics. Cham. Switzerland. 463 pages. 
+#' DOI: 10.1007/978-3-031-30073-8
+#' 
+#' A. Kowarik, M. Templ (2016) Imputation with
+#' R package VIM.  *Journal of
+#' Statistical Software*, 74(7), 1-16.
+#' 
+#' M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 #' data using visualization tools.  *Journal of Advances in Data Analysis
 #' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #'
 #' M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
 #' imputation using standard and robust methods.  *Journal of
 #' Computational Statistics and Data Analysis*, Vol. 55, pp. 2793-2806.
-#' @keywords package
-NULL
+#' @keywords internal
+"_PACKAGE"
 
 
 

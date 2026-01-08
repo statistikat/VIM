@@ -70,6 +70,8 @@ available
 - `vignette("modelImp")` gives insight into the model-based imputation methods
   `regressionImp()` and `matchImpute()`
 - `vignette("irmi")` showcases the `irmi()` method.
+- `vignette("vimpute")` showcases the newly added `vimpute()` function that performs imputation with
+mlr3 as backend.
 
 ## Visualize imputed values
 

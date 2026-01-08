@@ -1,4 +1,7 @@
-# VIM 6.2.6
+# VIM 7.0.0
+ - new function vimpute that uses mlr3 backend for a flexible imputation method.
+ 
+# VIM 6.x.x
  - fix infinite loop in matchImpute in case all observations of a variable are missing
  - remove parameter metric from kNN because it was not used
  - add function xgboostImpute for using a simple xgboostModel to impute
