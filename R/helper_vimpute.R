@@ -167,6 +167,52 @@ register_robust_learners <- function() {
 # print(pred)
 
 ### +++++++++++++++++++++++++++++++++ Helper Functions +++++++++++++++++++++++++++++++++ ###
+
+
+#
+#
+#
+ensure_dummy_rows_for_factors <- function(dt, target_col) {
+  dt <- data.table::copy(dt)
+  
+  factor_cols <- names(dt)[sapply(dt, is.factor)]
+  factor_cols <- setdiff(factor_cols, target_col)
+  
+  for (col in factor_cols) {
+    lvls <- levels(dt[[col]])
+    present <- unique(dt[[col]])
+    missing_lvls <- setdiff(lvls, present)
+    
+    if (length(missing_lvls) > 0) {
+      for (lvl in missing_lvls) {
+        dummy <- dt[1]
+        for (fc in factor_cols) {
+          dummy[[fc]] <- levels(dt[[fc]])[1]
+        }
+        dummy[[col]] <- lvl
+        dummy[[target_col]] <- levels(dt[[target_col]])[1]
+        dt <- rbind(dt, dummy)
+      }
+    }
+  }
+  dt
+}
+#
+#
+#
+needs_ranger_classif <- function(y, X) {
+  tab <- table(y)
+  imbalance <- min(tab) / sum(tab) < 0.05
+  high_dim  <- ncol(X) > nrow(X) / 5
+  rare_levels <- any(sapply(X, function(col) {
+    is.factor(col) && any(table(col) < 10)
+  }))
+  multicollinear <- ncol(X) > 1 && {
+    mm <- model.matrix(~ ., data = X)
+    qr(mm)$rank < ncol(mm)
+  }
+  imbalance || high_dim || rare_levels || multicollinear
+}
 #
 #
 #
