@@ -401,6 +401,13 @@ vimpute <- function(
       if(verbose){
         message(paste("***** Create task"))
       }
+      
+      # ordered -> factor
+      ordered_cols <- names(data_temp)[sapply(data_temp, inherits, "ordered")]
+      if (length(ordered_cols) > 0) {
+        data_temp[, (ordered_cols) := lapply(.SD, function(x) factor(as.character(x))), .SDcols = ordered_cols]
+      }
+
       data_y_fill <- copy(data_temp)
       supports_missing <- all(sapply(learner_candidates, function(lrn) "missings" %in% lrn$properties))
       
@@ -708,6 +715,23 @@ vimpute <- function(
       if(verbose){
         message("***** Train Model")
       }
+      
+      ordered_cols <- names(data_temp)[sapply(data_temp, inherits, "ordered")]
+      if (length(ordered_cols) > 0) {
+        data_temp[, (ordered_cols) := lapply(.SD, function(x) factor(as.character(x))), .SDcols = ordered_cols]
+      }
+      
+      ordered_cols_final <- names(data_y_fill_final)[sapply(data_y_fill_final, inherits, "ordered")]
+      if (length(ordered_cols_final) > 0) {
+        data_y_fill_final[, (ordered_cols_final) := lapply(.SD, function(x) factor(as.character(x))), .SDcols = ordered_cols_final]
+      }
+
+      # # Print classes
+      # print("Classes of data_temp:")
+      # print(sapply(data_temp, class))
+      # 
+      # print("Classes of data_y_fill_final:")
+      # print(sapply(data_y_fill_final, class))
       
       # Check semicontinous
       is_sc <- is_semicontinuous(data_temp[[var]])
@@ -1149,76 +1173,96 @@ vimpute <- function(
         zero_flag_col <- paste0(var, "_zero_flag")
         feature_cols <- setdiff(colnames(data_temp), c(var, zero_flag_col))
         
-        # 1) classification (null vs positive)
+        # 1) classification (null vs positive) P(Y > 0 | X)
         class_learner <- learner$classifier
         class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
-        
+        # Factor Level Handling
         class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
         check_all_factor_levels(class_pred_data, factor_levels)
         
-        factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
+        # factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
 
         ### ensure reserve level exists in prediction data ###
         reserve_level <- ".__IMPUTEOOR_NEW__"
         for (col in factor_cols) {
           train_levels <- factor_levels[[col]]
           if (!(reserve_level %in% train_levels)) train_levels <- c(train_levels, reserve_level)
-          
           # All unknown levels -> reserve_level
           class_pred_data[[col]][!class_pred_data[[col]] %in% train_levels] <- reserve_level
-          
           # Set factor levels 
           class_pred_data[[col]] <- factor(class_pred_data[[col]], levels = train_levels)
         }
         
-        factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
-        for (col in factor_cols) {
-        }
-        
-        for (col in names(class_pred_data)) {
-          if (is.factor(class_pred_data[[col]])) {
-          }
-        }
+        # factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
+        # for (col in factor_cols) {
+        # }
+        # 
+        # for (col in names(class_pred_data)) {
+        #   if (is.factor(class_pred_data[[col]])) {
+        #   }
+        # }
         
         # Prediction
         pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
+        # pred_probs[, "positive"] = P(Y>0 | X)
+        pi_hat <- pred_probs[, "positive"] 
         
-        if (isFALSE(sequential) || i == nseq) {
-          preds_class <- apply(pred_probs, 1, function(probs) {
-            sample(colnames(pred_probs), size = 1, prob = probs)
-          })
-        } else {
-          preds_class <- colnames(pred_probs)[max.col(pred_probs)]
-        }
+        # Save prob in zero_flag_col 
+        data_temp[[zero_flag_col]][missing_idx] <- pi_hat
         
-        levels_zero_flag <- levels(data_temp[[zero_flag_col]])
-        data_temp[[zero_flag_col]][missing_idx] <- ifelse(
-          preds_class == "positive", "positive", "zero"
-        )
+        # if (isFALSE(sequential) || i == nseq) {
+        #   preds_class <- apply(pred_probs, 1, function(probs) {
+        #     sample(colnames(pred_probs), size = 1, prob = probs)
+        #   })
+        # } else {
+        #   preds_class <- colnames(pred_probs)[max.col(pred_probs)]
+        # }
+        # 
+        # levels_zero_flag <- levels(data_temp[[zero_flag_col]])
+        # data_temp[[zero_flag_col]][missing_idx] <- ifelse(
+        #   preds_class == "positive", "positive", "zero"
+        # )
         
-        # 2) regression: for positive predictions
+        # 2) regression: for positive predictions E[Y | Y > 0, X]
         reg_learner <- learner$regressor
-        reg_rows <- missing_idx[which(data_temp[[zero_flag_col]][missing_idx] == "positive")]
+        reg_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
         
-        if (length(reg_rows) > 0) {
-          reg_pred_data <- data_temp[reg_rows, feature_cols, with = FALSE]
-          reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
-          check_all_factor_levels(reg_pred_data, factor_levels)
-          
-          if (anyNA(reg_pred_data)) {
-            reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
-          }
-          
-          preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
-        } else {
-          preds_reg <- numeric(0)
+        # Factorlevels
+        reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
+        check_all_factor_levels(reg_pred_data, factor_levels)
+        
+        # Fill NA in feature
+        if (anyNA(reg_pred_data)) {
+          reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[missing_idx])
         }
         
-        # Combine results 
-        preds <- data_temp[[var]]
-        preds[missing_idx] <- 0
-        preds[reg_rows] <- preds_reg
-        preds <- preds[missing_idx]
+        preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response  # E[Y | Y>0, X]
+        
+        # reg_learner <- learner$regressor
+        # reg_rows <- missing_idx[which(data_temp[[zero_flag_col]][missing_idx] == "positive")]
+        # 
+        # if (length(reg_rows) > 0) {
+        #   reg_pred_data <- data_temp[reg_rows, feature_cols, with = FALSE]
+        #   reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
+        #   check_all_factor_levels(reg_pred_data, factor_levels)
+        #   
+        #   if (anyNA(reg_pred_data)) {
+        #     reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
+        #   }
+        #   
+        #   preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
+        # } else {
+        #   preds_reg <- numeric(0)
+        # }
+        
+        # Combine results, Impuatation = deterministic
+        # Y_imputed = P(Y > 0 | X) * E[Y | Y > 0, X]
+        preds_imputed <- pi_hat * preds_reg
+        data_temp[[var]][missing_idx] <- preds_imputed
+        # preds <- data_temp[[var]]
+        # preds[missing_idx] <- 0
+        # preds[reg_rows] <- preds_reg
+        # preds <- preds[missing_idx]
         
       } else {
         # Not semicontinuous

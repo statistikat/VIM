@@ -434,6 +434,11 @@ precheck <- function(
   }
   
   # Datatypes
+  ordered_cols <- names(data)[sapply(data, inherits, "ordered")]
+  if (length(ordered_cols) > 0) {
+    data[, (ordered_cols) := lapply(.SD, function(x) factor(as.character(x))), .SDcols = ordered_cols]
+  }
+  
   data[, (variables) := lapply(.SD, function(x) {
     if (is.numeric(x)) {
       as.numeric(x)  # Integer & Double in Numeric 
@@ -441,6 +446,8 @@ precheck <- function(
       as.factor(x)  # Strings in Factors
     } else if (is.logical(x)) {
       as.numeric(x)  # TRUE/FALSE ->  1/0
+    # } else if (inherits(x, "ordered")) {
+    #   as.factor(x)
     } else if (is.factor(x)) {
       x  
     } else {
