@@ -57,6 +57,58 @@ vimpute <- function(
   old_plan <- future::plan()  # Save current plan
   on.exit(future::plan(old_plan), add = TRUE)  # Restore on exit, even if error
   
+  # ### ***** Learner START ***** ################################################################################################### 
+  # no_change_counter <- 0
+  # robust_required <- any(unlist(method) == "robust")
+  # 
+  # if (robust_required) {
+  #   register_robust_learners()
+  # }
+  # 
+  # learner_ids <- c(
+  #   "regr.cv_glmnet", "regr.glmnet", "classif.glmnet",
+  #   "regr.ranger", "classif.ranger",
+  #   "regr.xgboost", "classif.xgboost"
+  # )
+  # 
+  # if (robust_required) {
+  #   learner_ids <- c(learner_ids, "regr.lm_rob", "classif.glm_rob")
+  # }
+  # 
+  # learners <- lapply(learner_ids, function(id) lrn(id))
+  # names(learners) <- learner_ids
+  # ### Learner End ###
+  
+  # only defined variables
+  data_all_variables <- as.data.table(data)
+  data <-  as.data.table(data)[, considered_variables, with = FALSE]
+  
+  # save factor levels
+  factor_levels <- list()
+  for (col in names(data)) {
+    if (is.factor(data[[col]])) {
+      factor_levels[[col]] <- levels(data[[col]])
+    } else if (is.character(data[[col]])) {
+      # factor_levels[[col]] <- unique(na.omit(data[[col]]))
+      factor_levels[[col]] <- levels(as.factor(data[[col]])) # Nnew
+    }
+  }
+  
+  ### ***** Check Data Start ***** ###################################################################################################
+  if(verbose){
+    message(paste("***** Check Data"))  
+  }
+  checked_data <- precheck(data, pmm, formula, method, sequential)
+  data         <- checked_data$data
+  variables    <- checked_data$variables
+  variables_NA <- checked_data$variables_NA
+  method       <- checked_data$method
+  
+  if (!sequential && nseq > 1) {
+    if (verbose) message ("'nseq' was set to 1 because 'sequential = FALSE'.")
+    nseq <- 1
+  }
+  
   ### ***** Learner START ***** ################################################################################################### 
   no_change_counter <- 0
   robust_required <- any(unlist(method) == "robust")
@@ -78,39 +130,6 @@ vimpute <- function(
   learners <- lapply(learner_ids, function(id) lrn(id))
   names(learners) <- learner_ids
   ### Learner End ###
-  
-  # only defined variables
-  data_all_variables <- as.data.table(data)
-  data <-  as.data.table(data)[, considered_variables, with = FALSE]
-  
-  # save factor levels
-  factor_levels <- list()
-  for (col in names(data)) {
-    if (is.factor(data[[col]])) {
-      factor_levels[[col]] <- levels(data[[col]])
-    } else if (is.character(data[[col]])) {
-      # factor_levels[[col]] <- unique(na.omit(data[[col]]))
-      factor_levels[[col]] <- levels(as.factor(data[[col]])) # Nnew
-    }
-  }
-  
-  # message("factor levels:")
-  # message(capture.output(print(factor_levels)))
-  
-  ### ***** Check Data Start ***** ###################################################################################################
-  if(verbose){
-    message(paste("***** Check Data"))  
-  }
-  checked_data <- precheck(data, pmm, formula, method, sequential)
-  data         <- checked_data$data
-  variables    <- checked_data$variables
-  variables_NA <- checked_data$variables_NA
-  method       <- checked_data$method
-  
-  if (!sequential && nseq > 1) {
-    if (verbose) message ("'nseq' was set to 1 because 'sequential = FALSE'.")
-    nseq <- 1
-  }
   
   ### Check Data End ###
   
@@ -187,10 +206,6 @@ vimpute <- function(
         data <- enforce_factor_levels(data, factor_levels)  # <--- WICHTIG
         data_clean <- na.omit(data)
         
-        # message("factor levels data clean")
-        # levels_list <- sapply(data_clean, function(col) if (is.factor(col)) levels(col) else NULL)
-        # message(capture.output(print(levels_list)))
-        
         check_all_factor_levels(data_clean, factor_levels)
         
         is_target_numeric <- is.numeric(data[[target_col]])
@@ -232,10 +247,6 @@ vimpute <- function(
         setnames(data_temp, clean_colnames(names(data_temp)))
         data_temp <- enforce_factor_levels(data_temp, factor_levels)  
         check_all_factor_levels(data_temp, factor_levels)
-        
-        # message("factor levels data temp")
-        # levels_list <- sapply(data_temp, function(col) if (is.factor(col)) levels(col) else NULL)
-        # message(capture.output(print(levels_list)))
         
         # Impute missing values (Median/Mode)  -> for prediction 
         if (is_target_numeric) {
@@ -296,9 +307,6 @@ vimpute <- function(
         data_temp <- enforce_factor_levels(data_temp, factor_levels)
         check_all_factor_levels(data_temp, factor_levels)
         
-        # message("factor levels data_temp")
-        # levels_list <- sapply(data_temp, function(col) if (is.factor(col)) levels(col) else NULL)
-        # message(capture.output(print(levels_list)))
       }
       
       if ("Intercept" %in% colnames(data_temp)) {
@@ -314,8 +322,6 @@ vimpute <- function(
       }
       
       method_var <- method[[var]]
-      
-      
       
       ### ***** Select suitable learner Start ***** ###################################################################################################
       if(verbose){
@@ -340,6 +346,7 @@ vimpute <- function(
         )
       } 
       learner_candidates <- learners_list[[method_var]]
+      
       ### Select suitable learner End ***** ####
       
       ### *****OHE Start***** ###################################################################################################
@@ -374,7 +381,6 @@ vimpute <- function(
       }
       
       if (needs_ohe) {
-        #print("One-Hot-Encoding notwendig")
         po_ohe <- po("encode", method = "one-hot")
         
         # OHE on data
@@ -389,11 +395,6 @@ vimpute <- function(
         # Apply the encoding to the training data
         data_temp <- po_ohe$predict(list(train_task))[[1]]$data()
       }
-      
-      # message("factor levels data temp")
-      # levels_list <- sapply(data_temp, function(col) if (is.factor(col)) levels(col) else NULL)
-      # message(capture.output(print(levels_list)))
-      
       
       ### OHE End ###
       
@@ -521,7 +522,6 @@ vimpute <- function(
       if (!tuning_status[[var]] && nseq >= 2 && tune) {
         
         if ((nseq > 2 && i == round(nseq / 2)) || (nseq == 2 && i == 2)) {
-          #print("Starte Hyperparameter-Tuning")
           tuner = tnr("random_search")
           p = length(task$feature_names)
           
@@ -725,13 +725,6 @@ vimpute <- function(
       if (length(ordered_cols_final) > 0) {
         data_y_fill_final[, (ordered_cols_final) := lapply(.SD, function(x) factor(as.character(x))), .SDcols = ordered_cols_final]
       }
-
-      # # Print classes
-      # print("Classes of data_temp:")
-      # print(sapply(data_temp, class))
-      # 
-      # print("Classes of data_y_fill_final:")
-      # print(sapply(data_y_fill_final, class))
       
       # Check semicontinous
       is_sc <- is_semicontinuous(data_temp[[var]])

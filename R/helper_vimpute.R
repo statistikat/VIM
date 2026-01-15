@@ -425,6 +425,42 @@ precheck <- function(
     stop("Error: 'method' must either be empty, a single string, a single-element list, have the same length as 'variables' or 'considered_variables' (if specified), or the number of variables must match NAs.")
   }
   
+  # check method for regularized
+  # ---- Check regularized method for target and predictors ----
+  for (var in variables_NA) {
+    y_obs <- data[[var]][!is.na(data[[var]])]
+    
+    # Target variable check
+    if (method[[var]] %in% c("regularized", "glmnet")) {
+      if (is.factor(y_obs) && any(table(y_obs) <= 1)) {
+        warning(paste0("Variable '", var, "' has too few observations per class for 'regularized'. Falling back to 'robust'."))
+        method[[var]] <- "robust"
+        next
+      }
+      if (is.numeric(y_obs) && length(unique(y_obs)) < 3) {
+        warning(paste0("Variable '", var, "' has too few unique values for 'regularized'. Falling back to 'robust'."))
+        method[[var]] <- "robust"
+        next
+      }
+      
+      # Predictor check
+      predictors <- setdiff(names(data), var)
+      for (col in predictors) {
+        x_obs <- data[[col]][!is.na(data[[col]])]
+        if (is.factor(x_obs) && any(table(x_obs) <= 1)) {
+          warning(paste0("Predictor '", col, "' has too few observations per class. Falling back to 'robust' for target '", var, "'."))
+          method[[var]] <- "robust"
+          break
+        }
+        if (is.numeric(x_obs) && length(unique(x_obs)) < 2) {
+          warning(paste0("Predictor '", col, "' has too few unique values. Falling back to 'robust' for target '", var, "'."))
+          method[[var]] <- "robust"
+          break
+        }
+      }
+    }
+  }
+  
   # warning if more than 50% missing values
   if (nrow(data) == 0) stop("Error: Data has no rows.")
   missing_counts <- colSums(is.na(data))
