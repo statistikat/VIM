@@ -349,9 +349,11 @@ precheck <- function(
   variables = colnames(data)
   variables_NA  = colnames(data)[apply(data, 2, function(x) any(is.na(x)))]   # alle Variablen die missind data haben
   if (length(variables_NA) == 0) {
-    stop ("Error: No missing data available")
+    stop("Error: No missing data available")
   } else {
-    message ("Variables with Missing Data: ", paste (variables_NA, collapse = ","))
+    if (verbose) {
+      message("Variables with Missing Data: ", paste(variables_NA, collapse = ", "))
+    }
   }
   
   # check data structure
