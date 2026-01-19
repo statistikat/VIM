@@ -43,6 +43,7 @@ vimpute <- function(
     considered_variables = names(data), 
     method = setNames(as.list(rep("ranger", length(considered_variables))), considered_variables),
     pmm = setNames(as.list(rep(TRUE, length(considered_variables))), considered_variables),
+    pmm_k = 1,
     formula = FALSE, 
     sequential = TRUE,
     nseq = 10,
@@ -98,7 +99,7 @@ vimpute <- function(
   if(verbose){
     message(paste("***** Check Data"))  
   }
-  checked_data <- precheck(data, pmm, formula, method, sequential)
+  checked_data <- precheck(data, pmm, formula, method, sequential, pmm_k)
   data         <- checked_data$data
   variables    <- checked_data$variables
   variables_NA <- checked_data$variables_NA
@@ -1329,10 +1330,13 @@ vimpute <- function(
         
         # True observed values from the original data
         observed_values <- na.omit(data[[var]])
+        k <- min(pmm_k, length(observed_values))
         
         # Find the next true value for each prediction
         preds <- sapply(preds, function(x) {
-          observed_values[which.min(abs(observed_values - x))]
+          # observed_values[which.min(abs(observed_values - x))]
+          idx <- order(abs(observed_values - x))[1:k]
+          sample(observed_values[idx],1)
         })
       }
       ### PMM End ###  

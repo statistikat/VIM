@@ -342,7 +342,8 @@ precheck <- function(
     pmm,
     formula,
     method,
-    sequential
+    sequential,
+    pmm_k
 ) {
   
   # check missing data
@@ -351,9 +352,9 @@ precheck <- function(
   if (length(variables_NA) == 0) {
     stop("Error: No missing data available")
   } else {
-    if (verbose) {
-      message("Variables with Missing Data: ", paste(variables_NA, collapse = ", "))
-    }
+    # if (verbose) {
+    #   message("Variables with Missing Data: ", paste(variables_NA, collapse = ", "))
+    # }
   }
   
   # check data structure
@@ -398,6 +399,22 @@ precheck <- function(
     }
   }
   check_pmm(pmm, variables)
+  
+  # check pmm_k
+  if (any(unlist(pmm))) {
+    if (
+      !is.numeric(pmm_k) ||
+      length(pmm_k) != 1 ||
+      is.na(pmm_k) ||
+      pmm_k < 1 ||
+      pmm_k %% 1 != 0
+    ) {
+      stop(
+        "Error: 'pmm_k' must be a single positive integer (>= 1) ",
+        "when predictive mean matching (PMM) is enabled."
+      )
+    }
+  }
   
   # check methods
   supported_methods <- c("ranger", "regularized", "xgboost", "robust")
