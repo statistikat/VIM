@@ -1337,6 +1337,11 @@ vimpute <- function(
           # observed_values[which.min(abs(observed_values - x))]
           idx <- order(abs(observed_values - x))[1:k]
           sample(observed_values[idx],1)
+          # mean_val <- mean(observed_values[idx]) 
+          
+          # add small random noise for variability
+          # mean_val + rnorm(1, mean = 0, sd = 0.01 * sd(observed_values))
+          # mean_val
         })
       }
       ### PMM End ###  
