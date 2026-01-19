@@ -28,6 +28,7 @@ This vignette demonstrates how to use the `vimpute()` function for flexible miss
 - `considered_variables`: A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process.
 - `method`: A named list specifying the imputation method for each variable.
 - `pmm`: TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable.
+- `pmm_k`: A positive integer defining how many nearest observed values are considered in predictive mean matching (PMM); when pmm = TRUE, one of the k values closest to the predicted value is randomly selected for imputation.
 - `formula`: If not all variables are used as predictors, or if transformations or interactions are required 
              (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" andc               "regularized". Provide as a list for each variable that requires specific conditions.
 - `sequential`: Specifies whether the imputation should be performed sequentially.
