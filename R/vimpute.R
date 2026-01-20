@@ -10,7 +10,8 @@
 # - xgboost 
 # - regularized
 # - robust
-#' @param pmm - TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable.
+#' @param pmm - TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable. If TRUE, missing values of numeric variables are imputed by matching to observed values with similar predicted scores.
+#' @param pmm_k - An integer specifying the number of nearest observed values to consider in predictive mean matching (PMM) for each numeric variable.  If `pmm_k = 1`, classical PMM is applied: the single observed value closest to the predicted value is used. If `pmm_k > 1`, Score-kNN PMM is applied: for each missing value, the `k` observed values with closest model-predicted scores are selected, and the imputation is the mean (numeric)/ median (factor) from these neighbors. 
 #' @param formula - If not all variables are used as predictors, or if transformations or interactions are required (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized". Provide as a list for each variable that requires specific conditions.
 #   - formula format:                     list(variable_1 ~ age + lenght, variable_2 ~ width + country) 
 #   - formula format with transformation: list(log(variable_1) ~ age + inverse(lenght), variable_2 ~ width + country)
@@ -1319,32 +1320,65 @@ vimpute <- function(
       }
       ### Predict End ###################################################################################################
       
-      ### *****PMM Start***** ###################################################################################################
+      ### ***** PMM / Score-kNN Start ***** ###################################################################################################
       if(verbose){
-        message(paste("***** pmm for predictions"))
+        message("***** PMM / Score-kNN for predictions")
       }
-      if (pmm[[var]] && is.numeric(data_temp[[var]])) {
-        if(verbose){
-          print(paste("PMM is applied to", var, "."))
+      
+      if (pmm[[var]]) {
+        
+        # 1) Identify observed and missing rows
+        obs_idx  <- which(!is.na(data[[var]]))
+        miss_idx <- which(is.na(data[[var]]))
+        
+        # 2) Extract observed values of the target variable
+        y_obs <- data[[var]][obs_idx]
+        
+        if (pmm_k == 1 && is.numeric(data_temp[[var]])) {
+          # --- Standard PMM (1D at Y) only for numeric variables ---
+          preds <- sapply(preds, function(x) {
+            idx <- which.min(abs(y_obs - x))  # find the closest observed value
+            y_obs[idx]
+          })
+          
+        } else if (pmm_k > 1) {
+          # --- Score-based kNN (1D Score) ---
+          
+          # Compute model scores for all rows
+          preds_full <- reg_learner$predict_newdata(data)$response
+          
+          # Observed scores and scores for missing rows
+          score_obs  <- preds_full[obs_idx]  
+          score_miss <- preds[miss_idx]               
+          k <- min(pmm_k, length(y_obs))
+          
+          if (is.numeric(data_temp[[var]])) {
+            # Numeric: Smooth imputation using mean of k nearest neighbors
+            preds <- sapply(score_miss, function(s) {
+              idx <- order(abs(score_obs - s))[1:k]  # find indices of k nearest neighbors
+              mean(y_obs[idx])
+            })
+            
+          } else if (is.factor(data_temp[[var]])) {
+            # Categorical: Mode from k nearest neighbors
+            preds <- sapply(score_miss, function(s) {
+              idx <- order(abs(score_obs - s))[1:k]  # find k nearest neighbors
+              tbl <- table(y_obs[idx])
+              names(tbl)[which.max(tbl)]  # mode
+              # OR for stochastic draw: sample(y_obs[idx], 1)
+            })
+            preds <- factor(preds, levels = levels(data_temp[[var]]))
+          }
         }
         
-        # True observed values from the original data
-        observed_values <- na.omit(data[[var]])
-        k <- min(pmm_k, length(observed_values))
+        # Optional: add small random noise for numeric variables
+        # if (is.numeric(data_temp[[var]])) {
+        #   preds <- preds + rnorm(length(preds), mean = 0, sd = 0.01 * sd(y_obs))
+        # }
         
-        # Find the next true value for each prediction
-        preds <- sapply(preds, function(x) {
-          # observed_values[which.min(abs(observed_values - x))]
-          idx <- order(abs(observed_values - x))[1:k]
-          sample(observed_values[idx],1)
-          # mean_val <- mean(observed_values[idx]) 
-          
-          # add small random noise for variability
-          # mean_val + rnorm(1, mean = 0, sd = 0.01 * sd(observed_values))
-          # mean_val
-        })
       }
-      ### PMM End ###  
+      ### PMM / Score-kNN End ###
+      
       
       ### *****Prediction History Start***** ###################################################################################################
       if(verbose){
