@@ -76,3 +76,74 @@ library(VIM)
   expect_error(vimpute(d, formula = ~Dream + Span, method = "ranger", sequential = FALSE))
 # 
 # 
+
+# vimpute supports considered_variables subsets", {
+  vars <- c("Sleep", "Dream", "Span")
+  set.seed(1)
+  out <- vimpute(
+    sleep,
+    considered_variables = vars,
+    method = "ranger",
+    sequential = FALSE,
+    imp_var = TRUE
+  )
+
+  expect_true(all(vars %in% names(out)))
+  expect_false(any(c("BodyWgt", "BrainWgt") %in% names(out)))
+  expect_equal(sum(is.na(out[, vars, with = FALSE])), 0)
+# 
+
+# vimpute accepts pmm list named for NA variables only", {
+  pmm_na_vars <- setNames(
+    as.list(rep(FALSE, 5)),
+    c("NonD", "Dream", "Sleep", "Span", "Gest")
+  )
+  set.seed(1)
+  out <- vimpute(
+    sleep,
+    method = "ranger",
+    pmm = pmm_na_vars,
+    sequential = FALSE,
+    imp_var = FALSE
+  )
+
+  expect_identical(nrow(out), nrow(sleep))
+  expect_equal(sum(is.na(out)), 0)
+# 
+
+# vimpute runs multiple sequential iterations when configured", {
+  set.seed(1)
+  out <- vimpute(
+    sleep,
+    method = "ranger",
+    sequential = TRUE,
+    nseq = 2,
+    eps = -1,
+    pred_history = TRUE
+  )
+
+  expect_equal(max(out$pred_history$iteration), 2)
+  expect_equal(length(unique(out$pred_history$iteration)), 2)
+# 
+
+# vimpute rejects formulas for unsupported methods", {
+  d <- sleep[1:20, c("Sleep", "Dream", "Span", "BodyWgt")]
+  expect_error(
+    vimpute(
+      d,
+      method = "ranger",
+      pmm = FALSE,
+      formula = list(Sleep ~ Dream + Span + BodyWgt),
+      sequential = FALSE
+    )
+  )
+# 
+
+# vimpute warns on columns with more than 50% missing values", {
+  d <- sleep[1:20, c("Sleep", "Dream", "Span")]
+  d$Dream[1:15] <- NA
+  expect_warning(
+    vimpute(d, method = "ranger", sequential = FALSE, imp_var = FALSE),
+    "more than 50% missing values"
+  )
+# 
