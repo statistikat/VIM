@@ -47,7 +47,6 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
     # formula without left side for prediction
     formPred <- as.formula(paste( "~", rhs,"-1"))
     lhs_vector <- data[[lhsV]]
-    num_class <- NULL
     if (!any(is.na(lhs_vector))) {
       cat(paste0("No missings in ", lhsV, ".\n"))
     } else {
@@ -59,24 +58,16 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
       currentClass <- NULL
       if(inherits(labtmp,"factor")){
         currentClass <- "factor"
-        
-        predict_levels <- levels(labtmp)
-        labtmp <- as.integer(labtmp)-1
-        if(length(unique(labtmp))==2){
+        if(length(levels(labtmp))==2){
           objective <- "binary:logistic"
-          predict_levels <- predict_levels[unique(labtmp)+1]
-          labtmp <- as.integer(as.factor(labtmp))-1
-          
         }else if(length(unique(labtmp))>2){
           objective <- "multi:softprob"
-          num_class <- max(labtmp)+1
         }
         
       }else if(inherits(labtmp,"integer")){
         currentClass <- "integer"
         if(length(unique(labtmp))==2){
-          lvlsInt <- unique(labtmp)
-          labtmp <- match(labtmp,lvlsInt)-1
+          labtmp <- as.factor(labtmp)
           warning("binary factor detected but not properly stored as factor.")
           objective <- "binary:logistic"
         }else{
@@ -85,8 +76,7 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
       }else if(inherits(labtmp,"numeric")){
         currentClass <- "numeric"
         if(length(unique(labtmp))==2){
-          lvlsInt <- unique(labtmp)
-          labtmp <- match(labtmp,lvlsInt)-1
+          labtmp <- as.factor(labtmp)
           warning("binary factor detected but not properly stored as factor.")
           objective <- "binary:logistic"
         }else{
@@ -96,38 +86,30 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
         
       
       mm <- model.matrix(form,dattmp)
-      if(!is.null(num_class)){
-        mod <- xgboost::xgboost(data = mm, label = labtmp,
-                                nrounds=nrounds, objective=objective, num_class = num_class, verbose = verbose, ...)
-      }else{
-        mod <- xgboost::xgboost(data = mm, label = labtmp,
-                                nrounds=nrounds, objective=objective, verbose = verbose, ...)
-      }
+      mod <- xgboost::xgboost(x = mm, y = labtmp,
+                              nrounds=nrounds, objective=objective,
+                              verbosity = ifelse(verbose,2,0), ...)
       
       if (verbose)
         message("Evaluating model for ", lhsV, " on ", sum(!rhs_na & lhs_na), " observations")
       
       predictions <- 
         predict(mod, newdata = model.matrix(formPred,subset(data, !rhs_na & lhs_na)), reshape=TRUE)
-      
-      if(objective %in% c("binary:logistic","multi:softprob")){
-        
-        if(objective =="binary:logistic"){
-          predictions <- cbind(1-predictions,predictions)
-        }
-        
+      if(objective =="binary:logistic"){
+        predictions <- levels(labtmp)[as.integer(runif(length(predictions))<=predictions)+1]
+      }
+      if(objective == "multi:softprob"){
         predict_num <- 1:ncol(predictions)
         predictions <- apply(predictions,1,function(z,lev){
           z <- cumsum(z)
           z_lev <- lev[z>runif(1)]
           return(z_lev[1])
-        },lev=predict_num)
-        
-        if(is.factor(dattmp[[lhsV]])){
-          predictions <- predict_levels[predictions]
-        }else{
-          predictions <- lvlsInt[predictions]
-        }
+        },lev=levels(labtmp))
+      }
+      if(currentClass=="integer"){
+        predictions <- as.integer(as.character(predictions))
+      }else if(currentClass=="numeric"){
+        predictions <- as.numeric(as.character(predictions))
       }
       data[!rhs_na & lhs_na, ][[lhsV]] <- predictions  
       
