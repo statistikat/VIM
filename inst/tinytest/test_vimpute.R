@@ -147,3 +147,84 @@ library(VIM)
     "more than 50% missing values"
   )
 # 
+
+# vimpute supports formulas with target transformations for regularized models", {
+  d <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
+  method_all <- setNames(as.list(rep("regularized", ncol(d))), names(d))
+  pmm_all <- setNames(as.list(rep(FALSE, ncol(d))), names(d))
+
+  set.seed(1)
+  out <- vimpute(
+    d,
+    method = method_all,
+    pmm = pmm_all,
+    formula = list(log(Sleep) ~ Dream + Span + BodyWgt),
+    sequential = FALSE,
+    imp_var = FALSE
+  )
+
+  expect_identical(nrow(out), nrow(d))
+  expect_equal(sum(is.na(out)), 0)
+  expect_true(all(out$Sleep > 0, na.rm = TRUE))
+# 
+
+# vimpute returns tuning_log output when tune is requested", {
+  d <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
+  method_all <- setNames(as.list(rep("ranger", ncol(d))), names(d))
+  pmm_all <- setNames(as.list(rep(TRUE, ncol(d))), names(d))
+
+  set.seed(1)
+  out <- suppressWarnings(vimpute(
+    d,
+    method = method_all,
+    pmm = pmm_all,
+    sequential = TRUE,
+    nseq = 2,
+    tune = TRUE,
+    imp_var = FALSE
+  ))
+
+  expect_true(is.list(out))
+  expect_true(all(c("data", "tuning_log") %in% names(out)))
+  expect_true(length(out$tuning_log) > 0)
+  expect_true(all(c("variable", "tuned_better") %in% names(out$tuning_log[[1]])))
+# 
+
+# vimpute runs robust method without leaving missings", {
+  d <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
+  method_all <- setNames(as.list(rep("robust", ncol(d))), names(d))
+  pmm_all <- setNames(as.list(rep(FALSE, ncol(d))), names(d))
+
+  set.seed(1)
+  out <- suppressWarnings(vimpute(
+    d,
+    method = method_all,
+    pmm = pmm_all,
+    sequential = FALSE,
+    imp_var = FALSE
+  ))
+
+  expect_identical(nrow(out), nrow(d))
+  expect_equal(sum(is.na(out)), 0)
+# 
+
+# vimpute handles character predictors by converting to factors", {
+  set.seed(7)
+  d <- data.frame(
+    city = sample(c("A", "B", "C"), 60, replace = TRUE),
+    x = rnorm(60),
+    y = rnorm(60),
+    stringsAsFactors = FALSE
+  )
+  d$y[1:5] <- NA
+
+  out <- suppressWarnings(vimpute(
+    d,
+    method = "ranger",
+    sequential = FALSE,
+    imp_var = FALSE
+  ))
+
+  expect_true(is.factor(out$city))
+  expect_equal(sum(is.na(out$y)), 0)
+# 
