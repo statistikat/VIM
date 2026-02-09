@@ -54,32 +54,11 @@ vimpute <- function(
     tune = FALSE,
     verbose = FALSE
 ) {
+
   ..cols <- ..feature_cols <- ..reg_features <- ..relevant_features <- NULL
   # save plan
   old_plan <- future::plan()  # Save current plan
   on.exit(future::plan(old_plan), add = TRUE)  # Restore on exit, even if error
-  
-  # ### ***** Learner START ***** ################################################################################################### 
-  # no_change_counter <- 0
-  # robust_required <- any(unlist(method) == "robust")
-  # 
-  # if (robust_required) {
-  #   register_robust_learners()
-  # }
-  # 
-  # learner_ids <- c(
-  #   "regr.cv_glmnet", "regr.glmnet", "classif.glmnet",
-  #   "regr.ranger", "classif.ranger",
-  #   "regr.xgboost", "classif.xgboost"
-  # )
-  # 
-  # if (robust_required) {
-  #   learner_ids <- c(learner_ids, "regr.lm_rob", "classif.glm_rob")
-  # }
-  # 
-  # learners <- lapply(learner_ids, function(id) lrn(id))
-  # names(learners) <- learner_ids
-  # ### Learner End ###
   
   # only defined variables
   data_all_variables <- as.data.table(data)
@@ -96,7 +75,7 @@ vimpute <- function(
     }
   }
   
-  ### ***** Check Data Start ***** ###################################################################################################
+### ***** Check Data Start ***** ###################################################################################################
   if(verbose){
     message(paste("***** Check Data"))  
   }
@@ -110,8 +89,14 @@ vimpute <- function(
     if (verbose) message ("'nseq' was set to 1 because 'sequential = FALSE'.")
     nseq <- 1
   }
+### Check Data End ###
   
-  ### ***** Learner START ***** ################################################################################################### 
+### ***** Learner START ***** ################################################################################################### 
+  
+  # Erweiterung
+  # LightGBM via mlr3extralearners:
+  # classif.lightgbm, regr.lightgbm
+  
   no_change_counter <- 0
   robust_required <- any(unlist(method) == "robust")
   
@@ -131,11 +116,9 @@ vimpute <- function(
   
   learners <- lapply(learner_ids, function(id) lrn(id))
   names(learners) <- learner_ids
-  ### Learner End ###
+### Learner End ###
   
-  ### Check Data End ###
-  
-  ### ***** Def missing indices Start ***** ###################################################################################################
+### ***** Def missing indices Start ***** ###################################################################################################
   if(verbose){
     message(paste("***** Find Missing Indices"))
   }
@@ -177,8 +160,15 @@ vimpute <- function(
       }
       var_start_time <- Sys.time()
       
+      # If only NAs -> Stop
+      if (all(is.na(data[[var]]))) {
+        stop(sprintf(
+          "Variable '%s' contains only missing values. No model can be estimated. Please remove it from 'considered_variables' or impute it externally.",
+          var
+        ))
+      }
+      
       data_before <- copy(data)
-      variables    <- checked_data$variables
       if(verbose){
         message(paste("***** Select predictors"))
       }
@@ -189,7 +179,7 @@ vimpute <- function(
         }
       }
       
-      ### ***** Formula Extraction Start ***** ###################################################################################################
+### ***** Formula Extraction Start ***** ###################################################################################################
       if (!isFALSE(formula) && (!isFALSE(selected_formula))) {
         identified_variables <- identify_variables(selected_formula, data, var)
         target_col <- var
@@ -205,7 +195,7 @@ vimpute <- function(
         rewrited_formula <- rewrite_formula (selected_formula, target_col) # write formula in the correct way
         
         # Remove missing values (na.omit)  -> for Training
-        data <- enforce_factor_levels(data, factor_levels)  # <--- WICHTIG
+        data <- enforce_factor_levels(data, factor_levels)  
         data_clean <- na.omit(data)
         
         check_all_factor_levels(data_clean, factor_levels)
@@ -296,7 +286,7 @@ vimpute <- function(
         }
         
         
-        ### Formula Extraction End ###   
+### Formula Extraction End ###   
         
       } else {
         lhs_transformation <- NULL
@@ -314,7 +304,6 @@ vimpute <- function(
       if ("Intercept" %in% colnames(data_temp)) {
         data_temp <- data_temp[, !colnames(data_temp) %in% "Intercept", with = FALSE]
         mm_data <- mm_data[, !colnames(mm_data) %in% "Intercept", with = FALSE]
-        
       }
       
       if (!isFALSE(selected_formula)) {
@@ -325,7 +314,7 @@ vimpute <- function(
       
       method_var <- method[[var]]
       
-      ### ***** Select suitable learner Start ***** ###################################################################################################
+### ***** Select suitable learner Start ***** ###################################################################################################
       if(verbose){
         message(paste("***** Select Learner"))
       }
@@ -349,9 +338,9 @@ vimpute <- function(
       } 
       learner_candidates <- learners_list[[method_var]]
       
-      ### Select suitable learner End ***** ####
+### Select suitable learner End ***** ####
       
-      ### *****OHE Start***** ###################################################################################################
+### *****OHE Start***** ###################################################################################################
       if(verbose){
         message(paste("***** OHE"))
       }
@@ -398,9 +387,9 @@ vimpute <- function(
         data_temp <- po_ohe$predict(list(train_task))[[1]]$data()
       }
       
-      ### OHE End ###
+### OHE End ###
       
-      ### *****Create task Start***** ###################################################################################################
+### *****Create task Start***** ###################################################################################################
       if(verbose){
         message(paste("***** Create task"))
       }
@@ -1139,9 +1128,9 @@ vimpute <- function(
         }
       }
       
-      ### Select suitable task type End ####
+### Select suitable task type End ####
       
-      ### *****Predict Start***** ###################################################################################################
+### *****Predict Start***** ###################################################################################################
       if(verbose){
         message("***** Predict")
       }
@@ -1175,7 +1164,7 @@ vimpute <- function(
         class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
         check_all_factor_levels(class_pred_data, factor_levels)
         
-        # factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
+        factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
 
         ### ensure reserve level exists in prediction data ###
         reserve_level <- ".__IMPUTEOOR_NEW__"
@@ -1252,12 +1241,8 @@ vimpute <- function(
         
         # Combine results, Impuatation = deterministic
         # Y_imputed = P(Y > 0 | X) * E[Y | Y > 0, X]
-        preds_imputed <- pi_hat * preds_reg
-        data_temp[[var]][missing_idx] <- preds_imputed
-        # preds <- data_temp[[var]]
-        # preds[missing_idx] <- 0
-        # preds[reg_rows] <- preds_reg
-        # preds <- preds[missing_idx]
+        preds <- pi_hat * preds_reg
+        # data_temp[[var]][missing_idx] <- preds
         
       } else {
         # Not semicontinuous
@@ -1318,64 +1303,58 @@ vimpute <- function(
         decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
         preds <- round(preds, decimal_places)
       }
-      ### Predict End ###################################################################################################
       
-      ### ***** PMM / Score-kNN Start ***** ###################################################################################################
+      # Store model score used for prediction for pmm (numeric targets only)
+      if (inherits(preds, "numeric")) {
+        miss_idx <- missing_indices[[var]]
+        obs_idx <- setdiff(seq_len(nrow(data)), miss_idx)
+        
+        # Store score for PMM
+        score_current <- numeric(nrow(data))
+        score_current[obs_idx] <- data[[var]][obs_idx]       # observed values
+        score_current[miss_idx] <- preds        # predictions for missing rows
+      }
+### Predict End ###################################################################################################
+      
+### ***** PMM / Score-kNN Start ***** ###################################################################################################
       if(verbose){
         message("***** PMM / Score-kNN for predictions")
       }
       
-      if (pmm[[var]]) {
+      if (pmm[[var]] && is.numeric(data_temp[[var]]) && length(miss_idx) > 0) {
         
-        # 1) Identify observed and missing rows
-        obs_idx  <- which(!is.na(data[[var]]))
-        miss_idx <- which(is.na(data[[var]]))
-        
-        # 2) Extract observed values of the target variable
+        # Observed values
         y_obs <- data[[var]][obs_idx]
         
         if (pmm_k == 1 && is.numeric(data_temp[[var]])) {
           # --- Standard PMM (1D at Y) only for numeric variables ---
-          preds <- sapply(preds, function(x) {
-            idx <- which.min(abs(y_obs - x))  # find the closest observed value
+          preds<- sapply(preds, function(x) {
+            idx <- which.min(abs(y_obs - x))
             y_obs[idx]
           })
           
-        } else if (pmm_k > 1) {
-          # --- Score-based kNN (1D Score) ---
+        } else if (pmm_k > 1 && is.numeric(data_temp[[var]])) {
+          # --- Score-based kNN PMM (1D score, numeric targets only) ---
           
-          # Compute model scores for all rows
-          preds_full <- reg_learner$predict_newdata(data)$response
-          
-          # Observed scores and scores for missing rows
-          score_obs  <- preds_full[obs_idx]  
-          score_miss <- preds[miss_idx]               
+          # Compute model-based scores for ALL rows
+          # IMPORTANT: score must come from the SAME regression model
+          # Score-based kNN
+          score_obs  <- score_current[obs_idx]
+          score_miss <- score_current[miss_idx]
           k <- min(pmm_k, length(y_obs))
           
-          if (is.numeric(data_temp[[var]])) {
-            # Numeric: Smooth imputation using mean of k nearest neighbors
-            preds <- sapply(score_miss, function(s) {
-              idx <- order(abs(score_obs - s))[1:k]  # find indices of k nearest neighbors
-              mean(y_obs[idx])
-            })
-            
-          } else if (is.factor(data_temp[[var]])) {
-            # Categorical: Mode from k nearest neighbors
-            preds <- sapply(score_miss, function(s) {
-              idx <- order(abs(score_obs - s))[1:k]  # find k nearest neighbors
-              tbl <- table(y_obs[idx])
-              names(tbl)[which.max(tbl)]  # mode
-              # OR for stochastic draw: sample(y_obs[idx], 1)
-            })
-            preds <- factor(preds, levels = levels(data_temp[[var]]))
-          }
+          preds <- sapply(score_miss, function(s) {
+            idx <- order(abs(score_obs - s))[1:k]  # find k nearest neighbors
+            mean(y_obs[idx])                       # smooth
+            # stochastic alternative: sample(y_obs[idx], 1)
+          })
         }
         
-        # Optional: add small random noise for numeric variables
-        # if (is.numeric(data_temp[[var]])) {
-        #   preds <- preds + rnorm(length(preds), mean = 0, sd = 0.01 * sd(y_obs))
-        # }
+        # Round only final imputation
+        decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
+        preds <- round(preds, decimal_places)
         
+        #preds <- preds[miss_idx]
       }
       ### PMM / Score-kNN End ###
       
@@ -1399,11 +1378,13 @@ vimpute <- function(
         message(paste("***** Replace values with new predictions"))
       }
       
+      # preds <- preds[miss_idx]
+      
       if (length(missing_idx) > 0) {
         if (is.numeric(data_prev[[var]])) {  
           data[missing_idx, (var) := as.numeric(preds)]
         } else if (is.factor(data[[var]])) {
-          data[missing_idx, (var) := factor(preds, levels = factor_levels[[var]])]
+          data[missing_idx, (var) := factor((preds), levels = factor_levels[[var]])]
         } else {
           stop(paste("Unknown data type for variable:", var))
         }
@@ -1429,7 +1410,7 @@ vimpute <- function(
             data_new[, (var) := data[[var]]]
             
             # Ensure that `preds` is not NULL or empty
-            if (length(preds) == length(missing_idx) && !all(is.na(preds))) {
+            if (length((preds)) == length(missing_idx) && !all(is.na((preds)))) {
               # Set the imputation as TRUE for missing values
               set(data_new, i = missing_idx, j = imp_col, value = TRUE)
             } else {
