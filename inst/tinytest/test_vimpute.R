@@ -154,14 +154,14 @@ library(VIM)
   pmm_all <- setNames(as.list(rep(FALSE, ncol(d))), names(d))
 
   set.seed(1)
-  out <- vimpute(
+  expect_warning(out <- vimpute(
     d,
     method = method_all,
     pmm = pmm_all,
     formula = list(log(Sleep) ~ Dream + Span + BodyWgt),
     sequential = FALSE,
     imp_var = FALSE
-  )
+  ))
 
   expect_identical(nrow(out), nrow(d))
   expect_equal(sum(is.na(out)), 0)

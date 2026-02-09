@@ -127,7 +127,6 @@ vimpute <- function(
     if (length(na_idx) > 0) return(na_idx) else return(integer(0))
   }), variables)
   missing_indices <- missing_indices[!sapply(missing_indices, is.null)]
-  names(missing_indices)
   ### Def missing indices End ###
   
   po_ohe <- NULL # set ohe to zero, becomes true if ohe is needed
@@ -159,6 +158,7 @@ vimpute <- function(
         message(paste("***** Impute variable:", var))
       }
       var_start_time <- Sys.time()
+      variables <- checked_data$variables
       
       # If only NAs -> Stop
       if (all(is.na(data[[var]]))) {
@@ -291,19 +291,20 @@ vimpute <- function(
       } else {
         lhs_transformation <- NULL
         selected_formula <- FALSE
-        feature_cols <- setdiff(variables, var)  
+        feature_cols <- setdiff(names(data), var)
         target_col <- var
         selected_cols <- c(target_col, feature_cols)
-        data <- data[, selected_cols, with = FALSE]
-        data_temp <- as.data.table(data)
+        data_temp <- as.data.table(data[, selected_cols, with = FALSE])
         data_temp <- enforce_factor_levels(data_temp, factor_levels)
         check_all_factor_levels(data_temp, factor_levels)
         
       }
       
-      if ("Intercept" %in% colnames(data_temp)) {
+      if (!isFALSE(selected_formula) && "Intercept" %in% colnames(data_temp)) {
         data_temp <- data_temp[, !colnames(data_temp) %in% "Intercept", with = FALSE]
-        mm_data <- mm_data[, !colnames(mm_data) %in% "Intercept", with = FALSE]
+        if (exists("mm_data", inherits = FALSE)) {
+          mm_data <- mm_data[, !colnames(mm_data) %in% "Intercept", with = FALSE]
+        }
       }
       
       if (!isFALSE(selected_formula)) {
