@@ -36,6 +36,25 @@ library(VIM)
   expect_true(max(abs(out_mean$Dream - out_median$Dream)) > 0)
 # 
 
+# vimpute accepts xgboost learner_params with eta", {
+  d <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
+  method_all <- setNames(as.list(rep("xgboost", ncol(d))), names(d))
+  pmm_all <- setNames(as.list(rep(FALSE, ncol(d))), names(d))
+
+  set.seed(1)
+  out <- vimpute(
+    d,
+    method = method_all,
+    pmm = pmm_all,
+    sequential = FALSE,
+    imp_var = FALSE,
+    learner_params = list(xgboost = list(nrounds = 25, eta = 0.2, max_depth = 3))
+  )
+
+  expect_identical(nrow(out), nrow(d))
+  expect_equal(sum(is.na(out)), 0)
+# 
+
 # vimpute returns prediction history when requested", {
   set.seed(1)
   out <- vimpute(

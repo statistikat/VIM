@@ -12,6 +12,9 @@
 # - robust
 #' @param pmm - TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable. If TRUE, missing values of numeric variables are imputed by matching to observed values with similar predicted scores.
 #' @param pmm_k - An integer specifying the number of nearest observed values to consider in predictive mean matching (PMM) for each numeric variable.  If `pmm_k = 1`, classical PMM is applied: the single observed value closest to the predicted value is used. If `pmm_k > 1`, Score-kNN PMM is applied: for each missing value, the `k` observed values with closest model-predicted scores are selected, and the imputation is the mean (numeric)/ median (factor) from these neighbors. 
+#' @param learner_params - Optional named list with method-specific learner parameters.
+#'   Supported names are `"ranger"` and `"xgboost"` (e.g.
+#'   `list(xgboost = list(nrounds = 50, eta = 0.2))`).
 #' @param formula - If not all variables are used as predictors, or if transformations or interactions are required (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized". Provide as a list for each variable that requires specific conditions.
 #   - formula format:                     list(variable_1 ~ age + lenght, variable_2 ~ width + country) 
 #   - formula format with transformation: list(log(variable_1) ~ age + inverse(lenght), variable_2 ~ width + country)
@@ -565,8 +568,8 @@ vimpute <- function(
             # sample.fraction = proportion of data sampled per tree
             
             # XGBoost
-            "regr.xgboost" = ps(nrounds = p_int(100,500), learning_rate = p_dbl(0.01, 0.3), max_depth = p_int(3, 9),  colsample_bytree = p_dbl(0.7, 0.9)),
-            "classif.xgboost" = ps(nrounds = p_int(100,500), learning_rate = p_dbl(0.01, 0.3), max_depth = p_int(3, 9), subsample = p_dbl(0.7, 0.9), colsample_bytree = p_dbl(0.7, 0.9)),
+            "regr.xgboost" = ps(nrounds = p_int(100,500), eta = p_dbl(0.01, 0.3), max_depth = p_int(3, 9),  colsample_bytree = p_dbl(0.7, 0.9)),
+            "classif.xgboost" = ps(nrounds = p_int(100,500), eta = p_dbl(0.01, 0.3), max_depth = p_int(3, 9), subsample = p_dbl(0.7, 0.9), colsample_bytree = p_dbl(0.7, 0.9)),
             # eta = learning rate, low values --> more stable but slower models
             # max_depth = Maximum tree depth, large values --> more complex patterns but possibly overfitting
             # subsample = proportion of data used per boosting iteration | colsample_bytree = proportion of features used per tree          
