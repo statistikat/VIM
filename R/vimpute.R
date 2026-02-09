@@ -24,6 +24,8 @@
 #' @param pred_history - If TRUE, all predicted values across all iterations are stored.
 #' @param tune - Tunes hyperparameters halfway through iterations, TRUE or FALSE.
 #' @param verbose - If TRUE additional debugging output is provided
+#' @param ... Additional method-specific options. Currently supports
+#'   `ranger_median = TRUE/FALSE` for ranger regression predictions (tree-wise median aggregation).
 #' @return imputed data set or c(imputed data set, prediction history)
 #' @export
 #'
@@ -52,13 +54,32 @@ vimpute <- function(
     imp_var = TRUE,
     pred_history = FALSE,
     tune = FALSE,
-    verbose = FALSE
+    verbose = FALSE,
+    ...
 ) {
 
   ..cols <- ..feature_cols <- ..reg_features <- ..relevant_features <- NULL
   # save plan
   old_plan <- future::plan()  # Save current plan
   on.exit(future::plan(old_plan), add = TRUE)  # Restore on exit, even if error
+
+  dots <- list(...)
+  ranger_median <- FALSE
+  if ("ranger_median" %in% names(dots)) {
+    ranger_median <- dots$ranger_median
+    dots$ranger_median <- NULL
+  }
+  if (!is.logical(ranger_median) || length(ranger_median) != 1 || is.na(ranger_median)) {
+    stop("Error: 'ranger_median' in ... must be TRUE or FALSE.")
+  }
+  if (length(dots) > 0) {
+    dot_names <- names(dots)
+    if (is.null(dot_names)) {
+      dot_names <- rep("<unnamed>", length(dots))
+    }
+    dot_names[dot_names == ""] <- "<unnamed>"
+    warning("Arguments in `...` are currently ignored: ", paste(unique(dot_names), collapse = ", "))
+  }
   
   # only defined variables
   data_all_variables <- as.data.table(data)
@@ -1153,6 +1174,38 @@ vimpute <- function(
         if (x == floor(x)) return(0)
         nchar(sub(".*\\.", "", as.character(x)))
       }
+
+      # helper: ranger regression prediction via per-tree median
+      predict_ranger_median <- function(graph_learner, newdata, target_name = NULL) {
+        model_names <- names(graph_learner$model)
+        ranger_idx <- grep("regr\\.ranger$", model_names)
+        if (length(ranger_idx) == 0) {
+          return(NULL)
+        }
+
+        ranger_model <- graph_learner$model[[ranger_idx[1]]]$model
+        if (is.list(ranger_model) && !inherits(ranger_model, "ranger") && "model" %in% names(ranger_model)) {
+          ranger_model <- ranger_model$model
+        }
+        if (!inherits(ranger_model, "ranger")) {
+          return(NULL)
+        }
+
+        pred_dt <- as.data.table(newdata)
+        if (!is.null(target_name) && target_name %in% colnames(pred_dt)) {
+          pred_dt <- pred_dt[, setdiff(colnames(pred_dt), target_name), with = FALSE]
+        }
+
+        tree_preds <- predict(ranger_model, data = as.data.frame(pred_dt), predict.all = TRUE)$predictions
+        if (is.null(dim(tree_preds))) {
+          return(as.numeric(tree_preds))
+        }
+        if (length(dim(tree_preds)) != 2) {
+          return(NULL)
+        }
+
+        apply(tree_preds, 1, median)
+      }
       
       if (is_sc) {
         zero_flag_col <- paste0(var, "_zero_flag")
@@ -1221,7 +1274,13 @@ vimpute <- function(
           reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[missing_idx])
         }
         
-        preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response  # E[Y | Y>0, X]
+        preds_reg <- NULL
+        if (method_var == "ranger" && isTRUE(ranger_median) && !is.null(reg_learner)) {
+          preds_reg <- predict_ranger_median(reg_learner, reg_pred_data, target_name = NULL)
+        }
+        if (is.null(preds_reg)) {
+          preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response  # E[Y | Y>0, X]
+        }
         
         # reg_learner <- learner$regressor
         # reg_rows <- missing_idx[which(data_temp[[zero_flag_col]][missing_idx] == "positive")]
@@ -1292,7 +1351,13 @@ vimpute <- function(
             backend = backend_data,
             target = target_col
           )
-          preds <- learner$predict(pred_task)$response
+          preds <- NULL
+          if (method_var == "ranger" && isTRUE(ranger_median)) {
+            preds <- predict_ranger_median(learner, bdt, target_name = target_col)
+          }
+          if (is.null(preds)) {
+            preds <- learner$predict(pred_task)$response
+          }
         }
       }
       

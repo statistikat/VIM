@@ -20,6 +20,22 @@ library(VIM)
   expect_equal(sum(is.na(out)), 0)
 # 
 
+# vimpute supports ranger median aggregation via ...", {
+  set.seed(1)
+  out_mean <- vimpute(sleep, method = "ranger", sequential = FALSE, imp_var = FALSE)
+  set.seed(1)
+  out_median <- vimpute(
+    sleep,
+    method = "ranger",
+    sequential = FALSE,
+    imp_var = FALSE,
+    ranger_median = TRUE
+  )
+
+  expect_equal(sum(is.na(out_median)), 0)
+  expect_true(max(abs(out_mean$Dream - out_median$Dream)) > 0)
+# 
+
 # vimpute returns prediction history when requested", {
   set.seed(1)
   out <- vimpute(
