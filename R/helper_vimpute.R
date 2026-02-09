@@ -621,3 +621,59 @@ check_factor_levels <- function(data, original_levels) {
     }
   }
 }
+#
+#
+#
+# helper: inverse Transformation
+inverse_transform <- function(x, method) {
+  switch(method,
+         exp = log(x),
+         log = exp(x),
+         sqrt = x^2,
+         inverse = 1 / x,
+         stop("Unknown transformation: ", method)
+  )
+}
+#
+#
+#
+# helper decimal places
+get_decimal_places <- function(x) {
+  if (is.na(x)) return(0)
+  if (x == floor(x)) return(0)
+  nchar(sub(".*\\.", "", as.character(x)))
+}
+#
+#
+#
+# helper: ranger regression prediction via per-tree median
+predict_ranger_median <- function(graph_learner, newdata, target_name = NULL) {
+  model_names <- names(graph_learner$model)
+  ranger_idx <- grep("regr\\.ranger$", model_names)
+  if (length(ranger_idx) == 0) {
+    return(NULL)
+  }
+  
+  ranger_model <- graph_learner$model[[ranger_idx[1]]]$model
+  if (is.list(ranger_model) && !inherits(ranger_model, "ranger") && "model" %in% names(ranger_model)) {
+    ranger_model <- ranger_model$model
+  }
+  if (!inherits(ranger_model, "ranger")) {
+    return(NULL)
+  }
+  
+  pred_dt <- as.data.table(newdata)
+  if (!is.null(target_name) && target_name %in% colnames(pred_dt)) {
+    pred_dt <- pred_dt[, setdiff(colnames(pred_dt), target_name), with = FALSE]
+  }
+  
+  tree_preds <- predict(ranger_model, data = as.data.frame(pred_dt), predict.all = TRUE)$predictions
+  if (is.null(dim(tree_preds))) {
+    return(as.numeric(tree_preds))
+  }
+  if (length(dim(tree_preds)) != 2) {
+    return(NULL)
+  }
+  
+  apply(tree_preds, 1, median)
+}
