@@ -167,6 +167,52 @@ register_robust_learners <- function() {
 # print(pred)
 
 ### +++++++++++++++++++++++++++++++++ Helper Functions +++++++++++++++++++++++++++++++++ ###
+
+
+#
+#
+#
+ensure_dummy_rows_for_factors <- function(dt, target_col) {
+  dt <- data.table::copy(dt)
+  
+  factor_cols <- names(dt)[sapply(dt, is.factor)]
+  factor_cols <- setdiff(factor_cols, target_col)
+  
+  for (col in factor_cols) {
+    lvls <- levels(dt[[col]])
+    present <- unique(dt[[col]])
+    missing_lvls <- setdiff(lvls, present)
+    
+    if (length(missing_lvls) > 0) {
+      for (lvl in missing_lvls) {
+        dummy <- dt[1]
+        for (fc in factor_cols) {
+          dummy[[fc]] <- levels(dt[[fc]])[1]
+        }
+        dummy[[col]] <- lvl
+        dummy[[target_col]] <- levels(dt[[target_col]])[1]
+        dt <- rbind(dt, dummy)
+      }
+    }
+  }
+  dt
+}
+#
+#
+#
+needs_ranger_classif <- function(y, X) {
+  tab <- table(y)
+  imbalance <- min(tab) / sum(tab) < 0.05
+  high_dim  <- ncol(X) > nrow(X) / 5
+  rare_levels <- any(sapply(X, function(col) {
+    is.factor(col) && any(table(col) < 10)
+  }))
+  multicollinear <- ncol(X) > 1 && {
+    mm <- model.matrix(~ ., data = X)
+    qr(mm)$rank < ncol(mm)
+  }
+  imbalance || high_dim || rare_levels || multicollinear
+}
 #
 #
 #
@@ -296,16 +342,19 @@ precheck <- function(
     pmm,
     formula,
     method,
-    sequential
+    sequential,
+    pmm_k
 ) {
   
   # check missing data
   variables = colnames(data)
   variables_NA  = colnames(data)[apply(data, 2, function(x) any(is.na(x)))]   # alle Variablen die missind data haben
   if (length(variables_NA) == 0) {
-    stop ("Error: No missing data available")
+    stop("Error: No missing data available")
   } else {
-    message ("Variables with Missing Data: ", paste (variables_NA, collapse = ","))
+    # if (verbose) {
+    #   message("Variables with Missing Data: ", paste(variables_NA, collapse = ", "))
+    # }
   }
   
   # check data structure
@@ -351,6 +400,22 @@ precheck <- function(
   }
   check_pmm(pmm, variables)
   
+  # check pmm_k
+  if (any(unlist(pmm))) {
+    if (
+      !is.numeric(pmm_k) ||
+      length(pmm_k) != 1 ||
+      is.na(pmm_k) ||
+      pmm_k < 1 ||
+      pmm_k %% 1 != 0
+    ) {
+      stop(
+        "Error: 'pmm_k' must be a single positive integer (>= 1) ",
+        "when predictive mean matching (PMM) is enabled."
+      )
+    }
+  }
+  
   # check methods
   supported_methods <- c("ranger", "regularized", "xgboost", "robust")
   
@@ -379,6 +444,42 @@ precheck <- function(
     stop("Error: 'method' must either be empty, a single string, a single-element list, have the same length as 'variables' or 'considered_variables' (if specified), or the number of variables must match NAs.")
   }
   
+  # check method for regularized
+  # ---- Check regularized method for target and predictors ----
+  for (var in variables_NA) {
+    y_obs <- data[[var]][!is.na(data[[var]])]
+    
+    # Target variable check
+    if (method[[var]] %in% c("regularized", "glmnet")) {
+      if (is.factor(y_obs) && any(table(y_obs) <= 1)) {
+        warning(paste0("Variable '", var, "' has too few observations per class for 'regularized'. Falling back to 'robust'."))
+        method[[var]] <- "robust"
+        next
+      }
+      if (is.numeric(y_obs) && length(unique(y_obs)) < 3) {
+        warning(paste0("Variable '", var, "' has too few unique values for 'regularized'. Falling back to 'robust'."))
+        method[[var]] <- "robust"
+        next
+      }
+      
+      # Predictor check
+      predictors <- setdiff(names(data), var)
+      for (col in predictors) {
+        x_obs <- data[[col]][!is.na(data[[col]])]
+        if (is.factor(x_obs) && any(table(x_obs) <= 1)) {
+          warning(paste0("Predictor '", col, "' has too few observations per class. Falling back to 'robust' for target '", var, "'."))
+          method[[var]] <- "robust"
+          break
+        }
+        if (is.numeric(x_obs) && length(unique(x_obs)) < 2) {
+          warning(paste0("Predictor '", col, "' has too few unique values. Falling back to 'robust' for target '", var, "'."))
+          method[[var]] <- "robust"
+          break
+        }
+      }
+    }
+  }
+  
   # warning if more than 50% missing values
   if (nrow(data) == 0) stop("Error: Data has no rows.")
   missing_counts <- colSums(is.na(data))
@@ -388,6 +489,11 @@ precheck <- function(
   }
   
   # Datatypes
+  ordered_cols <- names(data)[sapply(data, inherits, "ordered")]
+  if (length(ordered_cols) > 0) {
+    data[, (ordered_cols) := lapply(.SD, function(x) factor(as.character(x))), .SDcols = ordered_cols]
+  }
+  
   data[, (variables) := lapply(.SD, function(x) {
     if (is.numeric(x)) {
       as.numeric(x)  # Integer & Double in Numeric 
@@ -395,6 +501,8 @@ precheck <- function(
       as.factor(x)  # Strings in Factors
     } else if (is.logical(x)) {
       as.numeric(x)  # TRUE/FALSE ->  1/0
+    # } else if (inherits(x, "ordered")) {
+    #   as.factor(x)
     } else if (is.factor(x)) {
       x  
     } else {
