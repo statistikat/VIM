@@ -12,9 +12,8 @@
 # - robust
 #' @param pmm - TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable. If TRUE, missing values of numeric variables are imputed by matching to observed values with similar predicted scores.
 #' @param pmm_k - An integer specifying the number of nearest observed values to consider in predictive mean matching (PMM) for each numeric variable.  If `pmm_k = 1`, classical PMM is applied: the single observed value closest to the predicted value is used. If `pmm_k > 1`, Score-kNN PMM is applied: for each missing value, the `k` observed values with closest model-predicted scores are selected, and the imputation is the mean (numeric)/ median (factor) from these neighbors. 
-#' @param learner_params - Optional named list with method-specific learner parameters.
-#'   Supported names are `"ranger"` and `"xgboost"` (e.g.
-#'   `list(xgboost = list(nrounds = 50, eta = 0.2))`).
+#' @param learner_params - Optional named list with variable-specific learner parameters.
+#'   e.g. for a variable that uses method xgboost: `learner_params = list(considered_variables[1] = list(nrounds = 50, eta = 0.2))`).
 #' @param formula - If not all variables are used as predictors, or if transformations or interactions are required (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized". Provide as a list for each variable that requires specific conditions.
 #   - formula format:                     list(variable_1 ~ age + lenght, variable_2 ~ width + country) 
 #   - formula format with transformation: list(log(variable_1) ~ age + inverse(lenght), variable_2 ~ width + country)
@@ -118,7 +117,7 @@ vimpute <- function(
   
 ### ***** Learner START ***** ################################################################################################### 
   
-  # Erweiterung
+  # Possible extension
   # LightGBM via mlr3extralearners:
   # classif.lightgbm, regr.lightgbm
   
@@ -203,6 +202,10 @@ vimpute <- function(
           message(paste("Selected formula for variable", var, ":", selected_formula))
         }
       }
+      
+      # Extract method-specific-learner
+      var_learner_params <- learner_params[[var]]
+      if (is.null(var_learner_params)) var_learner_params <- list()
       
 ### ***** Formula Extraction Start ***** ###################################################################################################
       if (!isFALSE(formula) && (!isFALSE(selected_formula))) {
@@ -340,6 +343,17 @@ vimpute <- function(
       
       method_var <- method[[var]]
       
+      # Custom ranger median prediction
+      use_median <- FALSE
+      if ("predict_median" %in% names(var_learner_params)) {
+        if (isTRUE(var_learner_params$predict_median)) use_median <- TRUE
+        var_learner_params$predict_median <- NULL
+      }
+      
+      if (method_var == "ranger" && use_median) {
+        ranger_median <- TRUE
+      }
+      
 ### ***** Select suitable learner Start ***** ###################################################################################################
       if(verbose){
         message(paste("***** Select Learner"))
@@ -450,7 +464,7 @@ vimpute <- function(
         stop("Mistake: Target variable is neither numerical nor a factor!")
       }
       
-      ### *****Create Learner Start***** ###################################################################################################
+### *****Create Learner Start***** ###################################################################################################
       if(verbose){
         message(paste("***** Create Learner"))
       }
@@ -462,7 +476,7 @@ vimpute <- function(
       } else {
         optimal_threads <- max_threads
       }
-      # XGBoost Parameter
+      # XGBoost Parameter Defaults
       xgboost_params <- list(
         nrounds = 100,
         max_depth = 3,
@@ -470,31 +484,65 @@ vimpute <- function(
         min_child_weight = 1,
         subsample = 1,
         colsample_bytree = 1,
-        #tree_method = "hist", 
-        #early_stopping_rounds = 10,
         verbose = 1,
         nthread = optimal_threads
       )
-      # xgboost individual parameters
-      if (!is.null(learner_params) && "xgboost" %in% names(learner_params)) {
-        xgboost_params <- modifyList(xgboost_params, learner_params[["xgboost"]])
+      
+      if (method_var == "xgboost") {
+        
+        # All valid xgboost parameters in mlr3
+        valid_xgb_params <- names(learners[["regr.xgboost"]]$param_set$id)
+        
+        # Invalid parameters
+        invalid <- setdiff(names(var_learner_params), valid_xgb_params)
+        if (length(invalid) > 0) {
+          stop(paste(
+            "Invalid XGBoost parameters for variable", var, ":",
+            paste(invalid, collapse = ", "),
+            "\nValid parameters are:",
+            paste(valid_xgb_params, collapse = ", ")
+          ))
+        }
+        
+        # Use valid parameters 
+        xgboost_params <- modifyList(xgboost_params, var_learner_params)
+        
+        if (verbose) {
+          cat("\n--- XGBoost params for variable", var, "---\n")
+          print(xgboost_params)
+        }
       }
       
-      if(verbose){
-        print(paste("nthread is set to:", optimal_threads))
-        print(paste("nrounds is set to:", xgboost_params$nrounds))
-      }
-      
-      # Ranger Parameter 
+      # Ranger Parameter Defaults
       ranger_params <- list(
         num.trees = 500,
         num.threads = 4
       )
-      # ranger individual parameters
-      if (!is.null(learner_params) && "ranger" %in% names(learner_params)) {
-        ranger_params <- modifyList(ranger_params, learner_params[["ranger"]])
-      }
       
+      if (method_var == "ranger") {
+        
+        # All valid ranger params
+        valid_ranger_params <- names(learners[["regr.ranger"]]$param_set$id)
+        
+        # Invalid parameters
+        invalid <- setdiff(names(var_learner_params), valid_ranger_params)
+        if (length(invalid) > 0) {
+          stop(paste(
+            "Invalid Ranger parameters for variable", var, ":",
+            paste(invalid, collapse = ", "),
+            "\nValid parameters are:",
+            paste(valid_ranger_params, collapse = ", ")
+          ))
+        }
+        
+        # Use parameter
+        ranger_params <- modifyList(ranger_params, var_learner_params)
+        
+        if (verbose) {
+          cat("\n--- Ranger params for variable", var, "---\n")
+          print(ranger_params)
+        }
+      }
       
       if (length(learner_candidates) > 1) {
         resample_results <- lapply(learner_candidates, function(lrn) {
@@ -541,9 +589,9 @@ vimpute <- function(
         tuned_learner$predict_type <- "prob"
       }
       
-      ### Create Learner End ### 
+### Create Learner End ### 
       
-      ### *****Hyperparameter Start***** ###################################################################################################
+### *****Hyperparameter Start***** ###################################################################################################
       if(verbose){
         message(paste("***** Parametertuning"))
       }
@@ -699,9 +747,6 @@ vimpute <- function(
           # Use cached parameters
           current_learner$param_set$values <- hyperparameter_cache[[var]]$params
         }
-      } else {
-        # No tuning - use default parameters
-        current_learner$param_set$values <- list()
       }
       
       # tuning_log
@@ -1171,56 +1216,6 @@ vimpute <- function(
 ### *****Predict Start***** ###################################################################################################
       if(verbose){
         message("***** Predict")
-      }
-      
-      # helper: inverse Transformation
-      inverse_transform <- function(x, method) {
-        switch(method,
-               exp = log(x),
-               log = exp(x),
-               sqrt = x^2,
-               inverse = 1 / x,
-               stop("Unknown transformation: ", method)
-        )
-      }
-      
-      # helper decimal places
-      get_decimal_places <- function(x) {
-        if (is.na(x)) return(0)
-        if (x == floor(x)) return(0)
-        nchar(sub(".*\\.", "", as.character(x)))
-      }
-
-      # helper: ranger regression prediction via per-tree median
-      predict_ranger_median <- function(graph_learner, newdata, target_name = NULL) {
-        model_names <- names(graph_learner$model)
-        ranger_idx <- grep("regr\\.ranger$", model_names)
-        if (length(ranger_idx) == 0) {
-          return(NULL)
-        }
-
-        ranger_model <- graph_learner$model[[ranger_idx[1]]]$model
-        if (is.list(ranger_model) && !inherits(ranger_model, "ranger") && "model" %in% names(ranger_model)) {
-          ranger_model <- ranger_model$model
-        }
-        if (!inherits(ranger_model, "ranger")) {
-          return(NULL)
-        }
-
-        pred_dt <- as.data.table(newdata)
-        if (!is.null(target_name) && target_name %in% colnames(pred_dt)) {
-          pred_dt <- pred_dt[, setdiff(colnames(pred_dt), target_name), with = FALSE]
-        }
-
-        tree_preds <- predict(ranger_model, data = as.data.frame(pred_dt), predict.all = TRUE)$predictions
-        if (is.null(dim(tree_preds))) {
-          return(as.numeric(tree_preds))
-        }
-        if (length(dim(tree_preds)) != 2) {
-          return(NULL)
-        }
-
-        apply(tree_preds, 1, median)
       }
       
       if (is_sc) {
