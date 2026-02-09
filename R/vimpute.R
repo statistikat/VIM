@@ -964,7 +964,7 @@ vimpute <- function(
         }
         
         if (nrow(reg_data) == 0) {
-          warning("reg_data empty after NA handling for ", var, " — skipping regressor.")
+          warning("reg_data empty after NA handling for ", var, " - skipping regressor.")
           reg_learner <- NULL
         } else {
           
