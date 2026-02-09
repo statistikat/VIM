@@ -45,6 +45,7 @@ vimpute <- function(
     method = setNames(as.list(rep("ranger", length(considered_variables))), considered_variables),
     pmm = setNames(as.list(rep(TRUE, length(considered_variables))), considered_variables),
     pmm_k = 1,
+    learner_params = NULL,
     formula = FALSE, 
     sequential = TRUE,
     nseq = 10,
@@ -450,14 +451,26 @@ vimpute <- function(
         verbose = 1,
         nthread = optimal_threads
       )
+      # xgboost individual parameters
+      if (!is.null(learner_params) && "xgboost" %in% names(learner_params)) {
+        xgboost_params <- modifyList(xgboost_params, learner_params[["xgboost"]])
+      }
+      
       if(verbose){
         print(paste("nthread is set to:", optimal_threads))
+        print(paste("nrounds is set to:", xgboost_params$nrounds))
       }
+      
       # Ranger Parameter 
       ranger_params <- list(
         num.trees = 500,
         num.threads = 4
       )
+      # ranger individual parameters
+      if (!is.null(learner_params) && "ranger" %in% names(learner_params)) {
+        ranger_params <- modifyList(ranger_params, learner_params[["ranger"]])
+      }
+      
       
       if (length(learner_candidates) > 1) {
         resample_results <- lapply(learner_candidates, function(lrn) {
@@ -531,8 +544,8 @@ vimpute <- function(
             # sample.fraction = proportion of data sampled per tree
             
             # XGBoost
-            "regr.xgboost" = ps(nrounds = p_int(100,500), eta = p_dbl(0.01, 0.3), max_depth = p_int(3, 9),  colsample_bytree = p_dbl(0.7, 0.9)),
-            "classif.xgboost" = ps(nrounds = p_int(100,500), eta = p_dbl(0.01, 0.3), max_depth = p_int(3, 9), subsample = p_dbl(0.7, 0.9), colsample_bytree = p_dbl(0.7, 0.9)),
+            "regr.xgboost" = ps(nrounds = p_int(100,500), learning_rate = p_dbl(0.01, 0.3), max_depth = p_int(3, 9),  colsample_bytree = p_dbl(0.7, 0.9)),
+            "classif.xgboost" = ps(nrounds = p_int(100,500), learning_rate = p_dbl(0.01, 0.3), max_depth = p_int(3, 9), subsample = p_dbl(0.7, 0.9), colsample_bytree = p_dbl(0.7, 0.9)),
             # eta = learning rate, low values --> more stable but slower models
             # max_depth = Maximum tree depth, large values --> more complex patterns but possibly overfitting
             # subsample = proportion of data used per boosting iteration | colsample_bytree = proportion of features used per tree          
