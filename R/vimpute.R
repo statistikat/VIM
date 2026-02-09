@@ -10,7 +10,10 @@
 # - xgboost 
 # - regularized
 # - robust
-#' @param pmm - TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable.
+#' @param pmm - TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable. If TRUE, missing values of numeric variables are imputed by matching to observed values with similar predicted scores.
+#' @param pmm_k - An integer specifying the number of nearest observed values to consider in predictive mean matching (PMM) for each numeric variable.  If `pmm_k = 1`, classical PMM is applied: the single observed value closest to the predicted value is used. If `pmm_k > 1`, Score-kNN PMM is applied: for each missing value, the `k` observed values with closest model-predicted scores are selected, and the imputation is the mean (numeric)/ median (factor) from these neighbors. 
+#' @param learner_params - Optional named list with variable-specific learner parameters.
+#'   e.g. for a variable that uses method xgboost: `learner_params = list(considered_variables[1] = list(nrounds = 50, eta = 0.2))`).
 #' @param formula - If not all variables are used as predictors, or if transformations or interactions are required (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized". Provide as a list for each variable that requires specific conditions.
 #   - formula format:                     list(variable_1 ~ age + lenght, variable_2 ~ width + country) 
 #   - formula format with transformation: list(log(variable_1) ~ age + inverse(lenght), variable_2 ~ width + country)
@@ -23,6 +26,8 @@
 #' @param pred_history - If TRUE, all predicted values across all iterations are stored.
 #' @param tune - Tunes hyperparameters halfway through iterations, TRUE or FALSE.
 #' @param verbose - If TRUE additional debugging output is provided
+#' @param ... Additional method-specific options. Currently supports
+#'   `ranger_median = TRUE/FALSE` for ranger regression predictions (tree-wise median aggregation).
 #' @return imputed data set or c(imputed data set, prediction history)
 #' @export
 #'
@@ -43,6 +48,8 @@ vimpute <- function(
     considered_variables = names(data), 
     method = setNames(as.list(rep("ranger", length(considered_variables))), considered_variables),
     pmm = setNames(as.list(rep(TRUE, length(considered_variables))), considered_variables),
+    pmm_k = 1,
+    learner_params = NULL,
     formula = FALSE, 
     sequential = TRUE,
     nseq = 10,
@@ -50,14 +57,70 @@ vimpute <- function(
     imp_var = TRUE,
     pred_history = FALSE,
     tune = FALSE,
-    verbose = FALSE
+    verbose = FALSE,
+    ...
 ) {
+
   ..cols <- ..feature_cols <- ..reg_features <- ..relevant_features <- NULL
   # save plan
   old_plan <- future::plan()  # Save current plan
   on.exit(future::plan(old_plan), add = TRUE)  # Restore on exit, even if error
+
+  dots <- list(...)
+  ranger_median <- FALSE
+  if ("ranger_median" %in% names(dots)) {
+    ranger_median <- dots$ranger_median
+    dots$ranger_median <- NULL
+  }
+  if (!is.logical(ranger_median) || length(ranger_median) != 1 || is.na(ranger_median)) {
+    stop("Error: 'ranger_median' in ... must be TRUE or FALSE.")
+  }
+  if (length(dots) > 0) {
+    dot_names <- names(dots)
+    if (is.null(dot_names)) {
+      dot_names <- rep("<unnamed>", length(dots))
+    }
+    dot_names[dot_names == ""] <- "<unnamed>"
+    warning("Arguments in `...` are currently ignored: ", paste(unique(dot_names), collapse = ", "))
+  }
   
-  ### ***** Learner START ***** ################################################################################################### 
+  # only defined variables
+  data_all_variables <- as.data.table(data)
+  data <-  as.data.table(data)[, considered_variables, with = FALSE]
+  
+  # save factor levels
+  factor_levels <- list()
+  for (col in names(data)) {
+    if (is.factor(data[[col]])) {
+      factor_levels[[col]] <- levels(data[[col]])
+    } else if (is.character(data[[col]])) {
+      # factor_levels[[col]] <- unique(na.omit(data[[col]]))
+      factor_levels[[col]] <- levels(as.factor(data[[col]])) # Nnew
+    }
+  }
+  
+### ***** Check Data Start ***** ###################################################################################################
+  if(verbose){
+    message(paste("***** Check Data"))  
+  }
+  checked_data <- precheck(data, pmm, formula, method, sequential, pmm_k)
+  data         <- checked_data$data
+  variables    <- checked_data$variables
+  variables_NA <- checked_data$variables_NA
+  method       <- checked_data$method
+  
+  if (!sequential && nseq > 1) {
+    if (verbose) message ("'nseq' was set to 1 because 'sequential = FALSE'.")
+    nseq <- 1
+  }
+### Check Data End ###
+  
+### ***** Learner START ***** ################################################################################################### 
+  
+  # Possible extension
+  # LightGBM via mlr3extralearners:
+  # classif.lightgbm, regr.lightgbm
+  
   no_change_counter <- 0
   robust_required <- any(unlist(method) == "robust")
   
@@ -77,45 +140,9 @@ vimpute <- function(
   
   learners <- lapply(learner_ids, function(id) lrn(id))
   names(learners) <- learner_ids
-  ### Learner End ###
+### Learner End ###
   
-  # only defined variables
-  data_all_variables <- as.data.table(data)
-  data <-  as.data.table(data)[, considered_variables, with = FALSE]
-  
-  # save factor levels
-  factor_levels <- list()
-  for (col in names(data)) {
-    if (is.factor(data[[col]])) {
-      factor_levels[[col]] <- levels(data[[col]])
-    } else if (is.character(data[[col]])) {
-      factor_levels[[col]] <- unique(na.omit(data[[col]]))
-    }
-  }
-  
-  # message("factor levels:")
-  # message(capture.output(print(factor_levels)))
-  
-  ### ***** Check Data Start ***** ###################################################################################################
-  if(verbose){
-    message(paste("***** Check Data"))  
-  }
-  checked_data <- precheck(data, pmm, formula, method, sequential)
-  data         <- checked_data$data
-  variables    <- checked_data$variables
-  variables_NA <- checked_data$variables_NA
-  method       <- checked_data$method
-  
-  if (!sequential && nseq > 1) {
-    if (verbose) message ("'nseq' was set to 1 because 'sequential = FALSE'.")
-    nseq <- 1
-  }
-  
-  #orig_data <- data
-  
-  ### Check Data End ###
-  
-  ### ***** Def missing indices Start ***** ###################################################################################################
+### ***** Def missing indices Start ***** ###################################################################################################
   if(verbose){
     message(paste("***** Find Missing Indices"))
   }
@@ -124,7 +151,6 @@ vimpute <- function(
     if (length(na_idx) > 0) return(na_idx) else return(integer(0))
   }), variables)
   missing_indices <- missing_indices[!sapply(missing_indices, is.null)]
-  names(missing_indices)
   ### Def missing indices End ###
   
   po_ohe <- NULL # set ohe to zero, becomes true if ohe is needed
@@ -156,9 +182,17 @@ vimpute <- function(
         message(paste("***** Impute variable:", var))
       }
       var_start_time <- Sys.time()
+      variables <- checked_data$variables
+      
+      # If only NAs -> Stop
+      if (all(is.na(data[[var]]))) {
+        stop(sprintf(
+          "Variable '%s' contains only missing values. No model can be estimated. Please remove it from 'considered_variables' or impute it externally.",
+          var
+        ))
+      }
       
       data_before <- copy(data)
-      variables    <- checked_data$variables
       if(verbose){
         message(paste("***** Select predictors"))
       }
@@ -169,7 +203,11 @@ vimpute <- function(
         }
       }
       
-      ### ***** Formula Extraction Start ***** ###################################################################################################
+      # Extract method-specific-learner
+      var_learner_params <- learner_params[[var]]
+      if (is.null(var_learner_params)) var_learner_params <- list()
+      
+### ***** Formula Extraction Start ***** ###################################################################################################
       if (!isFALSE(formula) && (!isFALSE(selected_formula))) {
         identified_variables <- identify_variables(selected_formula, data, var)
         target_col <- var
@@ -185,12 +223,8 @@ vimpute <- function(
         rewrited_formula <- rewrite_formula (selected_formula, target_col) # write formula in the correct way
         
         # Remove missing values (na.omit)  -> for Training
-        data <- enforce_factor_levels(data, factor_levels)  # <--- WICHTIG
+        data <- enforce_factor_levels(data, factor_levels)  
         data_clean <- na.omit(data)
-        
-        # message("factor levels data clean")
-        # levels_list <- sapply(data_clean, function(col) if (is.factor(col)) levels(col) else NULL)
-        # message(capture.output(print(levels_list)))
         
         check_all_factor_levels(data_clean, factor_levels)
         
@@ -233,10 +267,6 @@ vimpute <- function(
         setnames(data_temp, clean_colnames(names(data_temp)))
         data_temp <- enforce_factor_levels(data_temp, factor_levels)  
         check_all_factor_levels(data_temp, factor_levels)
-        
-        # message("factor levels data temp")
-        # levels_list <- sapply(data_temp, function(col) if (is.factor(col)) levels(col) else NULL)
-        # message(capture.output(print(levels_list)))
         
         # Impute missing values (Median/Mode)  -> for prediction 
         if (is_target_numeric) {
@@ -284,28 +314,25 @@ vimpute <- function(
         }
         
         
-        ### Formula Extraction End ###   
+### Formula Extraction End ###   
         
       } else {
         lhs_transformation <- NULL
         selected_formula <- FALSE
-        feature_cols <- setdiff(variables, var)  
+        feature_cols <- setdiff(names(data), var)
         target_col <- var
         selected_cols <- c(target_col, feature_cols)
-        data <- data[, selected_cols, with = FALSE]
-        data_temp <- as.data.table(data)
+        data_temp <- as.data.table(data[, selected_cols, with = FALSE])
         data_temp <- enforce_factor_levels(data_temp, factor_levels)
         check_all_factor_levels(data_temp, factor_levels)
         
-        # message("factor levels data_temp")
-        # levels_list <- sapply(data_temp, function(col) if (is.factor(col)) levels(col) else NULL)
-        # message(capture.output(print(levels_list)))
       }
       
-      if ("Intercept" %in% colnames(data_temp)) {
+      if (!isFALSE(selected_formula) && "Intercept" %in% colnames(data_temp)) {
         data_temp <- data_temp[, !colnames(data_temp) %in% "Intercept", with = FALSE]
-        mm_data <- mm_data[, !colnames(mm_data) %in% "Intercept", with = FALSE]
-        
+        if (exists("mm_data", inherits = FALSE)) {
+          mm_data <- mm_data[, !colnames(mm_data) %in% "Intercept", with = FALSE]
+        }
       }
       
       if (!isFALSE(selected_formula)) {
@@ -316,9 +343,18 @@ vimpute <- function(
       
       method_var <- method[[var]]
       
+      # Custom ranger median prediction
+      use_median <- FALSE
+      if ("predict_median" %in% names(var_learner_params)) {
+        if (isTRUE(var_learner_params$predict_median)) use_median <- TRUE
+        var_learner_params$predict_median <- NULL
+      }
       
+      if (method_var == "ranger" && use_median) {
+        ranger_median <- TRUE
+      }
       
-      ### ***** Select suitable learner Start ***** ###################################################################################################
+### ***** Select suitable learner Start ***** ###################################################################################################
       if(verbose){
         message(paste("***** Select Learner"))
       }
@@ -341,9 +377,10 @@ vimpute <- function(
         )
       } 
       learner_candidates <- learners_list[[method_var]]
-      ### Select suitable learner End ***** ####
       
-      ### *****OHE Start***** ###################################################################################################
+### Select suitable learner End ***** ####
+      
+### *****OHE Start***** ###################################################################################################
       if(verbose){
         message(paste("***** OHE"))
       }
@@ -375,7 +412,6 @@ vimpute <- function(
       }
       
       if (needs_ohe) {
-        #print("One-Hot-Encoding notwendig")
         po_ohe <- po("encode", method = "one-hot")
         
         # OHE on data
@@ -391,17 +427,19 @@ vimpute <- function(
         data_temp <- po_ohe$predict(list(train_task))[[1]]$data()
       }
       
-      # message("factor levels data temp")
-      # levels_list <- sapply(data_temp, function(col) if (is.factor(col)) levels(col) else NULL)
-      # message(capture.output(print(levels_list)))
+### OHE End ###
       
-      
-      ### OHE End ###
-      
-      ### *****Create task Start***** ###################################################################################################
+### *****Create task Start***** ###################################################################################################
       if(verbose){
         message(paste("***** Create task"))
       }
+      
+      # ordered -> factor
+      ordered_cols <- names(data_temp)[sapply(data_temp, inherits, "ordered")]
+      if (length(ordered_cols) > 0) {
+        data_temp[, (ordered_cols) := lapply(.SD, function(x) factor(as.character(x))), .SDcols = ordered_cols]
+      }
+
       data_y_fill <- copy(data_temp)
       supports_missing <- all(sapply(learner_candidates, function(lrn) "missings" %in% lrn$properties))
       
@@ -416,7 +454,7 @@ vimpute <- function(
       data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
       data_y_fill_final <- enforce_factor_levels(data_y_fill_final, factor_levels) 
       
-     
+      
       # Create task
       if (is.numeric(data_y_fill_final[[target_col]])) {
         task <- TaskRegr$new(id = target_col, backend = data_y_fill_final, target = target_col)
@@ -426,7 +464,7 @@ vimpute <- function(
         stop("Mistake: Target variable is neither numerical nor a factor!")
       }
       
-      ### *****Create Learner Start***** ###################################################################################################
+### *****Create Learner Start***** ###################################################################################################
       if(verbose){
         message(paste("***** Create Learner"))
       }
@@ -438,7 +476,7 @@ vimpute <- function(
       } else {
         optimal_threads <- max_threads
       }
-      # XGBoost Parameter
+      # XGBoost Parameter Defaults
       xgboost_params <- list(
         nrounds = 100,
         max_depth = 3,
@@ -446,19 +484,65 @@ vimpute <- function(
         min_child_weight = 1,
         subsample = 1,
         colsample_bytree = 1,
-        #tree_method = "hist", 
-        #early_stopping_rounds = 10,
         verbose = 1,
         nthread = optimal_threads
       )
-      if(verbose){
-        print(paste("nthread is set to:", optimal_threads))
+      
+      if (method_var == "xgboost") {
+        
+        # All valid xgboost parameters in mlr3
+        valid_xgb_params <- names(learners[["regr.xgboost"]]$param_set$id)
+        
+        # Invalid parameters
+        invalid <- setdiff(names(var_learner_params), valid_xgb_params)
+        if (length(invalid) > 0) {
+          stop(paste(
+            "Invalid XGBoost parameters for variable", var, ":",
+            paste(invalid, collapse = ", "),
+            "\nValid parameters are:",
+            paste(valid_xgb_params, collapse = ", ")
+          ))
+        }
+        
+        # Use valid parameters 
+        xgboost_params <- modifyList(xgboost_params, var_learner_params)
+        
+        if (verbose) {
+          cat("\n--- XGBoost params for variable", var, "---\n")
+          print(xgboost_params)
+        }
       }
-      # Ranger Parameter 
+      
+      # Ranger Parameter Defaults
       ranger_params <- list(
         num.trees = 500,
         num.threads = 4
       )
+      
+      if (method_var == "ranger") {
+        
+        # All valid ranger params
+        valid_ranger_params <- names(learners[["regr.ranger"]]$param_set$id)
+        
+        # Invalid parameters
+        invalid <- setdiff(names(var_learner_params), valid_ranger_params)
+        if (length(invalid) > 0) {
+          stop(paste(
+            "Invalid Ranger parameters for variable", var, ":",
+            paste(invalid, collapse = ", "),
+            "\nValid parameters are:",
+            paste(valid_ranger_params, collapse = ", ")
+          ))
+        }
+        
+        # Use parameter
+        ranger_params <- modifyList(ranger_params, var_learner_params)
+        
+        if (verbose) {
+          cat("\n--- Ranger params for variable", var, "---\n")
+          print(ranger_params)
+        }
+      }
       
       if (length(learner_candidates) > 1) {
         resample_results <- lapply(learner_candidates, function(lrn) {
@@ -505,9 +589,9 @@ vimpute <- function(
         tuned_learner$predict_type <- "prob"
       }
       
-      ### Create Learner End ### 
+### Create Learner End ### 
       
-      ### *****Hyperparameter Start***** ###################################################################################################
+### *****Hyperparameter Start***** ###################################################################################################
       if(verbose){
         message(paste("***** Parametertuning"))
       }
@@ -515,7 +599,6 @@ vimpute <- function(
       if (!tuning_status[[var]] && nseq >= 2 && tune) {
         
         if ((nseq > 2 && i == round(nseq / 2)) || (nseq == 2 && i == 2)) {
-          #print("Starte Hyperparameter-Tuning")
           tuner = tnr("random_search")
           p = length(task$feature_names)
           
@@ -664,9 +747,6 @@ vimpute <- function(
           # Use cached parameters
           current_learner$param_set$values <- hyperparameter_cache[[var]]$params
         }
-      } else {
-        # No tuning - use default parameters
-        current_learner$param_set$values <- list()
       }
       
       # tuning_log
@@ -675,13 +755,13 @@ vimpute <- function(
         tuned_better = isTRUE(hyperparameter_cache[[var]]$is_tuned)
       )
       
-      if (verbose) {
-        #print tuning_log
-        if (length(tuning_log) > 0) {
-          print("Tuning Log:")
-          print(tuning_log)
-        }
-      }
+      # if (verbose) {
+      #   #print tuning_log
+      #   if (length(tuning_log) > 0) {
+      #     print("Tuning Log:")
+      #     print(tuning_log)
+      #   }
+      # }
       ### Hyperparameter End ###
       
       ### ***** NAs Start***** ###################################################################################################
@@ -710,65 +790,110 @@ vimpute <- function(
         message("***** Train Model")
       }
       
-      po_fixfactors <- po("fixfactors")
+      ordered_cols <- names(data_temp)[sapply(data_temp, inherits, "ordered")]
+      if (length(ordered_cols) > 0) {
+        data_temp[, (ordered_cols) := lapply(.SD, function(x) factor(as.character(x))), .SDcols = ordered_cols]
+      }
+      
+      ordered_cols_final <- names(data_y_fill_final)[sapply(data_y_fill_final, inherits, "ordered")]
+      if (length(ordered_cols_final) > 0) {
+        data_y_fill_final[, (ordered_cols_final) := lapply(.SD, function(x) factor(as.character(x))), .SDcols = ordered_cols_final]
+      }
       
       # Check semicontinous
       is_sc <- is_semicontinuous(data_temp[[var]])
       
       if (is_sc) {
         
-        # 1) Classification: 0 or > 0
+        reserve_level <- ".__IMPUTEOOR_NEW__"  # important if there are new levels in prediction compared to training
+        
+        # Prepare factorlevels  -> important that train and pred are working with same factorlevels
+        for (col in setdiff(names(data_temp), c(var))) {
+          if (is.factor(data_temp[[col]])) {
+            factor_levels[[col]] <- unique(c(levels(data_temp[[col]]), reserve_level))
+            data_temp[[col]] <- factor(data_temp[[col]], levels = factor_levels[[col]])
+          }
+        }
+        
+        # Zero-Flag adding -> to check if regression is necessary
         zero_flag_col <- paste0(var, "_zero_flag")
+        factor_levels[[zero_flag_col]] <- c("zero", "positive")
+        data_temp[[zero_flag_col]] <- factor(
+          ifelse(data_temp[[var]] == 0, "zero", "positive"),
+          levels = factor_levels[[zero_flag_col]]
+        )
         
-        data_temp[[zero_flag_col]] <- factor(ifelse(data_temp[[var]] == 0, "zero", "positive"))
+        new_cols <- setdiff(names(data_temp), names(tuning_status))
+        for (col in new_cols) {
+          tuning_status[[col]] <- FALSE
+        }
+
+        # Features for classification
         relevant_features <- setdiff(names(data_temp), c(var, zero_flag_col))
-        class_data <- data_temp[!is.na(data_temp[[var]]) & complete.cases(data_temp[, ..relevant_features]),]
-        train_data <- class_data 
-        train_data <- enforce_factor_levels(train_data , factor_levels)
+        if (length(relevant_features) == 0) stop("No relevant features for classification for ", var)
         
-        #message("levels in train data")
-        #levels_list <- sapply(train_data, function(col) if (is.factor(col)) levels(col) else NULL)
-        #message(capture.output(print(levels_list)))
+        # Prepare classification data 
+        class_data <- data_temp[!is.na(data_temp[[var]]), c(relevant_features, var, zero_flag_col), with = FALSE] # not using NAs for training
+        if (nrow(class_data) == 0) stop("No rows left for classification for ", var)
         
-        feature_cols <- setdiff(names(train_data), c(var, zero_flag_col))
+        # Harmonize factor-levels -> no new levels and no lost levels
+        class_data <- enforce_factor_levels(class_data, factor_levels)
+        check_all_factor_levels(class_data, factor_levels)
         
-        # classification task
+        # Before training: make sure all features have right levels
+        for (col in relevant_features) {
+          if (is.factor(class_data[[col]])) {
+            class_data[[col]] <- factor(class_data[[col]], levels = factor_levels[[col]])
+          }
+        }
+        
+        # Dummy rows for missing levels -> every level has to be present (min one time)
+        class_data <- ensure_dummy_rows_for_factors(
+          dt = class_data,
+          target_col = zero_flag_col
+        )
+        
+        # Classification Task & Pipeline
         class_task <- TaskClassif$new(
           id = paste0(zero_flag_col, "_task"),
-          backend = train_data,
+          backend = class_data,
           target = zero_flag_col
         )
-        class_task$select(setdiff(names(train_data), c(var, zero_flag_col)))
+        class_task$select(relevant_features)
         
+        # classif_learner <- lrn("classif.log_reg")
+        use_ranger <- needs_ranger_classif(
+          y = class_data[[zero_flag_col]],
+          X = class_data[, relevant_features, with = FALSE]
+        )
         
-        # learner
+        classif_learner <- if (use_ranger) {
+          lrn("classif.ranger")   # no need of OHE 
+        } else {
+          lrn("classif.log_reg")  # linear 
+        }
+        
+        po_fix <- po("fixfactors", droplevels = FALSE) # no level drops
+        po_oor <- po("imputeoor",
+                     affect_columns = selector_type("factor"),
+                     create_empty_level = TRUE) # new levels -> reserve levels
+        
+        class_pipeline <- po_fix %>>% po_oor %>>% classif_learner
+        class_learner <- GraphLearner$new(class_pipeline)
+        class_learner$predict_type <- "prob"
+        
+        # Train
+        class_learner$train(class_task)
+        
+        # Regression-Learner 
         regr_learner_id <- best_learner$id
-        classif_learner <- lrn("classif.log_reg")
         regr_learner <- lrn(regr_learner_id)
+        
         if (grepl("xgboost", best_learner$id)) {
           regr_learner$param_set$values <- modifyList(regr_learner$param_set$values, xgboost_params)
         } else if (grepl("ranger", best_learner$id)) {
           regr_learner$param_set$values <- modifyList(regr_learner$param_set$values, ranger_params)
         }
-        
-        # support missings? 
-        supports_missing_classif <- "missings" %in% classif_learner$properties
-        if (method_var == "ranger") supports_missing_classif <- FALSE
-        
-        
-        # if support missings
-        po_x_miss_classif <- NULL
-        if (sum(is.na(data_temp[[var]])) > 0 && supports_missing_classif && method_var != "xgboost") {
-          po_x_miss_classif <- po("missind", param_vals = list(
-            affect_columns = mlr3pipelines::selector_all(),
-            which = "all",
-            type = "factor"
-          ))
-        }
-        
-        class_pipeline <- if (!is.null(po_x_miss_classif)) po_x_miss_classif %>>% classif_learner else classif_learner
-        # class_pipeline <- po_fixfactors %>>% class_pipeline
-        class_learner <- GraphLearner$new(class_pipeline)
         
         # Hyperparameter-Cache for classification
         if (isTRUE(tuning_status[[var]]) && !is.null(tuning_status[[zero_flag_col]]) && isTRUE(tuning_status[[zero_flag_col]])) {
@@ -805,37 +930,32 @@ vimpute <- function(
           warning(sprintf("predict_type 'prob' not supported by learner '%s'; fallback to 'response'", class_learner$id))
         }
         
-        # train classificationmodel
-        class_learner$train(class_task)
-        
-        
         # 2) Regression
-        reg_data <- data_temp[data_temp[[var]] > 0,]
-        reg_features <- setdiff(names(reg_data), c(var, zero_flag_col))
-        reg_data <- reg_data[!is.na(reg_data[[var]]),] #only without NA
+        reg_data <- data_temp[data_temp[[var]] > 0,]  # only positive values
+        # Same features as classification
+        reg_features <- relevant_features
+        # Regression without NA in target
+        reg_data <- reg_data[!is.na(reg_data[[var]]), ]
+        
+        # Harmonize factor-levels
         reg_data <- enforce_factor_levels(reg_data, factor_levels)
-        has_na_in_features <- anyNA(reg_data[, ..reg_features])
+        check_all_factor_levels(reg_data, factor_levels)
         
-        #message("levels in reg data")
-        #levels_list <- sapply(reg_data, function(col) if (is.factor(col)) levels(col) else NULL)
-        #message(capture.output(print(levels_list)))
+        has_na_in_features <- any(sapply(reg_features, function(cn) anyNA(reg_data[[cn]])))
         
-        # support missings?
+        # Does Regressions-Learner support missings?
         supports_missing <- "missings" %in% regr_learner$properties
         if (method_var == "ranger") supports_missing <- FALSE
         
-        # Missings as Indikator-Variables
         po_x_miss_reg <- NULL
         if (has_na_in_features && supports_missing && method_var != "xgboost") {
           po_x_miss_reg <- po("missind", param_vals = list(
-            affect_columns = mlr3pipelines::selector_all(),
+            affect_columns = selector_name(reg_features),
             which = "all",
             type = "factor"
           ))
-          #po_x_miss_reg <- po_fixfactors %>>% po_x_miss_reg
         }
         
-        # Fallback: if learner canot handle missings
         if (has_na_in_features && !supports_missing) {
           cols <- c(reg_features, var)
           reg_data <- na.omit(reg_data[, ..cols])
@@ -843,51 +963,29 @@ vimpute <- function(
           check_all_factor_levels(reg_data, factor_levels)
         }
         
-        #message("levels in reg data")
-        #levels_list <- sapply(reg_data, function(col) if (is.factor(col)) levels(col) else NULL)
-        #message(capture.output(print(levels_list)))
-        
-        # Task
-        reg_task <- TaskRegr$new(id = var, backend = reg_data, target = var)
-        reg_task$select(reg_features)
-        
-        # Pipeline
-        reg_pipeline <- if (!is.null(po_x_miss_reg)) po_x_miss_reg %>>% regr_learner else regr_learner
-        # reg_pipeline <- po_fixfactors %>>% reg_pipeline
-        reg_learner <- GraphLearner$new(reg_pipeline)
-        
-        # Hyperparameter-Cache
-        if (isTRUE(tuning_status[[var]]) && !is.null(tuning_status[[zero_flag_col]]) && isTRUE(tuning_status[[zero_flag_col]])) {
-          if (!is.null(hyperparameter_cache[[var]]) && isTRUE(hyperparameter_cache[[var]]$is_tuned)) {
-            params <- hyperparameter_cache[[var]]$params
-            if (verbose) {
-              cat(sprintf("Use optimized parameters from the cache for %s\n", var))
-            }
-            
-            pipeline_valid <- intersect(names(params), reg_pipeline$param_set$ids())
-            reg_pipeline$param_set$values <- modifyList(reg_pipeline$param_set$values, params[pipeline_valid])
-            
-            prefixed_names <- paste0(best_learner$id, ".", names(params))
-            learner_valid <- prefixed_names %in% reg_learner$param_set$ids()
-            if (any(learner_valid)) {
-              prefixed_params <- setNames(params[learner_valid], prefixed_names[learner_valid])
-              reg_learner$param_set$values <- modifyList(reg_learner$param_set$values, prefixed_params)
-            }
-            
-            missing_in_pipeline <- setdiff(names(params), reg_pipeline$param_set$ids())
-            missing_in_learner <- setdiff(names(params), 
-                                          sub(paste0("^", best_learner$id, "\\."), "", 
-                                              reg_learner$param_set$ids()[startsWith(reg_learner$param_set$ids(), best_learner$id)]))
-            if (length(missing_in_pipeline) > 0) warning("Missing in Pipeline (regression): ", paste(missing_in_pipeline, collapse = ", "))
-            if (length(missing_in_learner) > 0) warning("Missing in Learner (regression): ", paste(missing_in_learner, collapse = ", "))
+        if (nrow(reg_data) == 0) {
+          warning("reg_data empty after NA handling for ", var, " - skipping regressor.")
+          reg_learner <- NULL
+        } else {
+          
+          # Task
+          reg_task <- TaskRegr$new(id = var, backend = reg_data, target = var)
+          reg_task$select(reg_features)
+          # Pipeline
+          reg_pipeline <- if (!is.null(po_x_miss_reg)) {
+            po_x_miss_reg %>>% regr_learner
+          } else {
+            regr_learner
           }
+          
+          reg_learner <- GraphLearner$new(reg_pipeline)
+          
+          # Train
+          reg_learner$train(reg_task)
+          
+          # save models
+          learner <- list(classifier = class_learner, regressor = if (!exists("reg_learner") || is.null(reg_learner)) NULL else reg_learner)
         }
-        
-        # Train regressionmodel
-        reg_learner$train(reg_task)
-        
-        # save models
-        learner <- list(classifier = class_learner, regressor = reg_learner)
         
         # if not semicontinous
       } else {
@@ -965,17 +1063,17 @@ vimpute <- function(
       
       ### *****Identify NAs Start***** ###################################################################################################
       if(verbose){
-        message("***** Identidy missing values *****")
+        message("***** Identify missing values *****")
       }
       
-      # impute missing values
+      # Impute missing values
       impute_missing_values <- function(data, ref_data) {
         for (col in colnames(data)) {
           if (any(is.na(data[[col]]))) {
             if (is.numeric(ref_data[[col]])) {
-              data[[col]][is.na(data[[col]])] <- median(ref_data[[col]], na.rm = TRUE)  # Median
+              data[[col]][is.na(data[[col]])] <- median(ref_data[[col]], na.rm = TRUE)
             } else if (is.factor(ref_data[[col]])) {
-              mode_value <- names(which.max(table(ref_data[[col]], useNA = "no")))      # Modus
+              mode_value <- names(which.max(table(ref_data[[col]], useNA = "no")))
               data[[col]][is.na(data[[col]])] <- mode_value
             }
           }
@@ -983,98 +1081,118 @@ vimpute <- function(
         return(data)
       }
       
-      # missing indices
-      missing_idx <- missing_indices[[var]]
-      if (length(missing_idx) == 0) {
-        next
+      # Imputeoor for Ranger (Out-of-Range-Level)
+      imputeoor <- function(data, ref_data) {
+        for (col in colnames(data)) {
+          if (is.factor(data[[col]])) {
+            known_levels <- levels(ref_data[[col]])
+            unknown_idx <- !data[[col]] %in% known_levels
+            if (any(unknown_idx, na.rm = TRUE)) {
+              # All unknown levels to NA 
+              data[[col]][unknown_idx] <- NA
+            }
+          }
+        }
+        return(data)
       }
       
+      # Missing indices
+      missing_idx <- missing_indices[[var]]
+      if (length(missing_idx) == 0) next
+      
+      variables <- colnames(data_temp)
+      zero_flag_col <- paste0(var, "_zero_flag")
+      
       if (!is_sc) {
-        # not semicontinous
-        
-        variables <- colnames(data_temp)
+        # Not semicontinuous
         feature_cols <- setdiff(variables, var)
         
         if (!isFALSE(selected_formula)) {
           backend_data <- mm_data[missing_idx, ]
           backend_data <- enforce_factor_levels(backend_data, factor_levels)
           
-          # backend_data <- set_new_levels_to_na(backend_data, factor_levels, data_y_fill_final, method_var)
+          # Ranger-specific handling for new levels
+          if (method_var == "ranger") {
+            backend_data <- imputeoor(backend_data, data_temp)
+          }
           
-          # Impute if NA in backend_data
+          # Impute Missing Values
           if (any(is.na(backend_data))) {
             backend_data <- impute_missing_values(backend_data, data_temp)
           }
+          
           check_all_factor_levels(backend_data, factor_levels)
           
-          
         } else {
-          # without formula
           backend_cols <- union(feature_cols, var)
           backend_data <- data_temp[missing_idx, backend_cols, with = FALSE]
           backend_data <- enforce_factor_levels(backend_data, factor_levels)
-          check_all_factor_levels(backend_data, factor_levels)
-          # backend_data <- set_new_levels_to_na(backend_data, factor_levels, data_y_fill_final, method_var)
+          
+          if (method_var == "ranger") {
+            backend_data <- imputeoor(backend_data, data_temp)
+          }
           
           if (!supports_missing) {
             backend_data <- impute_missing_values(backend_data, data_y_fill)
           }
+          check_all_factor_levels(backend_data, factor_levels)
         }
         
-        # message("levels in backend data")
-        # levels_list <- sapply(backend_data, function(col) if (is.factor(col)) levels(col) else NULL)
-        # message(capture.output(print(levels_list)))
-        
       } else {
-        # semicontinous
-        zero_flag_col <- paste0(var, "_zero_flag")
-        variables <- colnames(data_temp)
+        # Semicontinuous
         feature_cols <- setdiff(variables, c(var, zero_flag_col))
         
-        print("feature_cols")
-        print(feature_cols)
-        
         if (!isFALSE(selected_formula)) {
-          class_pred_data <- mm_data[missing_idx,]
+          class_pred_data <- mm_data[missing_idx, ]
           class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
-          # class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
-          if (anyNA(class_pred_data)) {
-            class_pred_data <- impute_missing_values(class_pred_data, data_temp)
+          
+          if (method_var == "ranger") {
+            class_pred_data <- imputeoor(class_pred_data, data_temp)
           }
           
-          # message("levels in class pred data")
-          # levels_list <- sapply(class_pred_data, function(col) if (is.factor(col)) levels(col) else NULL)
-          # message(capture.output(print(levels_list)))
+          if (anyNA(class_pred_data)) { # Nnew
+            class_pred_data <- impute_missing_values(class_pred_data, data_temp) # Nnew
+          }
           
         } else {
           class_pred_data <- data_temp[missing_idx, c(feature_cols, zero_flag_col), with = FALSE]
           class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
-          # class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
+          
           if (!supports_missing && anyNA(class_pred_data)) {
             class_pred_data <- impute_missing_values(class_pred_data, data_temp)
           }
-
         }
-        reg_pred_data <- data_temp[data_temp[[var]] > 0, ]
+        
+        reg_pred_data <- data_temp[data_temp[[var]] > 0, feature_cols, with = FALSE]
         reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
-        # reg_pred_data <- set_new_levels_to_na(reg_pred_data, factor_levels, data_y_fill_final, method_var)
+        
+        if (method_var == "ranger") { #Nnew
+          reg_pred_data <- imputeoor(reg_pred_data, data_temp) #Nnew
+        }
+        
+        # Replace new levels (Log-Regression) with modus
+        if (method_var == "logreg") {
+          for (col in names(reg_pred_data)) {
+            if (is.factor(reg_pred_data[[col]])) {
+              known_levels <- levels(data_temp[[col]])
+              unknown_idx <- !reg_pred_data[[col]] %in% known_levels
+              if (any(unknown_idx, na.rm = TRUE)) {
+                mode_value <- names(which.max(table(data_temp[[col]], useNA = "no")))
+                reg_pred_data[[col]][unknown_idx] <- mode_value
+              }
+            }
+          }
+        }
+        
         if (!supports_missing && anyNA(reg_pred_data)) {
           reg_pred_data <- impute_missing_values(reg_pred_data, data_temp)
         }
-        
-        # message("levels in reg pred data")
-        # levels_list <- sapply(reg_pred_data, function(col) if (is.factor(col)) levels(col) else NULL)
-        # message(capture.output(print(levels_list)))
-        
       }
       ### Identify NAs End ###
       
       ### *****Select suitable task type Start***** ###################################################################################################
       
       if (!is_sc) {
-        # message("levels in reg backend data")
-        # levels_list <- sapply(backend_data, function(col) if (is.factor(col)) levels(col) else NULL)
-        # message(capture.output(print(levels_list)))
         
         if (is.numeric(data_temp[[target_col]])) {
           pred_task <- TaskRegr$new(
@@ -1093,127 +1211,124 @@ vimpute <- function(
         }
       }
       
-      ### Select suitable task type End ####
+### Select suitable task type End ####
       
-      ### *****Predict Start***** ###################################################################################################
+### *****Predict Start***** ###################################################################################################
       if(verbose){
-        message(paste("***** Predict"))
-      }
-      
-      
-      # helper: inverse Transformation
-      inverse_transform <- function(x, method) {
-        switch(method,
-               exp = log(x),
-               log = exp(x),
-               sqrt = x^2,
-               inverse = 1 / x,
-               stop("Unknown transformation: ", method)
-        )
-      }
-      
-      # helper decimal places
-      get_decimal_places <- function(x) {
-        if (is.na(x)) return(0)
-        if (x == floor(x)) return(0)
-        nchar(sub(".*\\.", "", as.character(x)))
+        message("***** Predict")
       }
       
       if (is_sc) {
         zero_flag_col <- paste0(var, "_zero_flag")
-        variables <- colnames(data_temp)
-        feature_cols <- setdiff(variables, c(var, zero_flag_col))
+        feature_cols <- setdiff(colnames(data_temp), c(var, zero_flag_col))
         
-        # 1) classification (null vs positive)
+        # 1) classification (null vs positive) P(Y > 0 | X)
         class_learner <- learner$classifier
-        
-        # no NAs
         class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
-        
-        # Prediction without Task (weil Zielvariable nicht vorhanden)
+        # Factor Level Handling
         class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
-        
-        # message("levels in class pred data")
-        # levels_list <- sapply(class_pred_data, function(col) if (is.factor(col)) levels(col) else NULL)
-        # message(capture.output(print(levels_list)))
-        
-        
         check_all_factor_levels(class_pred_data, factor_levels)
-        # class_pred_data <- set_new_levels_to_na(class_pred_data, factor_levels, data_y_fill_final, method_var)
-        if (anyNA(class_pred_data)) {
-          class_pred_data <- impute_missing_values(class_pred_data, data_temp)
+        
+        factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
+
+        ### ensure reserve level exists in prediction data ###
+        reserve_level <- ".__IMPUTEOOR_NEW__"
+        for (col in factor_cols) {
+          train_levels <- factor_levels[[col]]
+          if (!(reserve_level %in% train_levels)) train_levels <- c(train_levels, reserve_level)
+          # All unknown levels -> reserve_level
+          class_pred_data[[col]][!class_pred_data[[col]] %in% train_levels] <- reserve_level
+          # Set factor levels 
+          class_pred_data[[col]] <- factor(class_pred_data[[col]], levels = train_levels)
         }
+        
+        # factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
+        # for (col in factor_cols) {
+        # }
+        # 
+        # for (col in names(class_pred_data)) {
+        #   if (is.factor(class_pred_data[[col]])) {
+        #   }
+        # }
+        
+        # Prediction
         pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
+        # pred_probs[, "positive"] = P(Y>0 | X)
+        pi_hat <- pred_probs[, "positive"] 
         
-        # predict
-        if (isFALSE(sequential) || i == nseq) {
-          preds_class <- apply(pred_probs, 1, function(probs) {
-            sample(colnames(pred_probs), size = 1, prob = probs)
-          })
-        } else {
-          preds_class <- colnames(pred_probs)[max.col(pred_probs)]
-        }
+        # Save prob in zero_flag_col 
+        data_temp[[zero_flag_col]][missing_idx] <- pi_hat
         
-        levels_zero_flag <- levels(data_temp[[zero_flag_col]])
-        data_temp[[zero_flag_col]][missing_idx] <- ifelse(preds_class == "positive",
-                                                          levels_zero_flag[levels_zero_flag == "positive"],
-                                                          levels_zero_flag[levels_zero_flag == "zero"])
+        # if (isFALSE(sequential) || i == nseq) {
+        #   preds_class <- apply(pred_probs, 1, function(probs) {
+        #     sample(colnames(pred_probs), size = 1, prob = probs)
+        #   })
+        # } else {
+        #   preds_class <- colnames(pred_probs)[max.col(pred_probs)]
+        # }
+        # 
+        # levels_zero_flag <- levels(data_temp[[zero_flag_col]])
+        # data_temp[[zero_flag_col]][missing_idx] <- ifelse(
+        #   preds_class == "positive", "positive", "zero"
+        # )
         
-        # 2) regression: for positive predictions
+        # 2) regression: for positive predictions E[Y | Y > 0, X]
         reg_learner <- learner$regressor
+        reg_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
         
-        reg_rows <- missing_idx[which(data_temp[[zero_flag_col]][missing_idx] == "positive")]
-        if (length(reg_rows) > 0) {
-          reg_pred_data <- data_temp[reg_rows, feature_cols, with = FALSE]
-          
-          reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
-          check_all_factor_levels(reg_pred_data, factor_levels)
-          
-          # message("levels in reg pred data")
-          # levels_list <- sapply(reg_pred_data, function(col) if (is.factor(col)) levels(col) else NULL)
-          # message(capture.output(print(levels_list)))
-          
-          # reg_pred_data <- set_new_levels_to_na(reg_pred_data, factor_levels, data_y_fill_final, method_var = method_var)
-          if (anyNA(reg_pred_data)) {
-            reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
-          }
-          
-          preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
-        } else {
-          preds_reg <- numeric(0)
+        # Factorlevels
+        reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
+        check_all_factor_levels(reg_pred_data, factor_levels)
+        
+        # Fill NA in feature
+        if (anyNA(reg_pred_data)) {
+          reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[missing_idx])
         }
         
-        preds <- data_temp[[var]]  
-        preds[missing_idx] <- 0    
-        preds[reg_rows] <- preds_reg  
-        preds <- preds[missing_idx]
+        preds_reg <- NULL
+        if (method_var == "ranger" && isTRUE(ranger_median) && !is.null(reg_learner)) {
+          preds_reg <- predict_ranger_median(reg_learner, reg_pred_data, target_name = NULL)
+        }
+        if (is.null(preds_reg)) {
+          preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response  # E[Y | Y>0, X]
+        }
         
-        print ("preds")
-        print (preds)
+        # reg_learner <- learner$regressor
+        # reg_rows <- missing_idx[which(data_temp[[zero_flag_col]][missing_idx] == "positive")]
+        # 
+        # if (length(reg_rows) > 0) {
+        #   reg_pred_data <- data_temp[reg_rows, feature_cols, with = FALSE]
+        #   reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
+        #   check_all_factor_levels(reg_pred_data, factor_levels)
+        #   
+        #   if (anyNA(reg_pred_data)) {
+        #     reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
+        #   }
+        #   
+        #   preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
+        # } else {
+        #   preds_reg <- numeric(0)
+        # }
         
+        # Combine results, Impuatation = deterministic
+        # Y_imputed = P(Y > 0 | X) * E[Y | Y > 0, X]
+        preds <- pi_hat * preds_reg
+        # data_temp[[var]][missing_idx] <- preds
         
       } else {
-        # not semicontinous 
-        if (anyNA(backend_data[, ..feature_cols]))  {
-          warning("NAs present in backend_data before Task creation - did fixfactors create new NAs?")
-          print(which(sapply(backend_data[, ..feature_cols], function(col) anyNA(col))))
-        }
-        
+        # Not semicontinuous
         bdt <- as.data.table(backend_data)
         bdt <- enforce_factor_levels(bdt, factor_levels)
-        check_all_factor_levels(bdt, factor_levels) 
+        check_all_factor_levels(bdt, factor_levels)
         
-        # message("levels in backend data/ bdt")
-        # levels_list <- sapply(bdt, function(col) if (is.factor(col)) levels(col) else NULL)
-        # message(capture.output(print(levels_list)))
-        
+        if (method_var == "ranger") { 
+          bdt <- imputeoor(bdt, data_temp) 
+        }
         
         if (anyNA(bdt)) {
           bdt <- impute_missing_values(bdt, data_temp)
-          print("impute_missings_before_pred")
         }
-        # bdt <- enforce_factor_levels(bdt, factor_levels)
-        check_factor_levels(bdt, factor_levels) 
+        
         backend_data <- mlr3::as_data_backend(bdt)
         
         if (is.factor(data_temp[[target_col]])) {
@@ -1222,18 +1337,6 @@ vimpute <- function(
             backend = backend_data,
             target = target_col
           )
-        } else if (is.numeric(data_temp[[target_col]])) {
-          pred_task <- TaskRegr$new(
-            id = target_col,
-            backend = backend_data,
-            target = target_col
-          )
-        } else {
-          stop("Target variable must be factor or numeric!")
-        }
-        
-        if (is.factor(data_temp[[target_col]])) {
-          
           mod <- switch(method_var,
                         ranger = "classif.ranger",
                         xgboost = "classif.xgboost",
@@ -1242,11 +1345,7 @@ vimpute <- function(
                         stop("Unknown method for classification:", method_var))
           
           learner$model[[mod]]$param_set$values$predict_type <- "prob"
-          
           pred_probs <- learner$predict(pred_task)$prob
-          if (is.null(pred_probs)) {
-            stop("Error while calculating probabilities.")
-          }
           
           if (isFALSE(sequential) || i == nseq) {
             preds <- apply(pred_probs, 1, function(probs) {
@@ -1258,7 +1357,18 @@ vimpute <- function(
           }
           
         } else {
-          preds <- learner$predict(pred_task)$response
+          pred_task <- TaskRegr$new(
+            id = target_col,
+            backend = backend_data,
+            target = target_col
+          )
+          preds <- NULL
+          if (method_var == "ranger" && isTRUE(ranger_median)) {
+            preds <- predict_ranger_median(learner, bdt, target_name = target_col)
+          }
+          if (is.null(preds)) {
+            preds <- learner$predict(pred_task)$response
+          }
         }
       }
       
@@ -1270,26 +1380,61 @@ vimpute <- function(
         decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
         preds <- round(preds, decimal_places)
       }
-      ### Predict End ###################################################################################################
       
-      ### *****PMM Start***** ###################################################################################################
-      if(verbose){
-        message(paste("***** pmm for predictions"))
+      # Store model score used for prediction for pmm (numeric targets only)
+      if (inherits(preds, "numeric")) {
+        miss_idx <- missing_indices[[var]]
+        obs_idx <- setdiff(seq_len(nrow(data)), miss_idx)
+        
+        # Store score for PMM
+        score_current <- numeric(nrow(data))
+        score_current[obs_idx] <- data[[var]][obs_idx]       # observed values
+        score_current[miss_idx] <- preds        # predictions for missing rows
       }
-      if (pmm[[var]] && is.numeric(data_temp[[var]])) {
-        if(verbose){
-          print(paste("PMM is applied to", var, "."))
+### Predict End ###################################################################################################
+      
+### ***** PMM / Score-kNN Start ***** ###################################################################################################
+      if(verbose){
+        message("***** PMM / Score-kNN for predictions")
+      }
+      
+      if (pmm[[var]] && is.numeric(data_temp[[var]]) && length(miss_idx) > 0) {
+        
+        # Observed values
+        y_obs <- data[[var]][obs_idx]
+        
+        if (pmm_k == 1 && is.numeric(data_temp[[var]])) {
+          # --- Standard PMM (1D at Y) only for numeric variables ---
+          preds<- sapply(preds, function(x) {
+            idx <- which.min(abs(y_obs - x))
+            y_obs[idx]
+          })
+          
+        } else if (pmm_k > 1 && is.numeric(data_temp[[var]])) {
+          # --- Score-based kNN PMM (1D score, numeric targets only) ---
+          
+          # Compute model-based scores for ALL rows
+          # IMPORTANT: score must come from the SAME regression model
+          # Score-based kNN
+          score_obs  <- score_current[obs_idx]
+          score_miss <- score_current[miss_idx]
+          k <- min(pmm_k, length(y_obs))
+          
+          preds <- sapply(score_miss, function(s) {
+            idx <- order(abs(score_obs - s))[1:k]  # find k nearest neighbors
+            mean(y_obs[idx])                       # smooth
+            # stochastic alternative: sample(y_obs[idx], 1)
+          })
         }
         
-        # True observed values from the original data
-        observed_values <- na.omit(data[[var]])
+        # Round only final imputation
+        decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
+        preds <- round(preds, decimal_places)
         
-        # Find the next true value for each prediction
-        preds <- sapply(preds, function(x) {
-          observed_values[which.min(abs(observed_values - x))]
-        })
+        #preds <- preds[miss_idx]
       }
-      ### PMM End ###  
+      ### PMM / Score-kNN End ###
+      
       
       ### *****Prediction History Start***** ###################################################################################################
       if(verbose){
@@ -1310,11 +1455,13 @@ vimpute <- function(
         message(paste("***** Replace values with new predictions"))
       }
       
+      # preds <- preds[miss_idx]
+      
       if (length(missing_idx) > 0) {
         if (is.numeric(data_prev[[var]])) {  
           data[missing_idx, (var) := as.numeric(preds)]
         } else if (is.factor(data[[var]])) {
-          data[missing_idx, (var) := factor(preds, levels = factor_levels[[var]])]
+          data[missing_idx, (var) := factor((preds), levels = factor_levels[[var]])]
         } else {
           stop(paste("Unknown data type for variable:", var))
         }
@@ -1340,7 +1487,7 @@ vimpute <- function(
             data_new[, (var) := data[[var]]]
             
             # Ensure that `preds` is not NULL or empty
-            if (length(preds) == length(missing_idx) && !all(is.na(preds))) {
+            if (length((preds)) == length(missing_idx) && !all(is.na((preds)))) {
               # Set the imputation as TRUE for missing values
               set(data_new, i = missing_idx, j = imp_col, value = TRUE)
             } else {
