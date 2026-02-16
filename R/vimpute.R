@@ -516,7 +516,7 @@ vimpute <- function(
       # Ranger Parameter Defaults
       ranger_params <- list(
         num.trees = 500,
-        num.threads = 4
+        num.threads = optimal_threads
       )
       
       if (method_var == "ranger") {
@@ -544,6 +544,9 @@ vimpute <- function(
         }
       }
       
+      is_regr_task <- is.numeric(data_y_fill_final[[target_col]])
+      measure <- if (is_regr_task) msr("regr.rmse") else msr("classif.acc")
+
       if (length(learner_candidates) > 1) {
         resample_results <- lapply(learner_candidates, function(lrn) {
           
@@ -552,12 +555,22 @@ vimpute <- function(
           } else if (grepl("ranger", lrn$id)) {
             lrn$param_set$values <- modifyList(lrn$param_set$values, ranger_params)
           }
+          
+          # Klassiication: probabilistic
+          if (!is_regr_task) {
+            lrn$predict_type <- "prob"
+          }
           resample(task, lrn, rsmp("cv", folds = 5))
         })
         
-        mse_values <- sapply(resample_results, function(res) res$aggregate(msr("regr.rmse")))
-        best_learner <- learner_candidates[[which.min(mse_values)]]
         
+        scores <- sapply(resample_results, function(res) res$aggregate(measure))
+        if (is_regr_task) {
+          best_learner <- learner_candidates[[which.min(scores)]]   # RMSE: min
+        } else {
+          best_learner <- learner_candidates[[which.max(scores)]]   # ACC: max
+        }
+
       } else {
         best_learner <- learner_candidates[[1]]
       }
