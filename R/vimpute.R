@@ -1350,6 +1350,7 @@ vimpute <- function(
             backend = backend_data,
             target = target_col
           )
+          
           mod <- switch(method_var,
                         ranger = "classif.ranger",
                         xgboost = "classif.xgboost",
@@ -1357,7 +1358,10 @@ vimpute <- function(
                         robust = "classif.glm_rob",
                         stop("Unknown method for classification:", method_var))
           
-          learner$model[[mod]]$param_set$values$predict_type <- "prob"
+          # learner$model[[mod]]$param_set$values$predict_type <- "prob"
+          # pred_probs <- learner$predict(pred_task)$prob
+          
+          learner$predict_type <- "prob"
           pred_probs <- learner$predict(pred_task)$prob
           
           if (isFALSE(sequential) || i == nseq) {
