@@ -491,7 +491,7 @@ vimpute <- function(
       if (method_var == "xgboost") {
         
         # All valid xgboost parameters in mlr3
-        valid_xgb_params <- names(learners[["regr.xgboost"]]$param_set$id)
+        valid_xgb_params <- learners[["regr.xgboost"]]$param_set$ids()
         
         # Invalid parameters
         invalid <- setdiff(names(var_learner_params), valid_xgb_params)
@@ -522,7 +522,7 @@ vimpute <- function(
       if (method_var == "ranger") {
         
         # All valid ranger params
-        valid_ranger_params <- names(learners[["regr.ranger"]]$param_set$id)
+        valid_ranger_params <- learners[["regr.ranger"]]$param_set$ids()
         
         # Invalid parameters
         invalid <- setdiff(names(var_learner_params), valid_ranger_params)
