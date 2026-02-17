@@ -334,6 +334,81 @@ select_formula <- function(formula_list, response_variable) {
 }
 #
 #
+# Checking learner_params
+map_learner_params <- function(variables, method, learner_params) {
+  
+  # 0) Empty
+  if (is.null(learner_params) || length(learner_params) == 0) {
+    return(setNames(vector("list", length(variables)), variables))
+  }
+  
+  # 1) Context
+  method_names     <- unique(unlist(method))
+  only_one_method  <- length(method_names) == 1
+  
+  nm       <- names(learner_params)
+  nm_clean <- if (is.null(nm)) character(0) else nm[nzchar(nm) & !is.na(nm)]
+  
+  # Top-Level-Keys
+  var_keys   <- intersect(nm_clean, variables)
+  meth_keys  <- intersect(nm_clean, method_names)
+  unknown    <- setdiff(nm_clean, c(variables, method_names))
+  
+  has_any_names          <- length(nm_clean) > 0
+  has_var_keys           <- length(var_keys)  > 0
+  has_meth_keys          <- length(meth_keys) > 0
+  has_any_var_or_method  <- has_var_keys || has_meth_keys
+  
+  # 2) GLOBAL-MODUS: only okay if ONE Method and NO var-/method-Key 
+  if (!has_any_var_or_method) {
+    if (only_one_method) {
+      out <- setNames(vector("list", length(variables)), variables)
+      for (v in variables) out[[v]] <- learner_params
+      return(out)
+    } else {
+      # More Methods
+      warning("Global learner_params cannot be applied because multiple methods are used. Parameters ignored.")
+      return(setNames(vector("list", length(variables)), variables))
+    }
+  }
+  
+  # 3) Mixed (Variable- and Method-Keys at same time)
+  if (has_var_keys && has_meth_keys) {
+    warning("Mixed learner_params keys (variables AND methods) are not allowed. All learner_params were ignored.")
+    return(setNames(vector("list", length(variables)), variables))
+  }
+  
+  # 4) Unknown Top-Level-Keys
+  if (length(unknown) > 0) {
+    warning(sprintf(
+      "learner_params contain entries that do not match any NA-variable or method and will be ignored: %s",
+      paste(unknown, collapse = ", ")
+    ))
+  }
+  
+  # 5) VARIABLE-MODUS
+  if (has_var_keys && !has_meth_keys) {
+    out <- setNames(vector("list", length(variables)), variables)
+    for (v in variables) {
+      out[[v]] <- if (v %in% var_keys) learner_params[[v]] else list()
+    }
+    return(out)
+  }
+  
+  # 6) METHOD-MODUS
+  if (!has_var_keys && has_meth_keys) {
+    out <- setNames(vector("list", length(variables)), variables)
+    for (v in variables) {
+      m <- method[[v]]
+      out[[v]] <- if (!is.null(m) && (m %in% meth_keys)) learner_params[[m]] else list()
+    }
+    return(out)
+  }
+  
+  # 7) Fallback
+  setNames(vector("list", length(variables)), variables)
+}
+#
 #
 # Precheck 
 # Performs a series of preliminary checks, including checking for missing values, data types, formulas, PMM settings and supported methods, and returns the checked data and variable information.
@@ -343,7 +418,8 @@ precheck <- function(
     formula,
     method,
     sequential,
-    pmm_k
+    pmm_k,
+    learner_params
 ) {
   
   # check missing data
@@ -510,10 +586,16 @@ precheck <- function(
     }
   }), .SDcols = variables]
   
+  # learner_params checking
+  checked_learner_params <- map_learner_params(
+    variables = variables_NA,
+    method    = method,
+    learner_params = learner_params
+  )
+  
   message("Precheck done.")
-  return(list(data=data, variables=variables, variables_NA=variables_NA, method=method))
+  return(list(data=data, variables=variables, variables_NA=variables_NA, method=method, learner_params = checked_learner_params))
 }
-
 #
 #
 #

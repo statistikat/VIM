@@ -13,7 +13,8 @@
 #' @param pmm - TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable. If TRUE, missing values of numeric variables are imputed by matching to observed values with similar predicted scores.
 #' @param pmm_k - An integer specifying the number of nearest observed values to consider in predictive mean matching (PMM) for each numeric variable.  If `pmm_k = 1`, classical PMM is applied: the single observed value closest to the predicted value is used. If `pmm_k > 1`, Score-kNN PMM is applied: for each missing value, the `k` observed values with closest model-predicted scores are selected, and the imputation is the mean (numeric)/ median (factor) from these neighbors. 
 #' @param learner_params - Optional named list with variable-specific learner parameters.
-#'   e.g. for a variable that uses method xgboost: `learner_params = list(considered_variables[1] = list(nrounds = 50, eta = 0.2))`).
+#'   e.g. for a variable that uses method xgboost: `learner_params = list(considered_variables[1] = list(nrounds = 50, eta = 0.2)))`.
+#'   e.g. for a variable that uses method ranger:  `learner_params = list(considered_variables[2] = list(predict_median = TRUE)))` (tree-wise median aggregation).
 #' @param formula - If not all variables are used as predictors, or if transformations or interactions are required (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized". Provide as a list for each variable that requires specific conditions.
 #   - formula format:                     list(variable_1 ~ age + lenght, variable_2 ~ width + country) 
 #   - formula format with transformation: list(log(variable_1) ~ age + inverse(lenght), variable_2 ~ width + country)
@@ -26,8 +27,6 @@
 #' @param pred_history - If TRUE, all predicted values across all iterations are stored.
 #' @param tune - Tunes hyperparameters halfway through iterations, TRUE or FALSE.
 #' @param verbose - If TRUE additional debugging output is provided
-#' @param ... Additional method-specific options. Currently supports
-#'   `ranger_median = TRUE/FALSE` for ranger regression predictions (tree-wise median aggregation).
 #' @return imputed data set or c(imputed data set, prediction history)
 #' @export
 #'
@@ -57,8 +56,7 @@ vimpute <- function(
     imp_var = TRUE,
     pred_history = FALSE,
     tune = FALSE,
-    verbose = FALSE,
-    ...
+    verbose = FALSE
 ) {
 
   ..cols <- ..feature_cols <- ..reg_features <- ..relevant_features <- NULL
@@ -66,24 +64,8 @@ vimpute <- function(
   old_plan <- future::plan()  # Save current plan
   on.exit(future::plan(old_plan), add = TRUE)  # Restore on exit, even if error
 
-  dots <- list(...)
-  ranger_median <- FALSE
-  if ("ranger_median" %in% names(dots)) {
-    ranger_median <- dots$ranger_median
-    dots$ranger_median <- NULL
-  }
-  if (!is.logical(ranger_median) || length(ranger_median) != 1 || is.na(ranger_median)) {
-    stop("Error: 'ranger_median' in ... must be TRUE or FALSE.")
-  }
-  if (length(dots) > 0) {
-    dot_names <- names(dots)
-    if (is.null(dot_names)) {
-      dot_names <- rep("<unnamed>", length(dots))
-    }
-    dot_names[dot_names == ""] <- "<unnamed>"
-    warning("Arguments in `...` are currently ignored: ", paste(unique(dot_names), collapse = ", "))
-  }
-  
+  # dots <- list(...)
+
   # only defined variables
   data_all_variables <- as.data.table(data)
   data <-  as.data.table(data)[, considered_variables, with = FALSE]
@@ -103,11 +85,15 @@ vimpute <- function(
   if(verbose){
     message(paste("***** Check Data"))  
   }
-  checked_data <- precheck(data, pmm, formula, method, sequential, pmm_k)
-  data         <- checked_data$data
-  variables    <- checked_data$variables
-  variables_NA <- checked_data$variables_NA
-  method       <- checked_data$method
+  checked_data   <- precheck(data, pmm, formula, method, sequential, pmm_k, learner_params)
+  data           <- checked_data$data
+  variables      <- checked_data$variables
+  variables_NA   <- checked_data$variables_NA
+  method         <- checked_data$method
+  learner_params <- checked_data$learner_params
+  
+  print("learner_params")
+  print(learner_params)
   
   if (!sequential && nseq > 1) {
     if (verbose) message ("'nseq' was set to 1 because 'sequential = FALSE'.")
@@ -345,6 +331,7 @@ vimpute <- function(
       
       # Custom ranger median prediction
       use_median <- FALSE
+      ranger_median <- FALSE
       if ("predict_median" %in% names(var_learner_params)) {
         if (isTRUE(var_learner_params$predict_median)) use_median <- TRUE
         var_learner_params$predict_median <- NULL
@@ -495,13 +482,13 @@ vimpute <- function(
         
         # Invalid parameters
         invalid <- setdiff(names(var_learner_params), valid_xgb_params)
+        
         if (length(invalid) > 0) {
-          stop(paste(
-            "Invalid XGBoost parameters for variable", var, ":",
-            paste(invalid, collapse = ", "),
-            "\nValid parameters are:",
-            paste(valid_xgb_params, collapse = ", ")
+          warning(sprintf(
+            "learner_params for variable '%s' contain invalid XGBoost parameters: %s. These parameters were ignored.",
+            var, paste(invalid, collapse = ", ")
           ))
+          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
         }
         
         # Use valid parameters 
@@ -526,13 +513,13 @@ vimpute <- function(
         
         # Invalid parameters
         invalid <- setdiff(names(var_learner_params), valid_ranger_params)
+        
         if (length(invalid) > 0) {
-          stop(paste(
-            "Invalid Ranger parameters for variable", var, ":",
-            paste(invalid, collapse = ", "),
-            "\nValid parameters are:",
-            paste(valid_ranger_params, collapse = ", ")
+          warning(sprintf(
+            "learner_params for variable '%s' contain invalid ranger parameters: %s. These parameters were ignored.",
+            var, paste(invalid, collapse = ", ")
           ))
+          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
         }
         
         # Use parameter
@@ -1233,15 +1220,24 @@ vimpute <- function(
       
       if (is_sc) {
         zero_flag_col <- paste0(var, "_zero_flag")
-        feature_cols <- setdiff(colnames(data_temp), c(var, zero_flag_col))
+        zero_prob_col <- paste0(var, "_zero_prob")     # numeric Prob-column
+        feature_cols <- setdiff(colnames(data_temp), c(var, zero_flag_col, zero_prob_col))
         
         # 1) classification (null vs positive) P(Y > 0 | X)
         class_learner <- learner$classifier
+        
+        # Safety: classifier -> probabilities 
+        if ("prob" %in% class_learner$predict_types) {
+          class_learner$predict_type <- "prob"
+        } else {
+          class_learner$predict_type <- "response"  # Fallback
+          warning(sprintf("predict_type 'prob' not supported by learner '%s'; fallback to 'response'", class_learner$id))
+        }
+        
         class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
         # Factor Level Handling
         class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
         check_all_factor_levels(class_pred_data, factor_levels)
-        
         factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
 
         ### ensure reserve level exists in prediction data ###
@@ -1254,36 +1250,23 @@ vimpute <- function(
           # Set factor levels 
           class_pred_data[[col]] <- factor(class_pred_data[[col]], levels = train_levels)
         }
-        
-        # factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
-        # for (col in factor_cols) {
-        # }
-        # 
-        # for (col in names(class_pred_data)) {
-        #   if (is.factor(class_pred_data[[col]])) {
-        #   }
-        # }
-        
+
         # Prediction
         pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
         # pred_probs[, "positive"] = P(Y>0 | X)
-        pi_hat <- pred_probs[, "positive"] 
+        pi_hat <- if (!is.null(pred_probs) && "positive" %in% colnames(pred_probs)) {
+          pred_probs[, "positive"]
+        } else {
+          # Fallback 'response'
+          as.numeric(class_learner$predict_newdata(class_pred_data)$response == "positive")
+        }
         
         # Save prob in zero_flag_col 
-        data_temp[[zero_flag_col]][missing_idx] <- pi_hat
-        
-        # if (isFALSE(sequential) || i == nseq) {
-        #   preds_class <- apply(pred_probs, 1, function(probs) {
-        #     sample(colnames(pred_probs), size = 1, prob = probs)
-        #   })
-        # } else {
-        #   preds_class <- colnames(pred_probs)[max.col(pred_probs)]
-        # }
-        # 
-        # levels_zero_flag <- levels(data_temp[[zero_flag_col]])
-        # data_temp[[zero_flag_col]][missing_idx] <- ifelse(
-        #   preds_class == "positive", "positive", "zero"
-        # )
+        # data_temp[[zero_flag_col]][missing_idx] <- pi_hat
+        if (!zero_prob_col %in% names(data_temp)) {
+          data_temp[[zero_prob_col]] <- NA_real_
+        }
+        data_temp[[zero_prob_col]][missing_idx] <- pi_hat
         
         # 2) regression: for positive predictions E[Y | Y > 0, X]
         reg_learner <- learner$regressor
@@ -1305,23 +1288,6 @@ vimpute <- function(
         if (is.null(preds_reg)) {
           preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response  # E[Y | Y>0, X]
         }
-        
-        # reg_learner <- learner$regressor
-        # reg_rows <- missing_idx[which(data_temp[[zero_flag_col]][missing_idx] == "positive")]
-        # 
-        # if (length(reg_rows) > 0) {
-        #   reg_pred_data <- data_temp[reg_rows, feature_cols, with = FALSE]
-        #   reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
-        #   check_all_factor_levels(reg_pred_data, factor_levels)
-        #   
-        #   if (anyNA(reg_pred_data)) {
-        #     reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[reg_rows])
-        #   }
-        #   
-        #   preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
-        # } else {
-        #   preds_reg <- numeric(0)
-        # }
         
         # Combine results, Impuatation = deterministic
         # Y_imputed = P(Y > 0 | X) * E[Y | Y > 0, X]
@@ -1465,28 +1431,45 @@ vimpute <- function(
           predicted_values = preds
         )
       }
-      ### Prediction History End ###
+### Prediction History End ###
       
-      ### *****Replace missing values with predicted values Start***** ###################################################################################################
+### *****Replace missing values with predicted values Start***** ###################################################################################################
       if(verbose){
         message(paste("***** Replace values with new predictions"))
       }
-      
       # preds <- preds[miss_idx]
-      
       if (length(missing_idx) > 0) {
-        if (is.numeric(data_prev[[var]])) {  
+        
+        # orginal numeric
+        is_target_numeric <- is.numeric(original_data[[var]])
+        
+        if (is_target_numeric) {
+          # if factor because of semicontinous -> numeric
+          if (is.factor(data[[var]])) {
+            data[, (var) := as.numeric(as.character(get(var)))]
+          }
+          if (exists("data_new") && is.factor(data_new[[var]])) {
+            data_new[, (var) := as.numeric(as.character(get(var)))]
+          }
+          
+          # numeric imputation
           data[missing_idx, (var) := as.numeric(preds)]
-        } else if (is.factor(data[[var]])) {
-          data[missing_idx, (var) := factor((preds), levels = factor_levels[[var]])]
+          
+        } else if (is.factor(original_data[[var]])) {
+          
+          # factor imputation
+          data[missing_idx, (var) := factor(preds, levels = factor_levels[[var]])]
+          
         } else {
           stop(paste("Unknown data type for variable:", var))
         }
+        
         data <- copy(data)
       }
-      ### Replace missing values with predicted values Start End ###
       
-      ### *****Import Variable Start***** ###################################################################################################
+### Replace missing values with predicted values End ###
+      
+### *****Import Variable Start***** ###################################################################################################
       if(verbose){
         message(paste("***** Import Variable (imp_var = TRUE)"))
       }
@@ -1520,9 +1503,9 @@ vimpute <- function(
         message(paste("time used for", var, ":", iteration_times[[var]], "Sekunden"))
       }
     }
-    ### Import Variable END ###
+### Import Variable END ###
     
-    ### *****Stop Criteria Start***** ###################################################################################################
+### *****Stop Criteria Start***** ###################################################################################################
     if (sequential && i != 1) {
       is_dt <- inherits(data, "data.table")
       
@@ -1552,22 +1535,36 @@ vimpute <- function(
       
       
       if (length(factor_cols) > 0) {
-        if (is_dt) {
-          # Calculate number of changed values
-          cat_changes <- sum(data[, factor_cols, with = FALSE] != data_prev[, factor_cols, with = FALSE], na.rm = TRUE)
-          
-          # Calculate total number of categorical values
-          total_cat_values <- sum(!is.na(data_prev[, factor_cols, with = FALSE]))
+        # if (is_dt) {
+        #   # Calculate number of changed values
+        #   cat_changes <- sum(data[, factor_cols, with = FALSE] != data_prev[, factor_cols, with = FALSE], na.rm = TRUE)
+        #   
+        #   # Calculate total number of categorical values
+        #   total_cat_values <- sum(!is.na(data_prev[, factor_cols, with = FALSE]))
+        # } else {
+        #   # If 'data' is data.frame 
+        #   cat_changes <- sum(data[factor_cols] != data_prev[factor_cols], na.rm = TRUE)
+        #   total_cat_values <- sum(!is.na(data_prev[factor_cols]))
+        # }
+        # # Calculate normalized rate of change
+        # cat_diff <- cat_changes / (total_cat_values + 1e-8)  # +epsilon to avoid division by zero
+        
+        # comparison as character
+        data_fac_chr      <- data[,       lapply(.SD, as.character), .SDcols = factor_cols]
+        data_prev_fac_chr <- data_prev[,  lapply(.SD, as.character), .SDcols = factor_cols]
+        
+        # Differences
+        cat_changes <- sum(data_fac_chr != data_prev_fac_chr, na.rm = TRUE)
+        total_cat_values <- sum(!is.na(data_prev_fac_chr))
+        
+        cat_diff <- if (total_cat_values > 0) {
+          cat_changes / (total_cat_values + 1e-8)
         } else {
-          # If 'data' is data.frame 
-          cat_changes <- sum(data[factor_cols] != data_prev[factor_cols], na.rm = TRUE)
-          total_cat_values <- sum(!is.na(data_prev[factor_cols]))
+          0
         }
         
-        # Calculate normalized rate of change
-        cat_diff <- cat_changes / (total_cat_values + 1e-8)  # +epsilon to avoid division by zero
       } else {
-        cat_diff <- 0  # If there are no categorical columns, the difference is 0  
+        cat_diff <- 0  # If there are no categorical columns
       }
       
       # Calculate total change
