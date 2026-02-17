@@ -475,6 +475,7 @@ vimpute <- function(
         nthread = optimal_threads
       )
       
+      ## XGBOOST
       if (method_var == "xgboost") {
         
         # All valid xgboost parameters in mlr3
@@ -506,6 +507,7 @@ vimpute <- function(
         num.threads = optimal_threads
       )
       
+      ## RANGER
       if (method_var == "ranger") {
         
         # All valid ranger params
@@ -531,6 +533,80 @@ vimpute <- function(
         }
       }
       
+      ## REGULARIZED (glmnet)
+      if (method_var == "regularized") {
+        
+        if (is.numeric(data[[target_col]])) {
+          # ---- Regression glmnet ----
+          valid_glmnet_params <- learners[["regr.glmnet"]]$param_set$ids()
+          
+          invalid <- setdiff(names(var_learner_params), valid_glmnet_params)
+          if (length(invalid) > 0) {
+            warning(sprintf(
+              "learner_params for variable '%s' contain invalid glmnet regression parameters: %s. They were ignored.",
+              var, paste(invalid, collapse = ", ")
+            ))
+            var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
+          }
+          
+          glmnet_params <- var_learner_params
+          
+          if (verbose) {
+            cat("\n--- glmnet regression params for variable", var, "---\n")
+            print(glmnet_params)
+          }
+          
+        } else {
+          # ---- Classification glmnet ----
+          valid_glmnet_params <- learners[["classif.glmnet"]]$param_set$ids()
+          
+          invalid <- setdiff(names(var_learner_params), valid_glmnet_params)
+          if (length(invalid) > 0) {
+            warning(sprintf(
+              "learner_params for variable '%s' contain invalid glmnet classification parameters: %s. They were ignored.",
+              var, paste(invalid, collapse = ", ")
+            ))
+            var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
+          }
+          
+          glmnet_params <- var_learner_params
+          
+          if (verbose) {
+            cat("\n--- glmnet classification params for variable", var, "---\n")
+            print(glmnet_params)
+          }
+        }
+      }
+      
+      ## ROBUST (lm_rob / glm_rob)
+      if (method_var == "robust") {
+        
+        # Regression vs Classification
+        if (is.numeric(data[[target_col]])) {
+          valid_robust_params <- learners[["regr.lm_rob"]]$param_set$ids()
+        } else {
+          valid_robust_params <- learners[["classif.glm_rob"]]$param_set$ids()
+        }
+        
+        # Invalid parameters
+        invalid <- setdiff(names(var_learner_params), valid_robust_params)
+        
+        if (length(invalid) > 0) {
+          warning(sprintf(
+            "learner_params for variable '%s' contain invalid robust-model parameters: %s. These parameters were ignored.",
+            var, paste(invalid, collapse = ", ")
+          ))
+          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
+        }
+        
+        robust_params <- var_learner_params
+        
+        if (verbose) {
+          cat("\n--- robust params for variable", var, "---\n")
+          print(robust_params)
+        }
+      }
+      
       is_regr_task <- is.numeric(data_y_fill_final[[target_col]])
       measure <- if (is_regr_task) msr("regr.rmse") else msr("classif.acc")
 
@@ -541,15 +617,22 @@ vimpute <- function(
             lrn$param_set$values <- modifyList(lrn$param_set$values, xgboost_params)
           } else if (grepl("ranger", lrn$id)) {
             lrn$param_set$values <- modifyList(lrn$param_set$values, ranger_params)
+          } else if (grepl("glmnet", lrn$id)) {
+            lrn$param_set$values <- modifyList(lrn$param_set$values, glmnet_params)
+          } else if (grepl("lm_rob|glm_rob", lrn$id)) {
+            lrn$param_set$values <- modifyList(lrn$param_set$values, robust_params)
           }
           
           # Klassiication: probabilistic
           if (!is_regr_task) {
-            lrn$predict_type <- "prob"
+            if ("prob" %in% lrn$predict_types) {
+              lrn$predict_type <- "prob"
+            } else {
+              lrn$predict_type <- "response"
+            }
           }
           resample(task, lrn, rsmp("cv", folds = 5))
         })
-        
         
         scores <- sapply(resample_results, function(res) res$aggregate(measure))
         if (is_regr_task) {
@@ -580,6 +663,16 @@ vimpute <- function(
         default_learner$param_set$values <- modifyList(default_learner$param_set$values, ranger_params)
         current_learner$param_set$values <- modifyList(current_learner$param_set$values, ranger_params)
         tuned_learner$param_set$values <- modifyList(tuned_learner$param_set$values, ranger_params)
+      } else if (grepl("glmnet", best_learner$id)) {
+        best_learner$param_set$values   <- modifyList(best_learner$param_set$values, glmnet_params)
+        default_learner$param_set$values <- modifyList(default_learner$param_set$values, glmnet_params)
+        current_learner$param_set$values <- modifyList(current_learner$param_set$values, glmnet_params)
+        tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, glmnet_params)
+      } else if (grepl("lm_rob|glm_rob", best_learner$id)) {
+        best_learner$param_set$values   <- modifyList(best_learner$param_set$values, robust_params)
+        default_learner$param_set$values <- modifyList(default_learner$param_set$values, robust_params)
+        current_learner$param_set$values <- modifyList(current_learner$param_set$values, robust_params)
+        tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, robust_params)
       }
       
       if (is.factor(data_temp[[target_col]])) {
@@ -996,7 +1089,12 @@ vimpute <- function(
           current_learner$param_set$values <- modifyList(current_learner$param_set$values, xgboost_params)
         } else if (grepl("ranger", best_learner$id)) {
           current_learner$param_set$values <- modifyList(current_learner$param_set$values, ranger_params)
+        } else if (grepl("glmnet", best_learner$id)) {
+          current_learner$param_set$values <- modifyList(current_learner$param_set$values, glmnet_params)
+        } else if (grepl("lm_rob|glm_rob", best_learner$id)) {
+          current_learner$param_set$values <- modifyList(current_learner$param_set$values, robust_params)
         }
+        
         
         # Handling of missing values
         if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) { #xgboost can handle NAs directly, support_missings are learners that can handle missings if they are marked as such
