@@ -46,8 +46,8 @@ vimpute <- function(
     data,
     considered_variables = names(data), 
     method = setNames(as.list(rep("ranger", length(considered_variables))), considered_variables),
-    pmm = setNames(as.list(rep(TRUE, length(considered_variables))), considered_variables),
-    pmm_k = 1,
+    pmm = FALSE,
+    pmm_k = NULL,
     learner_params = NULL,
     formula = FALSE, 
     sequential = TRUE,
@@ -85,12 +85,15 @@ vimpute <- function(
   if(verbose){
     message(paste("***** Check Data"))  
   }
-  checked_data   <- precheck(data, pmm, formula, method, sequential, pmm_k, learner_params)
+  checked_data   <- precheck(data, pmm, formula, method, sequential, pmm_k, learner_params, tune)
   data           <- checked_data$data
   variables      <- checked_data$variables
   variables_NA   <- checked_data$variables_NA
   method         <- checked_data$method
   learner_params <- checked_data$learner_params
+  pmm            <- checked_data$pmm
+  pmm_k          <- checked_data$pmm_k
+  tune           <- checked_data$tune
   
   print("learner_params")
   print(learner_params)
@@ -353,9 +356,9 @@ vimpute <- function(
           xgboost = list(learners[["regr.xgboost"]])
         )
       } else if (is.factor(data[[target_col]])) {
-        if (method_var == "robust" && length(levels(data[[target_col]])) != 2) {
-          warning(paste0("Variable not binary", target_col, "': use alternative method than glm.rob"))
-        }
+        # if (method_var == "robust" && length(levels(data[[target_col]])) != 2) {
+        #   warning(paste0("Variable not binary", target_col, "': use alternative method than glm.rob"))
+        # }
         learners_list <- list(
           regularized = list(learners[["classif.glmnet"]]),
           robust = list(learners[["classif.glm_rob"]]),
@@ -689,7 +692,7 @@ vimpute <- function(
         message(paste("***** Parametertuning"))
       }
       
-      if (!tuning_status[[var]] && nseq >= 2 && tune) {
+      if (!tuning_status[[var]] && nseq >= 2 && isTRUE(tune[[var]])) {
         
         if ((nseq > 2 && i == round(nseq / 2)) || (nseq == 2 && i == 2)) {
           tuner = tnr("random_search")
@@ -855,9 +858,9 @@ vimpute <- function(
       #     print(tuning_log)
       #   }
       # }
-      ### Hyperparameter End ###
+### Hyperparameter End ###
       
-      ### ***** NAs Start***** ###################################################################################################
+### ***** NAs Start***** ###################################################################################################
       if(verbose){
         message(paste("***** NAs in feature variables bearbeiten"))
       }
@@ -1484,14 +1487,14 @@ vimpute <- function(
         # Observed values
         y_obs <- data[[var]][obs_idx]
         
-        if (pmm_k == 1 && is.numeric(data_temp[[var]])) {
+        if (pmm_k[[var]] == 1 && is.numeric(data_temp[[var]])) {
           # --- Standard PMM (1D at Y) only for numeric variables ---
           preds<- sapply(preds, function(x) {
             idx <- which.min(abs(y_obs - x))
             y_obs[idx]
           })
           
-        } else if (pmm_k > 1 && is.numeric(data_temp[[var]])) {
+        } else if (pmm_k[[var]] > 1 && is.numeric(data_temp[[var]])) {
           # --- Score-based kNN PMM (1D score, numeric targets only) ---
           
           # Compute model-based scores for ALL rows
@@ -1499,7 +1502,7 @@ vimpute <- function(
           # Score-based kNN
           score_obs  <- score_current[obs_idx]
           score_miss <- score_current[miss_idx]
-          k <- min(pmm_k, length(y_obs))
+          k <- min(pmm_k[[var]], length(y_obs))
           
           preds <- sapply(score_miss, function(s) {
             idx <- order(abs(score_obs - s))[1:k]  # find k nearest neighbors
@@ -1514,10 +1517,10 @@ vimpute <- function(
         
         #preds <- preds[miss_idx]
       }
-      ### PMM / Score-kNN End ###
+### PMM / Score-kNN End ###
       
       
-      ### *****Prediction History Start***** ###################################################################################################
+### *****Prediction History Start***** ###################################################################################################
       if(verbose){
         message(paste("***** Predict History"))
       }
@@ -1723,9 +1726,13 @@ vimpute <- function(
   result <- as.data.table(if (imp_var) data_new else data)  # Default: Return `data` only
   result <- enforce_factor_levels(result, factor_levels)
   
-  if (!pred_history && !tune) {
+  
+  any_tuned <- any(unlist(tune))
+  
+  if (!pred_history && !any_tuned) {
     return(result)
   }
+  
   
   output <- list(data = result)   
   
@@ -1733,7 +1740,7 @@ vimpute <- function(
     pred_result <- rbindlist(history, fill = TRUE)
     output$pred_history <- pred_result
   }
-  if (tune) {
+  if (any_tuned) {
     output$tuning_log <- tuning_log
     
   } 

@@ -121,6 +121,40 @@ register_robust_learners <- function() {
   
   
   # robust Classification Learner
+  # LearnerClassifGlmRob <- R6::R6Class(
+  #   inherit = mlr3::LearnerClassif,
+  #   public = list(
+  #     initialize = function() {
+  #       super$initialize(
+  #         id = "classif.glm_rob",
+  #         feature_types = c("numeric", "integer", "factor", "ordered"),
+  #         predict_types = c("response", "prob"),
+  #         packages = c("mlr3learners"),
+  #         properties = c("twoclass", "multiclass")
+  #       )
+  #       self$state$learner = NULL
+  #     }
+  #   ),
+  #   
+  #   private = list(
+  #     .train = function(task) {
+  #       n_classes = length(task$class_names)
+  #       if (n_classes == 2) {
+  #         self$state$learner = mlr3::lrn("classif.log_reg", predict_type = self$predict_type)
+  #       } else {
+  #         self$state$learner = mlr3::lrn("classif.multinom", predict_type = self$predict_type)
+  #       }
+  #       self$state$learner$train(task)
+  #     },
+  #     
+  #     .predict = function(task) {
+  #       if (is.null(self$state$learner)) stop("Model not trained yet")
+  #       pred = self$state$learner$predict(task)
+  #       return(pred)
+  #     }
+  #   )
+  # )
+  
   LearnerClassifGlmRob <- R6::R6Class(
     inherit = mlr3::LearnerClassif,
     public = list(
@@ -129,28 +163,92 @@ register_robust_learners <- function() {
           id = "classif.glm_rob",
           feature_types = c("numeric", "integer", "factor", "ordered"),
           predict_types = c("response", "prob"),
-          packages = c("mlr3learners"),
+          packages = c("robustbase"),
           properties = c("twoclass", "multiclass")
         )
-        self$state$learner = NULL
+        self$state$models <- NULL
+        self$state$classes <- NULL
       }
     ),
-    
     private = list(
       .train = function(task) {
-        n_classes = length(task$class_names)
-        if (n_classes == 2) {
-          self$state$learner = mlr3::lrn("classif.log_reg", predict_type = self$predict_type)
+        data <- as.data.frame(task$data())
+        y    <- task$truth()
+        X    <- data[, task$feature_names, drop = FALSE]
+        classes <- task$class_names
+        self$state$classes <- classes
+        
+        # robust factor handling: droplevels etc. (optional nach Bedarf)
+        # ...
+        
+        if (length(classes) == 2L) {
+          # Binär: ein robustes Logit
+          df <- data.frame(y = as.factor(y), X)
+          mod <- robustbase::glmrob(y ~ ., data = df, family = binomial())
+          self$state$models <- list(mod)
         } else {
-          self$state$learner = mlr3::lrn("classif.multinom", predict_type = self$predict_type)
+          # Multiclass: One-vs-Rest
+          mods <- vector("list", length(classes))
+          names(mods) <- classes
+          for (k in classes) {
+            # y_k = 1{y==k} vs rest
+            yk <- factor(ifelse(y == k, 1L, 0L))
+            df <- data.frame(y = yk, X)
+            # robustes Logit
+            mods[[k]] <- robustbase::glmrob(y ~ ., data = df, family = binomial())
+          }
+          self$state$models <- mods
         }
-        self$state$learner$train(task)
+        invisible(TRUE)
       },
       
       .predict = function(task) {
-        if (is.null(self$state$learner)) stop("Model not trained yet")
-        pred = self$state$learner$predict(task)
-        return(pred)
+        data <- as.data.frame(task$data(cols = task$feature_names))
+        classes <- self$state$classes
+        
+        if (length(classes) == 2L) {
+          mod <- self$state$models[[1]]
+          p1  <- tryCatch(
+            stats::predict(mod, newdata = data, type = "response"),
+            error = function(e) rep(NA_real_, nrow(data))
+          )
+          # p(y=positive), definiere Klassenreihenfolge wie in task$class_names
+          # Nehmen wir classes[1] als "positive" für Konsistenz:
+          probs <- cbind(p1, 1 - p1)
+          colnames(probs) <- classes
+          if (self$predict_type == "prob") {
+            pred <- mlr3::PredictionClassif$new(task = task, prob = probs)
+          } else {
+            resp <- classes[max.col(probs, ties.method = "first")]
+            pred <- mlr3::PredictionClassif$new(task = task, response = resp)
+          }
+          return(pred)
+        } else {
+          # Multiclass OvR
+          mods <- self$state$models
+          Pk   <- matrix(NA_real_, nrow(data), length(classes))
+          colnames(Pk) <- classes
+          for (k in classes) {
+            Pk[, k] <- tryCatch(
+              stats::predict(mods[[k]], newdata = data, type = "response"),
+              error = function(e) rep(NA_real_, nrow(data))
+            )
+            # clamp to avoid 0/1 pathological odds
+            Pk[, k] <- pmin(pmax(Pk[, k], 1e-6), 1 - 1e-6)
+          }
+          # OvR-Normalisierung: q_k = p_k/(1-p_k); p_tilde_k = q_k / sum_j q_j
+          Q <- Pk / (1 - Pk)
+          row_sums <- rowSums(Q)
+          probs <- Q / row_sums
+          
+          if (self$predict_type == "prob") {
+            pred <- mlr3::PredictionClassif$new(task = task, prob = probs)
+          } else {
+            resp <- classes[max.col(probs, ties.method = "first")]
+            pred <- mlr3::PredictionClassif$new(task = task, response = resp)
+          }
+          return(pred)
+        }
       }
     )
   )
@@ -334,6 +432,169 @@ select_formula <- function(formula_list, response_variable) {
 }
 #
 #
+#
+#
+map_pmm <- function(variables_NA, pmm, original_data) {
+  
+  user_set_pmm_per_variable <- is.list(pmm) 
+  
+  # 1: Single logical
+  if (is.logical(pmm) && length(pmm) == 1) {
+    out <- setNames(as.list(rep(pmm, length(variables_NA))), variables_NA)
+    
+    invalid_numeric <- variables_NA[!vapply(original_data[, variables_NA, with=FALSE], is.numeric, logical(1))]
+    for (v in invalid_numeric) out[[v]] <- FALSE
+    
+    return(out)
+  }
+  
+  # 2: List
+  if (is.list(pmm)) {
+    
+    nm <- names(pmm)
+    if (is.null(nm)) stop("pmm as list must use variable names as list names.")
+    
+    unknown <- setdiff(nm, variables_NA)
+    # if (length(unknown) > 0) {
+    #   warning(sprintf("pmm contains names that are not NA-variables: %s (ignored).",
+    #                   paste(unknown, collapse=", ")))
+    # }
+    
+    out <- setNames(vector("list", length(variables_NA)), variables_NA)
+    
+    for (v in variables_NA) {
+      if (!is.null(pmm[[v]])) {
+        out[[v]] <- as.logical(pmm[[v]])
+      } else {
+        out[[v]] <- FALSE
+      }
+      
+      # PMM only for numeric
+      if (isTRUE(out[[v]]) && !is.numeric(original_data[[v]])) {
+        
+        # Warn ONLY if the user set pmm for this variable explicitly:
+        if (user_set_pmm_per_variable && !is.null(pmm[[v]]) && isTRUE(pmm[[v]])) {
+          warning(sprintf("PMM not possible for non-numeric variable '%s'. PMM disabled.", v))
+        }
+        
+        out[[v]] <- FALSE
+      }
+      }
+    return(out)
+  }
+  
+  stop("pmm must be either a single logical or a named list of logicals.")
+}
+#
+#
+#
+#
+# Maps PMM-k values per NA variable, respecting PMM on/off flags.
+map_pmm_k <- function(variables_NA, pmm_k, pmm) {
+  
+  user_set_k_per_variable <- is.list(pmm_k)   # TRUE = user explicitly set per-variable
+  
+  # 1) Single global integer → ALWAYS silent fallback for non-numeric vars
+  if (is.numeric(pmm_k) && length(pmm_k) == 1) {
+    if (pmm_k < 1 || pmm_k %% 1 != 0)
+      stop("'pmm_k' must be a positive integer (>= 1).")
+    
+    out <- setNames(as.list(rep(as.integer(pmm_k), length(variables_NA))), variables_NA)
+    
+    for (v in variables_NA) {
+      if (isFALSE(pmm[[v]])) {
+        # PMM disabled for this variable:
+        # but user set pmm_k globally → DO NOT WARN
+        out[[v]] <- NULL
+      }
+    }
+    return(out)
+  }
+  
+  # 2) Named list case → validate per variable
+  if (is.list(pmm_k)) {
+    nm <- names(pmm_k)
+    if (is.null(nm))
+      stop("pmm_k as list must provide variable names.")
+    
+    unknown <- setdiff(nm, variables_NA)
+    if (length(unknown) > 0) {
+      warning(sprintf(
+        "pmm_k list contains names not matching NA variables: %s (ignored).",
+        paste(unknown, collapse = ", ")
+      ))
+    }
+    
+    out <- setNames(vector("list", length(variables_N_A)), variables_NA)
+    
+    for (v in variables_NA) {
+      
+      if (isFALSE(pmm[[v]])) {
+        # Only warn if user explicitly set pmm_k[[v]]
+        if (!is.null(pmm_k[[v]])) {
+          warning(sprintf("pmm_k specified for '%s' but PMM disabled. pmm_k ignored.", v))
+        }
+        out[[v]] <- NULL
+        
+      } else {
+        # PMM enabled → validate
+        if (!is.null(pmm_k[[v]])) {
+          val <- as.integer(pmm_k[[v]])
+          if (is.na(val) || val < 1L)
+            stop(sprintf("pmm_k for '%s' must be a positive integer (>= 1).", v))
+          out[[v]] <- val
+        } else {
+          out[[v]] <- 1L
+        }
+      }
+    }
+    return(out)
+  }
+  
+  # 3) pmm_k missing → default behavior
+  if (is.null(pmm_k)) {
+    out <- setNames(vector("list", length(variables_NA)), variables_NA)
+    for (v in variables_NA)
+      out[[v]] <- if (isTRUE(pmm[[v]])) 1L else NULL
+    return(out)
+  }
+  
+  stop("pmm_k must be a single integer, a named list, or NULL.")
+}
+#
+#
+#
+#
+map_tune <- function(variables_NA, tune) {
+  
+  # Single TRUE/FALSE → applies to all
+  if (is.logical(tune) && length(tune) == 1) {
+    return(setNames(as.list(rep(tune, length(variables_NA))), variables_NA))
+  }
+  
+  if (is.list(tune)) {
+    nm <- names(tune)
+    if (is.null(nm))
+      stop("tune as list must have variable names.")
+    
+    unknown <- setdiff(nm, variables_NA)
+    if (length(unknown) > 0) {
+      warning(sprintf("tune contains names that are not NA-variables: %s (ignored).",
+                      paste(unknown, collapse=", ")))
+    }
+    
+    out <- setNames(vector("list", length(variables_NA)), variables_NA)
+    for (v in variables_NA) {
+      if (!is.null(tune[[v]])) out[[v]] <- as.logical(tune[[v]]) else out[[v]] <- FALSE
+    }
+    return(out)
+  }
+  
+  stop("tune must be a single logical or a named list.")
+}
+#
+#
+#
 # Checking learner_params
 map_learner_params <- function(variables, method, learner_params) {
   
@@ -374,7 +635,7 @@ map_learner_params <- function(variables, method, learner_params) {
   
   # 3) Mixed (Variable- and Method-Keys at same time)
   if (has_var_keys && has_meth_keys) {
-    warning("Mixed learner_params keys (variables AND methods) are not allowed. All learner_params were ignored.")
+    warning("Mixed learner_params keys (variables AND methods) are not allowed. All learner_params were ignored. Hint: ensure no variable shares a name with a reserved method (ranger, xgboost, regularized, robust).")
     return(setNames(vector("list", length(variables)), variables))
   }
   
@@ -419,136 +680,127 @@ precheck <- function(
     method,
     sequential,
     pmm_k,
-    learner_params
+    learner_params,
+    tune
 ) {
+  # -------------------------------------------------------------------------
+  # 1) Identify variables and variables containing missing values
+  # -------------------------------------------------------------------------
+  variables      <- colnames(data)
+  variables_NA   <- variables[apply(data, 2, function(x) any(is.na(x)))]
   
-  # check missing data
-  variables = colnames(data)
-  variables_NA  = colnames(data)[apply(data, 2, function(x) any(is.na(x)))]   # alle Variablen die missind data haben
   if (length(variables_NA) == 0) {
-    stop("Error: No missing data available")
-  } else {
-    # if (verbose) {
-    #   message("Variables with Missing Data: ", paste(variables_NA, collapse = ", "))
-    # }
+    stop("Error: No variables with missing data found.")
   }
   
-  # check data structure
+  # -------------------------------------------------------------------------
+  # 2) Warn if any variable name equals a reserved method name
+  #    (this would cause ambiguity in learner_params)
+  # -------------------------------------------------------------------------
+  reserved_methods <- c("ranger", "xgboost", "regularized", "robust")
+  conflicting_vars <- intersect(variables, reserved_methods)
+  if (length(conflicting_vars) > 0) {
+    warning(sprintf(
+      "Variable name(s) conflict with reserved method names: %s. ",
+      paste(conflicting_vars, collapse = ", ")
+    ))
+  }
+  
+  # -------------------------------------------------------------------------
+  # 3) Ensure data is a data.table
+  # -------------------------------------------------------------------------
   if (is.data.table(data)) {
-    message("data is data.table")  
+    message("data is data.table")
   } else if (is.matrix(data) || is.data.frame(data)) {
-    data <- as.data.table(data)  
+    data <- as.data.table(data)
   } else {
-    stop("Error: Input must be a dataframe or a data.table.")
+    stop("Error: Input must be a data.frame, matrix, or data.table.")
   }
   
-  # check formula
+  # -------------------------------------------------------------------------
+  # 4) Validate formula list (if provided)
+  # -------------------------------------------------------------------------
   if (!identical(formula, FALSE)) {
-    if (!is.list(formula)) {
-      stop("Error: 'formula' must be either FALSE or a list of formulas.")
-    }
+    if (!is.list(formula)) stop("'formula' must be FALSE or a named list of formulas.")
     
     for (var in names(formula)) {
-      if (!inherits(formula[[var]], "formula")) {
-        stop(paste("Error: Element for ", var, " is not a valid formula!"))
-      }
+      if (!inherits(formula[[var]], "formula"))
+        stop(sprintf("Element for variable '%s' is not a valid formula.", var))
       
-      # Extract variables from the formula
+      # Check that all variables referenced exist in the dataset
       form_vars <- all.vars(formula[[var]])
-      
-      # Check whether all variables are present in the data
       missing_vars <- setdiff(form_vars, names(data))
       if (length(missing_vars) > 0) {
-        stop(paste("Missing variables in data:", paste(missing_vars, collapse = ", ")))
+        stop(sprintf("Formula for '%s' references unknown variables: %s",
+                     var, paste(missing_vars, collapse=", ")))
       }
     }
   }
   
-  # check pmm
-  check_pmm <- function(
-    pmm, 
-    variables
-  ) {
-    if (!(is.logical(pmm) && length(pmm) == 1) &&
-        !(is.list(pmm) && (length(pmm) == length(variables) || length(pmm) == length(variables_NA)) && all(sapply(pmm, is.logical)))) {
-      stop("Error: pmm must contain a list of the length of 'variables' or 'considered_variables' (if specified) with TRUE/FALSE values.")
-    }
-  }
-  check_pmm(pmm, variables)
-  
-  # check pmm_k
-  if (any(unlist(pmm))) {
-    if (
-      !is.numeric(pmm_k) ||
-      length(pmm_k) != 1 ||
-      is.na(pmm_k) ||
-      pmm_k < 1 ||
-      pmm_k %% 1 != 0
-    ) {
-      stop(
-        "Error: 'pmm_k' must be a single positive integer (>= 1) ",
-        "when predictive mean matching (PMM) is enabled."
-      )
-    }
-  }
-  
-  # check methods
+  # -------------------------------------------------------------------------
+  # 5) Normalize 'method' argument so every variable has a method
+  # -------------------------------------------------------------------------
   supported_methods <- c("ranger", "regularized", "xgboost", "robust")
   
-  # proove methods
   if (length(method) == 0) {
-    message("Methods are empty, no imputation is used.")
-  } else if ((is.character(method) && length(method) == 1) ||
-             (is.list(method) && length(method) == 1 && is.character(method[[1]]))) {
-    # If `method` is a single string or a single-element list, set for all variables
+    message("No method specified, no imputation will be applied.")
+  }
+  # Case A: single string (apply to all variables)
+  else if ((is.character(method) && length(method) == 1) ||
+           (is.list(method) && length(method) == 1 && is.character(method[[1]]))) {
+    
     method_value <- if (is.list(method)) method[[1]] else method
-    if (!(method_value %in% supported_methods)) {
-      stop("Error: The provided method is not supported.")
-    }
+    if (!(method_value %in% supported_methods))
+      stop("Unsupported method specified.")
+    
     method <- setNames(as.list(rep(method_value, length(variables))), variables)
-  } else if (length(method) == length(variables) || length(method) == length(variables_NA)) {
-    # If `method` has the same length as `variables` or the number of variables matches NAs
-    if (is.list(method) && all(sapply(method, is.character))) {
-      # Check whether all elements in `method` are strings and contain valid methods
-      if (!all(unlist(method) %in% supported_methods)) {
-        stop("Error: One or more methods in the list are not supported.")
-      }
-    } else {
-      stop("Error: 'method' must be a list of string values.")
-    }
-  } else {
-    stop("Error: 'method' must either be empty, a single string, a single-element list, have the same length as 'variables' or 'considered_variables' (if specified), or the number of variables must match NAs.")
+  }
+  # Case B: list with variable → method mapping
+  else if (length(method) == length(variables) ||
+           length(method) == length(variables_NA)) {
+    
+    if (!is.list(method) || !all(sapply(method, is.character)))
+      stop("'method' must be a list of method names.")
+    
+    if (!all(unlist(method) %in% supported_methods))
+      stop("One or more unsupported methods found in 'method'.")
+  }
+  else {
+    stop("Invalid 'method' specification. Must be a single method or a list matching variables or variables_NA.")
   }
   
-  # check method for regularized
-  # ---- Check regularized method for target and predictors ----
+  # -------------------------------------------------------------------------
+  # 6) Validate 'regularized' method compatibility (glmnet)
+  # -------------------------------------------------------------------------
   for (var in variables_NA) {
     y_obs <- data[[var]][!is.na(data[[var]])]
     
-    # Target variable check
     if (method[[var]] %in% c("regularized", "glmnet")) {
+      
       if (is.factor(y_obs) && any(table(y_obs) <= 1)) {
-        warning(paste0("Variable '", var, "' has too few observations per class for 'regularized'. Falling back to 'robust'."))
-        method[[var]] <- "robust"
-        next
-      }
-      if (is.numeric(y_obs) && length(unique(y_obs)) < 3) {
-        warning(paste0("Variable '", var, "' has too few unique values for 'regularized'. Falling back to 'robust'."))
+        warning(sprintf("Target '%s' has too few observations per class for 'regularized'. Falling back to 'robust'.", var))
         method[[var]] <- "robust"
         next
       }
       
-      # Predictor check
+      if (is.numeric(y_obs) && length(unique(y_obs)) < 3) {
+        warning(sprintf("Target '%s' has too few unique values for 'regularized'. Falling back to 'robust'.", var))
+        method[[var]] <- "robust"
+        next
+      }
+      
       predictors <- setdiff(names(data), var)
       for (col in predictors) {
         x_obs <- data[[col]][!is.na(data[[col]])]
+        
         if (is.factor(x_obs) && any(table(x_obs) <= 1)) {
-          warning(paste0("Predictor '", col, "' has too few observations per class. Falling back to 'robust' for target '", var, "'."))
+          warning(sprintf("Predictor '%s' unsuitable for glmnet. Falling back to 'robust' for '%s'.", col, var))
           method[[var]] <- "robust"
           break
         }
+        
         if (is.numeric(x_obs) && length(unique(x_obs)) < 2) {
-          warning(paste0("Predictor '", col, "' has too few unique values. Falling back to 'robust' for target '", var, "'."))
+          warning(sprintf("Predictor '%s' unsuitable for glmnet. Falling back to 'robust' for '%s'.", col, var))
           method[[var]] <- "robust"
           break
         }
@@ -556,45 +808,65 @@ precheck <- function(
     }
   }
   
-  # warning if more than 50% missing values
-  if (nrow(data) == 0) stop("Error: Data has no rows.")
+  # -------------------------------------------------------------------------
+  # 7) Warning for variables with > 50% missing values
+  # -------------------------------------------------------------------------
   missing_counts <- colSums(is.na(data))
   na_cols <- names(missing_counts[missing_counts > 0.5 * nrow(data)])
   if (length(na_cols) > 0) {
-    warning(paste("Warning: The following variables have more than 50% missing values:", paste(na_cols, collapse = ", ")))
+    warning(sprintf("Variables with >50%% missing values: %s", paste(na_cols, collapse=", ")))
   }
   
-  # Datatypes
+  # -------------------------------------------------------------------------
+  # 8) Standardize datatypes (numeric, factor, etc.)
+  # -------------------------------------------------------------------------
   ordered_cols <- names(data)[sapply(data, inherits, "ordered")]
   if (length(ordered_cols) > 0) {
-    data[, (ordered_cols) := lapply(.SD, function(x) factor(as.character(x))), .SDcols = ordered_cols]
+    data[, (ordered_cols) := lapply(.SD, function(x) factor(as.character(x))), .SDcols=ordered_cols]
   }
   
   data[, (variables) := lapply(.SD, function(x) {
     if (is.numeric(x)) {
-      as.numeric(x)  # Integer & Double in Numeric 
+      as.numeric(x)
     } else if (is.character(x)) {
-      as.factor(x)  # Strings in Factors
+      as.factor(x)
     } else if (is.logical(x)) {
-      as.numeric(x)  # TRUE/FALSE ->  1/0
-    # } else if (inherits(x, "ordered")) {
-    #   as.factor(x)
+      as.numeric(x)
     } else if (is.factor(x)) {
-      x  
+      x
     } else {
-      stop("Error: Unknown datatype")
+      stop("Unknown datatype encountered.")
     }
   }), .SDcols = variables]
   
-  # learner_params checking
+  # -------------------------------------------------------------------------
+  # 9) Map learner_params (complex logic, separate helper)
+  # -------------------------------------------------------------------------
   checked_learner_params <- map_learner_params(
-    variables = variables_NA,
-    method    = method,
+    variables      = variables_NA,
+    method         = method,
     learner_params = learner_params
   )
   
+  # -------------------------------------------------------------------------
+  # 10) Map pmm / pmm_k / tune using flexible rules
+  # -------------------------------------------------------------------------
+  checked_pmm   <- map_pmm(variables_NA, pmm,  original_data = data)
+  checked_pmm_k <- map_pmm_k(variables_NA, pmm_k, checked_pmm)
+  checked_tune  <- map_tune(variables_NA, tune)
+  
   message("Precheck done.")
-  return(list(data=data, variables=variables, variables_NA=variables_NA, method=method, learner_params = checked_learner_params))
+  
+  return(list(
+    data           = data,
+    variables      = variables,
+    variables_NA   = variables_NA,
+    method         = method,
+    learner_params = checked_learner_params,
+    pmm            = checked_pmm,
+    pmm_k          = checked_pmm_k,
+    tune           = checked_tune
+  ))
 }
 #
 #
