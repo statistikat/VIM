@@ -525,7 +525,7 @@ map_pmm_k <- function(variables_NA, pmm_k, pmm) {
       ))
     }
     
-    out <- setNames(vector("list", length(variables_N_A)), variables_NA)
+    out <- setNames(vector("list", length(variables_NA)), variables_NA)
     
     for (v in variables_NA) {
       

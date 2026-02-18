@@ -3,31 +3,68 @@
 #' Need of 'helper_vimpute' script
 
 ## PARAMETERS ##
-#' @param data - Dataset with missing values. Can be provided as a data.table or data.frame.
-#' @param considered_variables - A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process.
-#' @param method - A named list specifying the imputation method for each variable:
-# - ranger
-# - xgboost 
-# - regularized
-# - robust
-#' @param pmm - TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable. If TRUE, missing values of numeric variables are imputed by matching to observed values with similar predicted scores.
-#' @param pmm_k - An integer specifying the number of nearest observed values to consider in predictive mean matching (PMM) for each numeric variable.  If `pmm_k = 1`, classical PMM is applied: the single observed value closest to the predicted value is used. If `pmm_k > 1`, Score-kNN PMM is applied: for each missing value, the `k` observed values with closest model-predicted scores are selected, and the imputation is the mean (numeric)/ median (factor) from these neighbors. 
-#' @param learner_params - Optional named list with variable-specific learner parameters.
-#'   e.g. for a variable that uses method xgboost: `learner_params = list(considered_variables[1] = list(nrounds = 50, eta = 0.2)))`.
-#'   e.g. for a variable that uses method ranger:  `learner_params = list(considered_variables[2] = list(predict_median = TRUE)))` (tree-wise median aggregation).
-#' @param formula - If not all variables are used as predictors, or if transformations or interactions are required (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized". Provide as a list for each variable that requires specific conditions.
-#   - formula format:                     list(variable_1 ~ age + lenght, variable_2 ~ width + country) 
-#   - formula format with transformation: list(log(variable_1) ~ age + inverse(lenght), variable_2 ~ width + country)
-#   - For X: follows the rules of model.matrix
-#   - For Y: transformations supported are log(), exp(), sqrt(), I(1/..). Only applicable for numeric variables.
-#' @param sequential - If TRUE, all variables are imputed sequentially.
-#' @param nseq - Maximum number of iterations (if sequential is TRUE).
-#' @param eps - Threshold for convergence.
-#' @param imp_var - If TRUE, the imputed values are stored.
-#' @param pred_history - If TRUE, all predicted values across all iterations are stored.
-#' @param tune - Tunes hyperparameters halfway through iterations, TRUE or FALSE.
-#' @param verbose - If TRUE additional debugging output is provided
-#' @return imputed data set or c(imputed data set, prediction history)
+#' @param data
+#'  Dataset with missing values. Provide as a data.table.
+#' @param considered_variables
+#'  A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process.
+#' @param method
+#'  Specifies the imputation method for each variable.
+#'  Can be provided either:
+#'    - as a **single global method** (e.g. "ranger"), applied to all variables, or
+#'    - as a **named list** (e.g. as.list(var1 = "xgboost", var2="robust")), assigning a method to each variable individually.
+#'  Supported methods:
+#     - ranger (Random Forest)
+#     - xgboost (Gradient Boosting)
+#     - regularized (glmnet regression/classification)
+#     - robust (robustbase::lmrob / glmrob) 
+#' @param pmm 
+#'  Predictive Mean Matching (PMM) settings.
+#'  Can be provided:
+#'    - as a **single TRUE/FALSE** (global), or  
+#'    - as a **named list**, assigning PMM per (numeric) variable.
+#' @param pmm_k 
+#'  Number of nearest neighbors used in PMM.
+#'  Accepted forms:
+#'    - single global integer (applies to all variables), or  
+#'    - named list assigning values per variable, or  
+#'    - NULL (default), meaning:
+#'      - k = 1 automatically for variables using PMM,
+#'      - k = NULL for variables without PMM
+#' @param learner_params 
+#'  Hyperparameters for the chosen methods.
+#'  Can be provided in **three ways**:
+#'    - **Per variable**  (e.g. list(mpg = list(num.trees = 500)))  
+#'    - **Per method**    (e.g. list(ranger = list(num.trees = 600)))  
+#'    - **Global**, applied to all variables using the same method
+#' @param formula
+#'  Optional modeling formula to restrict or transform predictor variables.  
+#'  Only supported for **regularized** (glmnet) and **robust** (lmrob/glmrob) methods
+#'  Provide as a named list, e.g.:
+#'    - list(mpg = mpg ~ hp + drat)  
+#'    - list(hp  = log(hp) ~ wt + cyl) 
+#'  For X: follows the rules of model.matrix
+#'  For Y: transformations supported are log(), exp(), sqrt(), I(1/..). Only applicable for numeric variables.
+#' @param sequential
+#'  If TRUE, all variables with missing data are imputed sequentially across iterations.
+#' @param nseq
+#'  Maximum number of iterations (if sequential is TRUE).
+#' @param eps
+#'  Convergence threshold: the imputation process stops early if predictions change less than this amount across iterations.
+#' @param imp_var
+#'  If TRUE, additional columns indicating imputed values (VAR_imp) are added.
+#' @param pred_history 
+#'  If TRUE, all predicted values across all iterations are stored.
+#' @param tune
+#'  Hyperparameter tuning flag. Can be:
+#'    - TRUE/FALSE globally  
+#'    - or a list specifying tuning per variable, e.g. list(var1 = TRUE)
+#'  Tuning is performed halfway through nseq iterations.
+#' @param verbose
+#'  If TRUE additional debugging output is provided
+#' @return
+#'  Either:
+#'    - the imputed dataset (default), or  
+#'    - a list containing the imputed dataset and prediction history, depending on the pred_history and tune settings.
 #' @export
 #'
 #' @family imputation methods
