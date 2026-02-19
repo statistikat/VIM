@@ -681,7 +681,8 @@ precheck <- function(
     sequential,
     pmm_k,
     learner_params,
-    tune
+    tune,
+    default_method = NULL
 ) {
   # -------------------------------------------------------------------------
   # 1) Identify variables and variables containing missing values
@@ -740,33 +741,94 @@ precheck <- function(
   # -------------------------------------------------------------------------
   # 5) Normalize 'method' argument so every variable has a method
   # -------------------------------------------------------------------------
+  # -------------------------------------------------------------------------
+  # 5) Normalize 'method' argument so every NA-variable gets a valid method
+  # -------------------------------------------------------------------------
   supported_methods <- c("ranger", "regularized", "xgboost", "robust")
   
   if (length(method) == 0) {
-    message("No method specified, no imputation will be applied.")
+    stop("No method specified. Please provide at least one method.")
   }
-  # Case A: single string (apply to all variables)
-  else if ((is.character(method) && length(method) == 1) ||
-           (is.list(method) && length(method) == 1 && is.character(method[[1]]))) {
-    
-    method_value <- if (is.list(method)) method[[1]] else method
-    if (!(method_value %in% supported_methods))
-      stop("Unsupported method specified.")
-    
-    method <- setNames(as.list(rep(method_value, length(variables))), variables)
+  
+  # no default method
+  if (is.null(default_method)) {
+    m_vec <- unlist(method, use.names = FALSE)
+    if (length(m_vec) > 0 && length(unique(m_vec)) == 1L) {
+      default_method <- unique(m_vec)
+    }
   }
-  # Case B: list with variable → method mapping
-  else if (length(method) == length(variables) ||
-           length(method) == length(variables_NA)) {
+  
+  # Fallback → ranger
+  if (is.null(default_method)) {
+    default_method <- "ranger"
+  }
+  
+  #  A: global method
+  if (is.character(method) && length(method) == 1L) {
     
-    if (!is.list(method) || !all(sapply(method, is.character)))
-      stop("'method' must be a list of method names.")
+    if (!(method %in% supported_methods)) {
+      stop(sprintf("Unsupported method '%s'.", method))
+    }
     
-    if (!all(unlist(method) %in% supported_methods))
+    method <- setNames(as.list(rep(method, length(variables_NA))), variables_NA)
+    
+  } else if (is.list(method) && length(method) == 1L && is.character(method[[1]])) {
+    
+    m <- method[[1]]
+    if (!(m %in% supported_methods)) {
+      stop(sprintf("Unsupported method '%s'.", m))
+    }
+    
+    method <- setNames(as.list(rep(m, length(variables_NA))), variables_NA)
+    
+    # B: Named list
+  } else if (is.list(method) && !is.null(names(method))) {
+    
+    unknown <- setdiff(names(method), variables)
+    if (length(unknown) > 0) {
+      stop(sprintf(
+        "Unknown variable name(s) in 'method': %s",
+        paste(unknown, collapse = ", ")
+      ))
+    }
+    
+    all_methods <- unlist(method, use.names = FALSE)
+    if (!all(all_methods %in% supported_methods)) {
       stop("One or more unsupported methods found in 'method'.")
-  }
-  else {
-    stop("Invalid 'method' specification. Must be a single method or a list matching variables or variables_NA.")
+    }
+    
+    # Final mapping
+    full_method <- setNames(vector("list", length(variables_NA)), variables_NA)
+    
+    for (v in variables_NA) {
+      if (!is.null(method[[v]])) {
+        full_method[[v]] <- method[[v]]
+      } else {
+        full_method[[v]] <- default_method
+        warning(sprintf(
+          "No method specified for NA-variable '%s'. Using default method '%s'.",
+          v, default_method
+        ))
+      }
+    }
+    
+    method <- full_method
+    
+    # C: unnamed list
+  } else if (is.list(method) &&
+             (length(method) == length(variables) || length(method) == length(variables_NA)) &&
+             is.null(names(method))) {
+    
+    all_methods <- unlist(method, use.names = FALSE)
+    if (!all(all_methods %in% supported_methods)) {
+      stop("One or more unsupported methods found in 'method'.")
+    }
+    
+    # mapping
+    method <- setNames(as.list(all_methods[seq_along(variables_NA)]), variables_NA)
+    
+  } else {
+    stop("Invalid 'method' specification: must be a single method or a (named) list.")
   }
   
   # -------------------------------------------------------------------------
