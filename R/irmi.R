@@ -9,6 +9,11 @@
 #'
 #' A full description of the method can be found in the mentioned reference.
 #'
+#' @note
+#'   **Deprecated**: `irmi()` is considered legacy functionality.
+#'   For new projects, please use [vimpute()] instead, which provides
+#'   a more modern, flexible and robust imputation framework.
+#'   
 #' @param x data.frame or matrix
 #' @param eps threshold for convergency
 #' @param maxit maximum number of iterations
@@ -106,6 +111,13 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
 #object mixed conversion into the right format (vector of variable names of
 #type mixed)
 #TODO: Data sets with variables "y" might fail
+  
+  
+  warning(
+    "IRMI is deprecated. Please use 'vimpute()' for imputation going forward.",
+    call. = FALSE
+  )
+  
   check_data(x)
   if (trace) {
     message("Method for multinomial models:", multinom.method, "\n")
