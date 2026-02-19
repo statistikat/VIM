@@ -1974,65 +1974,61 @@ vimpute <- function(
     
 ### *****Stop Criteria Start***** ###################################################################################################
     if (sequential && i != 1) {
-      is_dt <- inherits(data, "data.table")
       
-      # Automatic detection of the variable types
-      numeric_cols <- names(data)[sapply(data, is.numeric)]
-      factor_cols <- names(data)[sapply(data, is.factor)]
+      num_diff <- 0
+      cat_diff <- 0
       
-      # Calculation of numerical differences
-      if (length(numeric_cols) > 0) {  
-        epsilon <- 1e-8  # Avoid division by zero  
+      # Variables with missings
+      for (v in variables_NA) {
         
-        if (is_dt) {  
-          # Calculate standard deviation of each column in data_prev  
-          std_dev <- sapply(data_prev[, mget(numeric_cols)], sd, na.rm = TRUE)  
+        idx <- missing_indices[[v]]
+        if (length(idx) == 0) next  # no NAs
+        
+        old_vals <- data_prev[[v]][idx]  # values of earlier iterations
+        new_vals <- data[[v]][idx]       # actual values
+        
+        # numeric
+        if (is.numeric(original_data[[v]])) {
           
-          # Calculate normalized relative change  
-          num_diff <- sum(abs(data[, mget(numeric_cols)] - data_prev[, mget(numeric_cols)]) /  
-                            (std_dev + epsilon), na.rm = TRUE)
-        } else {  
-          std_dev <- sapply(data_prev[, numeric_cols, drop = FALSE], sd, na.rm = TRUE)  
-          num_diff <- sum(abs(data[, numeric_cols, drop = FALSE] - data_prev[, numeric_cols, drop = FALSE]) /  
-                            (std_dev + epsilon), na.rm = TRUE)
-        }  
-      } else {  
-        num_diff <- 0  
-      }
-      
-      
-      if (length(factor_cols) > 0) {
-        
-        # comparison as character
-        data_fac_chr      <- data[,       lapply(.SD, as.character), .SDcols = factor_cols]
-        data_prev_fac_chr <- data_prev[,  lapply(.SD, as.character), .SDcols = factor_cols]
-        
-        # Differences
-        cat_changes <- sum(data_fac_chr != data_prev_fac_chr, na.rm = TRUE)
-        total_cat_values <- sum(!is.na(data_prev_fac_chr))
-        
-        cat_diff <- if (total_cat_values > 0) {
-          cat_changes / (total_cat_values + 1e-8)
-        } else {
-          0
+          d_var <- mean((new_vals - old_vals)^2, na.rm = TRUE)
+          if (is.finite(d_var)) {
+            num_diff <- num_diff + d_var
+          }
+          
+          # categorical
+        } else if (is.factor(original_data[[v]])) {
+          
+          old_chr <- as.character(old_vals)
+          new_chr <- as.character(new_vals)
+          
+          # Proportion of imputed cells whose class has changed
+          d_var <- mean(old_chr != new_chr, na.rm = TRUE)
+          if (is.finite(d_var)) {
+            cat_diff <- cat_diff + d_var
+          }
         }
         
-      } else {
-        cat_diff <- 0  # If there are no categorical columns
-      }
+      } # end for v in variables_NA
       
-      # Calculate total change
       total_diff <- num_diff + cat_diff
       
-      # Prove convergence
+      if (verbose) {
+        message(sprintf(
+          "Iteration %d: num_diff = %.6f, cat_diff = %.6f, total_diff = %.6f",
+          i, num_diff, cat_diff, total_diff
+        ))
+      }
+      
+      # Convergence
       if (total_diff < eps) {
         no_change_counter <- no_change_counter + 1
         if (no_change_counter >= 2) {
-          if(verbose){
-            message("Convergence achieved after two consecutive iterations without changes")
+          if (verbose) {
+            message("Convergence achieved after two consecutive iterations without changes in imputations")
             print(paste("stop after", i, "iterations"))
           }
           
+          # factor targets
           if (is.factor(data_temp[[target_col]])) {
             
             if (method_var == "ranger") {
@@ -2070,10 +2066,113 @@ vimpute <- function(
       } else {
         no_change_counter <- 0
       }
+      
     } else {
       no_change_counter <- 0
     }
   }
+    
+  #   if (sequential && i != 1) {
+  #     is_dt <- inherits(data, "data.table")
+  #     
+  #     # Automatic detection of the variable types
+  #     numeric_cols <- names(data)[sapply(data, is.numeric)]
+  #     factor_cols <- names(data)[sapply(data, is.factor)]
+  #     
+  #     # Calculation of numerical differences
+  #     if (length(numeric_cols) > 0) {  
+  #       epsilon <- 1e-8  # Avoid division by zero  
+  #       
+  #       if (is_dt) {  
+  #         # Calculate standard deviation of each column in data_prev  
+  #         std_dev <- sapply(data_prev[, mget(numeric_cols)], sd, na.rm = TRUE)  
+  #         
+  #         # Calculate normalized relative change  
+  #         num_diff <- sum(abs(data[, mget(numeric_cols)] - data_prev[, mget(numeric_cols)]) /  
+  #                           (std_dev + epsilon), na.rm = TRUE)
+  #       } else {  
+  #         std_dev <- sapply(data_prev[, numeric_cols, drop = FALSE], sd, na.rm = TRUE)  
+  #         num_diff <- sum(abs(data[, numeric_cols, drop = FALSE] - data_prev[, numeric_cols, drop = FALSE]) /  
+  #                           (std_dev + epsilon), na.rm = TRUE)
+  #       }  
+  #     } else {  
+  #       num_diff <- 0  
+  #     }
+  #     
+  #     
+  #     if (length(factor_cols) > 0) {
+  #       
+  #       # comparison as character
+  #       data_fac_chr      <- data[,       lapply(.SD, as.character), .SDcols = factor_cols]
+  #       data_prev_fac_chr <- data_prev[,  lapply(.SD, as.character), .SDcols = factor_cols]
+  #       
+  #       # Differences
+  #       cat_changes <- sum(data_fac_chr != data_prev_fac_chr, na.rm = TRUE)
+  #       total_cat_values <- sum(!is.na(data_prev_fac_chr))
+  #       
+  #       cat_diff <- if (total_cat_values > 0) {
+  #         cat_changes / (total_cat_values + 1e-8)
+  #       } else {
+  #         0
+  #       }
+  #       
+  #     } else {
+  #       cat_diff <- 0  # If there are no categorical columns
+  #     }
+  #     
+  #     # Calculate total change
+  #     total_diff <- num_diff + cat_diff
+  #     
+  #     # Prove convergence
+  #     if (total_diff < eps) {
+  #       no_change_counter <- no_change_counter + 1
+  #       if (no_change_counter >= 2) {
+  #         if(verbose){
+  #           message("Convergence achieved after two consecutive iterations without changes")
+  #           print(paste("stop after", i, "iterations"))
+  #         }
+  #         
+  #         if (is.factor(data_temp[[target_col]])) {
+  #           
+  #           if (method_var == "ranger") {
+  #             mod <- "classif.ranger"
+  #           }
+  #           
+  #           if (method_var == "xgboost") {
+  #             mod <- "classif.xgboost"
+  #           }
+  #           
+  #           if (method_var == "regularized") {
+  #             mod <- "classif.glmnet"
+  #           }
+  #           
+  #           if (method_var == "robust") {
+  #             mod <- "classif.glm_rob"
+  #           }
+  #           
+  #           learner$model[[mod]]$param_set$values$predict_type <- "prob"
+  #           pred_probs <- learner$predict(pred_task)$prob
+  #           
+  #           formatted_output <- capture.output(print(pred_probs))
+  #           
+  #           if (is.null(pred_probs)) {
+  #             stop("Error in the calculation of prediction probabilities.")
+  #           }
+  #           
+  #           preds <- apply(pred_probs, 1, function(probs) {
+  #             sample(levels(data_temp[[target_col]]), size = 1, prob = probs) # at last iteration: stochastic class assignment
+  #           })
+  #         }
+  #         
+  #         break
+  #       }
+  #     } else {
+  #       no_change_counter <- 0
+  #     }
+  #   } else {
+  #     no_change_counter <- 0
+  #   }
+  # }
 ### Stop criteria END ###
   
   result <- as.data.table(if (imp_var) data_new else data)  # Default: Return `data` only
