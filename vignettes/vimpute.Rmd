@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-This vignette demonstrates how to use the `vimpute()` function for flexible missing data imputation using machine learning models from the mlr3 ecosystem.
+This vignette demonstrates how to use the `vimpute()` function for flexible missing data imputation using machine learning models from the `mlr3` ecosystem.
 
 ### Function Arguments
 
@@ -45,6 +45,7 @@ To demonstrate the function, the `sleep` dataset from the `VIM` package is used.
 library(VIM)
 library(data.table)
 ```
+
 ```{r setup_2, message = FALSE}
 data <- as.data.table(VIM::sleep)
 a <- aggr(sleep, plot = FALSE)

@@ -1,4 +1,10 @@
+.DS_Store
+inst/.DS_Store
 .Rproj.user
 *.Rproj
 .Rhistory
 docs
+CLAUDE.md
+.claude
+VIM.Rcheck/
+VIM_*.tar.gz

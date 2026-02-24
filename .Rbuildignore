@@ -12,3 +12,5 @@ pkgdown
 ^revdep$
 ^\.github$
 ^codecov\.yml$
+^CLAUDE\.md$
+^\.claude$

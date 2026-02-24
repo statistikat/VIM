@@ -12,7 +12,7 @@
 #' @param alpha Relative size of good data points. Used for the robust
 #' bootstrap methods, Default: 0.75
 #' @param uncert Imputation uncertainty method, Default: 'pmm'
-#' @param familiy Not supported and ignored. Foreseen for future versions, Default: 'Gaussian'
+#' @param family Not supported and ignored. Foreseen for future versions, Default: 'Gaussian'
 #' @param value_back Only observations with imputed values as return object (ymiss),
 #'  or the whole data set, Default: 'all'
 #' @return Imputed data set.
@@ -33,8 +33,6 @@
 #' @export 
 #' @importFrom VIM initialise
 #' @importFrom robustbase lmrob
-#' @importFrom mgcv gam
-#' @importFrom pdist pdist
 imputeRobust <- function(form, 
                          data, 
                          boot = TRUE,
@@ -48,6 +46,11 @@ imputeRobust <- function(form,
   supportedMethods <- c("lts", "lm", "gam", "gamRob", "MM", "robGAM", "robGam")
   if(method == "gamRob" | method == "robGAM" | method == "robGam"){
     method <- "gamRob"
+  }
+  check_suggested <- function(pkg) {
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      stop(sprintf("Package '%s' is required but not installed. Please install it to use this function.", pkg), call. = FALSE)
+    }
   }
   if(method == "gam" | method == "gamRob"){
     if(inherits(form, "formula")){
@@ -114,7 +117,11 @@ imputeRobust <- function(form,
     }
     sdev <- summary(mod)$scale
   } else if(method == "gam"){
-    mod <- mgcv::gam(form, data = data)
+    if (requireNamespace("mgcv", quietly = TRUE)) {
+      mod <- mgcv::gam(form, data = data)
+    } else {
+      stop("Package 'mgcv' is required for this function.")
+    }
     if(boot){
       divide <- resid(mod) < quantile(resid(mod), alpha)
       idx <- which(divide)
@@ -137,7 +144,12 @@ imputeRobust <- function(form,
         boot_idx <- sample(x = 1:n, size = n, replace = TRUE)         
       }
       boot_dat <- data[boot_idx, ]
-      mod <<-  mgcv::gam(form, data = boot_dat)  
+      if (requireNamespace("mgcv", quietly = TRUE)) {
+        mod <-  mgcv::gam(form, data = boot_dat) 
+      } else {
+        stop("Package 'mgcv' is required for this function.")
+      }
+ 
     }
     sdev <- summary(mod)$scale
   } else if(method == "gamRob"){
@@ -207,8 +219,14 @@ imputeRobust <- function(form,
     }
     for(i in (1:n)[missindex]){
       cnt <- cnt + 1
-      d <- pdist::pdist(as.matrix(data[i, x_vars, drop = FALSE]), 
-                      as.matrix(data[, x_vars, drop = FALSE]))
+      my_distance_function <- function(x, y) {
+        if (!requireNamespace("pdist", quietly = TRUE)) {
+          stop("Package 'pdist' must be installed to use this function.")
+        }
+        d <- pdist::pdist(as.matrix(data[i, x_vars, drop = FALSE]), 
+                          as.matrix(data[, x_vars, drop = FALSE]))
+      }
+
       d <- 1 - d@dist / max(d@dist)
       d <- sqrt(d)
       p <- pred[i]
@@ -227,8 +245,8 @@ imputeRobust <- function(form,
         #                      %in% 1:5], 1)
         #donors[i] <- sample(y[sort(pdist::pdist(matrix(val[i], ncol = 1), matrix(y, ncol = 1))@dist,
         #                          index.return  = TRUE)$ix %in% 1:5], 1)
+        check_suggested("pdist")
         donors[i] <- sample(y[order(pdist::pdist(matrix(val[i], ncol = 1), matrix(y, ncol = 1))@dist)[1:5]], 1)        
-        
       }
       donors
     }

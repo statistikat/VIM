@@ -28,7 +28,6 @@
 #' @rdname imputeRobustChain
 #' @export 
 #' @importFrom VIM initialise
-#' @importFrom robCompositions outCoDa
 imputeRobustChain <- function(formulas = vector("list", ncol(data)), 
                               data, 
                               boot = TRUE,
@@ -95,7 +94,50 @@ imputeRobustChain <- function(formulas = vector("list", ncol(data)),
     data <- VIM::initialise(data, mixed = NULL)
   }
   if(length(ind_fac) > 0){
-    out_index <- robCompositions::outCoDa(data[, types %in% c("integer", "numeric", "count")])$outlierIndex
+    outCoDa <- function(x, quantile=0.975, method="robust", 
+                        alpha = 0.5, coda = TRUE){
+      ## Funktion from the same author from package robCompositions
+      if(dim(x)[2] < 2) stop("need data with at least 2 variables")
+      if(alpha < 0.5 | alpha > 1) stop("allowed values for h are between 0.5 and 1")
+      covEst <- function(x, type) {
+        standard <- function(x){
+          list(mean=colMeans(x, na.rm=TRUE), varmat=cov(x))  
+        }
+        robust <- function(x){
+          v <- robustbase::covMcd(x, alpha = alpha)
+          list(mean=v$center, varmat=v$cov)
+        }
+        robustHD <- function(x){
+          v <- robustbase::covOGK(x, sigmamu = robustbase::s_Qn)
+          list(mean=v$center, varmat=v$cov)
+        }
+        switch(type,
+               standard = standard(x),
+               robust = robust(x),
+               robustHD = robustHD(x))
+      }
+      if(!is.logical(coda) & !is.function(coda)){
+        stop("coda must be logical or function")
+      }
+      if(!is.logical(coda)){
+        x <- coda(x)
+      }	else if (coda){ 
+        x <- pivotCoord(x)
+      }  
+      cv <- covEst(x, "robust")
+      cvc <- covEst(x, "standard")
+      dM <- sqrt(mahalanobis(x, center=cv$mean, cov=cv$varmat))
+      dMc <- sqrt(mahalanobis(x, center=cvc$mean, cov=cvc$varmat))
+      #	limit <- sqrt(qchisq(p=quantile, df=ncol(x)-1))
+      limit <- sqrt(qchisq(p=quantile, df=ncol(x)))	
+      res <- list(mahalDist = dM, limit = limit, 
+                  outlierIndex = dM > limit, method=method, 
+                  om2 = dMc > limit,
+                  m2=dMc, coda = coda)
+      class(res) <- "outCoDa"
+      invisible(res)
+    }
+    out_index <- outCoDa(data[, types %in% c("integer", "numeric", "count")])$outlierIndex
   } else{
     out_index <- NULL
   }
@@ -298,7 +340,11 @@ useRobustNumeric <- function(form, data, method, index, factors, boot, robustboo
     }
     sdev <- summary(mod)$scale
   } else if(method == "gam"){
-    mod <- mgcv::gam(form, data = data)
+    if (requireNamespace("mgcv", quietly = TRUE)) {
+      mgcv::gam(form, data = data)
+    } else {
+      stop("Package 'mgcv' is required for this function.")
+    }
     if(boot){
       idx <- which(resid(mod) < quantile(resid(mod), 0.5))
       if(robustboot){
@@ -307,7 +353,11 @@ useRobustNumeric <- function(form, data, method, index, factors, boot, robustboo
         boot_idx <- sample(x = 1:n, size = n, replace = TRUE)         
       }
       boot_dat <- data[boot_idx, ]
-      mod <-  mgcv::gam(form, data = boot_dat)  
+      if (requireNamespace("mgcv", quietly = TRUE)) {
+        mgcv::gam(form, data = boot_dat)  
+      } else {
+        stop("Package 'mgcv' is required for this function.")
+      }
     }
     sdev <- summary(mod)$scale
   } else {
@@ -345,12 +395,17 @@ useRobustNumeric <- function(form, data, method, index, factors, boot, robustboo
       # d <- pdist::pdist(as.matrix(data[i, x_vars, drop = FALSE]), 
       #                   as.matrix(data[, x_vars, drop = FALSE]))
       mod_matrix <- as.matrix(model.matrix(mf, data = data))
-      d <- pdist::pdist(mod_matrix[i, ,drop = FALSE], 
-                        mod_matrix) 
+      my_distance_function <- function(x, y) {
+        if (!requireNamespace("pdist", quietly = TRUE)) {
+          stop("Package 'pdist' must be installed to use this function.")
+        }
+        d <- pdist::pdist(mod_matrix[i, ,drop = FALSE], 
+                                 mod_matrix) 
+      }
       d <- 1 - d@dist / max(d@dist)
-      d <<- sqrt(d)
-      r <<- resid(mod)
-      p <<- pred[i]
+      d <- sqrt(d)
+      r <- resid(mod)
+      p <- pred[i]
       ymiss[cnt] <- pred[i] + 
         sample(resid(mod), 
                size = 1, prob = d)     
@@ -366,8 +421,14 @@ useRobustNumeric <- function(form, data, method, index, factors, boot, robustboo
         #                      %in% 1:5], 1)
         #donors[i] <- sample(y[sort(pdist::pdist(matrix(val[i], ncol = 1), matrix(y, ncol = 1))@dist,
         #                          index.return  = TRUE)$ix %in% 1:5], 1)
-        donors[i] <- sample(y[order(pdist::pdist(matrix(val[i], ncol = 1), matrix(y, ncol = 1))@dist)[1:5]], 1)        
-        
+        my_distance_function <- function(x, y) {
+          if (!requireNamespace("pdist", quietly = TRUE)) {
+            stop("Package 'pdist' must be installed to use this function.")
+          }
+          donors[i] <- sample(y[order(pdist::pdist(matrix(val[i], ncol = 1), matrix(y, ncol = 1))@dist)[1:5]], 1)        
+          
+        }
+
       }
       donors 
     }

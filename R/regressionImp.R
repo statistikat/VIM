@@ -10,7 +10,8 @@
 #'
 #'
 #' [lm()] is used for family "normal" and [glm()] for all other families.
-#' (robust=TRUE: [lmrob()], [glmrob()])
+#' If \code{robust = TRUE}, \link[robustbase:lmrob]{lmrob()} is used for family "normal" 
+#' and \link[robustbase:glmrob]{glmrob()} for all other families.
 #'
 #' @param formula model formula to impute one variable
 #' @param data A data.frame containing the data

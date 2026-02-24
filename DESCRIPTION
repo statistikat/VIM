@@ -51,17 +51,28 @@ Suggests:
     pdist,
     enetLTS,
     robmixglm,
-    stringr
+    stringr,
     glmnet
-Description: New tools for the visualization of missing and/or imputed values
-    are introduced, which can be used for exploring the data and the structure of
-    the missing and/or imputed values. Depending on this structure of the missing
-    values, the corresponding methods may help to identify the mechanism generating
-    the missing values and allows to explore the data including missing values.
-    In addition, the quality of imputation can be visually explored using various
-    univariate, bivariate, multiple and multivariate plot methods. A graphical user
-    interface available in the separate package VIMGUI allows an easy handling of
-    the implemented plot methods.
+Description: Provides methods for imputation and visualization of 
+    missing values. It includes graphical tools to explore the amount, structure 
+    and patterns of missing and/or imputed values, supporting exploratory 
+    data analysis and helping to investigate potential missingness mechanisms
+    (details in Alfons, Templ and Filzmoser, <doi:10.1007/s11634-011-0102-y>. 
+    The quality of imputations can be assessed visually using a wide range of 
+    univariate, bivariate and multivariate plots. 
+    The package further provides several imputation methods, 
+    including efficient implementations of k-nearest neighbour and hot-deck 
+    imputation (Kowarik and Templ 2013, <doi:10.18637/jss.v074.i07>, 
+    iterative robust model-based multiple 
+    imputation (Templ 2011, <doi:10.1016/j.csda.2011.04.012>; 
+    Templ 2023, <doi:10.3390/math11122729>), and machine learning–based 
+    approaches such as robust GAM-based multiple imputation 
+    (Templ 2024, <doi:10.1007/s11222-024-10429-1>) as well as gradient boosting 
+    (XGBoost) and transformer-based methods 
+    (Niederhametner et al., <doi:10.1177/18747655251339401>). 
+    General background and practical guidance on imputation are provided in the 
+    Springer book by 
+    Templ (2023) <doi:10.1007/978-3-031-30073-8>.
 LazyData: TRUE
 ByteCompile: TRUE
 License: GPL (>= 2)

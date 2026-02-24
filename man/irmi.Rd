@@ -150,6 +150,11 @@ Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
 A. Kowarik, M. Templ (2016) Imputation with
 R package VIM.  \emph{Journal of
 Statistical Software}, 74(7), 1-16.
+
+M. Templ (2023) \emph{Visualization and Imputation of Missing Values}.
+Springer Publishing.
+Series in Computational Statistics. Cham. Switzerland. 463 pages.
+DOI: 10.1007/978-3-031-30073-8
 }
 \seealso{
 Other imputation methods: 
