@@ -11,6 +11,7 @@ vimpute(
   method = setNames(as.list(rep("ranger", length(considered_variables))),
     considered_variables),
   pmm = setNames(as.list(rep(TRUE, length(considered_variables))), considered_variables),
+  pmm_k = 1,
   formula = FALSE,
   sequential = TRUE,
   nseq = 10,
@@ -36,6 +37,11 @@ vimpute(
 
 \item{pmm}{\itemize{
 \item TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable.
+}}
+
+\item{pmm_k}{\itemize{
+\item An integer specifying the number of nearest observed values to consider in predictive mean matching (PMM) for each numeric variable.  
+\item When PMM is enabled (`pmm = TRUE`), the algorithm finds the `k` observed values closest to the predicted value and randomly draws one of them to impute the missing value.
 }}
 
 \item{formula}{\itemize{
