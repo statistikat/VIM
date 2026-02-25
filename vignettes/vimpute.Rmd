@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 ## Introduction
 
 This vignette documents `vimpute()` according to the current implementation in `R/vimpute.R`.
-`vimpute()` provides a flexible and robust way to impute missing values in tabular data. It performs iterative, sequential imputation, allowing later estimates to leverage earlier predictions. The function supports multiple learners—including tree-based, regularized, and robust regression methods—making it suitable for numeric, categorical, or mixed data with complex relationships.
+`vimpute()` provides a flexible and robust way to impute missing values in tabular data. It performs iterative, sequential imputation, allowing later estimates to leverage earlier predictions. The function supports multiple learners, including tree-based, regularized, and robust regression methods, making it suitable for numeric, categorical, or mixed data with complex relationships.
 Optional features include predictive mean matching (PMM) for numeric targets, formula-based modeling with transformations or interactions, factor level handling, per-variable tuning, and convergence monitoring. Outputs can include the imputed dataset, prediction histories, and tuning logs, depending on the chosen settings.
 
 ## Function Signature
