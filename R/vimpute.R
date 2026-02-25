@@ -1,5 +1,5 @@
 
-#' Impute missing values with prefered Model, sequentially, with hyperparametertuning and with PMM (if wanted)
+#' Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)
 #' Need of 'helper_vimpute' script
 
 ## PARAMETERS ##
