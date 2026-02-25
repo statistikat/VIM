@@ -22,6 +22,49 @@ library(paradox)
 library(mlr3tuning)
 library(mlr3learners)
 
+# Setup: Funktionen laden, falls nicht im Paketkontext (z.B. devtools::load_all())
+source_if_exists <- function(path_candidates) {
+  for (p in path_candidates) {
+    if (file.exists(p)) {
+      source(p)
+      return(invisible(TRUE))
+    }
+  }
+  invisible(FALSE)
+}
+
+if (!exists("precheck", mode = "function")) {
+  ok <- source_if_exists(c("helper_vimpute.R", "R/helper_vimpute.R"))
+  if (!ok) stop("helper_vimpute.R konnte nicht gefunden werden.")
+}
+if (!exists("vimpute", mode = "function")) {
+  ok <- source_if_exists(c("vimpute.R", "R/vimpute.R"))
+  if (!ok) stop("vimpute.R konnte nicht gefunden werden.")
+}
+
+# ------------------------------------------------------------------
+# Text zu pmm_k_method (neu in vimpute)
+# ------------------------------------------------------------------
+# pmm_k_method steuert, wie die k beobachteten Nachbarn bei PMM
+# aggregiert werden. Erlaubte Standardwerte sind:
+#   - "mean"   : Mittelwert der k Nachbarn
+#   - "median" : Median der k Nachbarn
+#   - "random" : zufälliger Wert aus den k Nachbarn
+#
+# pmm_k_method kann flexibel gesetzt werden:
+# 1) global:
+#    pmm_k_method = "median"
+#
+# 2) variablenspezifisch:
+#    pmm_k_method = list(mpg = "random", semi = "mean")
+#
+# 3) als eigene Funktion (global oder je Variable):
+#    pmm_k_method = function(x) quantile(x, 0.25, names = FALSE)
+#
+# Hinweis:
+# Eine Custom-Funktion muss genau einen numerischen, nicht-NA Wert
+# zurückgeben.
+
 
 
 
@@ -48,6 +91,158 @@ fac_na_idx <- sample(nrow(dt), 5)
 dt[fac_na_idx, cyl := NA]
 
 dt
+
+# ------------------------------------------------------------------
+# Tests: pmm_k_method (mtcars)
+# ------------------------------------------------------------------
+make_mtcars_pmm_data <- function(seed = 123) {
+  set.seed(seed)
+  x <- as.data.table(mtcars)
+  x[, cyl := factor(cyl)]
+  x[sample(.N, 8), mpg := NA]
+  x[sample(.N, 6), cyl := NA]
+  x
+}
+
+expect_no_error <- function(expr, label) {
+  err <- tryCatch({
+    eval.parent(substitute(expr))
+    NULL
+  }, error = function(e) e)
+  if (!is.null(err)) {
+    stop(sprintf("[FAIL] %s | unerwarteter Fehler: %s", label, conditionMessage(err)))
+  }
+  cat(sprintf("[OK] %s\n", label))
+}
+
+expect_error <- function(expr, pattern, label) {
+  err <- tryCatch({
+    eval.parent(substitute(expr))
+    NULL
+  }, error = function(e) e)
+  if (is.null(err)) {
+    stop(sprintf("[FAIL] %s | erwarteter Fehler blieb aus", label))
+  }
+  msg <- conditionMessage(err)
+  if (!grepl(pattern, msg, fixed = TRUE)) {
+    stop(sprintf("[FAIL] %s | falsche Fehlermeldung: %s", label, msg))
+  }
+  cat(sprintf("[OK] %s\n", label))
+}
+
+expect_warning <- function(expr, pattern, label) {
+  warnings <- character(0)
+  err <- tryCatch({
+    withCallingHandlers(
+      eval.parent(substitute(expr)),
+      warning = function(w) {
+        warnings <<- c(warnings, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }
+    )
+    NULL
+  }, error = function(e) e)
+  
+  if (!is.null(err)) {
+    stop(sprintf("[FAIL] %s | unerwarteter Fehler: %s", label, conditionMessage(err)))
+  }
+  if (!any(grepl(pattern, warnings, fixed = TRUE))) {
+    stop(sprintf(
+      "[FAIL] %s | erwartete Warnung nicht gefunden. Warnungen: %s",
+      label,
+      paste(warnings, collapse = " | ")
+    ))
+  }
+  cat(sprintf("[OK] %s\n", label))
+}
+
+run_pmm_k_method_tests <- function() {
+  dt_test <- make_mtcars_pmm_data()
+  
+  base_args <- list(
+    data = dt_test,
+    method = list(mpg = "ranger", cyl = "ranger"),
+    pmm = list(mpg = TRUE, cyl = FALSE),
+    pmm_k = list(mpg = 5, cyl = 3),
+    sequential = FALSE,
+    nseq = 1,
+    verbose = FALSE
+  )
+  
+  # Gültige Varianten
+  expect_no_error(do.call(vimpute, c(base_args, list(pmm_k_method = "mean"))),
+                  "global: pmm_k_method = 'mean'")
+  expect_no_error(do.call(vimpute, c(base_args, list(pmm_k_method = "median"))),
+                  "global: pmm_k_method = 'median'")
+  expect_no_error(do.call(vimpute, c(base_args, list(pmm_k_method = "random"))),
+                  "global: pmm_k_method = 'random'")
+  expect_no_error(do.call(vimpute, c(base_args, list(pmm_k_method = NULL))),
+                  "global: pmm_k_method = NULL (Default)")
+  expect_no_error(do.call(vimpute, c(base_args, list(
+    pmm_k_method = function(x) mean(x)
+  ))), "global: pmm_k_method = function(x) mean(x)")
+  expect_no_error(do.call(vimpute, c(base_args, list(
+    pmm_k_method = list(mpg = "median")
+  ))), "list: pmm_k_method = list(mpg = 'median')")
+  expect_no_error(do.call(vimpute, c(base_args, list(
+    pmm_k_method = list(mpg = function(x) quantile(x, 0.25, names = FALSE))
+  ))), "list: pmm_k_method = list(mpg = custom function)")
+  expect_no_error(do.call(vimpute, c(base_args, list(
+    pmm_k_method = list(mpg = "random", cyl = "mean")
+  ))), "list: gemischte Methoden inkl. PMM-aus Variable")
+  
+  # Erwartete Warnungen
+  expect_warning(do.call(vimpute, c(base_args, list(
+    pmm_k_method = list(mpg = "mean", unknown_var = "median")
+  ))),
+  "pmm_k_method list contains names not matching NA variables",
+  "Warnung: unbekannte Variablennamen in pmm_k_method")
+  
+  expect_warning(do.call(vimpute, c(base_args, list(
+    pmm_k_method = list(cyl = "random")
+  ))),
+  "pmm_k_method specified for 'cyl' but PMM disabled. pmm_k_method ignored.",
+  "Warnung: pmm_k_method für Variable mit PMM=FALSE")
+  
+  # Erwartete Fehler (Validierung)
+  expect_error(do.call(vimpute, c(base_args, list(pmm_k_method = "mode"))),
+               "pmm_k_method must be one of",
+               "Fehler: ungültiger globaler String")
+  expect_error(do.call(vimpute, c(base_args, list(pmm_k_method = 5))),
+               "pmm_k_method must be a single method, a function, a named list, or NULL.",
+               "Fehler: ungültiger globaler Typ (numeric)")
+  expect_error(do.call(vimpute, c(base_args, list(pmm_k_method = list("mean")))),
+               "pmm_k_method as list must provide variable names.",
+               "Fehler: unbenannte pmm_k_method-Liste")
+  expect_error(do.call(vimpute, c(base_args, list(
+    pmm_k_method = list(mpg = "mode")
+  ))),
+  "pmm_k_method for 'mpg' must be one of",
+  "Fehler: ungültiger variablenspezifischer String")
+  
+  # Erwartete Fehler (Custom Function Return)
+  expect_error(do.call(vimpute, c(base_args, list(
+    pmm_k_method = function(x) c(mean(x), median(x))
+  ))),
+  "must return exactly one non-missing numeric value",
+  "Fehler: Custom-Funktion gibt Vektor > 1 zurück")
+  
+  expect_error(do.call(vimpute, c(base_args, list(
+    pmm_k_method = function(x) NA_real_
+  ))),
+  "must return exactly one non-missing numeric value",
+  "Fehler: Custom-Funktion gibt NA zurück")
+  
+  expect_error(do.call(vimpute, c(base_args, list(
+    pmm_k_method = function(x) "abc"
+  ))),
+  "must return exactly one non-missing numeric value",
+  "Fehler: Custom-Funktion gibt nicht-numerischen Wert zurück")
+  
+  cat("\nAlle pmm_k_method-Tests erfolgreich.\n")
+}
+
+run_pmm_k_method_tests()
 
 undebug(vimpute)
 # debug(vimpute)

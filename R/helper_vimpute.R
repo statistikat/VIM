@@ -565,6 +565,111 @@ map_pmm_k <- function(variables_NA, pmm_k, pmm) {
 #
 #
 #
+map_pmm_k_method <- function(variables_NA, pmm_k_method, pmm) {
+  allowed <- c("mean", "median", "random")
+  normalize_method <- function(x, var_name = NULL) {
+    if (is.function(x)) {
+      return(x)
+    }
+    
+    if (!is.character(x) || length(x) != 1L || is.na(x)) {
+      if (is.null(var_name)) {
+        stop("pmm_k_method must be one of: 'mean', 'median', 'random', or a function.")
+      } else {
+        stop(sprintf(
+          "pmm_k_method for '%s' must be one of: 'mean', 'median', 'random', or a function.",
+          var_name
+        ))
+      }
+    }
+    
+    method <- tolower(x)
+    if (!(method %in% allowed)) {
+      if (is.null(var_name)) {
+        stop("pmm_k_method must be one of: 'mean', 'median', 'random', or a function.")
+      } else {
+        stop(sprintf(
+          "pmm_k_method for '%s' must be one of: 'mean', 'median', 'random', or a function.",
+          var_name
+        ))
+      }
+    }
+    
+    method
+  }
+  
+  # 1) Single global method
+  if (is.function(pmm_k_method)) {
+    out <- setNames(as.list(rep(list(pmm_k_method), length(variables_NA))), variables_NA)
+    
+    for (v in variables_NA) {
+      if (isFALSE(pmm[[v]])) {
+        out[[v]] <- NULL
+      }
+    }
+    return(out)
+  }
+  
+  # 2) Single global method-name
+  if (is.character(pmm_k_method) && length(pmm_k_method) == 1L) {
+    method <- normalize_method(pmm_k_method)
+    out <- setNames(as.list(rep(method, length(variables_NA))), variables_NA)
+    
+    for (v in variables_NA) {
+      if (isFALSE(pmm[[v]])) {
+        out[[v]] <- NULL
+      }
+    }
+    return(out)
+  }
+  
+  # 3) Named list case
+  if (is.list(pmm_k_method)) {
+    nm <- names(pmm_k_method)
+    if (is.null(nm))
+      stop("pmm_k_method as list must provide variable names.")
+    
+    unknown <- setdiff(nm, variables_NA)
+    if (length(unknown) > 0) {
+      warning(sprintf(
+        "pmm_k_method list contains names not matching NA variables: %s (ignored).",
+        paste(unknown, collapse = ", ")
+      ))
+    }
+    
+    out <- setNames(vector("list", length(variables_NA)), variables_NA)
+    
+    for (v in variables_NA) {
+      if (isFALSE(pmm[[v]])) {
+        if (!is.null(pmm_k_method[[v]])) {
+          warning(sprintf("pmm_k_method specified for '%s' but PMM disabled. pmm_k_method ignored.", v))
+        }
+        out[[v]] <- NULL
+      } else {
+        if (!is.null(pmm_k_method[[v]])) {
+          out[[v]] <- normalize_method(pmm_k_method[[v]], v)
+        } else {
+          out[[v]] <- "mean"
+        }
+      }
+    }
+    return(out)
+  }
+  
+  # 4) pmm_k_method missing -> default behavior
+  if (is.null(pmm_k_method)) {
+    out <- setNames(vector("list", length(variables_NA)), variables_NA)
+    for (v in variables_NA)
+      out[[v]] <- if (isTRUE(pmm[[v]])) "mean" else NULL
+    return(out)
+  }
+  
+  stop("pmm_k_method must be a single method, a function, a named list, or NULL.")
+}
+#
+#
+#
+#
 map_tune <- function(variables_NA, tune) {
   
   # Single TRUE/FALSE → applies to all
@@ -680,6 +785,7 @@ precheck <- function(
     method,
     sequential,
     pmm_k,
+    pmm_k_method,
     learner_params,
     tune,
     default_method = NULL
@@ -915,6 +1021,7 @@ precheck <- function(
   # -------------------------------------------------------------------------
   checked_pmm   <- map_pmm(variables_NA, pmm,  original_data = data)
   checked_pmm_k <- map_pmm_k(variables_NA, pmm_k, checked_pmm)
+  checked_pmm_k_method <- map_pmm_k_method(variables_NA, pmm_k_method, checked_pmm)
   checked_tune  <- map_tune(variables_NA, tune)
   
   message("Precheck done.")
@@ -927,6 +1034,7 @@ precheck <- function(
     learner_params = checked_learner_params,
     pmm            = checked_pmm,
     pmm_k          = checked_pmm_k,
+    pmm_k_method   = checked_pmm_k_method,
     tune           = checked_tune
   ))
 }

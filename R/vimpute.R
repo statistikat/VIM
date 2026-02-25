@@ -30,6 +30,18 @@
 #'    - NULL (default), meaning:
 #'      - k = 1 automatically for variables using PMM,
 #'      - k = NULL for variables without PMM
+#' @param pmm_k_method
+#'  Aggregation method used when `pmm_k > 1` in PMM.
+#'  Accepted forms:
+#'    - single global string (`"mean"`, `"median"`, `"random"`), or
+#'    - single global function (called with the k nearest observed values), or
+#'    - named list assigning methods per variable, or
+#'    - `NULL` (defaulting to `"mean"` for variables with PMM)
+#'  Semantics:
+#'    - `"mean"`: mean of the k nearest neighbors
+#'    - `"median"`: median of the k nearest neighbors
+#'    - `"random"`: random draw of one among the k nearest neighbors
+#'    - function: custom aggregator returning one numeric value
 #' @param learner_params 
 #'  Hyperparameters for the chosen methods.
 #'  Can be provided in **three ways**:
@@ -85,6 +97,7 @@ vimpute <- function(
     method = setNames(as.list(rep("ranger", length(considered_variables))), considered_variables),
     pmm = FALSE,
     pmm_k = NULL,
+    pmm_k_method = "mean",
     learner_params = NULL,
     formula = FALSE, 
     sequential = TRUE,
@@ -131,7 +144,7 @@ vimpute <- function(
     default_method <- unique(method_vector)
   }
   
-  checked_data   <- precheck(data, pmm, formula, method, sequential, pmm_k, learner_params, tune, default_method)
+  checked_data   <- precheck(data, pmm, formula, method, sequential, pmm_k, pmm_k_method, learner_params, tune, default_method)
   data           <- checked_data$data
   variables      <- checked_data$variables
   variables_NA   <- checked_data$variables_NA
@@ -139,6 +152,7 @@ vimpute <- function(
   learner_params <- checked_data$learner_params
   pmm            <- checked_data$pmm
   pmm_k          <- checked_data$pmm_k
+  pmm_k_method   <- checked_data$pmm_k_method
   tune           <- checked_data$tune
   
   if (!sequential && nseq > 1) {
@@ -1858,23 +1872,32 @@ vimpute <- function(
         # Observed values
         y_obs <- data[[var]][obs_idx]
         
-        if (pmm_k[[var]] == 1 && is.numeric(data_temp[[var]])) {
-          # Standard PMM (1D at Y) only for numeric variables
-          preds<- sapply(preds, function(x) {
-            idx <- which.min(abs(y_obs - x))
-            y_obs[idx]
-          })
-          
-        } else if (pmm_k[[var]] > 1 && is.numeric(data_temp[[var]])) {
+        if (pmm_k[[var]] >= 1 && is.numeric(data_temp[[var]])) {
           # Score-based kNN PMM (1D score, numeric targets only)
           score_obs  <- score_current[obs_idx]
           score_miss <- score_current[miss_idx]
           k <- min(pmm_k[[var]], length(y_obs))
+          pmm_method_var <- pmm_k_method[[var]]
           
           preds <- sapply(score_miss, function(s) {
             idx <- order(abs(score_obs - s))[1:k]  # find k nearest neighbors
-            mean(y_obs[idx])                       # smooth
-            # stochastic alternative: sample(y_obs[idx], 1)
+            neighbors <- y_obs[idx]
+            if (is.function(pmm_method_var)) {
+              agg <- pmm_method_var(neighbors)
+              if (length(agg) != 1L || !is.numeric(agg) || is.na(agg)) {
+                stop(sprintf(
+                  "pmm_k_method function for '%s' must return exactly one non-missing numeric value.",
+                  var
+                ))
+              }
+              as.numeric(agg)
+            } else if (pmm_method_var == "mean") {
+              mean(neighbors)
+            } else if (pmm_method_var == "median") {
+              median(neighbors)
+            } else {
+              sample(neighbors, 1)
+            }
           })
         }
         
