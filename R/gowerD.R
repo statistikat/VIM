@@ -54,7 +54,7 @@ gowerD <- function(data.x, data.y = data.x,
       warning("The number of unique values in the ordinal variables in data.x
               does not correspond to the values given in levOrders")
     }
-    levOrdersUniqueY <- sapply(orders,function(x)length(unique(data.x[[x]])))
+    levOrdersUniqueY <- sapply(orders,function(x)length(unique(data.y[[x]])))
     if(any(levOrdersUniqueY!=levOrders)){
       warning("The number of unique values in the ordinal variables in data.y
               does not correspond to the values given in levOrders")
