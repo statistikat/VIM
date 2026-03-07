@@ -72,13 +72,13 @@ rangerImpute <- function(formula, data, imp_var = TRUE,
       considered_variables = considered,
       method = method,
       pmm = pmm,
+      learner_params = list(ranger = list(predict_median = median)),
       sequential = FALSE,
       nseq = 1,
       imp_var = imp_var,
       pred_history = FALSE,
       tune = FALSE,
-      verbose = verbose,
-      ranger_median = median
+      verbose = verbose
     )
 
     data_out[[lhsV]] <- out[[lhsV]]
