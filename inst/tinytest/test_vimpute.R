@@ -20,7 +20,7 @@ library(VIM)
   expect_equal(sum(is.na(out)), 0)
 # 
 
-# vimpute supports ranger median aggregation via ...", {
+# vimpute supports ranger median aggregation via learner_params", {
   set.seed(1)
   out_mean <- vimpute(sleep, method = "ranger", sequential = FALSE, imp_var = FALSE)
   set.seed(1)
@@ -29,7 +29,7 @@ library(VIM)
     method = "ranger",
     sequential = FALSE,
     imp_var = FALSE,
-    ranger_median = TRUE
+    learner_params = list(ranger = list(predict_median = TRUE))
   )
 
   expect_equal(sum(is.na(out_median)), 0)
