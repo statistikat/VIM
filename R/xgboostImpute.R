@@ -26,6 +26,7 @@
 #' sleepx$Pred <- as.factor(LETTERS[sleepx$Pred])
 #' sleepx$Pred[1] <- NA
 #' xgboostImpute(Pred~BodyWgt+BrainWgt,data=sleepx)
+#' @importFrom xgboost xgboost
 #' @export
 xgboostImpute <- function(formula, data, imp_var = TRUE,
                          imp_suffix = "imp", verbose = FALSE,
