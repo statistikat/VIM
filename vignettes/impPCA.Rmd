@@ -2,7 +2,9 @@
 title: "Imputation Method based on Iterative EM PCA"
 author: "Birgit Karlhuber"
 date: "2024-07-08"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    highlight: default
 vignette: >
   %\VignetteIndexEntry{Imputation Method based on Iterative EM PCA}
   %\VignetteEngine{knitr::rmarkdown}
@@ -86,4 +88,3 @@ text(x = 5.6, y = 0.16, labels = paste("MAPE =", mape))
 text(x = 5.6, y = 0.12, labels = paste("NRMSE =", nrmse))
 
 ```
-

@@ -108,6 +108,11 @@ including outliers.
 
 A full description of the method can be found in the mentioned reference.
 }
+\note{
+\strong{Deprecated}: \code{irmi()} is considered legacy functionality.
+For new projects, please use \code{\link[=vimpute]{vimpute()}} instead, which provides
+a more modern, flexible and robust imputation framework.
+}
 \examples{
 
 data(sleep)
@@ -164,7 +169,6 @@ Other imputation methods:
 \code{\link{matchImpute}()},
 \code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
-\code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
 \code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}

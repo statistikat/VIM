@@ -58,7 +58,6 @@ Other imputation methods:
 \code{\link{kNN}()},
 \code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
-\code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
 \code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}

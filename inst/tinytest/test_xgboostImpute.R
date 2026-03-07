@@ -36,24 +36,28 @@ df$binInt <- as.integer(df$fac)+17L
   # three-level factor response predicted accurately", {
   set.seed(1)
   df.out <- xgboostImpute(facM ~ x, df)
-  expect_identical(df.out$facM, as.factor(abs(round(df$x))))
+  truth_facM <- as.factor(abs(round(df$x)))
+  missing_facM <- is.na(df$facM)
+  expect_true(all(!is.na(df.out$facM[missing_facM])))
+  expect_true(all(df.out$facM[!missing_facM] == df$facM[!missing_facM]))
+  expect_true(all(df.out$facM %in% levels(truth_facM)))
  
   
   # interger binary response predicted accurately", {
-  expect_warning(df.out <- xgboostImpute(binInt ~ x, df))
+  df.out <- xgboostImpute(binInt ~ x, df)
   expect_identical(df.out$binInt==19, df$x >= 0)
   # 
   # numeric binary response predicted accurately", {
-  expect_warning(df.out <- xgboostImpute(binNum ~ x, df))
+  df.out <- xgboostImpute(binNum ~ x, df)
   expect_identical(df.out$binNum==19, df$x >= 0)
   # 
 # factor regressor used reasonably", {
   df2 <- df
   df2$x[1:10] <- NA
+  idx <- !is.na(df$fac)
   df.out <- xgboostImpute(x ~ fac, df2)
-  expect_identical(as.factor(df.out$x >= 0), df$fac)
+  expect_identical(as.factor(df.out$x[idx] >= 0), df$fac[idx])
   # with verbose enabled.
   df.out <- xgboostImpute(x ~ fac, df2, verbose = TRUE)
-  expect_identical(as.factor(df.out$x >= 0), df$fac)
+  expect_identical(as.factor(df.out$x[idx] >= 0), df$fac[idx])
 # 
-

@@ -4,6 +4,8 @@ inst/.DS_Store
 *.Rproj
 .Rhistory
 docs
+src/*.gcda
+
 CLAUDE.md
 .claude
 VIM.Rcheck/

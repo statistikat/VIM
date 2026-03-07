@@ -1,3 +1,10 @@
+# VIM 7.1.0
+- improve `vimpute()` compatibility and validation
+- make `rangerImpute()`, `xgboostImpute()`, and `regressionImp()` delegate to `vimpute()`
+- restore backward-compatible `ranger_median` support in `vimpute()` and `rangerImpute()`
+- fall back from regularized to robust models when too few predictor columns remain after preprocessing
+- fix documentation and package check issues around `vimpute()`
+
 # VIM 7.0.0
  - new function vimpute that uses `mlr3` backend for a flexible imputation method.
  

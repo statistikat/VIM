@@ -1,6 +1,8 @@
 ---
 title: "VIM"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    highlight: default
 vignette: >
   %\VignetteIndexEntry{VIM}
   %\VignetteEngine{knitr::rmarkdown}
