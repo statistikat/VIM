@@ -2,3 +2,5 @@
 *.Rproj
 .Rhistory
 docs
+src/*.gcda
+
