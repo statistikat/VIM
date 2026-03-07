@@ -19,3 +19,13 @@
   expect_false(any(is.na(imp_regression$Span)))
 
 # 
+
+# regressionImp handles the VisualImp single-predictor call", {
+  dataset <- sleep[, c("Span", "NonD", "Sleep")]
+  imp_regression <- regressionImp(NonD ~ Sleep, dataset)
+  expect_true(is.data.frame(imp_regression))
+  expect_identical(nrow(imp_regression), nrow(dataset))
+  expect_true(sum(is.na(imp_regression$NonD)) < sum(is.na(dataset$NonD)))
+  expect_true(sum(imp_regression$NonD_imp) > 0)
+
+# 
