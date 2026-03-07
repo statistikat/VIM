@@ -829,17 +829,24 @@ precheck <- function(
   # -------------------------------------------------------------------------
   if (!identical(formula, FALSE)) {
     if (!is.list(formula)) stop("'formula' must be FALSE or a named list of formulas.")
-    
-    for (var in names(formula)) {
-      if (!inherits(formula[[var]], "formula"))
-        stop(sprintf("Element for variable '%s' is not a valid formula.", var))
-      
+
+    for (idx in seq_along(formula)) {
+      form <- formula[[idx]]
+      form_label <- names(formula)[idx]
+      if (is.null(form_label) || !nzchar(form_label)) {
+        form_label <- deparse(form[[2]])
+      }
+
+      if (!inherits(form, "formula")) {
+        stop(sprintf("Element for variable '%s' is not a valid formula.", form_label))
+      }
+
       # Check that all variables referenced exist in the dataset
-      form_vars <- all.vars(formula[[var]])
+      form_vars <- all.vars(form)
       missing_vars <- setdiff(form_vars, names(data))
       if (length(missing_vars) > 0) {
         stop(sprintf("Formula for '%s' references unknown variables: %s",
-                     var, paste(missing_vars, collapse=", ")))
+                     form_label, paste(missing_vars, collapse=", ")))
       }
     }
   }
@@ -936,6 +943,19 @@ precheck <- function(
   } else {
     stop("Invalid 'method' specification: must be a single method or a (named) list.")
   }
+
+  if (!identical(formula, FALSE)) {
+    formula_targets <- unique(vapply(formula, function(f) {
+      gsub("^I\\(1/|^log\\(|^sqrt\\(|^boxcox\\(|^exp\\(|\\)$| ", "", deparse(f[[2]]))
+    }, character(1)))
+
+    for (target in formula_targets) {
+      target_method <- if (target %in% names(method)) method[[target]] else default_method
+      if (!is.null(target_method) && !target_method %in% c("regularized", "robust")) {
+        stop("A formula can only be used with the 'robust' or 'regularized' methods.")
+      }
+    }
+  }
   
   # -------------------------------------------------------------------------
   # 6) Validate 'regularized' method compatibility (glmnet)
@@ -982,7 +1002,7 @@ precheck <- function(
   missing_counts <- colSums(is.na(data))
   na_cols <- names(missing_counts[missing_counts > 0.5 * nrow(data)])
   if (length(na_cols) > 0) {
-    warning(sprintf("Variables with >50%% missing values: %s", paste(na_cols, collapse=", ")))
+    warning(sprintf("Variables with more than 50%% missing values: %s", paste(na_cols, collapse=", ")))
   }
   
   # -------------------------------------------------------------------------
