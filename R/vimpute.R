@@ -186,6 +186,14 @@ vimpute <- function(
   
   learners <- lapply(learner_ids, function(id) lrn(id))
   names(learners) <- learner_ids
+  ensure_robust_learners <- function(learners) {
+    if (is.null(learners[["regr.lm_rob"]]) || is.null(learners[["classif.glm_rob"]])) {
+      register_robust_learners()
+      learners[["regr.lm_rob"]] <- lrn("regr.lm_rob")
+      learners[["classif.glm_rob"]] <- lrn("classif.glm_rob")
+    }
+    learners
+  }
 ### Learner End ###
   
 ### ***** Def missing indices Start ***** ###################################################################################################
@@ -469,6 +477,21 @@ vimpute <- function(
         
         # Apply the encoding to the training data
         data_temp <- po_ohe$predict(list(train_task))[[1]]$data()
+      }
+
+      effective_feature_count <- max(0L, ncol(data_temp) - 1L)
+      if (method_var == "regularized" && effective_feature_count < 2L) {
+        warning(sprintf(
+          "Variable '%s' has fewer than two usable predictor columns after preprocessing; regularized (glmnet) requires at least two columns. Switching to 'robust'.",
+          var
+        ))
+        learners <- ensure_robust_learners(learners)
+        method_var <- "robust"
+        learner_candidates <- if (is.numeric(data[[target_col]])) {
+          list(learners[["regr.lm_rob"]])
+        } else {
+          list(learners[["classif.glm_rob"]])
+        }
       }
       
 ### OHE End ###
@@ -1252,6 +1275,7 @@ vimpute <- function(
       
       if (is_sc && method_var == "regularized") {
         warning(sprintf("Variable '%s' is semikontinuous; regularized (glmnet) is unstable here. Switching to 'robust'.", var))
+        learners <- ensure_robust_learners(learners)
         method_var <- "robust"
       }
       

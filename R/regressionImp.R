@@ -71,6 +71,42 @@ regressionImp <- function(formula, data,
     pmm <- setNames(as.list(rep(FALSE, length(considered))), considered)
     
     subdata <- data_out[, considered, drop = FALSE]
+
+    use_simple_regression <- !robust &&
+      identical(family, "AUTO") &&
+      length(rhs2) == 1L &&
+      is.numeric(lhs_vector)
+
+    if (use_simple_regression) {
+      rhs_complete <- !is.na(data_out[[rhs2]])
+      train_idx <- rhs_complete & !is.na(lhs_vector)
+      pred_idx <- rhs_complete & is.na(lhs_vector)
+
+      if (sum(train_idx) >= 2L) {
+        form <- as.formula(paste(lhsV, "~", rhs))
+        mod <- stats::lm(form, data = data_out[train_idx, , drop = FALSE])
+
+        if (any(pred_idx)) {
+          data_out[pred_idx, lhsV] <- stats::predict(mod, newdata = data_out[pred_idx, , drop = FALSE])
+        }
+
+        if (imp_var) {
+          target_imp_col <- paste0(lhsV, "_", imp_suffix)
+          if (!(target_imp_col %in% colnames(data_out))) {
+            data_out[[target_imp_col]] <- is.na(lhs_vector)
+          } else {
+            data_out[[target_imp_col]] <- as.logical(data_out[[target_imp_col]])
+            warning(
+              "The following TRUE/FALSE imputation status variables will be updated: ",
+              target_imp_col
+            )
+            data_out[[target_imp_col]] <- is.na(lhs_vector)
+          }
+        }
+
+        next
+      }
+    }
     
     out <- vimpute(
       data                = subdata,
