@@ -32,11 +32,12 @@
 #'      - k = NULL for variables without PMM
 #' @param pmm_k_method
 #'  Aggregation method used when `pmm_k > 1` in PMM.
+#'  Default is `"mean"`.
 #'  Accepted forms:
 #'    - single global string (`"mean"`, `"median"`, `"random"`), or
 #'    - single global function (called with the k nearest observed values), or
 #'    - named list assigning methods per variable, or
-#'    - `NULL` (defaulting to `"mean"` for variables with PMM)
+#'    - `NULL` values inside such lists, which fall back to `"mean"`
 #'  Semantics:
 #'    - `"mean"`: mean of the k nearest neighbors
 #'    - `"median"`: median of the k nearest neighbors
@@ -1367,7 +1368,7 @@ vimpute <- function(
         
         po_fix <- po("fixfactors", droplevels = FALSE) # no level drops
         po_oor <- po("imputeoor",
-                     affect_columns = selector_type("factor"),
+                     affect_columns = mlr3pipelines::selector_type("factor"),
                      create_empty_level = TRUE) # new levels -> reserve levels
         
         class_pipeline <- po_fix %>>% po_oor %>>% classif_learner
@@ -1442,7 +1443,7 @@ vimpute <- function(
         po_x_miss_reg <- NULL
         if (has_na_in_features && supports_missing && method_var != "xgboost") {
           po_x_miss_reg <- po("missind", param_vals = list(
-            affect_columns = selector_name(reg_features),
+            affect_columns = mlr3pipelines::selector_name(reg_features),
             which = "all",
             type = "factor"
           ))
