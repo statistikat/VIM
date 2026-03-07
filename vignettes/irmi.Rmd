@@ -1,7 +1,9 @@
 ---
 title: "Imputation Method IRMI"
 author: Wolfgang Rannetbauer
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    highlight: default
 vignette: >
   %\VignetteIndexEntry{Imputation Method IRMI}
   %\VignetteEngine{knitr::rmarkdown}
@@ -142,6 +144,5 @@ reactable(results, columns = list(
 )
 
 ```
-
 
 

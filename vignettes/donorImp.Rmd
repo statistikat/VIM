@@ -1,7 +1,9 @@
 ---
 title: "Donor based Imputation Methods"
 author: Wolfgang Rannetbauer
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    highlight: default
 vignette: >
   %\VignetteIndexEntry{Donor based Imputation Methods}
   %\VignetteEngine{knitr::rmarkdown}

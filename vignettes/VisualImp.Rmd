@@ -3,6 +3,7 @@ title: "Supportive Graphic Methods"
 author: Wolfgang Rannetbauer, Birgit Karlhuber
 output: 
   rmarkdown::html_vignette:
+    highlight: default
     toc: TRUE
 vignette: >
   %\VignetteIndexEntry{Supportive Graphic Methods}

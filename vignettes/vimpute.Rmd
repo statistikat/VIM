@@ -1,7 +1,9 @@
 ---
 title: "Imputation Method vimpute"
 author: "Eileen Vattheuer"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    highlight: default
 vignette: >
   %\VignetteIndexEntry{Imputation Method vimpute}
   %\VignetteEncoding{UTF-8}
@@ -367,6 +369,5 @@ res_subset <- vimpute(
 ```
 
 Only `considered_variables` are used in the imputation workflow.
-
 
 
