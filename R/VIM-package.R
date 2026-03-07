@@ -601,8 +601,28 @@ NULL
 #' handling of the plot methods.  In addition, `VIM` can be used for data
 #' from essentially any field.
 #'
-
-#' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
+#' @title The VIM Package: Visualization and Imputation of Missing Values
+#' @name VIM-package
+#' @aliases VIM-package VIM
+#' @description
+#' VIM provides tools for visualization, imputation, and exploration of missing 
+#' and multivariate data.
+#' @details
+#' This package includes advanced imputation methods, robust statistics, 
+#' and tools for data preprocessing and diagnostics.
+#' @author Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
+#'
+#' Maintainer: Matthias Templ <matthias.templ@@gmail.com>
+#' @references 
+#' M. Templ (2023) *Visualization and Imputation of Missing Values*. Springer Publishing.
+#' Series in Computational Statistics. Cham. Switzerland. 463 pages. 
+#' DOI: 10.1007/978-3-031-30073-8
+#' 
+#' A. Kowarik, M. Templ (2016) Imputation with
+#' R package VIM.  *Journal of
+#' Statistical Software*, 74(7), 1-16.
+#' 
+#' M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 #' data using visualization tools.  *Journal of Advances in Data Analysis
 #' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #'

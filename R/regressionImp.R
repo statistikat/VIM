@@ -5,6 +5,12 @@
 #' or "robust" (lmrob/glmrob).
 #'
 #' @param formula model formula to impute one or several variables
+#'
+#' [lm()] is used for family "normal" and [glm()] for all other families.
+#' If \code{robust = TRUE}, \link[robustbase:lmrob]{lmrob()} is used for family "normal" 
+#' and \link[robustbase:glmrob]{glmrob()} for all other families.
+#'
+#' @param formula model formula to impute one variable
 #' @param data A data.frame containing the data
 #' @param family ignored in this wrapper version (only "AUTO"-like behaviour via vimpute)
 #' @param robust logical; if TRUE use method = "robust", otherwise "regularized"

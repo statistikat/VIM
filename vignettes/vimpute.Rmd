@@ -95,6 +95,7 @@ To demonstrate the function, the `sleep` dataset from the `VIM` package is used.
 library(VIM)
 library(data.table)
 ```
+
 ```{r setup_2, message = FALSE}
 data <- as.data.table(VIM::sleep)
 a <- aggr(sleep, plot = FALSE)

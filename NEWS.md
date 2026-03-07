@@ -6,12 +6,13 @@
 - fix documentation and package check issues around `vimpute()`
 
 # VIM 7.0.0
- - new function vimpute that uses mlr3 backend for a flexible imputation method.
+ - new function vimpute that uses `mlr3` backend for a flexible imputation method.
  
 # VIM 6.2.4
  - fix infinite loop in matchImpute in case all observations of a variable are missing
  - remove parameter metric from kNN because it was not used
  - add function xgboostImpute for using a simple xgboostModel to impute
+ - add imputeRobust function to impute numeric variables with robust methods (linear and non-linear ones)
 
 # VIM 6.2.3
 - default robust regression method for irmi for numeric variables changes from rlm to lmrob.

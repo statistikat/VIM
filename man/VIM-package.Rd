@@ -2,10 +2,16 @@
 % Please edit documentation in R/VIM-package.R
 \docType{package}
 \name{VIM-package}
-\alias{VIM}
 \alias{VIM-package}
-\title{Visualization and Imputation of Missing Values}
+\alias{VIM}
+\title{The VIM Package: Visualization and Imputation of Missing Values}
 \description{
+VIM provides tools for visualization, imputation, and exploration of missing
+and multivariate data.
+}
+\details{
+Visualization and Imputation of Missing Values
+
 This package introduces new tools for the visualization of missing or
 imputed values in , which can be used for exploring the data and the
 structure of the missing or imputed values. Depending on this structure,
@@ -14,8 +20,7 @@ errors, which may have happened in the imputation process. This knowledge is
 necessary for selecting an appropriate imputation method in order to
 reliably estimate the missing values. Thus the visualization tools should be
 applied before imputation and the diagnostic tools afterwards.
-}
-\details{
+
 Detecting missing values mechanisms is usually done by statistical tests or
 models.  Visualization of missing and imputed values can support the test
 decision, but also reveals more details about the data structure. Most
@@ -27,8 +32,19 @@ values mechanisms in the first place.
 A graphical user interface available in the package VIMGUI allows an easy
 handling of the plot methods.  In addition, \code{VIM} can be used for data
 from essentially any field.
+
+This package includes advanced imputation methods, robust statistics,
+and tools for data preprocessing and diagnostics.
 }
 \references{
+M. Templ (2023) \emph{Visualization and Imputation of Missing Values}. Springer Publishing.
+Series in Computational Statistics. Cham. Switzerland. 463 pages.
+DOI: 10.1007/978-3-031-30073-8
+
+A. Kowarik, M. Templ (2016) Imputation with
+R package VIM.  \emph{Journal of
+Statistical Software}, 74(7), 1-16.
+
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
@@ -45,23 +61,8 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Matthias Templ \email{matthias.templ@gmail.com}
+Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
 
-Authors:
-\itemize{
-  \item Alexander Kowarik \email{alexander.kowarik@statistik.gv.at} (\href{https://orcid.org/0000-0001-8598-4130}{ORCID})
-  \item Andreas Alfons
-  \item Johannes Gussenbauer
-  \item Nina Niederhametner
-  \item Eileen Vattheuer
-  \item Gregor de Cillia \email{gregor.decillia@statistik.gv.at}
-  \item Wolfgang Rannetbauer
-}
-
-Other contributors:
-\itemize{
-  \item Bernd Prantner [contributor]
-}
-
+Maintainer: Matthias Templ \href{mailto:matthias.templ@gmail.com}{matthias.templ@gmail.com}
 }
 \keyword{internal}

@@ -14,3 +14,5 @@ pkgdown
 ^codecov\.yml$
 ^R/test\.R0$
 ^src/.*\.(gcda|gcno|o|so)$
+^CLAUDE\.md$
+^\.claude$
