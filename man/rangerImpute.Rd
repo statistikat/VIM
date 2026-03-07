@@ -24,20 +24,20 @@ variable should be created show the imputation status}
 
 \item{imp_suffix}{suffix used for TF imputation variables}
 
-\item{...}{Arguments passed to \code{\link[ranger:ranger]{ranger::ranger()}}}
+\item{...}{Additional arguments. Currently ignored because
+\code{rangerImpute()} delegates to \code{\link[=vimpute]{vimpute()}}.}
 
 \item{verbose}{Show the number of observations used for training
-and evaluating the RF-Model. This parameter is also passed down to
-\code{\link[ranger:ranger]{ranger::ranger()}} to show computation status.}
+and evaluating the RF-Model.}
 
-\item{median}{Use the median (rather than the arithmetic mean) to average
-the values of individual trees for a more robust estimate.}
+\item{median}{\code{TRUE}/\code{FALSE}. If \code{TRUE}, ranger regression predictions are
+aggregated tree-wise using the median (via \code{\link[=vimpute]{vimpute()}}).}
 }
 \value{
 the imputed data set.
 }
 \description{
-Impute missing values based on a random forest model using \code{\link[ranger:ranger]{ranger::ranger()}}
+Impute missing values based on random-forest models via \code{\link[=vimpute]{vimpute()}}.
 }
 \examples{
 data(sleep)
@@ -51,7 +51,6 @@ Other imputation methods:
 \code{\link{kNN}()},
 \code{\link{matchImpute}()},
 \code{\link{medianSamp}()},
-\code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
 \code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}

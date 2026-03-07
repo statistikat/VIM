@@ -2,7 +2,7 @@
 % Please edit documentation in R/vimpute.R
 \name{vimpute}
 \alias{vimpute}
-\title{Impute missing values with prefered Model, sequentially, with hyperparametertuning and with PMM (if wanted)
+\title{Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)
 Need of 'helper_vimpute' script}
 \usage{
 vimpute(
@@ -10,8 +10,10 @@ vimpute(
   considered_variables = names(data),
   method = setNames(as.list(rep("ranger", length(considered_variables))),
     considered_variables),
-  pmm = setNames(as.list(rep(TRUE, length(considered_variables))), considered_variables),
-  pmm_k = 1,
+  pmm = FALSE,
+  pmm_k = NULL,
+  pmm_k_method = "mean",
+  learner_params = NULL,
   formula = FALSE,
   sequential = TRUE,
   nseq = 10,
@@ -23,64 +25,98 @@ vimpute(
 )
 }
 \arguments{
-\item{data}{\itemize{
-\item Dataset with missing values. Can be provided as a data.table or data.frame.
+\item{data}{Dataset with missing values. Provide as a data.table.}
+
+\item{considered_variables}{A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process.}
+
+\item{method}{Specifies the imputation method for each variable.
+Can be provided either:
+\itemize{
+\item as a \strong{single global method} (e.g. "ranger"), applied to all variables, or
+\item as a \strong{named list} (e.g. as.list(var1 = "xgboost", var2="robust")), assigning a method to each variable individually.
+Supported methods:
 }}
 
-\item{considered_variables}{\itemize{
-\item A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process.
+\item{pmm}{Predictive Mean Matching (PMM) settings.
+Can be provided:
+\itemize{
+\item as a \strong{single TRUE/FALSE} (global), or
+\item as a \strong{named list}, assigning PMM per (numeric) variable.
 }}
 
-\item{method}{\itemize{
-\item A named list specifying the imputation method for each variable:
+\item{pmm_k}{Number of nearest neighbors used in PMM.
+Accepted forms:
+\itemize{
+\item single global integer (applies to all variables), or
+\item named list assigning values per variable, or
+\item NULL (default), meaning:
+\itemize{
+\item k = 1 automatically for variables using PMM,
+\item k = NULL for variables without PMM
+}
 }}
 
-\item{pmm}{\itemize{
-\item TRUE/FALSE indicating whether predictive mean matching is used. Provide as a list for each variable.
+\item{pmm_k_method}{Aggregation method used when \code{pmm_k > 1} in PMM.
+Default is \code{"mean"}.
+Accepted forms:
+\itemize{
+\item single global string (\code{"mean"}, \code{"median"}, \code{"random"}), or
+\item single global function (called with the k nearest observed values), or
+\item named list assigning methods per variable, or
+\item \code{NULL} values inside such lists, which fall back to \code{"mean"}
+Semantics:
+\item \code{"mean"}: mean of the k nearest neighbors
+\item \code{"median"}: median of the k nearest neighbors
+\item \code{"random"}: random draw of one among the k nearest neighbors
+\item function: custom aggregator returning one numeric value
 }}
 
-\item{pmm_k}{\itemize{
-\item An integer specifying the number of nearest observed values to consider in predictive mean matching (PMM) for each numeric variable.  
-\item When PMM is enabled (`pmm = TRUE`), the algorithm finds the `k` observed values closest to the predicted value and randomly draws one of them to impute the missing value.
+\item{learner_params}{Hyperparameters for the chosen methods.
+Can be provided in \strong{three ways}:
+\itemize{
+\item \strong{Per variable}  (e.g. list(mpg = list(num.trees = 500)))
+\item \strong{Per method}    (e.g. list(ranger = list(num.trees = 600)))
+\item \strong{Global}, applied to all variables using the same method
 }}
 
-\item{formula}{\itemize{
-\item If not all variables are used as predictors, or if transformations or interactions are required (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized". Provide as a list for each variable that requires specific conditions.
+\item{formula}{Optional modeling formula to restrict or transform predictor variables.
+Only supported for \strong{regularized} (glmnet) and \strong{robust} (lmrob/glmrob) methods
+Provide as a named list, e.g.:
+\itemize{
+\item list(mpg = mpg ~ hp + drat)
+\item list(hp  = log(hp) ~ wt + cyl)
+For X: follows the rules of model.matrix
+For Y: transformations supported are log(), exp(), sqrt(), I(1/..). Only applicable for numeric variables.
 }}
 
-\item{sequential}{\itemize{
-\item If TRUE, all variables are imputed sequentially.
+\item{sequential}{If TRUE, all variables with missing data are imputed sequentially across iterations.}
+
+\item{nseq}{Maximum number of iterations (if sequential is TRUE).}
+
+\item{eps}{Convergence threshold: the imputation process stops early if predictions change less than this amount across iterations.}
+
+\item{imp_var}{If TRUE, additional columns indicating imputed values (VAR_imp) are added.}
+
+\item{pred_history}{If TRUE, all predicted values across all iterations are stored.}
+
+\item{tune}{Hyperparameter tuning flag. Can be:
+\itemize{
+\item TRUE/FALSE globally
+\item or a list specifying tuning per variable, e.g. list(var1 = TRUE)
+Tuning is performed halfway through nseq iterations.
 }}
 
-\item{nseq}{\itemize{
-\item Maximum number of iterations (if sequential is TRUE).
-}}
-
-\item{eps}{\itemize{
-\item Threshold for convergence.
-}}
-
-\item{imp_var}{\itemize{
-\item If TRUE, the imputed values are stored.
-}}
-
-\item{pred_history}{\itemize{
-\item If TRUE, all predicted values across all iterations are stored.
-}}
-
-\item{tune}{\itemize{
-\item Tunes hyperparameters halfway through iterations, TRUE or FALSE.
-}}
-
-\item{verbose}{\itemize{
-\item If TRUE additional debugging output is provided
-}}
+\item{verbose}{If TRUE additional debugging output is provided}
 }
 \value{
-imputed data set or c(imputed data set, prediction history)
+Either:
+\itemize{
+\item the imputed dataset (default), or
+\item a list containing the imputed dataset and prediction history, depending on the pred_history and tune settings.
+}
 }
 \description{
-Impute missing values with prefered Model, sequentially, with hyperparametertuning and with PMM (if wanted)
+Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)
 Need of 'helper_vimpute' script
 }
 \examples{
@@ -100,7 +136,6 @@ Other imputation methods:
 \code{\link{matchImpute}()},
 \code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
-\code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
 \code{\link{xgboostImpute}()}
 }
