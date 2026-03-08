@@ -25,6 +25,7 @@
 #' @seealso 
 #'  \code{\link[VIM]{initialise}}
 #'  \code{\link[robCompositions]{outCoDa}}
+#' @family imputation methods
 #' @rdname imputeRobustChain
 #' @export 
 #' @importFrom VIM initialise
@@ -451,4 +452,3 @@ useRobustNumeric <- function(form, data, method, index, factors, boot, robustboo
     return(data) 
   }
 }
-

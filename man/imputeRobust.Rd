@@ -65,4 +65,19 @@ if(interactive()){
 \code{\link[robustbase]{lmrob}}
 \code{\link[mgcv]{gam}}
 \code{\link[pdist]{pdist}}
+
+Other imputation methods: 
+\code{\link{hotdeck}()},
+\code{\link{impPCA}()},
+\code{\link{imputeRobustChain}()},
+\code{\link{irmi}()},
+\code{\link{kNN}()},
+\code{\link{matchImpute}()},
+\code{\link{medianSamp}()},
+\code{\link{rangerImpute}()},
+\code{\link{regressionImp}()},
+\code{\link{sampleCat}()},
+\code{\link{vimpute}()},
+\code{\link{xgboostImpute}()}
 }
+\concept{imputation methods}

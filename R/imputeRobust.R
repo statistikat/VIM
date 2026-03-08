@@ -29,6 +29,7 @@
 #'  \code{\link[robustbase]{lmrob}}
 #'  \code{\link[mgcv]{gam}}
 #'  \code{\link[pdist]{pdist}}
+#' @family imputation methods
 #' @rdname imputeRobust
 #' @export 
 #' @importFrom VIM initialise

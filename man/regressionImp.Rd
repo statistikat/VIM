@@ -15,7 +15,7 @@ regressionImp(
 )
 }
 \arguments{
-\item{formula}{model formula to impute one or several variables}
+\item{formula}{model formula to impute one variable}
 
 \item{data}{A data.frame containing the data}
 
@@ -37,3 +37,19 @@ Impute missing values based on a regression / classification model.
 Internally delegates to \code{vimpute()} with method = "regularized" (glmnet)
 or "robust" (lmrob/glmrob).
 }
+\seealso{
+Other imputation methods: 
+\code{\link{hotdeck}()},
+\code{\link{impPCA}()},
+\code{\link{imputeRobust}()},
+\code{\link{imputeRobustChain}()},
+\code{\link{irmi}()},
+\code{\link{kNN}()},
+\code{\link{matchImpute}()},
+\code{\link{medianSamp}()},
+\code{\link{rangerImpute}()},
+\code{\link{sampleCat}()},
+\code{\link{vimpute}()},
+\code{\link{xgboostImpute}()}
+}
+\concept{imputation methods}

@@ -19,8 +19,9 @@
 #' @param mod_cat ignored in this wrapper version (classification handled by vimpute)
 #'
 #' @return the imputed data set (same class as `data`)
+#' @family imputation methods
 #' @export
-
+	
 regressionImp <- function(formula, data,
                           family = "AUTO",
                           robust = FALSE,

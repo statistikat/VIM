@@ -85,11 +85,14 @@ Computational Statistics and Data Analysis, Elsevier, vol. 52(3), pages 1712-172
 \seealso{
 Other imputation methods: 
 \code{\link{hotdeck}()},
+\code{\link{imputeRobust}()},
+\code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},
 \code{\link{kNN}()},
 \code{\link{matchImpute}()},
 \code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
+\code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
 \code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}

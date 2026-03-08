@@ -115,10 +115,13 @@ Statistical Software}, 74(7), 1-16.
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
+\code{\link{imputeRobust}()},
+\code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},
 \code{\link{matchImpute}()},
 \code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
+\code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
 \code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}

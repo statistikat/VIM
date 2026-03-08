@@ -58,11 +58,14 @@ xgboostImpute(Pred~BodyWgt+BrainWgt,data=sleepx)
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
+\code{\link{imputeRobust}()},
+\code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},
 \code{\link{kNN}()},
 \code{\link{matchImpute}()},
 \code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
+\code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
 \code{\link{vimpute}()}
 }
