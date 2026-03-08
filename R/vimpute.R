@@ -131,6 +131,52 @@ vimpute <- function(
       factor_levels[[col]] <- levels(as.factor(data[[col]])) # Nnew
     }
   }
+
+  fill_missing_target <- function(dt, target_col) {
+    dt <- as.data.table(copy(dt))
+    y <- dt[[target_col]]
+    if (!anyNA(y)) {
+      return(dt)
+    }
+
+    if (is.numeric(y)) {
+      fill_value <- stats::median(y, na.rm = TRUE)
+      if (!is.finite(fill_value)) {
+        fill_value <- 0
+      }
+      dt[[target_col]][is.na(y)] <- fill_value
+    } else if (is.factor(y)) {
+      level_counts <- table(y, useNA = "no")
+      fill_value <- if (length(level_counts) > 0) {
+        names(level_counts)[which.max(level_counts)]
+      } else {
+        levels(y)[1L]
+      }
+      dt[[target_col]][is.na(y)] <- fill_value
+      dt[[target_col]] <- factor(dt[[target_col]], levels = levels(y))
+    } else {
+      stop(sprintf(
+        "Target variable '%s' must be numeric or factor after preprocessing.",
+        target_col
+      ))
+    }
+
+    dt
+  }
+
+  make_safe_task <- function(dt, target_col, id) {
+    dt_filled <- fill_missing_target(dt, target_col)
+    if (is.numeric(dt_filled[[target_col]])) {
+      TaskRegr$new(id = id, backend = dt_filled, target = target_col)
+    } else if (is.factor(dt_filled[[target_col]])) {
+      TaskClassif$new(id = id, backend = dt_filled, target = target_col)
+    } else {
+      stop(sprintf(
+        "Target variable '%s' must be numeric or factor after preprocessing.",
+        target_col
+      ))
+    }
+  }
   
 ### ***** Check Data Start ***** ###################################################################################################
   if(verbose){
@@ -324,11 +370,7 @@ vimpute <- function(
         check_all_factor_levels(data_temp, factor_levels)
         
         # Impute missing values (Median/Mode)  -> for prediction 
-        if (is_target_numeric) {
-          task_mm <- TaskRegr$new(id = "imputation_task_mm", backend = data, target = target_col)
-        } else {
-          task_mm <- TaskClassif$new(id = "imputation_task_mm", backend = data, target = target_col)
-        }
+        task_mm <- make_safe_task(data, target_col, "imputation_task_mm")
         
         pipeline_impute <- po("imputehist") %>>%  # Histogram-based imputation for numeric variables (Median)
           po("imputemode") %>>%                  # Mode imputation for categorical variables
@@ -339,6 +381,7 @@ vimpute <- function(
         mm_data <- po_task_mm$data() # mm_data = transformed data with missings filled in, data_temp = transformed data without missings
         mm_data <- as.data.table(mm_data)
         setnames(mm_data, clean_colnames(names(mm_data)))
+        mm_data[[target_col]][missing_indices[[var]]] <- NA
         mm_data <- enforce_factor_levels(mm_data, factor_levels)
         check_all_factor_levels(mm_data, factor_levels)
         
@@ -468,16 +511,13 @@ vimpute <- function(
         po_ohe <- po("encode", method = "one-hot")
         
         # OHE on data
-        if (task_type == "regr") {
-          train_task <- as_task_regr(data_temp, target = target_col)  
-        } else {
-          train_task <- as_task_classif(data_temp, target = target_col)  
-        }
+        train_task <- make_safe_task(data_temp, target_col, paste0(target_col, "_ohe_task"))
         
         po_ohe$train(list(train_task))  # Train Encoder
         
         # Apply the encoding to the training data
         data_temp <- po_ohe$predict(list(train_task))[[1]]$data()
+        data_temp[[target_col]][missing_indices[[var]]] <- NA
       }
 
       effective_feature_count <- max(0L, ncol(data_temp) - 1L)
@@ -1691,29 +1731,6 @@ vimpute <- function(
       }
 ### Identify NAs End ###
       
-### *****Select suitable task type Start***** ###################################################################################################
-      
-      if (!is_sc) {
-        
-        if (is.numeric(data_temp[[target_col]])) {
-          pred_task <- TaskRegr$new(
-            id = target_col,
-            backend = backend_data,
-            target = target_col
-          )
-        } else if (is.factor(data_temp[[target_col]])) {
-          pred_task <- TaskClassif$new(
-            id = target_col,
-            backend = backend_data,
-            target = target_col
-          )
-        } else {
-          stop("Error: Target variable is neither numeric nor a factor!")
-        }
-      }
-      
-### Select suitable task type End ####
-      
 ### *****Predict Start***** ###################################################################################################
       if(verbose){
         message("***** Predict")
@@ -1818,16 +1835,9 @@ vimpute <- function(
         if (anyNA(bdt)) {
           bdt <- impute_missing_values(bdt, data_temp)
         }
-        
-        backend_data <- mlr3::as_data_backend(bdt)
-        
+        feature_data <- as.data.table(bdt)[, setdiff(names(data_y_fill_final), target_col), with = FALSE]
+
         if (is.factor(data_temp[[target_col]])) {
-          pred_task <- TaskClassif$new(
-            id = target_col,
-            backend = backend_data,
-            target = target_col
-          )
-          
           mod <- switch(method_var,
                         ranger = "classif.ranger",
                         xgboost = "classif.xgboost",
@@ -1839,7 +1849,7 @@ vimpute <- function(
           # pred_probs <- learner$predict(pred_task)$prob
           
           learner$predict_type <- "prob"
-          pred_probs <- learner$predict(pred_task)$prob
+          pred_probs <- learner$predict_newdata(feature_data)$prob
           
           if (isFALSE(sequential) || i == nseq) {
             preds <- apply(pred_probs, 1, function(probs) {
@@ -1851,17 +1861,12 @@ vimpute <- function(
           }
           
         } else {
-          pred_task <- TaskRegr$new(
-            id = target_col,
-            backend = backend_data,
-            target = target_col
-          )
           preds <- NULL
           if (method_var == "ranger" && isTRUE(ranger_median)) {
-            preds <- predict_ranger_median(learner, bdt, target_name = target_col)
+            preds <- predict_ranger_median(learner, feature_data, target_name = target_col)
           }
           if (is.null(preds)) {
-            preds <- learner$predict(pred_task)$response
+            preds <- learner$predict_newdata(feature_data)$response
           }
         }
       }
