@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.0.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
       </span>
     </div>
 
@@ -163,6 +163,8 @@ missing values.</p>
 converges in a few iterations.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_irmi</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/irmi.html">irmi</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: IRMI is deprecated. Please use 'vimpute()' for imputation going</span></span>
+<span><span class="co">#&gt; forward.</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_irmi</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="irmi_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>We can see that <code><a href="../reference/irmi.html">irmi()</a></code> imputed all missing values for
@@ -215,6 +217,8 @@ to <code>NA</code>.</p>
 observations reveal missing values on several points.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_irmi</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/irmi.html">irmi</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: IRMI is deprecated. Please use 'vimpute()' for imputation going</span></span>
+<span><span class="co">#&gt; forward.</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_irmi</span>, delimiter <span class="op">=</span> <span class="st">"imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="irmi_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>The plot indicates that all missing values have been imputed by the

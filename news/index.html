@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.0.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
       </span>
     </div>
 
@@ -79,8 +79,25 @@
     </div>
 
     <div class="section level2">
+<h2 class="page-header" data-toc-text="7.1.0" id="vim-710">VIM 7.1.0<a class="anchor" aria-label="anchor" href="#vim-710"></a></h2>
+<ul><li>improve <code><a href="../reference/vimpute.html">vimpute()</a></code> compatibility and validation</li>
+<li>make <code><a href="../reference/rangerImpute.html">rangerImpute()</a></code>, <code><a href="../reference/xgboostImpute.html">xgboostImpute()</a></code>, and <code><a href="../reference/regressionImp.html">regressionImp()</a></code> delegate to <code><a href="../reference/vimpute.html">vimpute()</a></code>
+</li>
+<li>vimpute: fall back from regularized to robust models when too few predictor columns remain after preprocessing</li>
+<li>fix documentation and package check issues around <code><a href="../reference/vimpute.html">vimpute()</a></code>
+</li>
+<li>OpenMP is used in gowerD</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="page-header" data-toc-text="7.0.0" id="vim-700">VIM 7.0.0<small>2026-01-10</small><a class="anchor" aria-label="anchor" href="#vim-700"></a></h2>
-<ul><li>new function vimpute that uses mlr3 backend for a flexible imputation method.</li>
+<ul><li>new function vimpute that uses <code>mlr3</code> backend for a flexible imputation method.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="6.2.4" id="vim-624">VIM 6.2.4<a class="anchor" aria-label="anchor" href="#vim-624"></a></h2>
+<ul><li>fix infinite loop in matchImpute in case all observations of a variable are missing</li>
+<li>remove parameter metric from kNN because it was not used</li>
+<li>add function xgboostImpute for using a simple xgboostModel to impute</li>
+<li>add imputeRobust function to impute numeric variables with robust methods (linear and non-linear ones)</li>
 </ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="6.2.3" id="vim-623">VIM 6.2.3<a class="anchor" aria-label="anchor" href="#vim-623"></a></h2>

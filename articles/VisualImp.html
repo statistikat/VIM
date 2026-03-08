@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.0.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
       </span>
     </div>
 
@@ -186,7 +186,6 @@ additional variables.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># for imputed values</span></span>
 <span><span class="va">x_IMPUTED</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">NonD</span> <span class="op">~</span> <span class="va">Sleep</span>, data <span class="op">=</span> <span class="va">x</span><span class="op">)</span></span>
-<span><span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span></span>
 <span><span class="fu"><a href="../reference/barMiss.html">barMiss</a></span><span class="op">(</span><span class="va">x_IMPUTED</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span>, only.miss <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-3-2.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;">
 The plot indicates that there are still some missings in NonD. This is
@@ -217,7 +216,6 @@ plots makes it easy to indentify missing/imputed values.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># for imputed values</span></span>
 <span><span class="va">imp_regression</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">NonD</span> <span class="op">~</span> <span class="va">Sleep</span>, <span class="va">dataset</span><span class="op">)</span></span>
-<span><span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span></span>
 <span><span class="fu"><a href="../reference/scattMiss.html">scattMiss</a></span><span class="op">(</span><span class="va">imp_regression</span><span class="op">[</span>,<span class="op">-</span><span class="fl">3</span><span class="op">]</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-4-2.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>The plot indicates that there are still some missings in
@@ -246,7 +244,6 @@ additional variables.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># for imputed values</span></span>
 <span><span class="va">x_IMPUTED</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">NonD</span> <span class="op">~</span> <span class="va">Sleep</span>, data <span class="op">=</span> <span class="va">x</span><span class="op">)</span></span>
-<span><span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span></span>
 <span><span class="fu"><a href="../reference/histMiss.html">histMiss</a></span><span class="op">(</span><span class="va">x_IMPUTED</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span>, only.miss <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-5-2.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 </div>
@@ -266,8 +263,6 @@ data is visualized by a clearly distinguishable color.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># for imputed values - multiple variable imputation with regrssionImp()</span></span>
 <span><span class="va">x_IMPUTED</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">NonD</span> <span class="op">+</span> <span class="va">Dream</span> <span class="op">~</span> <span class="va">Sleep</span>, data <span class="op">=</span> <span class="va">x</span><span class="op">)</span></span>
-<span><span class="co">#&gt; There still missing values in variable NonD . Probably due to missing values in the regressors.</span></span>
-<span><span class="co">#&gt; There still missing values in variable Dream . Probably due to missing values in the regressors.</span></span>
 <span><span class="fu"><a href="../reference/matrixplot.html">matrixplot</a></span><span class="op">(</span><span class="va">x_IMPUTED</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span>, sortby <span class="op">=</span> <span class="st">"BodyWgt"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="VisualImp_files/figure-html/unnamed-chunk-6-2.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 </div>
