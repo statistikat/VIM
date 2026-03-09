@@ -515,6 +515,11 @@ vimpute <- function(
         supports_missing <- FALSE
       }
       
+      # TODO if xgboost will not be able to handle missings in target and $properties is not adjusted
+      # if (method_var == "xgboost") {
+      #   supports_missing <- FALSE
+      # }
+      
       # If NA in target variable --> only train with the data that has no NA in Y
       data_y_fill <- data_y_fill[!is.na(get(target_col))]
       
