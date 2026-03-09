@@ -49,6 +49,9 @@ M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 data using visualization tools.  \emph{Journal of Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 
+M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
+imputation using standard and robust methods.  \emph{Journal of
+Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
 }
 \seealso{
 Useful links:
@@ -58,20 +61,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Matthias Templ \email{matthias.templ@gmail.com}
-
-Authors:
-\itemize{
-  \item Alexander Kowarik \email{alexander.kowarik@statistik.gv.at} (\href{https://orcid.org/0000-0001-8598-4130}{ORCID})
-  \item Andreas Alfons
-  \item Gregor de Cillia \email{gregor.decillia@statistik.gv.at}
-  \item Wolfgang Rannetbauer
-}
-
-Other contributors:
-\itemize{
-  \item Bernd Prantner [contributor]
-}
+Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
 
 Maintainer: Matthias Templ \href{mailto:matthias.templ@gmail.com}{matthias.templ@gmail.com}
 }
