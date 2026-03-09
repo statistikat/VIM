@@ -1,7 +1,9 @@
 ---
 title: "Model based Imputation Methods"
 author: Gregor de Cillia
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    highlight: default
 vignette: >
   %\VignetteIndexEntry{Model based Imputation Methods}
   %\VignetteEngine{knitr::rmarkdown}
@@ -155,7 +157,6 @@ reactable(results, columns = list(
 )
 
 ```
-
 
 
 

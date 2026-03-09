@@ -108,6 +108,11 @@ including outliers.
 
 A full description of the method can be found in the mentioned reference.
 }
+\note{
+\strong{Deprecated}: \code{irmi()} is considered legacy functionality.
+For new projects, please use \code{\link[=vimpute]{vimpute()}} instead, which provides
+a more modern, flexible and robust imputation framework.
+}
 \examples{
 
 data(sleep)
@@ -150,17 +155,25 @@ Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
 A. Kowarik, M. Templ (2016) Imputation with
 R package VIM.  \emph{Journal of
 Statistical Software}, 74(7), 1-16.
+
+M. Templ (2023) \emph{Visualization and Imputation of Missing Values}.
+Springer Publishing.
+Series in Computational Statistics. Cham. Switzerland. 463 pages.
+DOI: 10.1007/978-3-031-30073-8
 }
 \seealso{
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
+\code{\link{imputeRobust}()},
+\code{\link{imputeRobustChain}()},
 \code{\link{kNN}()},
 \code{\link{matchImpute}()},
 \code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
 \code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
+\code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}
 }
 \author{

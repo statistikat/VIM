@@ -26,6 +26,7 @@
 #' sleepx$Pred <- as.factor(LETTERS[sleepx$Pred])
 #' sleepx$Pred[1] <- NA
 #' xgboostImpute(Pred~BodyWgt+BrainWgt,data=sleepx)
+#' @importFrom xgboost xgboost
 #' @export
 xgboostImpute <- function(formula, data, imp_var = TRUE,
                          imp_suffix = "imp", verbose = FALSE,
@@ -36,113 +37,65 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
   lhs <- gsub(" ", "", strsplit(formchar[2], "\\+")[[1]])
   rhs <- formchar[3]
   rhs2 <- gsub(" ", "", strsplit(rhs, "\\+")[[1]])
-  #Missings in RHS variables
-  rhs_na <- apply(subset(data, select = rhs2), 1, function(x) any(is.na(x)))
-  #objective should be a vector of lenght equal to the lhs variables
-  if(!is.null(objective)){
-    stopifnot(length(objective)==length(lhs))
+  if (!is.null(objective)) {
+    stopifnot(length(objective) == length(lhs))
   }
+  dots <- list(...)
+  if (nrounds != 100 || !is.null(objective) || length(dots) > 0) {
+    warning("`nrounds`, `objective`, and additional xgboost arguments are ignored; xgboostImpute() delegates to vimpute().")
+  }
+
+  data_out <- data
   for (lhsV in lhs) {
-    form <- as.formula(paste(lhsV, "~", rhs,"-1"))
-    # formula without left side for prediction
-    formPred <- as.formula(paste( "~", rhs,"-1"))
-    lhs_vector <- data[[lhsV]]
-    num_class <- NULL
+    lhs_vector <- data_out[[lhsV]]
     if (!any(is.na(lhs_vector))) {
       cat(paste0("No missings in ", lhsV, ".\n"))
-    } else {
-      lhs_na <- is.na(lhs_vector)
-      if (verbose)
-        message("Training model for ", lhsV, " on ", sum(!rhs_na & !lhs_na), " observations")
-      dattmp <- subset(data, !rhs_na & !lhs_na)
-      labtmp <- dattmp[[lhsV]]
-      currentClass <- NULL
-      if(inherits(labtmp,"factor")){
-        currentClass <- "factor"
-        
-        predict_levels <- levels(labtmp)
-        labtmp <- as.integer(labtmp)-1
-        if(length(unique(labtmp))==2){
-          objective <- "binary:logistic"
-          predict_levels <- predict_levels[unique(labtmp)+1]
-          labtmp <- as.integer(as.factor(labtmp))-1
-          
-        }else if(length(unique(labtmp))>2){
-          objective <- "multi:softprob"
-          num_class <- max(labtmp)+1
-        }
-        
-      }else if(inherits(labtmp,"integer")){
-        currentClass <- "integer"
-        if(length(unique(labtmp))==2){
-          lvlsInt <- unique(labtmp)
-          labtmp <- match(labtmp,lvlsInt)-1
-          warning("binary factor detected but not properly stored as factor.")
-          objective <- "binary:logistic"
-        }else{
-          objective <- "count:poisson"## Todo: this might not be wise as default
-        }
-      }else if(inherits(labtmp,"numeric")){
-        currentClass <- "numeric"
-        if(length(unique(labtmp))==2){
-          lvlsInt <- unique(labtmp)
-          labtmp <- match(labtmp,lvlsInt)-1
-          warning("binary factor detected but not properly stored as factor.")
-          objective <- "binary:logistic"
-        }else{
-          objective <- "reg:squarederror"
+      if (imp_var) {
+        imp_col <- paste0(lhsV, "_", imp_suffix)
+        if (imp_col %in% colnames(data_out)) {
+          data_out[[imp_col]] <- as.logical(data_out[[imp_col]])
+          warning(paste("The following TRUE/FALSE imputation status variables will be updated:", imp_col))
+        } else {
+          data_out[[imp_col]] <- is.na(lhs_vector)
         }
       }
-        
-      
-      mm <- model.matrix(form,dattmp)
-      if(!is.null(num_class)){
-        mod <- xgboost::xgboost(data = mm, label = labtmp,
-                                nrounds=nrounds, objective=objective, num_class = num_class, verbose = verbose, ...)
-      }else{
-        mod <- xgboost::xgboost(data = mm, label = labtmp,
-                                nrounds=nrounds, objective=objective, verbose = verbose, ...)
-      }
-      
-      if (verbose)
-        message("Evaluating model for ", lhsV, " on ", sum(!rhs_na & lhs_na), " observations")
-      
-      predictions <- 
-        predict(mod, newdata = model.matrix(formPred,subset(data, !rhs_na & lhs_na)), reshape=TRUE)
-      
-      if(objective %in% c("binary:logistic","multi:softprob")){
-        
-        if(objective =="binary:logistic"){
-          predictions <- cbind(1-predictions,predictions)
-        }
-        
-        predict_num <- 1:ncol(predictions)
-        predictions <- apply(predictions,1,function(z,lev){
-          z <- cumsum(z)
-          z_lev <- lev[z>runif(1)]
-          return(z_lev[1])
-        },lev=predict_num)
-        
-        if(is.factor(dattmp[[lhsV]])){
-          predictions <- predict_levels[predictions]
-        }else{
-          predictions <- lvlsInt[predictions]
-        }
-      }
-      data[!rhs_na & lhs_na, ][[lhsV]] <- predictions  
-      
+      next
     }
-    
+
+    considered <- unique(c(lhsV, rhs2))
+    method <- setNames(as.list(rep("xgboost", length(considered))), considered)
+    pmm <- setNames(as.list(rep(FALSE, length(considered))), considered)
+
+    if (verbose) {
+      rhs_na <- apply(subset(data_out, select = rhs2), 1, function(x) any(is.na(x)))
+      lhs_na <- is.na(lhs_vector)
+      message("Training model for ", lhsV, " on ", sum(!rhs_na & !lhs_na), " observations")
+      message("Evaluating model for ", lhsV, " on ", sum(!rhs_na & lhs_na), " observations")
+    }
+
+    out <- vimpute(
+      data = data_out[, considered, drop = FALSE],
+      considered_variables = considered,
+      method = method,
+      pmm = pmm,
+      sequential = FALSE,
+      nseq = 1,
+      imp_var = imp_var,
+      pred_history = FALSE,
+      tune = FALSE,
+      verbose = verbose
+    )
+
+    data_out[[lhsV]] <- out[[lhsV]]
     if (imp_var) {
-      if (imp_var %in% colnames(data)) {
-        data[, paste(lhsV, "_", imp_suffix, sep = "")] <- as.logical(data[, paste(lhsV, "_", imp_suffix, sep = "")])
-        warning(paste("The following TRUE/FALSE imputation status variables will be updated:",
-                      paste(lhsV, "_", imp_suffix, sep = "")))
-      } else {
-        data$NEWIMPTFVARIABLE <- is.na(lhs_vector)
-        colnames(data)[ncol(data)] <- paste(lhsV, "_", imp_suffix, sep = "")
+      vimpute_imp_col <- paste0(lhsV, "_imp")
+      target_imp_col <- paste0(lhsV, "_", imp_suffix)
+      if (vimpute_imp_col %in% colnames(out)) {
+        data_out[[target_imp_col]] <- as.logical(out[[vimpute_imp_col]])
+      } else if (!(target_imp_col %in% colnames(data_out))) {
+        data_out[[target_imp_col]] <- is.na(lhs_vector)
       }
     }
   }
-  data
+  data_out
 }

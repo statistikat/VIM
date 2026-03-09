@@ -9,6 +9,11 @@
 #'
 #' A full description of the method can be found in the mentioned reference.
 #'
+#' @note
+#'   **Deprecated**: `irmi()` is considered legacy functionality.
+#'   For new projects, please use [vimpute()] instead, which provides
+#'   a more modern, flexible and robust imputation framework.
+#'   
 #' @param x data.frame or matrix
 #' @param eps threshold for convergency
 #' @param maxit maximum number of iterations
@@ -59,6 +64,12 @@
 #' @references A. Kowarik, M. Templ (2016) Imputation with
 #' R package VIM.  *Journal of
 #' Statistical Software*, 74(7), 1-16.
+#' 
+#' M. Templ (2023) *Visualization and Imputation of Missing Values*. 
+#' Springer Publishing.
+#' Series in Computational Statistics. Cham. Switzerland. 463 pages. 
+#' DOI: 10.1007/978-3-031-30073-8
+#' 
 #' @keywords manip
 #' @family imputation methods
 #' @examples
@@ -106,6 +117,13 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
 #object mixed conversion into the right format (vector of variable names of
 #type mixed)
 #TODO: Data sets with variables "y" might fail
+  
+  
+  warning(
+    "IRMI is deprecated. Please use 'vimpute()' for imputation going forward.",
+    call. = FALSE
+  )
+  
   check_data(x)
   if (trace) {
     message("Method for multinomial models:", multinom.method, "\n")
@@ -231,7 +249,7 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
 #  if(is.null(count)) count <- rep(FALSE, P)
 #  if(!is.null(count) && length(count) != P) stop(paste("Length of mixed must either be NULL or", P))
 #if(any(countlog == mixedlog) && countlog == TRUE) stop(paste("you declined variable", which(countlog==mixedlog && countlog==TRUE), "to be both, count and mixed"))
-  if (length(Inter_list(list(count, mixed))) > 0)
+  if (length(Inter(list(count, mixed))) > 0)
     stop(paste("you declined a variable to be both, count and mixed"))
   #for(i in which(countlog)){
   #  class(x[,i]) <- c("count", "numeric")
@@ -590,32 +608,42 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
 
 ### utility functions
 anyNA <- function(X) any(is.na(X))
-Unit_list <- function(A) {
+
+Unit <- function(A) UseMethod("Unit")
+
+#' @export
+#' @method Unit list
+Unit.list <- function(A) {
   # Units a list of vectors into one vector
   a <- vector()
-  for (i in 1:length(A)) {
+  for (i in seq_along(A)) {
     a <- c(a, A[[i]])
   }
   levels(as.factor(a))
 }
-Inter_list <- function(A) {
+
+Inter <- function(A) UseMethod("Inter")
+
+#' @export
+#' @method Inter list
+Inter.list <- function(A) {
   # common entries from a list of vectors
-  a <- Unit_list(A)
+  a <- Unit(A)
   TF <- rep(TRUE, length(a))
-  for (i in 1:length(a)) {
-    for (j in 1:length(A)) {
+  for (i in seq_along(a)) {
+    for (j in seq_along(A)) {
       TF[i] <- TF[i] && a[i] %in% A[[j]]
     }
   }
   levels(as.factor(a[TF]))
 }
 
-
-
-#' Initialization of missing values
+#' @title Initialization of missing values
+#' @name initialise
 #'
-#' Rough estimation of missing values in a vector according to its type.
+#' @description Rough estimation of missing values in a vector according to its type.
 #'
+#' @details
 #' Missing values are imputed with the mean for vectors of class
 #' `"numeric"`, with the median for vectors of class `"integer"`, and
 #' with the mode for vectors of class `"factor"`.  Hence, `x` should
@@ -678,7 +706,7 @@ getM <- function(x_reg, ndata, type, index, mixed_tf, mixed_constant, factors,
 useLM <- function(x_reg, ndata, wy, mixed_tf, mixed_constant, factors, step,
                   robust, noise, noise.factor, force, robMethod, form) {
   n <- nrow(x_reg)
-  factors <- Inter_list(list(colnames(x_reg), factors))
+  factors <- Inter(list(colnames(x_reg), factors))
   ## for semicontinuous variables
   if (mixed_tf) {
     del_factors <- vector()
@@ -818,7 +846,7 @@ useLM <- function(x_reg, ndata, wy, mixed_tf, mixed_constant, factors, step,
 
 ## count data as response
 useGLMcount <- function(x_reg,  ndata, wy, factors, step, robust, form) {
-  factors <- Inter_list(list(colnames(x_reg), factors))
+  factors <- Inter(list(colnames(x_reg), factors))
   if (length(factors) > 0) {
     for (f in 1:length(factors)) {
       if (any(summary(x_reg[, factors[f]]) == 0)) {
@@ -851,7 +879,7 @@ useGLMcount <- function(x_reg,  ndata, wy, factors, step, robust, form) {
 
 # categorical response
 useMN <- function(x_reg, ndata, wy, factors, step, robust, form, multinom.method){
-  factors <- Inter_list(list(colnames(x_reg), factors))
+  factors <- Inter(list(colnames(x_reg), factors))
   if (length(factors) > 0) {
     for (f in 1:length(factors)) {
       if (any(summary(x_reg[, factors[f]]) == 0)) {
@@ -881,7 +909,7 @@ useMN <- function(x_reg, ndata, wy, factors, step, robust, form, multinom.method
 
 # ordered response
 useOrd <- function(x_reg, ndata,  wy, factors, step, robust, form){
-  factors <- Inter_list(list(colnames(x_reg), factors))
+  factors <- Inter(list(colnames(x_reg), factors))
   if (length(factors) > 0) {
     for (f in 1:length(factors)) {
       if (any(summary(x_reg[, factors[f]]) == 0)) {
@@ -905,7 +933,7 @@ useOrd <- function(x_reg, ndata,  wy, factors, step, robust, form){
 
 # binary response
 useB <- function(x_reg,  ndata, wy, factors, step, robust, form) {
-  factors <- Inter_list(list(colnames(x_reg), factors))
+  factors <- Inter(list(colnames(x_reg), factors))
   #TODO: Faktoren mit 2 Levels und nicht Levels 0 1, funktionieren NICHT!!!!
   if (length(factors) > 0){
     for (f in 1:length(factors)) {

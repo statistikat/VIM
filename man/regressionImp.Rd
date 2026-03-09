@@ -2,7 +2,7 @@
 % Please edit documentation in R/regressionImp.R
 \name{regressionImp}
 \alias{regressionImp}
-\title{Regression Imputation}
+\title{Regression Imputation (via vimpute)}
 \usage{
 regressionImp(
   formula,
@@ -19,60 +19,37 @@ regressionImp(
 
 \item{data}{A data.frame containing the data}
 
-\item{family}{family argument for \code{\link[=glm]{glm()}}. \code{"AUTO"} (the default) tries to choose
-automatically and is the only really tested option!!!}
+\item{family}{ignored in this wrapper version (only "AUTO"-like behaviour via vimpute)}
 
-\item{robust}{\code{TRUE}/\code{FALSE} if robust regression should be used. See details.}
+\item{robust}{logical; if TRUE use method = "robust", otherwise "regularized"}
 
-\item{imp_var}{\code{TRUE}/\code{FALSE} if a \code{TRUE}/\code{FALSE} variables for each imputed
-variable should be created show the imputation status}
+\item{imp_var}{logical; if TRUE create TRUE/FALSE variables indicating imputation status}
 
 \item{imp_suffix}{suffix used for TF imputation variables}
 
-\item{mod_cat}{\code{TRUE}/\code{FALSE} if \code{TRUE} for categorical variables the level with
-the highest prediction probability is selected, otherwise it is sampled
-according to the probabilities.}
+\item{mod_cat}{ignored in this wrapper version (classification handled by vimpute)}
 }
 \value{
-the imputed data set.
+the imputed data set (same class as \code{data})
 }
 \description{
-Impute missing values based on a regression model.
-}
-\details{
-\code{\link[=lm]{lm()}} is used for family "normal" and \code{\link[=glm]{glm()}} for all other families.
-(robust=TRUE: \code{\link[=lmrob]{lmrob()}}, \code{\link[=glmrob]{glmrob()}})
-}
-\examples{
-
-data(sleep)
-sleepImp1 <- regressionImp(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
-sleepImp2 <- regressionImp(Sleep+Gest+Span+Dream+NonD~BodyWgt+BrainWgt,data=sleep)
-
-data(testdata)
-imp_testdata1 <- regressionImp(b1+b2~x1+x2,data=testdata$wna)
-imp_testdata3 <- regressionImp(x1~x2,data=testdata$wna,robust=TRUE)
-
-}
-\references{
-A. Kowarik, M. Templ (2016) Imputation with
-R package VIM.  \emph{Journal of
-Statistical Software}, 74(7), 1-16.
+Impute missing values based on a regression / classification model.
+Internally delegates to \code{vimpute()} with method = "regularized" (glmnet)
+or "robust" (lmrob/glmrob).
 }
 \seealso{
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
+\code{\link{imputeRobust}()},
+\code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},
 \code{\link{kNN}()},
 \code{\link{matchImpute}()},
 \code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
 \code{\link{sampleCat}()},
+\code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}
 }
-\author{
-Alexander Kowarik
-}
 \concept{imputation methods}
-\keyword{manip}

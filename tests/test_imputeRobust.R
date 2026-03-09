@@ -4,14 +4,12 @@
 # library(mice)
 # data("Animals_na")
 # 
-# source("~/workspace/VIM/R/imputeRobust.R")
 # 
 # # debugonce(imputeRobust)
 # imputeRobust(data = Animals_na,
 #              form = formula("lbrain ~ lbody"), 
 #              method = "lm", uncert = "wresid", boot = FALSE)
 # 
-# source("~/workspace/vimbook/R/ani_plot.R")
 # 
 # data(Animals, package = "MASS")
 # ani_plot(Animals = Animals, method = "imputeRobust-lts-pmm", mainlab = NULL, 

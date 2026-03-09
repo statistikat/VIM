@@ -15,7 +15,6 @@
 #' regression imputation using standard and robust methods.  *Journal of
 #' Computational Statistics and Data Analysis*, Vol. 55, pp. 2793-2806.
 #' 
-# seealso \code{\link{robCompositions::rdcm}}
 #' @details This function has been mainly written for procudures 
 #' that evaluate imputation or replacement of rounded zeros. The ni parameter can thus, e.g. be
 #' used for expressing the number of rounded zeros.
