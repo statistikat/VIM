@@ -88,7 +88,8 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
   if(!is.null(hier_cat)&!is.null(cat_vars)){
     stopifnot(all(names(hier_cat)%in%cat_vars))
   }
-  na_idx <- which(is.na(dat[,get(target)]))
+  is_target_categorical <- target %in% cat_vars
+  na_idx <- which(is.na(dat[[target]]))
   
   if(length(na_idx)==0){
     return(dat)
@@ -99,8 +100,8 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
                            cat_vars,
                            hier_cat,
                            target,
-                           decimal_points,
                            decimal_points_target,
+                           decimal_points,
                            round_long_decs)
   dat_str <- dat_text$dat
   lens <- dat_text$len
@@ -112,6 +113,7 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
                                    target = target,
                                    cat_vars = cat_vars,
                                    hier_cat = hier_cat,
+                                   num_unique_cat = num_unique_cat,
                                    decimal_points = decimal_points,
                                    decimal_points_target = decimal_points_target,
                                    round_long_decs = round_long_decs,
@@ -154,22 +156,29 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
     
   }
   #find position of period in numeric target variables
-  if(!(target %in% cat_vars)){
-    pos_period <- NA
+  pos_period <- NA
+  if(!is_target_categorical){
     if("." %in% target_tok$Word_ngram){
-      s <- dat_str[!na_idx,get(target)][1]
+      s <- dat_str[which(!is.na(get(target)))[1L],get(target)]
       pos_period <- which(strsplit(s, "")[[1]]==".")
+      if(length(pos_period)==0L){
+        pos_period <- NA_integer_
+      }
       tok_period_pos <- which(target_tok$Word_ngram==".")
-      temp_tok <- target_tok[!(Word_ngram==".")]
+      temp_tok <- target_tok[Word_ngram!="."]
       tok_period <- target_tok[Word_ngram==".",TOKEN]
     }else{
-      temp_tok <- copy(target_tok)
+      temp_tok <- target_tok
       tok_period_pos <- NULL
     }
   }else{
     tok_period_pos <- NULL
-    temp_tok <- copy(target_tok)
+    temp_tok <- target_tok
   }
+  tok_minus_pos <- temp_tok[Word_ngram=="-",which=TRUE]
+  has_minus_tok <- length(tok_minus_pos) > 0L
+  temp_tok_no_minus <- if(has_minus_tok) temp_tok[-tok_minus_pos,] else temp_tok
+  sample_tok_probs <- is_target_categorical
   
   
   n_toks <- lens[[target]] #numer of toks to generate
@@ -179,7 +188,7 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
   
   
   embs <- copy(test)
-  cont_vars <- names(test)[!(names(test) %in% cat_vars)]
+  cont_vars <- setdiff(names(test), cat_vars)
   for(cont in cont_vars){
     cont_help <- paste0(cont,"_",1:max(nchar(embs[[cont]]),na.rm=TRUE))
     embs[,c(cont_help) := tstrsplit(get(cont), split="")]
@@ -193,10 +202,14 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
   embs[tok,TOKEN:=TOKEN,on=list(column_help = column,Word_ngram)]
   
   # seperator token
-  embs[,TOKEN_sep:=tok[Word_ngram==",",TOKEN]]
-  embs[column_help!=column, last_digit:=as.numeric(stringi::stri_extract_last(column,regex="\\d+"))]
-  embs[column_help!=column, last_digit_flag:=last_digit==max(last_digit),by=list(column_help)]
-  embs[column_help!=column & last_digit_flag==FALSE, TOKEN_sep:=NA] # only , after last digit
+  sep_token <- tok[Word_ngram==",",TOKEN][1L]
+  embs[,TOKEN_sep:=sep_token]
+  has_split_cols <- any(embs$column_help!=embs$column)
+  if(has_split_cols){
+    embs[column_help!=column, last_digit:=as.numeric(stringi::stri_extract_last(column,regex="\\d+"))]
+    embs[column_help!=column, last_digit_flag:=last_digit==max(last_digit),by=list(column_help)]
+    embs[column_help!=column & last_digit_flag==FALSE, TOKEN_sep:=NA] # only , after last digit
+  }
   embs[column_help==target, TOKEN_sep:=NA] # target needs no ,
   
   # cast back
@@ -209,8 +222,7 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
   setcolorder(embs,colorder)
   
   # drop columns with NAs
-  drop_cols <- sapply(embs,function(z){any(is.na(z))})
-  drop_cols <- names(drop_cols)[drop_cols]
+  drop_cols <- names(embs)[vapply(embs, anyNA, logical(1L))]
   embs[,c(drop_cols):=NULL]
   embs[,help_position:=NULL]
   
@@ -219,42 +231,35 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
                     test_emb)
   colnames(test_emb) <- NULL
   pred_toks <- ""  
-  for(i in 1:n_toks){
-    tok_minus_pos <- NULL
-    temp_tok_i <- copy(temp_tok)
+  for(i in seq_len(n_toks)){
+    temp_tok_i <- temp_tok
     if(i>1){
       #add previously predicted tokens to embedding and remove one zero padding column from the left
-      test_emb <- cbind(test_emb,next_tok_ids)[,-1]
-      
-      if(!exists("pos_period"))
-        pos_period <- NA
+      test_emb <- cbind(test_emb,next_tok_ids)[,-1,drop=FALSE]
+
       #if the next position is the position of a period: add period and move to prediction of next token
       if(!is.na(pos_period)){
         if(i==pos_period){
-          test_emb <- cbind(test_emb,tok_period)[,-1]
+          test_emb <- cbind(test_emb,tok_period)[,-1,drop=FALSE]
+          next_tok_ids <- rep(tok_period,nrow(test_emb))
           pred_toks <- paste0(pred_toks,".")
           next
         }
       }
       
       # - sign can only be appear in the front
-      tok_minus_pos <- temp_tok[Word_ngram=="-",which=TRUE]
-      if(length(tok_minus_pos)!=0){
-        temp_tok_i <- temp_tok[-c(tok_minus_pos),]
+      if(has_minus_tok){
+        temp_tok_i <- temp_tok_no_minus
       }
-      test_emb <- matrix(test_emb,ncol=input_shape)
     }
     
     probs <- model|>predict(test_emb)
-    
-    sample_tok_probs <- ifelse(target %in% cat_vars,TRUE,FALSE)
-    
+
     if(!is.null(tok_period_pos)){
-      probs <- probs[,-tok_period_pos]
+      probs <- probs[,-tok_period_pos,drop=FALSE]
     }
-    #if(!is.null(tok_minus_pos)){
-    if(length(tok_minus_pos)!=0){ #tok_minus_pos is integer(0) if "-" does not exist in temp_tok
-      probs <- probs[,-tok_minus_pos]
+    if(i>1 && has_minus_tok){
+      probs <- probs[,-tok_minus_pos,drop=FALSE]
     }
     ## DEBUG with Rcpp
     # tti <<- temp_tok_i
@@ -267,14 +272,15 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
     # temp <- apply(probs,1,function(x)tokenpred_to_string(x,temp_tok_i,sample_tok_probs))
     ###
     temp <- parallel_tokenpred_to_string(probs, temp_tok_i, sample_tok_probs)
-    next_tok_ids <- as.numeric(unlist(temp)[c(TRUE,FALSE)])
-    next_toks <- unlist(temp)[c(FALSE,TRUE)]
+    temp <- unlist(temp, use.names = FALSE)
+    next_tok_ids <- as.numeric(temp[c(TRUE,FALSE)])
+    next_toks <- temp[c(FALSE,TRUE)]
     
     pred_toks <- paste0(pred_toks,next_toks)
   }
 
   
-  if(target%in%cat_vars){
+  if(is_target_categorical){
     dat[na_idx,(target):= as.factor(pred_toks)]
   }else{
     dat[na_idx,(target):= as.numeric(pred_toks)]
@@ -294,6 +300,7 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
 # this can then be used as pretrained model to impute new data
 train_transformer <- function(data,target,cat_vars,
                               hier_cat,
+                              num_unique_cat = 35,
                               decimal_points=1,
                               decimal_points_target=1,
                               round_long_decs=TRUE,
@@ -316,6 +323,8 @@ train_transformer <- function(data,target,cat_vars,
                               save_model=FALSE,
                               model_folder="",
                               model_name="tf_impute_model"){
+  column <- Word_ngram <- help_position <- column_help <- TOKEN <- TOKEN_sep <- NULL
+  last_digit <- last_digit_flag <- NULL
   dat <- copy(data)
   if(!is.data.table(dat)){
     dat <- as.data.table(dat)
@@ -334,22 +343,13 @@ train_transformer <- function(data,target,cat_vars,
     num_unique <- apply(dat,2,function(x) length(unique(x)))
     cat_vars <- names(which(num_unique<num_unique_cat))
   }
-  #message("XX")
-  dd <<- dat
-  cv <<- cat_vars
-  hc <<- hier_cat
-  ta <<- target
-  dp <<- decimal_points
-  dpt <<- decimal_points_target
-  rld <<- round_long_decs
-  
   
   dat_text <- data_to_text(dat,
                            cat_vars,
                            hier_cat,
                            target,
-                           decimal_points,
                            decimal_points_target,
+                           decimal_points,
                            round_long_decs)
   #message("YY")
   
@@ -852,4 +852,3 @@ col_to_string <- function(x,decimal_points=NULL, round_long_decs = TRUE){
 #   token_id <- target_tok[token_idx,TOKEN]
 #   return(list(token_id=token_id,token=token))
 # }
-
