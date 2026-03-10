@@ -84,7 +84,8 @@ Can be provided in \strong{three ways}:
 }}
 
 \item{formula}{Optional modeling formula to restrict or transform predictor variables.
-Only supported for \strong{regularized} (glmnet) and \strong{robust} (lmrob/glmrob) methods
+Only supported for \strong{regularized} (glmnet), \strong{robust} (lmrob/glmrob),
+\strong{gam} (mgcv::gam), and \strong{robgam} (robust GAM) methods
 Provide as a named list, e.g.:
 \itemize{
 \item list(mpg = mpg ~ hp + drat)
@@ -195,5 +196,8 @@ Other imputation methods:
 \code{\link{sampleCat}()},
 \code{\link{vimmi}},
 \code{\link{xgboostImpute}()}
+}
+\author{
+Eileen Vattheuer, Matthias Templ, Alexander Kowarik
 }
 \concept{imputation methods}

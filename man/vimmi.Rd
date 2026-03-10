@@ -79,4 +79,7 @@ Other imputation methods:
 \code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}
 }
+\author{
+Matthias Templ
+}
 \concept{imputation methods}
