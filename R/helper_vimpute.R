@@ -1425,6 +1425,19 @@ midastouch_donors <- function(
   X_obs <- as.matrix(X_obs)
   X_miss <- as.matrix(X_miss)
 
+  # Remove columns with any NA to avoid NaN in distance computation
+  complete_cols <- apply(X_obs, 2, function(col) !any(is.na(col))) &
+                   apply(X_miss, 2, function(col) !any(is.na(col)))
+  if (sum(complete_cols) == 0) {
+    # Fallback: just use score-based PMM if no complete numeric features
+    if (!is.null(score_obs) && !is.null(score_miss)) {
+      return(pmm_donor_selection(y_obs, score_obs, score_miss, k = k, agg_method = "random"))
+    }
+    return(sample(y_obs, size = n_miss, replace = TRUE))
+  }
+  X_obs <- X_obs[, complete_cols, drop = FALSE]
+  X_miss <- X_miss[, complete_cols, drop = FALSE]
+
   # Covariance for Mahalanobis distance (regularized)
   cov_mat <- tryCatch({
     S <- cov(X_obs)
@@ -1439,13 +1452,15 @@ midastouch_donors <- function(
   for (i in seq_len(n_miss)) {
     diff_mat <- sweep(X_obs, 2, X_miss[i, ], "-")
     maha_dist <- sqrt(pmax(rowSums((diff_mat %*% S_inv) * diff_mat), 0))
+    # Replace any remaining NaN with large distance
+    maha_dist[is.na(maha_dist)] <- max(maha_dist, na.rm = TRUE) + 1
 
     if (!is.null(score_obs) && !is.null(score_miss)) {
       score_dist <- abs(score_obs - score_miss[i])
-      maha_range <- max(maha_dist) - min(maha_dist)
-      score_range <- max(score_dist) - min(score_dist)
-      maha_norm <- if (maha_range > 0) maha_dist / maha_range else rep(0, n_obs)
-      score_norm <- if (score_range > 0) score_dist / score_range else rep(0, n_obs)
+      maha_range <- max(maha_dist, na.rm = TRUE) - min(maha_dist, na.rm = TRUE)
+      score_range <- max(score_dist, na.rm = TRUE) - min(score_dist, na.rm = TRUE)
+      maha_norm <- if (!is.na(maha_range) && maha_range > 0) maha_dist / maha_range else rep(0, n_obs)
+      score_norm <- if (!is.na(score_range) && score_range > 0) score_dist / score_range else rep(0, n_obs)
       combined_dist <- 0.5 * maha_norm + 0.5 * score_norm
     } else {
       combined_dist <- maha_dist

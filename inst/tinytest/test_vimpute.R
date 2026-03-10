@@ -456,3 +456,27 @@ out_boot_ranger <- vimpute(d_t11, method = "ranger", sequential = FALSE, imp_var
                            boot = TRUE, robustboot = "standard")
 expect_equal(sum(is.na(out_boot_ranger)), 0)
 #
+
+### ---- Task 12: Uncertainty injection tests ---- ###
+
+# vimpute with uncert="normalerror" and method="robust" produces stochastic output
+d_t12 <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
+method_t12 <- setNames(as.list(rep("robust", ncol(d_t12))), names(d_t12))
+
+set.seed(42)
+out_ne1 <- suppressWarnings(vimpute(d_t12, method = method_t12, sequential = FALSE,
+                                     imp_var = FALSE, uncert = "normalerror"))
+set.seed(99)
+out_ne2 <- suppressWarnings(vimpute(d_t12, method = method_t12, sequential = FALSE,
+                                     imp_var = FALSE, uncert = "normalerror"))
+expect_equal(sum(is.na(out_ne1)), 0)
+expect_equal(sum(is.na(out_ne2)), 0)
+expect_true(!identical(out_ne1$Sleep, out_ne2$Sleep))
+
+# vimpute with uncert="midastouch" returns valid results
+set.seed(1)
+out_mt <- suppressWarnings(vimpute(d_t12, method = method_t12, sequential = FALSE,
+                                    imp_var = FALSE, uncert = "midastouch"))
+expect_equal(sum(is.na(out_mt)), 0)
+expect_true(all(is.finite(out_mt$Sleep)))
+#

@@ -2044,8 +2044,51 @@ vimpute <- function(
         score_current[obs_idx] <- data[[var]][obs_idx]       # observed values
         score_current[miss_idx] <- preds        # predictions for missing rows
       }
+
+      # --- Uncertainty injection (normalerror / resid / pmm / midastouch) ---
+      if (uncert != "none" && !has_any_pmm && inherits(preds, "numeric") && !is_sc) {
+        uncert_args <- list(preds = preds, method = uncert)
+
+        if (uncert %in% c("normalerror", "resid") && !is.null(stored_model_info)) {
+          uncert_args$scale <- stored_model_info$scale
+          uncert_args$residuals <- stored_model_info$residuals
+        }
+
+        if (uncert == "pmm") {
+          miss_idx_u <- missing_indices[[var]]
+          obs_idx_u <- setdiff(seq_len(nrow(data)), miss_idx_u)
+          uncert_args$y_obs <- data[[var]][obs_idx_u]
+          uncert_args$score_obs <- score_current[obs_idx_u]
+          uncert_args$score_miss <- score_current[miss_idx_u]
+          uncert_args$pmm_k <- 5L
+          uncert_args$pmm_k_method <- "random"
+        }
+
+        if (uncert == "midastouch") {
+          miss_idx_u <- missing_indices[[var]]
+          obs_idx_u <- setdiff(seq_len(nrow(data)), miss_idx_u)
+          uncert_args$y_obs <- data[[var]][obs_idx_u]
+          uncert_args$score_obs <- score_current[obs_idx_u]
+          uncert_args$score_miss <- score_current[miss_idx_u]
+          uncert_args$pmm_k <- 5L
+          feat_names <- setdiff(names(data), var)
+          num_feats <- feat_names[sapply(feat_names, function(f) is.numeric(data[[f]]))]
+          if (length(num_feats) > 0) {
+            uncert_args$X_obs <- as.matrix(data[obs_idx_u, num_feats, with = FALSE])
+            uncert_args$X_miss <- as.matrix(data[miss_idx_u, num_feats, with = FALSE])
+          }
+        }
+
+        preds <- do.call(inject_uncertainty, uncert_args)
+
+        # Re-round after uncertainty injection
+        if (exists("decimal_places")) {
+          preds <- round(preds, decimal_places)
+        }
+      }
+
 ### Predict End ###################################################################################################
-      
+
 ### ***** PMM / Score-kNN Start ***** ###################################################################################################
       if(verbose){
         message("***** PMM / Score-kNN for predictions")
