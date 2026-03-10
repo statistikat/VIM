@@ -1679,7 +1679,45 @@ vimpute <- function(
         }
         
         learner$train(task)
-        
+
+        # Bootstrap: refit on resampled training data for model uncertainty
+        stored_model_info <- NULL
+        if (boot && !is_sc) {
+          model_info <- extract_model_info(learner, method = method_var)
+          stored_model_info <- model_info
+
+          boot_idx <- bootstrap_resample(
+            n = nrow(data_y_fill_final),
+            strategy = robustboot,
+            weights = model_info$weights,
+            residuals = model_info$residuals,
+            alpha = 0.75
+          )
+
+          boot_data <- data_y_fill_final[boot_idx, ]
+          boot_data <- enforce_factor_levels(boot_data, factor_levels)
+
+          if (is.numeric(boot_data[[target_col]])) {
+            boot_task <- TaskRegr$new(id = paste0(target_col, "_boot"),
+                                      backend = boot_data, target = target_col)
+          } else {
+            boot_task <- TaskClassif$new(id = paste0(target_col, "_boot"),
+                                         backend = boot_data, target = target_col)
+          }
+
+          tryCatch({
+            learner$train(boot_task)
+          }, error = function(e) {
+            if (verbose) warning(sprintf(
+              "Bootstrap refit failed for '%s': %s. Using original model.", var, e$message))
+          })
+        }
+
+        # Store model info for uncertainty methods (even without bootstrap)
+        if (is.null(stored_model_info) && uncert %in% c("normalerror", "resid") && !is_sc) {
+          stored_model_info <- extract_model_info(learner, method = method_var)
+        }
+
       }
 ### Train Model End ###
       

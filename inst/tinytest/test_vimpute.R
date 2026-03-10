@@ -437,3 +437,22 @@ out1_t10 <- vimpute(d_t10, method = "ranger", sequential = FALSE, imp_var = FALS
 expect_true(inherits(out1_t10, "data.frame"))
 expect_false(inherits(out1_t10, "vimids"))
 #
+
+### ---- Task 11: Bootstrap integration tests ---- ###
+
+# vimpute with boot=TRUE and method="robust" produces no NAs
+set.seed(1)
+d_t11 <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
+method_t11 <- setNames(as.list(rep("robust", ncol(d_t11))), names(d_t11))
+
+set.seed(42)
+out_boot <- suppressWarnings(vimpute(d_t11, method = method_t11, sequential = FALSE,
+                                      imp_var = FALSE, boot = TRUE, robustboot = "stratified"))
+expect_equal(sum(is.na(out_boot)), 0)
+
+# vimpute with boot=TRUE and ranger uses standard bootstrap
+set.seed(1)
+out_boot_ranger <- vimpute(d_t11, method = "ranger", sequential = FALSE, imp_var = FALSE,
+                           boot = TRUE, robustboot = "standard")
+expect_equal(sum(is.na(out_boot_ranger)), 0)
+#
