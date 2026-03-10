@@ -2,7 +2,7 @@ library(VIM)
 
 # --- Constructor ---
 
-# vimids constructor creates valid object
+# vimmi constructor creates valid object
 set.seed(1)
 d <- data.frame(x = c(1, NA, 3, NA, 5), y = c(NA, 2, NA, 4, 5))
 where <- is.na(d)
@@ -11,14 +11,14 @@ imp <- list(
   y = data.frame(m1 = c(1.0, 3.1), m2 = c(1.2, 2.9))
 )
 
-obj <- VIM:::new_vimids(
+obj <- VIM:::new_vimmi(
   data = d, imp = imp, where = where, m = 2L,
   nmis = c(x = 2L, y = 2L),
   method = list(x = "ranger", y = "ranger"),
   boot = FALSE, uncert = "none", call = NULL
 )
 
-expect_true(inherits(obj, "vimids"))
+expect_true(inherits(obj, "vimmi"))
 expect_equal(obj$m, 2L)
 expect_equal(nrow(obj$data), 5)
 
@@ -59,7 +59,7 @@ expect_error(complete(obj, action = 0))
 expect_error(complete(obj, action = 3))
 expect_error(complete(obj, action = "invalid"))
 
-# --- with.vimids ---
+# --- with.vimmi ---
 
 fits <- with(obj, lm(y ~ x))
 expect_true(is.list(fits))
@@ -68,14 +68,14 @@ expect_true(all(sapply(fits, inherits, "lm")))
 # Coefficients should differ between imputations
 expect_true(!identical(coef(fits[[1]]), coef(fits[[2]])))
 
-# --- print.vimids ---
+# --- print.vimmi ---
 
 out <- capture.output(print(obj))
 expect_true(length(out) > 0)
-expect_true(any(grepl("vimids", out, ignore.case = TRUE)))
+expect_true(any(grepl("vimmi", out, ignore.case = TRUE)))
 expect_true(any(grepl("m = 2", out)))
 
-# --- summary.vimids ---
+# --- summary.vimmi ---
 
 s <- capture.output(summary(obj))
 expect_true(length(s) > 0)

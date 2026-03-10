@@ -407,14 +407,14 @@ expect_warning(
 )
 #
 
-### ---- Task 10: m-loop / vimids tests ---- ###
+### ---- Task 10: m-loop / vimmi tests ---- ###
 
-# vimpute with m > 1 returns a vimids object
+# vimpute with m > 1 returns a vimmi object
 set.seed(1)
 d_t10 <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
 out_t10 <- vimpute(d_t10, method = "ranger", sequential = FALSE, imp_var = FALSE, m = 3)
 
-expect_true(inherits(out_t10, "vimids"))
+expect_true(inherits(out_t10, "vimmi"))
 expect_equal(out_t10$m, 3L)
 expect_equal(nrow(out_t10$data), nrow(d_t10))
 
@@ -435,7 +435,7 @@ expect_equal(nrow(c1_t10), nrow(d_t10))
 set.seed(1)
 out1_t10 <- vimpute(d_t10, method = "ranger", sequential = FALSE, imp_var = FALSE, m = 1)
 expect_true(inherits(out1_t10, "data.frame"))
-expect_false(inherits(out1_t10, "vimids"))
+expect_false(inherits(out1_t10, "vimmi"))
 #
 
 ### ---- Task 11: Bootstrap integration tests ---- ###
@@ -483,7 +483,7 @@ expect_true(all(is.finite(out_mt$Sleep)))
 
 ### ---- Task 13: Full integration tests (boot + uncert + m) ---- ###
 
-# vimpute with boot + uncert + m > 1 returns proper vimids
+# vimpute with boot + uncert + m > 1 returns proper vimmi
 set.seed(1)
 d_t13 <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
 method_t13 <- setNames(as.list(rep("robust", ncol(d_t13))), names(d_t13))
@@ -492,7 +492,7 @@ out_full <- suppressWarnings(vimpute(
   boot = TRUE, robustboot = "stratified", uncert = "normalerror", m = 3
 ))
 
-expect_true(inherits(out_full, "vimids"))
+expect_true(inherits(out_full, "vimmi"))
 expect_equal(out_full$m, 3L)
 expect_true(out_full$boot)
 expect_equal(out_full$uncert, "normalerror")
@@ -505,7 +505,7 @@ expect_equal(sum(is.na(c1_full)), 0)
 expect_equal(sum(is.na(c2_full)), 0)
 expect_equal(sum(is.na(c3_full)), 0)
 
-# with.vimids works on integration result
+# with.vimmi works on integration result
 fits <- with(out_full, lm(Sleep ~ Dream + Span))
 expect_equal(length(fits), 3)
 expect_true(all(sapply(fits, inherits, "lm")))

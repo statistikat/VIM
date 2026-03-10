@@ -2,7 +2,7 @@
 #' @description S3 class for storing multiple imputations from \code{\link{vimpute}}.
 #'   Inspired by mice's \code{mids} class: stores the original data once and only
 #'   the imputed values per variable per imputation, for memory efficiency.
-#' @name vimids
+#' @name vimmi
 #' @family imputation methods
 NULL
 
@@ -16,7 +16,7 @@ complete <- function(data, ...) {
   UseMethod("complete")
 }
 
-#' Constructor for vimids objects
+#' Constructor for vimmi objects
 #'
 #' @param data Original data.frame/data.table with NAs intact
 #' @param imp Named list: per variable with missings, a data.frame with
@@ -28,9 +28,9 @@ complete <- function(data, ...) {
 #' @param boot Logical: was bootstrap used?
 #' @param uncert Character: uncertainty method used
 #' @param call The original function call
-#' @return A \code{vimids} object
+#' @return A \code{vimmi} object
 #' @keywords internal
-new_vimids <- function(data, imp, where, m, nmis, method, boot, uncert, call) {
+new_vimmi <- function(data, imp, where, m, nmis, method, boot, uncert, call) {
   structure(
     list(
       data   = data,
@@ -43,16 +43,16 @@ new_vimids <- function(data, imp, where, m, nmis, method, boot, uncert, call) {
       uncert = uncert,
       call   = call
     ),
-    class = "vimids"
+    class = "vimmi"
   )
 }
 
-#' Extract completed datasets from a vimids object
+#' Extract completed datasets from a vimmi object
 #'
 #' Reconstructs one or more completed datasets by filling in imputed values
 #' from the specified imputation(s).
 #'
-#' @param data A \code{vimids} object (produced by \code{\link{vimpute}} with \code{m > 1})
+#' @param data A \code{vimmi} object (produced by \code{\link{vimpute}} with \code{m > 1})
 #' @param action Specifies which completed dataset(s) to return:
 #'   \itemize{
 #'     \item Integer (1..m): return a single completed data.frame for that imputation
@@ -63,7 +63,7 @@ new_vimids <- function(data, imp, where, m, nmis, method, boot, uncert, call) {
 #' @param ... Currently unused
 #' @return A data.frame, list of data.frames, or long-format data.frame
 #' @export
-#' @rdname complete.vimids
+#' @rdname complete.vimmi
 #' @examples
 #' \dontrun{
 #' result <- vimpute(sleep, method = "ranger", m = 5, boot = TRUE, uncert = "normalerror")
@@ -71,7 +71,7 @@ new_vimids <- function(data, imp, where, m, nmis, method, boot, uncert, call) {
 #' all_d <- complete(result, "all")  # list of 5 datasets
 #' long_d <- complete(result, "long") # long format with .imp column
 #' }
-complete.vimids <- function(data, action = 1, ...) {
+complete.vimmi <- function(data, action = 1, ...) {
   x <- data  # S3 generic passes object as first arg named 'data'
 
   reconstruct_one <- function(mi) {
@@ -114,16 +114,16 @@ complete.vimids <- function(data, action = 1, ...) {
 #' Evaluate an expression across all imputations
 #'
 #' Applies an expression (typically a model fit) to each completed dataset
-#' in a \code{vimids} object. The results can be pooled using
+#' in a \code{vimmi} object. The results can be pooled using
 #' \code{mice::pool()} or \code{mitools::MIcombine()}.
 #'
-#' @param data A \code{vimids} object
+#' @param data A \code{vimmi} object
 #' @param expr An expression to evaluate, e.g. \code{lm(y ~ x)}
 #' @param ... Currently unused
 #' @return A list of length \code{m} containing the result of evaluating
 #'   \code{expr} on each completed dataset
 #' @export
-#' @rdname with.vimids
+#' @rdname with.vimmi
 #' @examples
 #' \dontrun{
 #' result <- vimpute(sleep, method = "ranger", m = 5, boot = TRUE, uncert = "normalerror")
@@ -131,20 +131,20 @@ complete.vimids <- function(data, action = 1, ...) {
 #' # Pool with mice:
 #' # mice::pool(fits)
 #' }
-with.vimids <- function(data, expr, ...) {
+with.vimmi <- function(data, expr, ...) {
   x <- data
   call_expr <- substitute(expr)
   lapply(seq_len(x$m), function(mi) {
-    d <- complete.vimids(x, action = mi)
+    d <- complete.vimmi(x, action = mi)
     eval(call_expr, envir = d, enclos = parent.frame(2L))
   })
 }
 
-#' @method print vimids
+#' @method print vimmi
 #' @export
-#' @rdname vimids
-print.vimids <- function(x, ...) {
-  cat("Multiply imputed dataset (vimids)\n")
+#' @rdname vimmi
+print.vimmi <- function(x, ...) {
+  cat("Multiply imputed dataset (vimmi)\n")
   cat(sprintf("  Observations: %d\n", nrow(x$data)))
   cat(sprintf("  Variables:    %d\n", ncol(x$data)))
   cat(sprintf("  Imputations:  m = %d\n", x$m))
@@ -163,11 +163,11 @@ print.vimids <- function(x, ...) {
   invisible(x)
 }
 
-#' @method summary vimids
+#' @method summary vimmi
 #' @export
-#' @rdname vimids
-summary.vimids <- function(object, ...) {
-  cat("Summary of vimids object\n")
+#' @rdname vimmi
+summary.vimmi <- function(object, ...) {
+  cat("Summary of vimmi object\n")
   cat(sprintf("  m = %d imputations\n", object$m))
   cat(sprintf("  boot = %s, uncert = '%s'\n", object$boot, object$uncert))
   cat("\nPer-variable summary:\n")
@@ -192,19 +192,19 @@ summary.vimids <- function(object, ...) {
   invisible(object)
 }
 
-#' Convert a vimids object to a mice mids object
+#' Convert a vimmi object to a mice mids object
 #'
-#' Converts a \code{vimids} object to long format and uses
+#' Converts a \code{vimmi} object to long format and uses
 #' \code{mice::as.mids()} to create a proper \code{mids} object.
 #' This enables use of \code{mice::pool()}, \code{mice::with.mids()},
 #' and other mice infrastructure.
 #'
-#' @param x A \code{vimids} object
+#' @param x A \code{vimmi} object
 #' @param ... Currently unused
 #' @return A \code{mids} object (from the mice package)
 #' @export
-#' @rdname as.mids.vimids
-as.mids.vimids <- function(x, ...) {
+#' @rdname as.mids.vimmi
+as.mids.vimmi <- function(x, ...) {
   if (!requireNamespace("mice", quietly = TRUE)) {
     stop("Package 'mice' is required for as.mids(). Please install it.")
   }
@@ -215,7 +215,7 @@ as.mids.vimids <- function(x, ...) {
   original$.id <- seq_len(nrow(original))
 
   completed_list <- lapply(seq_len(x$m), function(mi) {
-    d <- complete.vimids(x, action = mi)
+    d <- complete.vimmi(x, action = mi)
     d$.imp <- mi
     d$.id <- seq_len(nrow(d))
     d

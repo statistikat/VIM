@@ -132,8 +132,8 @@ Most effective with method = "robust". Default: FALSE}
 If \code{pmm = TRUE} is set, it takes precedence over \code{uncert}.}
 
 \item{m}{Number of multiple imputations. Default: 1 (single imputation).
-When \code{m > 1}, returns a \code{\link{vimids}} object storing the original
-data and imputed values efficiently. Use \code{\link{complete.vimids}} to
+When \code{m > 1}, returns a \code{\link{vimmi}} object storing the original
+data and imputed values efficiently. Use \code{\link{complete.vimmi}} to
 extract completed datasets.}
 }
 \value{
@@ -141,7 +141,7 @@ Either:
 \itemize{
 \item the imputed dataset (default, when \code{m = 1}), or
 \item a list containing the imputed dataset and prediction history (when \code{pred_history = TRUE} or \code{tune = TRUE}), or
-\item a \code{\link{vimids}} object (when \code{m > 1}).
+\item a \code{\link{vimmi}} object (when \code{m > 1}).
 }
 }
 \description{
@@ -169,7 +169,7 @@ Other imputation methods:
 \code{\link{rangerImpute}()},
 \code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
-\code{\link{vimids}},
+\code{\link{vimmi}},
 \code{\link{xgboostImpute}()}
 }
 \concept{imputation methods}

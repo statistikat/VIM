@@ -95,14 +95,14 @@
 #'  If \code{pmm = TRUE} is set, it takes precedence over \code{uncert}.
 #' @param m
 #'  Number of multiple imputations. Default: 1 (single imputation).
-#'  When \code{m > 1}, returns a \code{\link{vimids}} object storing the original
-#'  data and imputed values efficiently. Use \code{\link{complete.vimids}} to
+#'  When \code{m > 1}, returns a \code{\link{vimmi}} object storing the original
+#'  data and imputed values efficiently. Use \code{\link{complete.vimmi}} to
 #'  extract completed datasets.
 #' @return
 #'  Either:
 #'    - the imputed dataset (default, when \code{m = 1}), or
 #'    - a list containing the imputed dataset and prediction history (when \code{pred_history = TRUE} or \code{tune = TRUE}), or
-#'    - a \code{\link{vimids}} object (when \code{m > 1}).
+#'    - a \code{\link{vimmi}} object (when \code{m > 1}).
 #' @export
 #'
 #' @family imputation methods
@@ -255,7 +255,7 @@ vimpute <- function(
   data_new <- copy(data)
   original_data <- copy(data)  # Saves original structure of data
 
-  # Multiple imputation: run m times, collect imputed values, return vimids
+  # Multiple imputation: run m times, collect imputed values, return vimmi
   if (m > 1L) {
     where_matrix <- as.matrix(is.na(data))
 
@@ -315,7 +315,7 @@ vimpute <- function(
       variables_NA
     )
 
-    return(new_vimids(
+    return(new_vimmi(
       data   = as.data.frame(original_data),
       imp    = imp_list,
       where  = where_matrix,
