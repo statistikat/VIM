@@ -1,4 +1,5 @@
 #' @title VIM Multiple Imputations (vimmi)
+#' @author Matthias Templ
 #' @description S3 class for storing multiple imputations from \code{\link{vimpute}}.
 #'   Stores the original data once and only the imputed values per variable per
 #'   imputation, for memory efficiency.

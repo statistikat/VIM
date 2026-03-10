@@ -1,6 +1,7 @@
 #' @title Robust imputation
-#' @description Multiple imputation using classical and robust methods 
-#' accounting for model and imputation uncertainty. 
+#' @description Multiple imputation using classical and robust methods
+#' accounting for model and imputation uncertainty.
+#' @author Matthias Templ, Alexander Kowarik 
 #' @param form Model formulas as a list.
 #' @param data Data set to impute
 #' @param boot Accounting for model uncertainty with a classical bootstrap, 
