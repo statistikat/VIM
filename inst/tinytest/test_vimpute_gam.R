@@ -1,3 +1,5 @@
+library(VIM)
+
 # === build_gam_formula tests ===
 
 # Test: numeric predictors get s() wrapping
@@ -158,3 +160,73 @@ lrn_robmc$train(task_robmc)
 lrn_robmc$predict_type <- "prob"
 pred_robmc <- lrn_robmc$predict(task_robmc)
 expect_equal(ncol(pred_robmc$prob), 3, info = "robgam multiclass has 3 prob cols")
+
+# === vimpute integration tests ===
+
+library(data.table)
+
+# Test: method = "gam" is accepted by precheck
+data(sleep, package = "VIM")
+dt <- as.data.table(sleep)
+expect_silent(
+  VIM:::precheck(dt, pmm = FALSE, formula = FALSE, method = "gam",
+                 sequential = FALSE, pmm_k = NULL, pmm_k_method = "mean",
+                 learner_params = NULL, tune = FALSE)
+)
+
+# Test: method = "robgam" is accepted by precheck
+expect_silent(
+  VIM:::precheck(dt, pmm = FALSE, formula = FALSE, method = "robgam",
+                 sequential = FALSE, pmm_k = NULL, pmm_k_method = "mean",
+                 learner_params = NULL, tune = FALSE)
+)
+
+# Test: simple GAM imputation works
+set.seed(123)
+result_gam <- vimpute(data = sleep, method = "gam", sequential = FALSE)
+expect_true(is.data.table(result_gam) || is.data.frame(result_gam),
+            info = "gam imputation returns data")
+expect_true(sum(is.na(result_gam$Dream)) == 0, info = "gam imputes Dream")
+expect_true(sum(is.na(result_gam$Sleep)) == 0, info = "gam imputes Sleep")
+
+# Test: simple robgam imputation works
+set.seed(123)
+result_robgam <- vimpute(data = sleep, method = "robgam", sequential = FALSE)
+expect_true(is.data.table(result_robgam) || is.data.frame(result_robgam),
+            info = "robgam imputation returns data")
+expect_true(sum(is.na(result_robgam$Dream)) == 0, info = "robgam imputes Dream")
+
+# Test: GAM with sequential imputation
+set.seed(42)
+result_seq <- vimpute(data = sleep, method = "gam", sequential = TRUE, nseq = 3)
+expect_true(sum(is.na(result_seq$Dream)) == 0, info = "sequential gam imputes Dream")
+
+# Test: robgam with irw via learner_params
+set.seed(42)
+result_irw <- vimpute(data = sleep, method = "robgam",
+                       learner_params = list(robgam = list(robust_method = "irw")),
+                       sequential = FALSE)
+expect_true(sum(is.na(result_irw$Dream)) == 0, info = "robgam irw imputes Dream")
+
+# Test: GAM with bootstrap and uncertainty
+set.seed(42)
+result_boot <- vimpute(data = sleep, method = "gam", sequential = FALSE,
+                        boot = TRUE, uncert = "normalerror")
+expect_true(sum(is.na(result_boot$Dream)) == 0, info = "gam+boot+uncert works")
+
+# Test: robgam with MI (m > 1)
+set.seed(42)
+result_mi <- vimpute(data = sleep, method = "robgam", sequential = FALSE,
+                      boot = TRUE, uncert = "normalerror", m = 3)
+expect_true(inherits(result_mi, "vimmi"), info = "robgam MI returns vimmi")
+expect_equal(result_mi$m, 3L, info = "robgam MI has m=3")
+d1 <- complete(result_mi, 1)
+expect_true(sum(is.na(d1$Dream)) == 0, info = "robgam MI complete(1) has no NAs")
+
+# Test: mixed methods (gam for some, ranger for others)
+set.seed(42)
+vars_na <- names(which(sapply(sleep, function(x) any(is.na(x)))))
+mixed_method <- setNames(as.list(rep("ranger", length(vars_na))), vars_na)
+mixed_method[[vars_na[1]]] <- "gam"
+result_mixed <- vimpute(data = sleep, method = mixed_method, sequential = FALSE)
+expect_true(sum(is.na(result_mixed[[vars_na[1]]])) == 0, info = "mixed gam+ranger works")

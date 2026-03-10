@@ -804,7 +804,7 @@ precheck <- function(
   # 2) Warn if any variable name equals a reserved method name
   #    (this would cause ambiguity in learner_params)
   # -------------------------------------------------------------------------
-  reserved_methods <- c("ranger", "xgboost", "regularized", "robust")
+  reserved_methods <- c("ranger", "xgboost", "regularized", "robust", "gam", "robgam")
   conflicting_vars <- intersect(variables, reserved_methods)
   if (length(conflicting_vars) > 0) {
     warning(sprintf(
@@ -857,7 +857,7 @@ precheck <- function(
   # -------------------------------------------------------------------------
   # 5) Normalize 'method' argument so every NA-variable gets a valid method
   # -------------------------------------------------------------------------
-  supported_methods <- c("ranger", "regularized", "xgboost", "robust")
+  supported_methods <- c("ranger", "regularized", "xgboost", "robust", "gam", "robgam")
   
   if (length(method) == 0) {
     stop("No method specified. Please provide at least one method.")

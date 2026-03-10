@@ -17,7 +17,9 @@
 #     - ranger (Random Forest)
 #     - xgboost (Gradient Boosting)
 #     - regularized (glmnet regression/classification)
-#     - robust (robustbase::lmrob / glmrob) 
+#     - robust (robustbase::lmrob / glmrob)
+#     - gam (Generalized Additive Model via mgcv::gam)
+#     - robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
 #' @param pmm 
 #'  Predictive Mean Matching (PMM) settings.
 #'  Can be provided:
@@ -51,8 +53,9 @@
 #'    - **Per method**    (e.g. list(ranger = list(num.trees = 600)))  
 #'    - **Global**, applied to all variables using the same method
 #' @param formula
-#'  Optional modeling formula to restrict or transform predictor variables.  
-#'  Only supported for **regularized** (glmnet) and **robust** (lmrob/glmrob) methods
+#'  Optional modeling formula to restrict or transform predictor variables.
+#'  Only supported for **regularized** (glmnet), **robust** (lmrob/glmrob),
+#'  **gam** (mgcv::gam), and **robgam** (robust GAM) methods
 #'  Provide as a named list, e.g.:
 #'    - list(mpg = mpg ~ hp + drat)  
 #'    - list(hp  = log(hp) ~ wt + cyl) 
@@ -244,19 +247,27 @@ vimpute <- function(
   
   no_change_counter <- 0
   robust_required <- any(unlist(method) == "robust")
-  
+  gam_required <- any(unlist(method) %in% c("gam", "robgam"))
+
   if (robust_required) {
     register_robust_learners()
   }
-  
+  if (gam_required) {
+    register_gam_learners()
+  }
+
   learner_ids <- c(
     "regr.cv_glmnet", "regr.glmnet", "classif.glmnet",
     "regr.ranger", "classif.ranger",
     "regr.xgboost", "classif.xgboost"
   )
-  
+
   if (robust_required) {
     learner_ids <- c(learner_ids, "regr.lm_rob", "classif.glm_rob")
+  }
+  if (gam_required) {
+    learner_ids <- c(learner_ids, "regr.gam_imp", "classif.gam_imp",
+                     "regr.robgam_imp", "classif.robgam_imp")
   }
   
   learners <- lapply(learner_ids, function(id) lrn(id))
@@ -538,8 +549,8 @@ vimpute <- function(
       }
       
       if (!isFALSE(selected_formula)) {
-        if (!method[[var]] %in% c("robust", "regularized")) {
-          stop("Error: A formula can only be used with the 'robust' or 'regularized' methods.")
+        if (!method[[var]] %in% c("robust", "regularized", "gam", "robgam")) {
+          stop("Error: A formula can only be used with the 'robust', 'regularized', 'gam', or 'robgam' methods.")
         }
       }
       
@@ -566,14 +577,18 @@ vimpute <- function(
           regularized = list(learners[["regr.cv_glmnet"]], learners[["regr.glmnet"]]),
           robust = list(learners[["regr.lm_rob"]]),
           ranger = list(learners[["regr.ranger"]]),
-          xgboost = list(learners[["regr.xgboost"]])
+          xgboost = list(learners[["regr.xgboost"]]),
+          gam = list(learners[["regr.gam_imp"]]),
+          robgam = list(learners[["regr.robgam_imp"]])
         )
       } else if (is.factor(data[[target_col]])) {
         learners_list <- list(
           regularized = list(learners[["classif.glmnet"]]),
           robust = list(learners[["classif.glm_rob"]]),
           ranger = list(learners[["classif.ranger"]]),
-          xgboost = list(learners[["classif.xgboost"]])
+          xgboost = list(learners[["classif.xgboost"]]),
+          gam = list(learners[["classif.gam_imp"]]),
+          robgam = list(learners[["classif.robgam_imp"]])
         )
       } 
       learner_candidates <- learners_list[[method_var]]
@@ -833,13 +848,51 @@ vimpute <- function(
         }
         
         robust_params <- var_learner_params
-        
+
         if (verbose) {
           cat("\n--- robust params for variable", var, "---\n")
           print(robust_params)
         }
       }
-      
+
+      ## GAM
+      gam_params <- list()
+      if (method_var == "gam") {
+        valid_gam_params <- learners[["regr.gam_imp"]]$param_set$ids()
+        invalid <- setdiff(names(var_learner_params), valid_gam_params)
+        if (length(invalid) > 0) {
+          warning(sprintf(
+            "learner_params for variable '%s' contain invalid GAM parameters: %s. These parameters were ignored.",
+            var, paste(invalid, collapse = ", ")
+          ))
+          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
+        }
+        gam_params <- var_learner_params
+        if (verbose) {
+          cat("\n--- GAM params for variable", var, "---\n")
+          print(gam_params)
+        }
+      }
+
+      ## ROBGAM
+      robgam_params <- list()
+      if (method_var == "robgam") {
+        valid_robgam_params <- learners[["regr.robgam_imp"]]$param_set$ids()
+        invalid <- setdiff(names(var_learner_params), valid_robgam_params)
+        if (length(invalid) > 0) {
+          warning(sprintf(
+            "learner_params for variable '%s' contain invalid robGAM parameters: %s. These parameters were ignored.",
+            var, paste(invalid, collapse = ", ")
+          ))
+          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
+        }
+        robgam_params <- var_learner_params
+        if (verbose) {
+          cat("\n--- robGAM params for variable", var, "---\n")
+          print(robgam_params)
+        }
+      }
+
       is_regr_task <- is.numeric(data_y_fill_final[[target_col]])
       measure <- if (is_regr_task) msr("regr.rmse") else msr("classif.acc")
 
@@ -854,6 +907,10 @@ vimpute <- function(
             lrn$param_set$values <- modifyList(lrn$param_set$values, glmnet_params)
           } else if (grepl("lm_rob|glm_rob", lrn$id)) {
             lrn$param_set$values <- modifyList(lrn$param_set$values, robust_params)
+          } else if (grepl("robgam_imp", lrn$id)) {
+            lrn$param_set$values <- modifyList(lrn$param_set$values, robgam_params)
+          } else if (grepl("gam_imp", lrn$id)) {
+            lrn$param_set$values <- modifyList(lrn$param_set$values, gam_params)
           }
           
           # Klassiication: probabilistic
@@ -906,8 +963,18 @@ vimpute <- function(
         default_learner$param_set$values <- modifyList(default_learner$param_set$values, robust_params)
         current_learner$param_set$values <- modifyList(current_learner$param_set$values, robust_params)
         tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, robust_params)
+      } else if (grepl("robgam_imp", best_learner$id)) {
+        best_learner$param_set$values   <- modifyList(best_learner$param_set$values, robgam_params)
+        default_learner$param_set$values <- modifyList(default_learner$param_set$values, robgam_params)
+        current_learner$param_set$values <- modifyList(current_learner$param_set$values, robgam_params)
+        tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, robgam_params)
+      } else if (grepl("gam_imp", best_learner$id)) {
+        best_learner$param_set$values   <- modifyList(best_learner$param_set$values, gam_params)
+        default_learner$param_set$values <- modifyList(default_learner$param_set$values, gam_params)
+        current_learner$param_set$values <- modifyList(current_learner$param_set$values, gam_params)
+        tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, gam_params)
       }
-      
+
       if (is.factor(data_temp[[target_col]])) {
         best_learner$predict_type <- "prob"
         default_learner$predict_type <- "prob"
@@ -993,7 +1060,24 @@ vimpute <- function(
             )
             return(list(space = space, n_evals = 8))
           }
-          
+
+          # GAM
+          if (best_learner_id %in% c("regr.gam_imp", "classif.gam_imp")) {
+            space <- ps(
+              min_unique = p_int(3L, 8L)
+            )
+            return(list(space = space, n_evals = 5))
+          }
+
+          # ROBGAM
+          if (best_learner_id %in% c("regr.robgam_imp", "classif.robgam_imp")) {
+            space <- ps(
+              alpha = p_dbl(0.5, 0.9),
+              min_unique = p_int(3L, 8L)
+            )
+            return(list(space = space, n_evals = 8))
+          }
+
           # Fallback
           list(space = NULL, n_evals = 10)
         }
@@ -1649,6 +1733,10 @@ vimpute <- function(
           current_learner$param_set$values <- modifyList(current_learner$param_set$values, glmnet_params)
         } else if (grepl("lm_rob|glm_rob", best_learner$id)) {
           current_learner$param_set$values <- modifyList(current_learner$param_set$values, robust_params)
+        } else if (grepl("robgam_imp", best_learner$id)) {
+          current_learner$param_set$values <- modifyList(current_learner$param_set$values, robgam_params)
+        } else if (grepl("gam_imp", best_learner$id)) {
+          current_learner$param_set$values <- modifyList(current_learner$param_set$values, gam_params)
         }
         
         # Handling of missing values
