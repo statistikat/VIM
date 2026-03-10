@@ -1329,9 +1329,12 @@ extract_model_info <- function(model, method = "robust") {
   }
 
   if (inherits(raw_model, "lmrob")) {
-    info$residuals <- as.numeric(residuals(raw_model))
-    info$scale <- summary(raw_model)$scale
-    info$weights <- raw_model$rweights
+    info$residuals <- tryCatch(as.numeric(residuals(raw_model)), error = function(e) NULL)
+    info$scale <- tryCatch(summary(raw_model)$scale, error = function(e) {
+      # summary.lmrob can fail with small n; fallback to residual SD
+      tryCatch(sd(residuals(raw_model)), error = function(e2) NULL)
+    })
+    info$weights <- tryCatch(raw_model$rweights, error = function(e) NULL)
     return(info)
   }
 

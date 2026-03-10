@@ -515,3 +515,44 @@ long_full <- complete(out_full, "long")
 expect_equal(nrow(long_full), nrow(d_t13) * 3)
 expect_true(".imp" %in% names(long_full))
 #
+
+### ---- Review tests: MI correctness ---- ###
+
+# m > 1 without boot/uncert warns about identical imputations
+expect_warning(
+  vimpute(sleep[, c("Sleep", "Dream", "Span", "BodyWgt")],
+          method = "ranger", sequential = FALSE, imp_var = FALSE, m = 2),
+  "identical"
+)
+
+# boot=TRUE with m > 1 produces different imputations
+set.seed(1)
+d_rv <- data.frame(a = c(rnorm(18), NA, NA), b = rnorm(20))
+res_rv <- suppressWarnings(vimpute(d_rv, method = "ranger", sequential = FALSE,
+                                    imp_var = FALSE, m = 5, boot = TRUE))
+imp_rv <- res_rv$imp[["a"]]
+expect_true(!all(sapply(2:5, function(j) identical(imp_rv[[1]], imp_rv[[j]]))))
+
+# where matrix matches original data dimensions and NA positions
+set.seed(1)
+d_wh <- data.frame(a = c(1, NA, 3), b = c(NA, 2, 3), c = c(1, 2, 3))
+res_wh <- suppressWarnings(vimpute(d_wh, method = "ranger", sequential = FALSE,
+                                    imp_var = FALSE, m = 2, boot = TRUE))
+expect_equal(dim(res_wh$where), dim(res_wh$data))
+expect_true(res_wh$where[2, "a"])
+expect_true(res_wh$where[1, "b"])
+expect_true(all(!res_wh$where[, "c"]))
+
+# complete() reconstructs from imp list correctly
+for (mi_rv in 1:5) {
+  crv <- complete(res_rv, mi_rv)
+  miss_a <- which(is.na(d_rv$a))
+  expect_equal(crv$a[miss_a], res_rv$imp[["a"]][[mi_rv]])
+}
+
+# long format row ordering
+long_wh <- complete(res_wh, "long")
+expect_equal(long_wh$.imp[1:3], rep(1L, 3))
+expect_equal(long_wh$.imp[4:6], rep(2L, 3))
+expect_equal(long_wh$c[1:3], long_wh$c[4:6])
+#
