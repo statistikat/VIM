@@ -381,3 +381,28 @@ expect_true(length(result_mt) == n_miss_mt)
 expect_true(all(is.finite(result_mt)))
 expect_true(all(result_mt %in% y_obs_mt))
 #
+
+### ---- Task 9: New parameter tests ---- ###
+
+# vimpute accepts new uncertainty parameters without error
+set.seed(1)
+d_t9 <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
+out_t9 <- vimpute(d_t9, method = "ranger", sequential = FALSE, imp_var = FALSE,
+                  boot = FALSE, uncert = "none", m = 1)
+expect_equal(sum(is.na(out_t9)), 0)
+
+# vimpute rejects invalid m parameter
+d_t9s <- sleep[1:20, c("Sleep", "Dream", "Span")]
+expect_error(vimpute(d_t9s, method = "ranger", sequential = FALSE, m = 0))
+expect_error(vimpute(d_t9s, method = "ranger", sequential = FALSE, m = -1))
+
+# vimpute rejects invalid uncert parameter
+expect_error(vimpute(d_t9s, method = "ranger", sequential = FALSE, uncert = "invalid"))
+
+# vimpute warns when both pmm and uncert are set
+expect_warning(
+  vimpute(d_t9s, method = "ranger", sequential = FALSE, imp_var = FALSE,
+          pmm = TRUE, uncert = "normalerror"),
+  "pmm.*takes precedence"
+)
+#

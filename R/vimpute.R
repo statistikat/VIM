@@ -74,10 +74,35 @@
 #'  Tuning is performed halfway through nseq iterations.
 #' @param verbose
 #'  If TRUE additional debugging output is provided
+#' @param boot
+#'  If TRUE, bootstrap resampling is applied before model fitting to account
+#'  for model uncertainty. The bootstrap strategy is controlled by \code{robustboot}.
+#'  Most effective with method = "robust". Default: FALSE
+#' @param robustboot
+#'  Bootstrap strategy when \code{boot = TRUE}. Options:
+#'  \code{"standard"} (classical bootstrap),
+#'  \code{"stratified"} (good/bad residual split, default),
+#'  \code{"quantile"} (weighted by robustness weights),
+#'  \code{"residual"} (inverse residual weighting),
+#'  \code{"psi"} (Tukey bisquare weights).
+#' @param uncert
+#'  Imputation uncertainty method applied to predictions:
+#'  \code{"none"} (point prediction, default),
+#'  \code{"normalerror"} (add N(0, sigma_hat)),
+#'  \code{"resid"} (add sampled residual),
+#'  \code{"pmm"} (predictive mean matching),
+#'  \code{"midastouch"} (covariate-distance-weighted PMM, Siddique & Belin 2008).
+#'  If \code{pmm = TRUE} is set, it takes precedence over \code{uncert}.
+#' @param m
+#'  Number of multiple imputations. Default: 1 (single imputation).
+#'  When \code{m > 1}, returns a \code{\link{vimids}} object storing the original
+#'  data and imputed values efficiently. Use \code{\link{complete.vimids}} to
+#'  extract completed datasets.
 #' @return
 #'  Either:
-#'    - the imputed dataset (default), or  
-#'    - a list containing the imputed dataset and prediction history, depending on the pred_history and tune settings.
+#'    - the imputed dataset (default, when \code{m = 1}), or
+#'    - a list containing the imputed dataset and prediction history (when \code{pred_history = TRUE} or \code{tune = TRUE}), or
+#'    - a \code{\link{vimids}} object (when \code{m > 1}).
 #' @export
 #'
 #' @family imputation methods
@@ -107,7 +132,11 @@ vimpute <- function(
     imp_var = TRUE,
     pred_history = FALSE,
     tune = FALSE,
-    verbose = FALSE
+    verbose = FALSE,
+    boot = FALSE,
+    robustboot = "stratified",
+    uncert = "none",
+    m = 1L
 ) {
 
   ..cols <- ..feature_cols <- ..reg_features <- ..relevant_features <- NULL
@@ -161,7 +190,21 @@ vimpute <- function(
     nseq <- 1
   }
 ### Check Data End ###
-  
+
+  # Validate MI / bootstrap / uncertainty parameters
+  if (!is.logical(boot) || length(boot) != 1) stop("'boot' must be TRUE or FALSE.")
+  robustboot <- match.arg(robustboot, c("standard", "stratified", "quantile", "residual", "psi"))
+  uncert <- match.arg(uncert, c("none", "normalerror", "resid", "pmm", "midastouch"))
+  m <- as.integer(m)
+  if (m < 1L) stop("'m' must be a positive integer.")
+
+  # Reconcile pmm parameter with uncert parameter
+  has_any_pmm <- any(unlist(pmm))
+  if (has_any_pmm && uncert != "none") {
+    warning("Both 'pmm' and 'uncert' specified. 'pmm' takes precedence; 'uncert' ignored.")
+    uncert <- "none"
+  }
+
 ### ***** Learner START ***** ################################################################################################### 
   
   # Possible extension

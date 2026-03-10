@@ -21,7 +21,11 @@ vimpute(
   imp_var = TRUE,
   pred_history = FALSE,
   tune = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  boot = FALSE,
+  robustboot = "stratified",
+  uncert = "none",
+  m = 1L
 )
 }
 \arguments{
@@ -107,12 +111,37 @@ Tuning is performed halfway through nseq iterations.
 }}
 
 \item{verbose}{If TRUE additional debugging output is provided}
+
+\item{boot}{If TRUE, bootstrap resampling is applied before model fitting to account
+for model uncertainty. The bootstrap strategy is controlled by \code{robustboot}.
+Most effective with method = "robust". Default: FALSE}
+
+\item{robustboot}{Bootstrap strategy when \code{boot = TRUE}. Options:
+\code{"standard"} (classical bootstrap),
+\code{"stratified"} (good/bad residual split, default),
+\code{"quantile"} (weighted by robustness weights),
+\code{"residual"} (inverse residual weighting),
+\code{"psi"} (Tukey bisquare weights).}
+
+\item{uncert}{Imputation uncertainty method applied to predictions:
+\code{"none"} (point prediction, default),
+\code{"normalerror"} (add N(0, sigma_hat)),
+\code{"resid"} (add sampled residual),
+\code{"pmm"} (predictive mean matching),
+\code{"midastouch"} (covariate-distance-weighted PMM, Siddique & Belin 2008).
+If \code{pmm = TRUE} is set, it takes precedence over \code{uncert}.}
+
+\item{m}{Number of multiple imputations. Default: 1 (single imputation).
+When \code{m > 1}, returns a \code{\link{vimids}} object storing the original
+data and imputed values efficiently. Use \code{\link{complete.vimids}} to
+extract completed datasets.}
 }
 \value{
 Either:
 \itemize{
-\item the imputed dataset (default), or
-\item a list containing the imputed dataset and prediction history, depending on the pred_history and tune settings.
+\item the imputed dataset (default, when \code{m = 1}), or
+\item a list containing the imputed dataset and prediction history (when \code{pred_history = TRUE} or \code{tune = TRUE}), or
+\item a \code{\link{vimids}} object (when \code{m > 1}).
 }
 }
 \description{
