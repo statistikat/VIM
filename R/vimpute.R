@@ -254,7 +254,80 @@ vimpute <- function(
   po_ohe <- NULL # set ohe to zero, becomes true if ohe is needed
   data_new <- copy(data)
   original_data <- copy(data)  # Saves original structure of data
-  
+
+  # Multiple imputation: run m times, collect imputed values, return vimids
+  if (m > 1L) {
+    where_matrix <- as.matrix(is.na(data))
+
+    imp_collector <- setNames(
+      lapply(variables_NA, function(v) vector("list", m)),
+      variables_NA
+    )
+
+    for (mi in seq_len(m)) {
+      if (verbose) message(sprintf("=== Multiple imputation run %d of %d ===", mi, m))
+
+      single_result <- vimpute(
+        data = data_all_variables,
+        considered_variables = considered_variables,
+        method = method,
+        pmm = pmm,
+        pmm_k = pmm_k,
+        pmm_k_method = pmm_k_method,
+        learner_params = learner_params,
+        formula = formula,
+        sequential = sequential,
+        nseq = nseq,
+        eps = eps,
+        imp_var = FALSE,
+        pred_history = FALSE,
+        tune = tune,
+        boot = boot,
+        robustboot = robustboot,
+        uncert = uncert,
+        m = 1L,
+        verbose = verbose
+      )
+
+      imputed_dt <- if (is.list(single_result) && !is.data.frame(single_result) && "data" %in% names(single_result)) {
+        single_result$data
+      } else {
+        as.data.table(single_result)
+      }
+
+      for (v in variables_NA) {
+        miss_idx <- missing_indices[[v]]
+        imp_collector[[v]][[mi]] <- imputed_dt[[v]][miss_idx]
+      }
+    }
+
+    imp_list <- setNames(
+      lapply(variables_NA, function(v) {
+        df <- as.data.frame(imp_collector[[v]])
+        names(df) <- paste0("m", seq_len(m))
+        df
+      }),
+      variables_NA
+    )
+
+    nmis_vec <- setNames(
+      vapply(variables_NA, function(v) length(missing_indices[[v]]), integer(1)),
+      variables_NA
+    )
+
+    return(new_vimids(
+      data   = as.data.frame(original_data),
+      imp    = imp_list,
+      where  = where_matrix,
+      m      = m,
+      nmis   = nmis_vec,
+      method = method,
+      boot   = boot,
+      uncert = uncert,
+      call   = match.call()
+    ))
+  }
+
   if (pred_history == TRUE) {
     history <- list() # save history of predicted values
   }

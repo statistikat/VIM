@@ -406,3 +406,34 @@ expect_warning(
   "pmm.*takes precedence"
 )
 #
+
+### ---- Task 10: m-loop / vimids tests ---- ###
+
+# vimpute with m > 1 returns a vimids object
+set.seed(1)
+d_t10 <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
+out_t10 <- vimpute(d_t10, method = "ranger", sequential = FALSE, imp_var = FALSE, m = 3)
+
+expect_true(inherits(out_t10, "vimids"))
+expect_equal(out_t10$m, 3L)
+expect_equal(nrow(out_t10$data), nrow(d_t10))
+
+# Imputed values stored per variable
+expect_true(is.list(out_t10$imp))
+for (varname in names(out_t10$imp)) {
+  expect_equal(ncol(out_t10$imp[[varname]]), 3)
+}
+
+# complete() produces valid datasets
+c1_t10 <- complete(out_t10, 1)
+c2_t10 <- complete(out_t10, 2)
+expect_equal(sum(is.na(c1_t10)), 0)
+expect_equal(sum(is.na(c2_t10)), 0)
+expect_equal(nrow(c1_t10), nrow(d_t10))
+
+# m=1 still returns plain data.table (backward compatible)
+set.seed(1)
+out1_t10 <- vimpute(d_t10, method = "ranger", sequential = FALSE, imp_var = FALSE, m = 1)
+expect_true(inherits(out1_t10, "data.frame"))
+expect_false(inherits(out1_t10, "vimids"))
+#
