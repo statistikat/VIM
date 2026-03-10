@@ -1,0 +1,160 @@
+# === build_gam_formula tests ===
+
+# Test: numeric predictors get s() wrapping
+df <- data.frame(y = rnorm(20), x1 = rnorm(20), x2 = rnorm(20), f1 = factor(sample(letters[1:3], 20, TRUE)))
+f <- VIM:::build_gam_formula("y", c("x1", "x2", "f1"), df)
+f_str <- deparse(f, width.cutoff = 500)
+expect_true(grepl("s\\(x1\\)", f_str), info = "numeric x1 wrapped in s()")
+expect_true(grepl("s\\(x2\\)", f_str), info = "numeric x2 wrapped in s()")
+expect_true(grepl("f1", f_str), info = "factor f1 included as linear term")
+expect_false(grepl("s\\(f1\\)", f_str), info = "factor f1 NOT wrapped in s()")
+
+# Test: numeric with < 4 unique values becomes linear
+df2 <- data.frame(y = rnorm(20), x_few = rep(c(1, 2, 3), length.out = 20), x_many = rnorm(20))
+f2 <- VIM:::build_gam_formula("y", c("x_few", "x_many"), df2)
+f2_str <- deparse(f2, width.cutoff = 500)
+expect_false(grepl("s\\(x_few\\)", f2_str), info = "few-unique numeric not smoothed")
+expect_true(grepl("x_few", f2_str), info = "few-unique numeric still included")
+expect_true(grepl("s\\(x_many\\)", f2_str), info = "many-unique numeric smoothed")
+
+# Test: all factors => no s() terms
+df3 <- data.frame(y = rnorm(10), f1 = factor(rep(c("a","b"), 5)), f2 = factor(rep(c("c","d"), 5)))
+f3 <- VIM:::build_gam_formula("y", c("f1", "f2"), df3)
+f3_str <- deparse(f3, width.cutoff = 500)
+expect_false(grepl("s\\(", f3_str), info = "all-factor formula has no s()")
+
+# Test: single predictor
+df4 <- data.frame(y = rnorm(20), x1 = rnorm(20))
+f4 <- VIM:::build_gam_formula("y", "x1", df4)
+f4_str <- deparse(f4, width.cutoff = 500)
+expect_true(grepl("s\\(x1\\)", f4_str), info = "single numeric predictor smoothed")
+
+# === LearnerRegrGAM tests ===
+library(mlr3)
+
+VIM:::register_gam_learners()
+
+# Test: learner is registered and can be instantiated
+lrn_gam <- lrn("regr.gam_imp")
+expect_true(inherits(lrn_gam, "Learner"), info = "regr.gam_imp is a Learner")
+expect_true("numeric" %in% lrn_gam$feature_types, info = "supports numeric features")
+expect_true("factor" %in% lrn_gam$feature_types, info = "supports factor features")
+
+# Test: train and predict on simple data
+set.seed(42)
+train_df <- data.frame(y = rnorm(50), x1 = rnorm(50), x2 = rnorm(50),
+                        f1 = factor(sample(letters[1:3], 50, TRUE)))
+task_regr <- TaskRegr$new(id = "test_gam", backend = train_df, target = "y")
+lrn_gam$train(task_regr)
+expect_true(!is.null(lrn_gam$model), info = "model is fitted")
+
+pred <- lrn_gam$predict(task_regr)
+expect_equal(length(pred$response), 50, info = "predictions have correct length")
+expect_true(all(is.finite(pred$response)), info = "predictions are finite")
+
+# Test: model object is a gam
+raw_mod <- lrn_gam$model
+expect_true(inherits(raw_mod, "gam"), info = "stored model is a gam object")
+
+# === LearnerClassifGAM tests ===
+
+# Binary classification
+set.seed(42)
+train_bin <- data.frame(y = factor(sample(c("a", "b"), 50, TRUE)),
+                         x1 = rnorm(50), x2 = rnorm(50))
+task_bin <- TaskClassif$new(id = "test_gam_bin", backend = train_bin, target = "y")
+lrn_gam_c <- lrn("classif.gam_imp")
+lrn_gam_c$train(task_bin)
+expect_true(!is.null(lrn_gam_c$model), info = "binary classif model fitted")
+
+lrn_gam_c$predict_type <- "prob"
+pred_bin <- lrn_gam_c$predict(task_bin)
+expect_equal(nrow(pred_bin$prob), 50, info = "binary probs correct size")
+expect_true(all(rowSums(pred_bin$prob) > 0.99), info = "binary probs sum to ~1")
+
+# Multiclass classification (OvR)
+set.seed(42)
+train_multi <- data.frame(y = factor(sample(c("a", "b", "c"), 60, TRUE)),
+                           x1 = rnorm(60), x2 = rnorm(60))
+task_multi <- TaskClassif$new(id = "test_gam_multi", backend = train_multi, target = "y")
+lrn_gam_m <- lrn("classif.gam_imp")
+lrn_gam_m$train(task_multi)
+expect_true(!is.null(lrn_gam_m$model), info = "multiclass model fitted")
+
+lrn_gam_m$predict_type <- "prob"
+pred_multi <- lrn_gam_m$predict(task_multi)
+expect_equal(ncol(pred_multi$prob), 3, info = "multiclass has 3 prob columns")
+expect_true(all(abs(rowSums(pred_multi$prob) - 1) < 0.01), info = "multiclass probs sum to ~1")
+
+# Response prediction
+lrn_gam_r <- lrn("classif.gam_imp")
+lrn_gam_r$train(task_bin)
+pred_resp <- lrn_gam_r$predict(task_bin)
+expect_true(all(pred_resp$response %in% c("a", "b")), info = "response predictions are valid levels")
+
+# === LearnerRegrRobGAM tests ===
+
+# Test: simple method (default)
+set.seed(42)
+n <- 80
+train_rob <- data.frame(y = rnorm(n), x1 = rnorm(n), x2 = rnorm(n))
+train_rob$y[1:5] <- train_rob$y[1:5] + 20
+task_rob <- TaskRegr$new(id = "test_robgam", backend = train_rob, target = "y")
+
+lrn_rob <- lrn("regr.robgam_imp")
+lrn_rob$train(task_rob)
+expect_true(!is.null(lrn_rob$model), info = "robgam simple model fitted")
+pred_rob <- lrn_rob$predict(task_rob)
+expect_equal(length(pred_rob$response), n, info = "robgam predictions correct length")
+expect_true(all(is.finite(pred_rob$response)), info = "robgam predictions finite")
+
+# Test: model stores good/bad subset info
+mod_info <- lrn_rob$model
+expect_true(!is.null(mod_info$subset_good), info = "robgam stores good subset")
+expect_true(!is.null(mod_info$subset_bad), info = "robgam stores bad subset")
+expect_true(length(mod_info$subset_good) + length(mod_info$subset_bad) == n,
+            info = "good + bad = total n")
+
+# Test: irw method
+lrn_irw <- lrn("regr.robgam_imp")
+lrn_irw$param_set$values$robust_method <- "irw"
+lrn_irw$train(task_rob)
+expect_true(!is.null(lrn_irw$model), info = "robgam irw model fitted")
+pred_irw <- lrn_irw$predict(task_rob)
+expect_true(all(is.finite(pred_irw$response)), info = "robgam irw predictions finite")
+
+# Test: alpha parameter changes good subset size
+lrn_alpha <- lrn("regr.robgam_imp")
+lrn_alpha$param_set$values$alpha <- 0.5
+lrn_alpha$train(task_rob)
+expect_true(length(lrn_alpha$model$subset_good) <= ceiling(n * 0.5 + 1),
+            info = "alpha=0.5 restricts good subset")
+
+# === LearnerClassifRobGAM tests ===
+
+# Binary classification with outliers
+set.seed(42)
+n <- 60
+train_robcl <- data.frame(y = factor(sample(c("a", "b"), n, TRUE)),
+                           x1 = rnorm(n), x2 = rnorm(n))
+train_robcl$x1[1:3] <- train_robcl$x1[1:3] + 15
+task_robcl <- TaskClassif$new(id = "test_robgam_cl", backend = train_robcl, target = "y")
+
+lrn_robcl <- lrn("classif.robgam_imp")
+lrn_robcl$train(task_robcl)
+expect_true(!is.null(lrn_robcl$model), info = "robgam classif binary fitted")
+
+lrn_robcl$predict_type <- "prob"
+pred_robcl <- lrn_robcl$predict(task_robcl)
+expect_equal(nrow(pred_robcl$prob), n, info = "robgam classif probs correct size")
+expect_true(all(abs(rowSums(pred_robcl$prob) - 1) < 0.01), info = "robgam classif probs sum to ~1")
+
+# Multiclass
+train_robmc <- data.frame(y = factor(sample(c("a", "b", "c"), 90, TRUE)),
+                           x1 = rnorm(90), x2 = rnorm(90))
+task_robmc <- TaskClassif$new(id = "test_robgam_mc", backend = train_robmc, target = "y")
+lrn_robmc <- lrn("classif.robgam_imp")
+lrn_robmc$train(task_robmc)
+lrn_robmc$predict_type <- "prob"
+pred_robmc <- lrn_robmc$predict(task_robmc)
+expect_equal(ncol(pred_robmc$prob), 3, info = "robgam multiclass has 3 prob cols")
