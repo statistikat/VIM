@@ -108,10 +108,34 @@
 #' @family imputation methods
 #' @examples
 #' \dontrun{
+#' # Single imputation (default)
 #' x <- vimpute(data = sleep, sequential = FALSE)
+#'
+#' # Sequential imputation with 3 iterations
 #' y <- vimpute(data = sleep, sequential = TRUE, nseq = 3)
+#'
+#' # Impute only selected variables
 #' z <- vimpute(data = sleep, considered_variables =
 #'        c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE)
+#'
+#' # Multiple imputation (m = 5) with bootstrap and normal error uncertainty
+#' # Returns a vimmi object
+#' result <- vimpute(data = sleep, method = "ranger", m = 5,
+#'                   boot = TRUE, uncert = "normalerror")
+#' print(result)
+#'
+#' # Extract completed datasets
+#' d1 <- complete(result, 1)         # first imputed dataset
+#' all_d <- complete(result, "all")  # list of 5 datasets
+#' long_d <- complete(result, "long") # long format with .imp column
+#'
+#' # Fit a model on each imputed dataset
+#' fits <- with(result, lm(Sleep ~ Dream + Span))
+#'
+#' # Multiple imputation with robust method and residual uncertainty
+#' result2 <- vimpute(data = sleep, method = "robust", m = 5,
+#'                    boot = TRUE, robustboot = "stratified",
+#'                    uncert = "resid")
 #' }
 #########################################################################################
 #########################################################################################

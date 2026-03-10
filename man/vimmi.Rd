@@ -4,18 +4,66 @@
 \alias{vimmi}
 \alias{print.vimmi}
 \alias{summary.vimmi}
-\title{Multiply Imputed Dataset (VIM)}
+\title{VIM Multiple Imputations (vimmi)}
 \usage{
 \method{print}{vimmi}(x, ...)
 
 \method{summary}{vimmi}(object, ...)
 }
+\arguments{
+\item{x}{A \code{vimmi} object}
+
+\item{...}{Currently unused}
+
+\item{object}{A \code{vimmi} object}
+}
 \description{
 S3 class for storing multiple imputations from \code{\link{vimpute}}.
-Inspired by mice's \code{mids} class: stores the original data once and only
-the imputed values per variable per imputation, for memory efficiency.
+Stores the original data once and only the imputed values per variable per
+imputation, for memory efficiency.
+}
+\details{
+A \code{vimmi} object is returned by \code{\link{vimpute}} when \code{m > 1}.
+It contains:
+\describe{
+\item{\code{data}}{The original data.frame with NAs intact (stored once).}
+\item{\code{imp}}{Named list: for each variable with missings, a data.frame
+with \code{nmis} rows and \code{m} columns of imputed values.}
+\item{\code{where}}{Logical matrix indicating which cells were imputed.}
+\item{\code{m}}{Integer: number of imputations.}
+\item{\code{nmis}}{Named integer vector of missing counts per variable.}
+\item{\code{method}}{Named list of imputation methods used per variable.}
+\item{\code{boot}}{Logical: was bootstrap resampling used?}
+\item{\code{uncert}}{Character: uncertainty method used.}
+\item{\code{call}}{The original function call.}
+}
+
+Use \code{\link{complete.vimmi}} to extract completed datasets,
+\code{\link{with.vimmi}} to fit models across imputations, and
+\code{\link{as.mids.vimmi}} to convert to a mice \code{mids} object
+for pooling with \code{mice::pool()}.
+}
+\examples{
+\dontrun{
+# Multiple imputation with bootstrap and normal error uncertainty
+result <- vimpute(sleep, method = "ranger", m = 5,
+                  boot = TRUE, uncert = "normalerror")
+print(result)
+summary(result)
+
+# Extract completed datasets
+d1 <- complete(result, 1)
+all_d <- complete(result, "all")
+
+# Fit models and pool
+fits <- with(result, lm(Sleep ~ Dream + Span))
+# mice::pool(fits)  # requires mice
+}
 }
 \seealso{
+\code{\link{vimpute}}, \code{\link{complete.vimmi}},
+\code{\link{with.vimmi}}, \code{\link{as.mids.vimmi}}
+
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},

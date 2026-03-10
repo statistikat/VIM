@@ -20,3 +20,13 @@ Converts a \code{vimmi} object to long format and uses
 This enables use of \code{mice::pool()}, \code{mice::with.mids()},
 and other mice infrastructure.
 }
+\examples{
+\dontrun{
+result <- vimpute(sleep, method = "ranger", m = 5,
+                  boot = TRUE, uncert = "normalerror")
+mids_obj <- as.mids.vimmi(result)
+# Now use mice infrastructure:
+# fits <- with(mids_obj, lm(Sleep ~ Dream + Span))
+# mice::pool(fits)
+}
+}
