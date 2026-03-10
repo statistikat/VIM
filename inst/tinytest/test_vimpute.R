@@ -262,4 +262,122 @@ library(VIM)
 
   expect_true(is.factor(out$city))
   expect_equal(sum(is.na(out$y)), 0)
-# 
+#
+
+### ---- Helper function tests ---- ###
+
+# bootstrap_resample returns valid indices for stratified bootstrap
+if (requireNamespace("robustbase", quietly = TRUE)) {
+  set.seed(42)
+  n <- 100
+  fake_weights <- runif(n)
+  fake_residuals <- rnorm(n)
+
+  idx <- VIM:::bootstrap_resample(
+    n = n,
+    strategy = "stratified",
+    weights = fake_weights,
+    residuals = fake_residuals,
+    alpha = 0.75
+  )
+
+  expect_true(length(idx) == n)
+  expect_true(all(idx >= 1 & idx <= n))
+  expect_true(is.integer(idx) || is.numeric(idx))
+}
+
+# bootstrap_resample covers all strategies
+set.seed(1)
+n <- 50
+res <- rnorm(n)
+w <- runif(n)
+
+idx_std <- VIM:::bootstrap_resample(n, "standard")
+expect_true(length(idx_std) == n)
+
+idx_strat <- VIM:::bootstrap_resample(n, "stratified", residuals = res, alpha = 0.75)
+expect_true(length(idx_strat) == n)
+
+idx_quant <- VIM:::bootstrap_resample(n, "quantile", weights = w)
+expect_true(length(idx_quant) == n)
+
+idx_resid <- VIM:::bootstrap_resample(n, "residual", residuals = res)
+expect_true(length(idx_resid) == n)
+
+idx_psi <- VIM:::bootstrap_resample(n, "psi", residuals = res)
+expect_true(length(idx_psi) == n)
+
+# extract_model_info returns list with expected components for lm
+set.seed(1)
+d_lm <- data.frame(y = rnorm(30), x = rnorm(30))
+mod_lm <- lm(y ~ x, data = d_lm)
+
+info_lm <- VIM:::extract_model_info(mod_lm, method = "lm")
+expect_true(is.list(info_lm))
+expect_true("residuals" %in% names(info_lm))
+expect_true("scale" %in% names(info_lm))
+expect_true(length(info_lm$residuals) == 30)
+expect_true(is.numeric(info_lm$scale) && length(info_lm$scale) == 1)
+
+# extract_model_info works with lmrob
+if (requireNamespace("robustbase", quietly = TRUE)) {
+  set.seed(1)
+  d_rob <- data.frame(y = rnorm(40), x = rnorm(40))
+  mod_rob <- robustbase::lmrob(y ~ x, data = d_rob)
+
+  info_rob <- VIM:::extract_model_info(mod_rob, method = "robust")
+  expect_true(!is.null(info_rob$residuals))
+  expect_true(!is.null(info_rob$scale))
+  expect_true(!is.null(info_rob$weights))
+  expect_true(length(info_rob$weights) == 40)
+}
+
+# inject_uncertainty with normalerror adds noise
+set.seed(42)
+preds_ne <- rep(5.0, 20)
+noisy <- VIM:::inject_uncertainty(preds = preds_ne, method = "normalerror", scale = 1.0)
+expect_true(length(noisy) == 20)
+expect_true(!all(noisy == 5.0))
+expect_true(abs(mean(noisy) - 5.0) < 1.0)
+
+# inject_uncertainty with resid adds sampled residuals
+set.seed(1)
+preds_re <- rep(10.0, 15)
+resids <- rnorm(100, sd = 2)
+noisy_re <- VIM:::inject_uncertainty(preds_re, method = "resid", residuals = resids)
+expect_true(length(noisy_re) == 15)
+expect_true(!all(noisy_re == 10.0))
+
+# pmm_donor_selection returns valid donor-based values
+set.seed(1)
+y_obs <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+score_obs <- y_obs + rnorm(10, sd = 0.1)
+score_miss <- c(2.5, 7.3)
+
+result_pmm <- VIM:::pmm_donor_selection(
+  y_obs = y_obs, score_obs = score_obs, score_miss = score_miss,
+  k = 3, agg_method = "mean"
+)
+expect_true(length(result_pmm) == 2)
+expect_true(all(is.finite(result_pmm)))
+expect_true(abs(result_pmm[1] - 2.5) < 3)
+expect_true(abs(result_pmm[2] - 7.3) < 3)
+
+# midastouch_donors returns valid imputed values
+set.seed(1)
+n_obs_mt <- 50
+n_miss_mt <- 10
+y_obs_mt <- rnorm(n_obs_mt, mean = 5)
+X_obs_mt <- matrix(rnorm(n_obs_mt * 3), ncol = 3)
+X_miss_mt <- matrix(rnorm(n_miss_mt * 3), ncol = 3)
+score_obs_mt <- y_obs_mt + rnorm(n_obs_mt, sd = 0.1)
+score_miss_mt <- rnorm(n_miss_mt, mean = 5, sd = 0.5)
+
+result_mt <- VIM:::midastouch_donors(
+  y_obs = y_obs_mt, X_obs = X_obs_mt, X_miss = X_miss_mt,
+  score_obs = score_obs_mt, score_miss = score_miss_mt, k = 5
+)
+expect_true(length(result_mt) == n_miss_mt)
+expect_true(all(is.finite(result_mt)))
+expect_true(all(result_mt %in% y_obs_mt))
+#

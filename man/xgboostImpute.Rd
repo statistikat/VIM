@@ -67,6 +67,7 @@ Other imputation methods:
 \code{\link{rangerImpute}()},
 \code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
+\code{\link{vimids}},
 \code{\link{vimpute}()}
 }
 \concept{imputation methods}

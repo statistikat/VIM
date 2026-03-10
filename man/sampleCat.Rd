@@ -27,6 +27,7 @@ Other imputation methods:
 \code{\link{medianSamp}()},
 \code{\link{rangerImpute}()},
 \code{\link{regressionImp}()},
+\code{\link{vimids}},
 \code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}
 }

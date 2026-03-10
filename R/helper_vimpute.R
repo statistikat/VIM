@@ -1221,3 +1221,320 @@ predict_ranger_median <- function(graph_learner, newdata, target_name = NULL) {
   
   apply(tree_preds, 1, median)
 }
+
+#' Bootstrap resampling with robust strategies
+#'
+#' Returns bootstrap row indices based on the chosen strategy.
+#' Strategies adapted from imputeRobust (Templ 2024).
+#'
+#' @param n Number of observations
+#' @param strategy One of "standard", "stratified", "quantile", "residual", "psi"
+#' @param weights Robustness weights from model (e.g., lmrob$rweights). Used by "quantile" for MM.
+#' @param residuals Model residuals. Used by "stratified", "residual", "psi".
+#' @param alpha Fraction of "good" observations (default 0.75). Used by "stratified", "quantile".
+#' @param best_subset Integer indices of best observations (e.g., from LTS). Used by "quantile" for LTS.
+#' @return Integer vector of length n with bootstrap row indices
+#' @keywords internal
+bootstrap_resample <- function(
+    n,
+    strategy = "stratified",
+    weights = NULL,
+    residuals = NULL,
+    alpha = 0.75,
+    best_subset = NULL
+) {
+  strategy <- match.arg(strategy, c("standard", "stratified", "quantile", "residual", "psi"))
+
+  if (strategy == "standard") {
+    return(sample.int(n, size = n, replace = TRUE))
+  }
+
+  if (strategy == "quantile") {
+    if (!is.null(best_subset)) {
+      return(sample(best_subset, size = n, replace = TRUE))
+    }
+    if (!is.null(weights)) {
+      return(sample.int(n, size = n, replace = TRUE, prob = weights))
+    }
+    warning("'quantile' strategy requires weights or best_subset. Falling back to 'standard'.")
+    return(sample.int(n, size = n, replace = TRUE))
+  }
+
+  if (is.null(residuals)) {
+    warning("Bootstrap strategy '", strategy, "' requires residuals. Falling back to 'standard'.")
+    return(sample.int(n, size = n, replace = TRUE))
+  }
+
+  if (strategy == "stratified") {
+    threshold <- quantile(residuals, alpha)
+    good_idx <- which(residuals <= threshold)
+    bad_idx <- which(residuals > threshold)
+    n_good <- round(n * alpha)
+    n_bad <- n - n_good
+    if (length(good_idx) == 0) good_idx <- seq_len(n)
+    if (length(bad_idx) == 0) bad_idx <- seq_len(n)
+    idx <- c(
+      sample(good_idx, size = n_good, replace = TRUE),
+      sample(bad_idx, size = n_bad, replace = TRUE)
+    )
+    return(idx)
+  }
+
+  if (strategy == "residual") {
+    prob <- max(abs(residuals)) - abs(residuals)
+    prob[prob <= 0] <- .Machine$double.eps
+    return(sample.int(n, size = n, replace = TRUE, prob = prob))
+  }
+
+  if (strategy == "psi") {
+    u <- residuals / mad(residuals)
+    c_tukey <- 4.685
+    w <- ifelse(abs(u) > c_tukey, 0, (1 - (u^2) / c_tukey^2)^2)
+    prob <- max(abs(w)) - abs(w)
+    prob[prob <= 0] <- .Machine$double.eps
+    return(sample.int(n, size = n, replace = TRUE, prob = prob))
+  }
+}
+
+#' Extract model diagnostics for bootstrap strategies
+#'
+#' Drills into an mlr3 learner or raw model to retrieve residuals,
+#' scale estimate, and robustness weights needed for bootstrap resampling.
+#'
+#' @param model A fitted model object (lm, lmrob, gam, ranger, or mlr3 GraphLearner)
+#' @param method The vimpute method string: "robust", "ranger", "xgboost", "regularized"
+#' @return List with components: residuals (numeric vector or NULL),
+#'   scale (numeric scalar or NULL), weights (numeric vector or NULL)
+#' @keywords internal
+extract_model_info <- function(model, method = "robust") {
+  info <- list(residuals = NULL, scale = NULL, weights = NULL)
+
+  # Unwrap mlr3 GraphLearner if needed
+  raw_model <- model
+  if (inherits(model, "GraphLearner") || inherits(model, "Learner")) {
+    if (!is.null(model$model)) {
+      model_list <- model$model
+      for (nm in names(model_list)) {
+        inner <- model_list[[nm]]
+        if (inherits(inner, "list") && "model" %in% names(inner)) {
+          raw_model <- inner$model
+          break
+        }
+        if (inherits(inner, c("lm", "lmrob", "glmrob", "gam", "ranger"))) {
+          raw_model <- inner
+          break
+        }
+      }
+    }
+  }
+
+  if (inherits(raw_model, "lmrob")) {
+    info$residuals <- as.numeric(residuals(raw_model))
+    info$scale <- summary(raw_model)$scale
+    info$weights <- raw_model$rweights
+    return(info)
+  }
+
+  if (inherits(raw_model, "glmrob")) {
+    info$residuals <- tryCatch(as.numeric(residuals(raw_model)), error = function(e) NULL)
+    info$scale <- tryCatch(summary(raw_model)$dispersion, error = function(e) NULL)
+    return(info)
+  }
+
+  if (inherits(raw_model, "lm")) {
+    info$residuals <- as.numeric(residuals(raw_model))
+    info$scale <- sd(residuals(raw_model))
+    return(info)
+  }
+
+  if (inherits(raw_model, "gam")) {
+    info$residuals <- as.numeric(residuals(raw_model))
+    info$scale <- summary(raw_model)$scale
+    return(info)
+  }
+
+  # For ranger/xgboost: no residuals from model object.
+  # Bootstrap uses "standard" strategy only.
+  info
+}
+
+#' Score-based PMM donor selection
+#'
+#' For each missing value, finds k nearest observed values based on model
+#' score (predicted value) distance, then aggregates using the chosen method.
+#'
+#' @param y_obs Observed values of target variable
+#' @param score_obs Model scores for observed rows
+#' @param score_miss Model scores for missing rows
+#' @param k Number of nearest donors
+#' @param agg_method One of "mean", "median", "random", or a function
+#' @return Numeric vector of length(score_miss) with imputed values
+#' @keywords internal
+pmm_donor_selection <- function(
+    y_obs, score_obs, score_miss,
+    k = 1L, agg_method = "random"
+) {
+  k <- min(k, length(y_obs))
+
+  sapply(score_miss, function(s) {
+    idx <- order(abs(score_obs - s))[seq_len(k)]
+    neighbors <- y_obs[idx]
+
+    if (is.function(agg_method)) {
+      agg <- agg_method(neighbors)
+      if (length(agg) != 1L || !is.numeric(agg) || is.na(agg)) {
+        stop("pmm_k_method function must return exactly one non-missing numeric value.")
+      }
+      return(as.numeric(agg))
+    }
+
+    switch(agg_method,
+      "mean" = mean(neighbors),
+      "median" = median(neighbors),
+      "random" = sample(neighbors, 1),
+      sample(neighbors, 1)
+    )
+  })
+}
+
+#' Midastouch: PMM with covariate-distance-weighted donor selection
+#'
+#' For each missing value, finds k nearest donors using a combined score:
+#' closeness in predicted value (score) AND closeness in covariate space
+#' (Mahalanobis distance). Donors closer in covariate space are upweighted.
+#'
+#' Based on Siddique & Belin (2008), "Multiple imputation using an iterative
+#' hot-deck with distance-based donor selection", Statistics in Medicine.
+#'
+#' @param y_obs Observed values of the target variable
+#' @param X_obs Predictor matrix for observed rows (n_obs x p)
+#' @param X_miss Predictor matrix for missing rows (n_miss x p)
+#' @param score_obs Model predictions for observed rows
+#' @param score_miss Model predictions for missing rows
+#' @param k Number of candidate donors (default 5)
+#' @return Numeric vector of length n_miss with imputed values drawn from donors
+#' @keywords internal
+midastouch_donors <- function(
+    y_obs, X_obs, X_miss,
+    score_obs = NULL, score_miss = NULL, k = 5L
+) {
+  n_miss <- nrow(X_miss)
+  n_obs <- length(y_obs)
+  k <- min(k, n_obs)
+
+  X_obs <- as.matrix(X_obs)
+  X_miss <- as.matrix(X_miss)
+
+  # Covariance for Mahalanobis distance (regularized)
+  cov_mat <- tryCatch({
+    S <- cov(X_obs)
+    S + diag(1e-6, ncol(S))
+  }, error = function(e) {
+    diag(apply(X_obs, 2, var, na.rm = TRUE) + 1e-6)
+  })
+
+  S_inv <- tryCatch(solve(cov_mat), error = function(e) diag(1 / diag(cov_mat)))
+
+  result <- numeric(n_miss)
+  for (i in seq_len(n_miss)) {
+    diff_mat <- sweep(X_obs, 2, X_miss[i, ], "-")
+    maha_dist <- sqrt(pmax(rowSums((diff_mat %*% S_inv) * diff_mat), 0))
+
+    if (!is.null(score_obs) && !is.null(score_miss)) {
+      score_dist <- abs(score_obs - score_miss[i])
+      maha_range <- max(maha_dist) - min(maha_dist)
+      score_range <- max(score_dist) - min(score_dist)
+      maha_norm <- if (maha_range > 0) maha_dist / maha_range else rep(0, n_obs)
+      score_norm <- if (score_range > 0) score_dist / score_range else rep(0, n_obs)
+      combined_dist <- 0.5 * maha_norm + 0.5 * score_norm
+    } else {
+      combined_dist <- maha_dist
+    }
+
+    donor_idx <- order(combined_dist)[seq_len(k)]
+    donor_weights <- 1 / (combined_dist[donor_idx] + .Machine$double.eps)
+    donor_weights <- donor_weights / sum(donor_weights)
+    chosen <- sample(donor_idx, size = 1, prob = donor_weights)
+    result[i] <- y_obs[chosen]
+  }
+
+  result
+}
+
+#' Inject imputation uncertainty into predictions
+#'
+#' Adds stochastic noise to point predictions to properly reflect
+#' imputation uncertainty. Called after model prediction, before
+#' value assignment.
+#'
+#' @param preds Numeric vector of predicted values for missing observations
+#' @param method One of "none", "normalerror", "resid", "pmm", "midastouch"
+#' @param scale Scale estimate (sigma hat) from model. Required for "normalerror".
+#' @param residuals Training residuals. Required for "resid".
+#' @param y_obs Observed values of target variable. Required for "pmm", "midastouch".
+#' @param score_obs Model scores for observed rows. Required for "pmm".
+#' @param score_miss Model scores for missing rows. Required for "pmm".
+#' @param pmm_k Number of donors for pmm/midastouch (default 5).
+#' @param pmm_k_method Aggregation for pmm when k > 1 (default "random").
+#' @param X_obs Predictor matrix for observed rows. Required for "midastouch".
+#' @param X_miss Predictor matrix for missing rows. Required for "midastouch".
+#' @return Numeric vector of adjusted predictions (same length as preds)
+#' @keywords internal
+inject_uncertainty <- function(
+    preds,
+    method = "none",
+    scale = NULL,
+    residuals = NULL,
+    y_obs = NULL,
+    score_obs = NULL,
+    score_miss = NULL,
+    pmm_k = 5L,
+    pmm_k_method = "random",
+    X_obs = NULL,
+    X_miss = NULL
+) {
+  method <- match.arg(method, c("none", "normalerror", "resid", "pmm", "midastouch"))
+  n_miss <- length(preds)
+
+  if (method == "none") return(preds)
+
+  if (method == "normalerror") {
+    if (is.null(scale) || !is.numeric(scale) || scale <= 0) {
+      warning("inject_uncertainty: scale not available for 'normalerror'. Returning point predictions.")
+      return(preds)
+    }
+    return(preds + rnorm(n_miss, mean = 0, sd = scale))
+  }
+
+  if (method == "resid") {
+    if (is.null(residuals) || length(residuals) == 0) {
+      warning("inject_uncertainty: residuals not available for 'resid'. Returning point predictions.")
+      return(preds)
+    }
+    return(preds + sample(residuals, size = n_miss, replace = TRUE))
+  }
+
+  if (method == "pmm") {
+    if (is.null(y_obs) || is.null(score_obs) || is.null(score_miss)) {
+      warning("inject_uncertainty: observed values/scores not available for 'pmm'. Returning point predictions.")
+      return(preds)
+    }
+    return(pmm_donor_selection(
+      y_obs = y_obs, score_obs = score_obs, score_miss = score_miss,
+      k = pmm_k, agg_method = pmm_k_method
+    ))
+  }
+
+  if (method == "midastouch") {
+    if (is.null(y_obs) || is.null(X_obs) || is.null(X_miss)) {
+      warning("inject_uncertainty: covariate data not available for 'midastouch'. Returning point predictions.")
+      return(preds)
+    }
+    return(midastouch_donors(
+      y_obs = y_obs, X_obs = X_obs, X_miss = X_miss,
+      score_obs = score_obs, score_miss = score_miss, k = pmm_k
+    ))
+  }
+
+  preds
+}
