@@ -480,3 +480,38 @@ out_mt <- suppressWarnings(vimpute(d_t12, method = method_t12, sequential = FALS
 expect_equal(sum(is.na(out_mt)), 0)
 expect_true(all(is.finite(out_mt$Sleep)))
 #
+
+### ---- Task 13: Full integration tests (boot + uncert + m) ---- ###
+
+# vimpute with boot + uncert + m > 1 returns proper vimids
+set.seed(1)
+d_t13 <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
+method_t13 <- setNames(as.list(rep("robust", ncol(d_t13))), names(d_t13))
+out_full <- suppressWarnings(vimpute(
+  d_t13, method = method_t13, sequential = FALSE, imp_var = FALSE,
+  boot = TRUE, robustboot = "stratified", uncert = "normalerror", m = 3
+))
+
+expect_true(inherits(out_full, "vimids"))
+expect_equal(out_full$m, 3L)
+expect_true(out_full$boot)
+expect_equal(out_full$uncert, "normalerror")
+
+# All completed datasets are valid and different
+c1_full <- complete(out_full, 1)
+c2_full <- complete(out_full, 2)
+c3_full <- complete(out_full, 3)
+expect_equal(sum(is.na(c1_full)), 0)
+expect_equal(sum(is.na(c2_full)), 0)
+expect_equal(sum(is.na(c3_full)), 0)
+
+# with.vimids works on integration result
+fits <- with(out_full, lm(Sleep ~ Dream + Span))
+expect_equal(length(fits), 3)
+expect_true(all(sapply(fits, inherits, "lm")))
+
+# complete long format works
+long_full <- complete(out_full, "long")
+expect_equal(nrow(long_full), nrow(d_t13) * 3)
+expect_true(".imp" %in% names(long_full))
+#
