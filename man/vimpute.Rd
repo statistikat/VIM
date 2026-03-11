@@ -165,10 +165,10 @@ y <- vimpute(data = sleep, sequential = TRUE, nseq = 3)
 z <- vimpute(data = sleep, considered_variables =
        c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE)
 
-# Multiple imputation (m = 5) with bootstrap and normal error uncertainty
+# Multiple imputation (m = 5) with bootstrap and residual uncertainty
 # Returns a vimmi object
-result <- vimpute(data = sleep, method = "lm", m = 5,
-                  boot = TRUE, uncert = "resid")
+result <- vimpute(data = sleep, method = "ranger", sequential = FALSE,
+                  imp_var = FALSE, m = 5, boot = TRUE, uncert = "resid")
 print(result)
 
 # Extract completed datasets
@@ -182,7 +182,7 @@ fits <- with(result, lm(Sleep ~ Dream + Span))
 # Multiple imputation with robust method and residual uncertainty
 result2 <- vimpute(data = sleep, method = "robust", m = 5,
                    boot = TRUE, robustboot = "stratified",
-                   uncert = "resid")
+                   nseq = 3, uncert = "resid")
 }
 }
 \seealso{

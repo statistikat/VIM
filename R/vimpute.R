@@ -120,10 +120,10 @@
 #' z <- vimpute(data = sleep, considered_variables =
 #'        c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE)
 #'
-#' # Multiple imputation (m = 5) with bootstrap and normal error uncertainty
+#' # Multiple imputation (m = 5) with bootstrap and residual uncertainty
 #' # Returns a vimmi object
-#' result <- vimpute(data = sleep, method = "lm", m = 5,
-#'                   boot = TRUE, uncert = "resid")
+#' result <- vimpute(data = sleep, method = "ranger", sequential = FALSE,
+#'                   imp_var = FALSE, m = 5, boot = TRUE, uncert = "resid")
 #' print(result)
 #'
 #' # Extract completed datasets
@@ -136,8 +136,8 @@
 #'
 #' # Multiple imputation with robust method and residual uncertainty
 #' result2 <- vimpute(data = sleep, method = "robust", m = 5,
-#'                    boot = TRUE, robustboot = "stratified", sequential = 3,
-#'                    uncert = "resid")
+#'                    boot = TRUE, robustboot = "stratified",
+#'                    uncert = "normalerror")
 #' }
 #########################################################################################
 #########################################################################################
@@ -1801,6 +1801,7 @@ vimpute <- function(
         stored_model_info <- NULL
         if (boot && !is_sc) {
           model_info <- extract_model_info(learner, method = method_var)
+          model_info <- complete_model_info(model_info, learner = learner, task = task)
           stored_model_info <- model_info
 
           boot_idx <- bootstrap_resample(
@@ -1824,6 +1825,8 @@ vimpute <- function(
 
           tryCatch({
             learner$train(boot_task)
+            stored_model_info <- extract_model_info(learner, method = method_var)
+            stored_model_info <- complete_model_info(stored_model_info, learner = learner, task = boot_task)
           }, error = function(e) {
             if (verbose) warning(sprintf(
               "Bootstrap refit failed for '%s': %s. Using original model.", var, e$message))
@@ -1833,6 +1836,7 @@ vimpute <- function(
         # Store model info for uncertainty methods (even without bootstrap)
         if (is.null(stored_model_info) && uncert %in% c("normalerror", "resid") && !is_sc) {
           stored_model_info <- extract_model_info(learner, method = method_var)
+          stored_model_info <- complete_model_info(stored_model_info, learner = learner, task = task)
         }
 
       }
@@ -2073,7 +2077,17 @@ vimpute <- function(
           preds_reg <- predict_ranger_median(reg_learner, reg_pred_data, target_name = NULL)
         }
         if (is.null(preds_reg)) {
-          preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response  # E[Y | Y>0, X]
+          if (is.null(reg_learner) || !is.function(reg_learner$predict_newdata)) {
+            positive_values <- data_temp[[var]][!is.na(data_temp[[var]]) & data_temp[[var]] > 0]
+            fallback_positive <- if (length(positive_values) > 0) {
+              stats::median(positive_values)
+            } else {
+              0
+            }
+            preds_reg <- rep(fallback_positive, nrow(reg_pred_data))
+          } else {
+            preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response  # E[Y | Y>0, X]
+          }
         }
         
         # Combine results, Impuatation = deterministic
