@@ -1043,7 +1043,6 @@ precheck <- function(
   checked_tune  <- map_tune(variables_NA, tune)
   
   message("Precheck done.")
-  
   return(list(
     data           = data,
     variables      = variables,
