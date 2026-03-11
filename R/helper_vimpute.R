@@ -1042,7 +1042,6 @@ precheck <- function(
   checked_pmm_k_method <- map_pmm_k_method(variables_NA, pmm_k_method, checked_pmm)
   checked_tune  <- map_tune(variables_NA, tune)
   
-  message("Precheck done.")
   return(list(
     data           = data,
     variables      = variables,
@@ -1349,7 +1348,7 @@ extract_model_info <- function(model, method = "robust") {
 
   if (inherits(raw_model, "gam")) {
     info$residuals <- as.numeric(residuals(raw_model))
-    info$scale <- summary(raw_model)$scale
+    info$scale <- tryCatch(sqrt(summary(raw_model)$scale), error = function(e) sd(residuals(raw_model)))
     return(info)
   }
 
@@ -1366,6 +1365,57 @@ extract_model_info <- function(model, method = "robust") {
 
   # For ranger/xgboost: no residuals from model object.
   # Bootstrap uses "standard" strategy only.
+  info
+}
+
+#' Complete model diagnostics from learner predictions when the raw model
+#' does not expose them directly
+#'
+#' @param info Result from extract_model_info()
+#' @param learner A trained mlr3 learner or GraphLearner
+#' @param task A regression task used for training the learner
+#' @return Model info list with residuals/scale filled where possible
+#' @keywords internal
+complete_model_info <- function(info, learner = NULL, task = NULL) {
+  if (is.null(info) || !is.list(info)) {
+    info <- list(residuals = NULL, scale = NULL, weights = NULL)
+  }
+
+  needs_residuals <- is.null(info$residuals) || !is.numeric(info$residuals) || length(info$residuals) == 0L
+  needs_scale <- is.null(info$scale) || !is.numeric(info$scale) || length(info$scale) != 1L ||
+    !is.finite(info$scale) || info$scale <= 0
+
+  if ((!needs_residuals && !needs_scale) || is.null(learner) || is.null(task) || !inherits(task, "TaskRegr")) {
+    return(info)
+  }
+
+  truth <- tryCatch(as.numeric(task$truth()), error = function(e) NULL)
+  preds <- tryCatch(as.numeric(learner$predict(task)$response), error = function(e) NULL)
+
+  if (is.null(truth) || is.null(preds) || length(truth) != length(preds)) {
+    return(info)
+  }
+
+  residuals <- truth - preds
+  residuals <- residuals[is.finite(residuals)]
+  if (!length(residuals)) {
+    return(info)
+  }
+
+  if (needs_residuals) {
+    info$residuals <- residuals
+  }
+
+  if (needs_scale) {
+    scale_est <- stats::sd(residuals)
+    if (!is.finite(scale_est) || scale_est <= 0) {
+      scale_est <- sqrt(mean(residuals^2))
+    }
+    if (is.finite(scale_est) && scale_est > 0) {
+      info$scale <- scale_est
+    }
+  }
+
   info
 }
 
@@ -1577,16 +1627,67 @@ inject_uncertainty <- function(
 #'   predictor to be wrapped in s(). Default 4 (mgcv needs at least k=3 knots).
 #' @return A formula object suitable for mgcv::gam()
 #' @keywords internal
-build_gam_formula <- function(target, features, data, min_unique = 4L) {
+build_gam_formula <- function(target, features, data, min_unique = 4L, default_k = 10L) {
   terms <- vapply(features, function(f) {
     col <- data[[f]]
-    if (is.numeric(col) && length(unique(col[!is.na(col)])) >= min_unique) {
-      paste0("s(", f, ")")
+    n_unique <- length(unique(col[!is.na(col)]))
+    if (is.numeric(col) && n_unique >= min_unique) {
+      k <- min(default_k, max(3L, n_unique - 1L))
+      if (k >= default_k) {
+        paste0("s(", f, ")")
+      } else {
+        paste0("s(", f, ", k = ", k, ")")
+      }
     } else {
       f
     }
   }, character(1))
+  if (!length(terms)) {
+    return(as.formula(paste(target, "~ 1")))
+  }
   as.formula(paste(target, "~", paste(terms, collapse = " + ")))
+}
+
+fit_gam_model <- function(formula, data, family = NULL, weights = NULL) {
+  args <- list(
+    formula = formula,
+    data = data,
+    control = mgcv::gam.control(maxit = 100)
+  )
+  if (!is.null(family)) {
+    args$family <- family
+  }
+  if (!is.null(weights)) {
+    args$weights <- weights
+  }
+
+  fit_once <- function(call_args) {
+    withCallingHandlers(
+      do.call(mgcv::gam, call_args),
+      warning = function(w) {
+        warn_msg <- conditionMessage(w)
+        if (grepl("Iteration limit reached without full convergence", warn_msg, fixed = TRUE) ||
+            grepl("Fitting terminated with step failure", warn_msg, fixed = TRUE)) {
+          invokeRestart("muffleWarning")
+        }
+      }
+    )
+  }
+
+  tryCatch(
+    fit_once(args),
+    error = function(e) {
+      retryable <- grepl("failed to converge", e$message, ignore.case = TRUE) ||
+        grepl("optimizer", e$message, ignore.case = TRUE)
+      if (!retryable) {
+        stop(e)
+      }
+
+      retry_args <- args
+      retry_args$method <- "REML"
+      fit_once(retry_args)
+    }
+  )
 }
 
 #' Register GAM-based mlr3 learners for vimpute
@@ -1636,7 +1737,7 @@ register_gam_learners <- function() {
         form <- build_gam_formula(target, features, data, min_unique = pv$min_unique)
 
         model <- tryCatch(
-          mgcv::gam(form, data = data),
+          fit_gam_model(form, data = data),
           error = function(e) {
             warning(sprintf("gam() failed for '%s': %s\nFalling back to lm()", target, e$message))
             lm(reformulate(features, response = target), data = data)
@@ -1718,7 +1819,7 @@ register_gam_learners <- function() {
           df <- data.frame(y_bin = as.integer(y == classes[1]), data[, features, drop = FALSE])
           form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
           mod <- tryCatch(
-            mgcv::gam(form, data = df, family = binomial()),
+            fit_gam_model(form, data = df, family = binomial()),
             error = function(e) {
               warning(sprintf("gam(binomial) failed: %s\nFalling back to glm()", e$message))
               glm(reformulate(features, response = "y_bin"), data = df, family = binomial())
@@ -1734,7 +1835,7 @@ register_gam_learners <- function() {
           df <- data.frame(y_bin = as.integer(y == k), data[, features, drop = FALSE])
           form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
           mods[[k]] <- tryCatch(
-            mgcv::gam(form, data = df, family = binomial()),
+            fit_gam_model(form, data = df, family = binomial()),
             error = function(e) {
               warning(sprintf("gam(binomial) OvR class '%s' failed: %s\nFalling back to glm()", k, e$message))
               glm(reformulate(features, response = "y_bin"), data = df, family = binomial())
@@ -1838,7 +1939,7 @@ register_gam_learners <- function() {
 
         if (pv$robust_method == "simple") {
           mod_init <- tryCatch(
-            mgcv::gam(form, data = data),
+            fit_gam_model(form, data = data),
             error = function(e) {
               warning(sprintf("Initial gam() failed for '%s': %s", target, e$message))
               return(NULL)
@@ -1856,7 +1957,7 @@ register_gam_learners <- function() {
           bad_idx <- which(abs(resids) > cutoff)
 
           mod <- tryCatch(
-            mgcv::gam(form, data = data[good_idx, , drop = FALSE]),
+            fit_gam_model(form, data = data[good_idx, , drop = FALSE]),
             error = function(e) {
               warning(sprintf("robGAM refit on good subset failed: %s. Using initial model.", e$message))
               mod_init
@@ -1869,7 +1970,7 @@ register_gam_learners <- function() {
         } else {
           # IRW: Iterative Reweighting
           mod <- tryCatch(
-            mgcv::gam(form, data = data),
+            fit_gam_model(form, data = data),
             error = function(e) {
               warning(sprintf("Initial gam() for irw failed: %s", e$message))
               return(NULL)
@@ -1893,7 +1994,7 @@ register_gam_learners <- function() {
             weights <- new_weights
 
             mod <- tryCatch(
-              do.call(mgcv::gam, list(formula = form, data = data, weights = weights)),
+              fit_gam_model(form, data = data, weights = weights),
               error = function(e) {
                 warning(sprintf("robGAM irw iteration %d failed: %s", iter, e$message))
                 mod
@@ -1985,20 +2086,20 @@ register_gam_learners <- function() {
         fit_one_robgam <- function(df, form) {
           n <- nrow(df)
           if (pv$robust_method == "simple") {
-            mod_init <- tryCatch(mgcv::gam(form, data = df, family = binomial()),
+            mod_init <- tryCatch(fit_gam_model(form, data = df, family = binomial()),
               error = function(e) glm(form, data = df, family = binomial()))
 
             dev_resids <- residuals(mod_init, type = "deviance")
             cutoff <- quantile(abs(dev_resids), probs = pv$alpha)
             good_idx <- which(abs(dev_resids) <= cutoff)
 
-            mod <- tryCatch(mgcv::gam(form, data = df[good_idx, , drop = FALSE], family = binomial()),
+            mod <- tryCatch(fit_gam_model(form, data = df[good_idx, , drop = FALSE], family = binomial()),
               error = function(e) mod_init)
             return(mod)
 
           } else {
             weights <- rep(1, n)
-            mod <- tryCatch(mgcv::gam(form, data = df, family = binomial()),
+            mod <- tryCatch(fit_gam_model(form, data = df, family = binomial()),
               error = function(e) glm(form, data = df, family = binomial()))
 
             for (iter in seq_len(pv$max_iter)) {
@@ -2009,7 +2110,7 @@ register_gam_learners <- function() {
               new_weights <- ifelse(abs(u) > 1, 0, (1 - u^2)^2)
               if (max(abs(new_weights - weights)) < pv$tol) break
               weights <- new_weights
-              mod <- tryCatch(do.call(mgcv::gam, list(formula = form, data = df, weights = weights, family = binomial())),
+              mod <- tryCatch(fit_gam_model(form, data = df, weights = weights, family = binomial()),
                 error = function(e) mod)
             }
             return(mod)
