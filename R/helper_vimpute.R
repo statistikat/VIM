@@ -816,11 +816,9 @@ precheck <- function(
   # -------------------------------------------------------------------------
   # 3) Ensure data is a data.table
   # -------------------------------------------------------------------------
-  if (is.data.table(data)) {
-    message("data is data.table")
-  } else if (is.matrix(data) || is.data.frame(data)) {
+  if (!is.data.table(data) && (is.matrix(data) || is.data.frame(data))) {
     data <- as.data.table(data)
-  } else {
+  } else if (!is.data.table(data)) {
     stop("Error: Input must be a data.frame, matrix, or data.table.")
   }
   
