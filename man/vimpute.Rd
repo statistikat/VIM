@@ -2,8 +2,7 @@
 % Please edit documentation in R/vimpute.R
 \name{vimpute}
 \alias{vimpute}
-\title{Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)
-Need of 'helper_vimpute' script}
+\title{Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)}
 \usage{
 vimpute(
   data,
@@ -39,6 +38,12 @@ Can be provided either:
 \item as a \strong{single global method} (e.g. "ranger"), applied to all variables, or
 \item as a \strong{named list} (e.g. as.list(var1 = "xgboost", var2="robust")), assigning a method to each variable individually.
 Supported methods:
+\item ranger (Random Forest)
+\item xgboost (Gradient Boosting)
+\item regularized (glmnet regression/classification)
+\item robust (robustbase::lmrob / glmrob)
+\item gam (Generalized Additive Model via mgcv::gam)
+\item robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
 }}
 
 \item{pmm}{Predictive Mean Matching (PMM) settings.
@@ -147,7 +152,6 @@ Either:
 }
 \description{
 Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)
-Need of 'helper_vimpute' script
 }
 \examples{
 \dontrun{
@@ -163,8 +167,8 @@ z <- vimpute(data = sleep, considered_variables =
 
 # Multiple imputation (m = 5) with bootstrap and normal error uncertainty
 # Returns a vimmi object
-result <- vimpute(data = sleep, method = "ranger", m = 5,
-                  boot = TRUE, uncert = "normalerror")
+result <- vimpute(data = sleep, method = "lm", m = 5,
+                  boot = TRUE, uncert = "resid")
 print(result)
 
 # Extract completed datasets

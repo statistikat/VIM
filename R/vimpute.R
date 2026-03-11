@@ -1,6 +1,4 @@
-
 #' Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)
-#' Need of 'helper_vimpute' script
 #' @author Eileen Vattheuer, Matthias Templ, Alexander Kowarik
 
 ## PARAMETERS ##
@@ -14,12 +12,12 @@
 #'    - as a **single global method** (e.g. "ranger"), applied to all variables, or
 #'    - as a **named list** (e.g. as.list(var1 = "xgboost", var2="robust")), assigning a method to each variable individually.
 #'  Supported methods:
-#     - ranger (Random Forest)
-#     - xgboost (Gradient Boosting)
-#     - regularized (glmnet regression/classification)
-#     - robust (robustbase::lmrob / glmrob)
-#     - gam (Generalized Additive Model via mgcv::gam)
-#     - robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
+#'   - ranger (Random Forest)
+#'   - xgboost (Gradient Boosting)
+#'   - regularized (glmnet regression/classification)
+#'   - robust (robustbase::lmrob / glmrob)
+#'   - gam (Generalized Additive Model via mgcv::gam)
+#'   - robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
 #' @param pmm 
 #'  Predictive Mean Matching (PMM) settings.
 #'  Can be provided:
@@ -124,8 +122,8 @@
 #'
 #' # Multiple imputation (m = 5) with bootstrap and normal error uncertainty
 #' # Returns a vimmi object
-#' result <- vimpute(data = sleep, method = "ranger", m = 5,
-#'                   boot = TRUE, uncert = "normalerror")
+#' result <- vimpute(data = sleep, method = "lm", m = 5,
+#'                   boot = TRUE, uncert = "resid")
 #' print(result)
 #'
 #' # Extract completed datasets
@@ -138,7 +136,7 @@
 #'
 #' # Multiple imputation with robust method and residual uncertainty
 #' result2 <- vimpute(data = sleep, method = "robust", m = 5,
-#'                    boot = TRUE, robustboot = "stratified",
+#'                    boot = TRUE, robustboot = "stratified", sequential = 3,
 #'                    uncert = "resid")
 #' }
 #########################################################################################
