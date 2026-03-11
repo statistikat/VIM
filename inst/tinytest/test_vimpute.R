@@ -412,7 +412,9 @@ expect_warning(
 # vimpute with m > 1 returns a vimmi object
 set.seed(1)
 d_t10 <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
-out_t10 <- vimpute(d_t10, method = "ranger", sequential = FALSE, imp_var = FALSE, m = 3)
+out_t10 <- suppressWarnings(
+  vimpute(d_t10, method = "ranger", sequential = FALSE, imp_var = FALSE, m = 3)
+)
 
 expect_true(inherits(out_t10, "vimmi"))
 expect_equal(out_t10$m, 3L)
