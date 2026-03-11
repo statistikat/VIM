@@ -1528,7 +1528,7 @@ inject_uncertainty <- function(
   if (method == "none") return(preds)
 
   if (method == "normalerror") {
-    if (is.null(scale) || !is.numeric(scale) || scale <= 0) {
+    if (is.null(scale) || length(scale) != 1L || !is.numeric(scale) || is.na(scale) || scale <= 0) {
       warning("inject_uncertainty: scale not available for 'normalerror'. Returning point predictions.")
       return(preds)
     }
