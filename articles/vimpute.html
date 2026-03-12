@@ -157,7 +157,7 @@ that requires specific conditions.</li>
 performed sequentially.</li>
 <li>
 <code>nseq</code>: The number of sequential iterations, if
-<code>sequential</code>is TRUE.</li>
+<code>sequential</code> is TRUE.</li>
 <li>
 <code>eps</code>: The convergence threshold for sequential
 imputation.</li>
@@ -205,10 +205,11 @@ Dream is observed.</p>
 <div class="section level3">
 <h3 id="default-imputation">Default Imputation<a class="anchor" aria-label="anchor" href="#default-imputation"></a>
 </h3>
-<p>In the basic usage, the <code><a href="../reference/vimpute.html">vimpute()</a></code> function performs
-imputation using the default settings. It uses the “ranger” method for
-all variables, applies predictive mean matching, and performs sequential
-imputation with a convergence threshold of 0.005.</p>
+<p>In the basic usage, the <code><a href="../reference/vimpute.html">vimpute()</a></code> function uses the
+default settings: all variables are imputed with the “ranger” method,
+sequential imputation is enabled (<code>nseq = 10</code>,
+<code>eps = 0.005</code>), PMM is off, formulas are off, no tuning is
+performed, and imputation indicators are added.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">data</span>,</span>
@@ -265,18 +266,18 @@ imputation methods are specified for each variable. The
 a robust method.</p>
 <ul>
 <li>
-<strong><code>"robust"</code></strong>: Robust regression models
+<strong><code>"robust"</code></strong>: Robust Regression Models
 <ul>
 <li>
 <code>lmrob</code> for numeric variables: Implements MM-estimation
 for resistance to outliers</li>
 <li>
-<code>glmrob</code> for binary factors: Uses robust estimators to
-reduce outlier influence</li>
+<code>glmrob</code> for factors: Robust GLM; binary via robust
+logit, multiclass via one-vs-rest</li>
 </ul>
 </li>
 <li>
-<strong><code>"regularized"</code></strong>: Regularized regression
+<strong><code>"regularized"</code></strong>: Regularized Regression
 (<code>glmnet</code>)
 <ul>
 <li>Uses elastic net regularization<br>
@@ -309,7 +310,11 @@ variable.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result_mixed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">data</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>NonD <span class="op">=</span> <span class="st">"robust"</span>, Dream <span class="op">=</span> <span class="st">"ranger"</span>, Sleep <span class="op">=</span> <span class="st">"xgboost"</span>, Span <span class="op">=</span> <span class="st">"ranger"</span> , Gest <span class="op">=</span> <span class="st">"regularized"</span><span class="op">)</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>NonD <span class="op">=</span> <span class="st">"robust"</span>, </span>
+<span>                Dream <span class="op">=</span> <span class="st">"ranger"</span>, </span>
+<span>                Sleep <span class="op">=</span> <span class="st">"xgboost"</span>, </span>
+<span>                Span <span class="op">=</span> <span class="st">"ranger"</span>, </span>
+<span>                Gest <span class="op">=</span> <span class="st">"regularized"</span><span class="op">)</span>,</span>
 <span>  pred_history <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">

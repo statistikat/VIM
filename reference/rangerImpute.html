@@ -156,10 +156,6 @@ aggregated tree-wise using the median (via <code><a href="vimpute.html">vimpute(
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">rangerImpute</span><span class="op">(</span><span class="va">Dream</span><span class="op">+</span><span class="va">NonD</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> data is data.table</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Precheck done.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> data is data.table</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Precheck done.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger Dream_imp</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  3.0   1.4   3.3  38.6 645.0    3   5      3      TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.3   2.0   8.3   4.5  42.0    3   1      3     FALSE</span>
