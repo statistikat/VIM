@@ -332,10 +332,12 @@ vimpute <- function(
         check_all_factor_levels(data_temp, factor_levels)
         
         # Impute missing values (Median/Mode)  -> for prediction 
+        # Train on complete targets only (mlr3 disallows NA in target)
+        data_train_mm <- data[!is.na(get(target_col))]
         if (is_target_numeric) {
-          task_mm <- TaskRegr$new(id = "imputation_task_mm", backend = data, target = target_col)
+          task_mm <- TaskRegr$new(id = "imputation_task_mm", backend = data_train_mm, target = target_col)
         } else {
-          task_mm <- TaskClassif$new(id = "imputation_task_mm", backend = data, target = target_col)
+          task_mm <- TaskClassif$new(id = "imputation_task_mm", backend = data_train_mm, target = target_col)
         }
         
         pipeline_impute <- po("imputehist") %>>%  # Histogram-based imputation for numeric variables (Median)
@@ -343,7 +345,24 @@ vimpute <- function(
           po("modelmatrix", formula = rewrited_formula) #rewrited_formula  # Create design matrix
         
         pipeline_impute$train(task_mm)
-        po_task_mm <- pipeline_impute$predict(task_mm)[[1]]
+
+        # Predict on full data, but ensure target has no NA for task creation
+        data_pred_mm <- copy(data)
+        if (anyNA(data_pred_mm[[target_col]])) {
+          if (is_target_numeric) {
+            data_pred_mm[[target_col]][is.na(data_pred_mm[[target_col]])] <-
+              median(data_pred_mm[[target_col]], na.rm = TRUE)
+          } else {
+            mode_value <- names(which.max(table(data_pred_mm[[target_col]], useNA = "no")))
+            data_pred_mm[[target_col]][is.na(data_pred_mm[[target_col]])] <- mode_value
+          }
+        }
+        if (is_target_numeric) {
+          task_mm_pred <- TaskRegr$new(id = "imputation_task_mm_pred", backend = data_pred_mm, target = target_col)
+        } else {
+          task_mm_pred <- TaskClassif$new(id = "imputation_task_mm_pred", backend = data_pred_mm, target = target_col)
+        }
+        po_task_mm <- pipeline_impute$predict(task_mm_pred)[[1]]
         mm_data <- po_task_mm$data() # mm_data = transformed data with missings filled in, data_temp = transformed data without missings
         mm_data <- as.data.table(mm_data)
         setnames(mm_data, clean_colnames(names(mm_data)))
@@ -477,15 +496,32 @@ vimpute <- function(
         
         # OHE on data
         if (task_type == "regr") {
-          train_task <- as_task_regr(data_temp, target = target_col)  
+          train_dt <- data_temp[!is.na(get(target_col))]
+          train_task <- as_task_regr(train_dt, target = target_col)  
         } else {
-          train_task <- as_task_classif(data_temp, target = target_col)  
+          train_dt <- data_temp[!is.na(get(target_col))]
+          train_task <- as_task_classif(train_dt, target = target_col)  
         }
         
         po_ohe$train(list(train_task))  # Train Encoder
         
-        # Apply the encoding to the training data
-        data_temp <- po_ohe$predict(list(train_task))[[1]]$data()
+        # Apply the encoding to the full data; target must be non-NA for task creation
+        pred_dt <- copy(data_temp)
+        if (anyNA(pred_dt[[target_col]])) {
+          if (task_type == "regr") {
+            pred_dt[[target_col]][is.na(pred_dt[[target_col]])] <-
+              median(pred_dt[[target_col]], na.rm = TRUE)
+          } else {
+            mode_value <- names(which.max(table(pred_dt[[target_col]], useNA = "no")))
+            pred_dt[[target_col]][is.na(pred_dt[[target_col]])] <- mode_value
+          }
+        }
+        if (task_type == "regr") {
+          pred_task_ohe <- as_task_regr(pred_dt, target = target_col)
+        } else {
+          pred_task_ohe <- as_task_classif(pred_dt, target = target_col)
+        }
+        data_temp <- po_ohe$predict(list(pred_task_ohe))[[1]]$data()
       }
 
       effective_feature_count <- max(0L, ncol(data_temp) - 1L)
@@ -1709,15 +1745,37 @@ vimpute <- function(
       if (!is_sc) {
         
         if (is.numeric(data_temp[[target_col]])) {
+          backend_dt <- if (inherits(backend_data, "DataBackend")) {
+            rows <- backend_data$row_ids
+            if (is.null(rows)) rows <- seq_len(backend_data$nrow)
+            as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
+          } else {
+            as.data.table(backend_data)
+          }
+          if (anyNA(backend_dt[[target_col]])) {
+            backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <-
+              median(data_temp[[target_col]], na.rm = TRUE)
+          }
           pred_task <- TaskRegr$new(
             id = target_col,
-            backend = backend_data,
+            backend = backend_dt,
             target = target_col
           )
         } else if (is.factor(data_temp[[target_col]])) {
+          backend_dt <- if (inherits(backend_data, "DataBackend")) {
+            rows <- backend_data$row_ids
+            if (is.null(rows)) rows <- seq_len(backend_data$nrow)
+            as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
+          } else {
+            as.data.table(backend_data)
+          }
+          if (anyNA(backend_dt[[target_col]])) {
+            mode_value <- names(which.max(table(data_temp[[target_col]], useNA = "no")))
+            backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <- mode_value
+          }
           pred_task <- TaskClassif$new(
             id = target_col,
-            backend = backend_data,
+            backend = backend_dt,
             target = target_col
           )
         } else {
@@ -1835,9 +1893,20 @@ vimpute <- function(
         backend_data <- mlr3::as_data_backend(bdt)
         
         if (is.factor(data_temp[[target_col]])) {
+          backend_dt <- if (inherits(backend_data, "DataBackend")) {
+            rows <- backend_data$row_ids
+            if (is.null(rows)) rows <- seq_len(backend_data$nrow)
+            as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
+          } else {
+            as.data.table(backend_data)
+          }
+          if (anyNA(backend_dt[[target_col]])) {
+            mode_value <- names(which.max(table(data_temp[[target_col]], useNA = "no")))
+            backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <- mode_value
+          }
           pred_task <- TaskClassif$new(
             id = target_col,
-            backend = backend_data,
+            backend = backend_dt,
             target = target_col
           )
           
@@ -1864,9 +1933,20 @@ vimpute <- function(
           }
           
         } else {
+          backend_dt <- if (inherits(backend_data, "DataBackend")) {
+            rows <- backend_data$row_ids
+            if (is.null(rows)) rows <- seq_len(backend_data$nrow)
+            as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
+          } else {
+            as.data.table(backend_data)
+          }
+          if (anyNA(backend_dt[[target_col]])) {
+            backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <-
+              median(data_temp[[target_col]], na.rm = TRUE)
+          }
           pred_task <- TaskRegr$new(
             id = target_col,
-            backend = backend_data,
+            backend = backend_dt,
             target = target_col
           )
           preds <- NULL
