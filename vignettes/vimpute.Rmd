@@ -34,7 +34,7 @@ This vignette demonstrates how to use the `vimpute()` function for flexible miss
 - `formula`: If not all variables are used as predictors, or if transformations or interactions are required 
              (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized". Provide as a list for each variable that requires specific conditions.
 - `sequential`: Specifies whether the imputation should be performed sequentially.
-- `nseq`: The number of sequential iterations, if `sequential`is TRUE.
+- `nseq`: The number of sequential iterations, if `sequential` is TRUE.
 - `eps`: The convergence threshold for sequential imputation.
 - `imp_var`: Specifies whether to add indicator variables for imputed values.
 - `pred_history`: If enabled, saves the prediction history.
@@ -69,7 +69,7 @@ The __<font color="#87ceeb">blue</font>__ boxplot on the left shows the distribu
 
 ### Default Imputation
 
-In the basic usage, the `vimpute()` function performs imputation using the default settings. It uses the "ranger" method for all variables, applies predictive mean matching, and performs sequential imputation with a convergence threshold of 0.005.
+In the basic usage, the `vimpute()` function uses the default settings: all variables are imputed with the "ranger" method, sequential imputation is enabled (`nseq = 10`, `eps = 0.005`), PMM is off, formulas are off, no tuning is performed, and imputation indicators are added.
 
 ```{r, include=TRUE, results='hide', message=FALSE, warning=FALSE}
 result <- vimpute(
@@ -104,10 +104,10 @@ These colors represent the structure of missings.
 
 Specifies the method used for imputation of each variable. If `method` is not provided, `vimpute()` uses `"ranger"` for all variables. In this example, different imputation methods are specified for each variable. The `NonD` variable uses a robust method, `Dream` and `Span` are using ranger, `Sleep` uses xgboost, `Gest` uses a regularized method and `class` uses a robust method.
 
-- **`"robust"`**: Robust regression models  
+- **`"robust"`**: Robust Regression Models  
   - `lmrob` for numeric variables: Implements MM-estimation for resistance to outliers
-  - `glmrob` for binary factors: Uses robust estimators to reduce outlier influence 
-- **`"regularized"`**: Regularized regression (`glmnet`)  
+  - `glmrob` for factors: Robust GLM; binary via robust logit, multiclass via one-vs-rest
+- **`"regularized"`**: Regularized Regression (`glmnet`)  
   - Uses elastic net regularization  
   - Automatically handles multicollinearity  
 - **`"ranger"`**: Random Forest  
@@ -122,7 +122,11 @@ You can provide `method` globally as a single value/function (applies to all var
 ```{r, include=TRUE, results='hide', message=FALSE, warning=FALSE}
 result_mixed <- vimpute(
   data = data,
-  method = list(NonD = "robust", Dream = "ranger", Sleep = "xgboost", Span = "ranger" , Gest = "regularized"),
+  method = list(NonD = "robust", 
+                Dream = "ranger", 
+                Sleep = "xgboost", 
+                Span = "ranger", 
+                Gest = "regularized"),
   pred_history = TRUE
   )
 ```
