@@ -788,7 +788,8 @@ precheck <- function(
     pmm_k_method,
     learner_params,
     tune,
-    default_method = NULL
+    default_method = NULL,
+    verbose = FALSE
 ) {
   # -------------------------------------------------------------------------
   # 1) Identify variables and variables containing missing values
@@ -817,7 +818,7 @@ precheck <- function(
   # 3) Ensure data is a data.table
   # -------------------------------------------------------------------------
   if (is.data.table(data)) {
-    message("data is data.table")
+    if (isTRUE(verbose)) message("data is data.table")
   } else if (is.matrix(data) || is.data.frame(data)) {
     data <- as.data.table(data)
   } else {
@@ -1044,7 +1045,7 @@ precheck <- function(
   checked_pmm_k_method <- map_pmm_k_method(variables_NA, pmm_k_method, checked_pmm)
   checked_tune  <- map_tune(variables_NA, tune)
   
-  message("Precheck done.")
+  if (isTRUE(verbose)) message("Precheck done.")
   
   return(list(
     data           = data,

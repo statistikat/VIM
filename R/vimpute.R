@@ -115,6 +115,14 @@ vimpute <- function(
   old_plan <- future::plan()  # Save current plan
   on.exit(future::plan(old_plan), add = TRUE)  # Restore on exit, even if error
 
+  # Silence mlr3 info logs unless explicitly requested.
+  if (!isTRUE(verbose)) {
+    mlr3_logger <- lgr::get_logger("mlr3")
+    old_mlr3_threshold <- mlr3_logger$threshold
+    mlr3_logger$set_threshold("warn")
+    on.exit(mlr3_logger$set_threshold(old_mlr3_threshold), add = TRUE)
+  }
+
   # dots <- list(...)
 
   # only defined variables
@@ -145,7 +153,7 @@ vimpute <- function(
     default_method <- unique(method_vector)
   }
   
-  checked_data   <- precheck(data, pmm, formula, method, sequential, pmm_k, pmm_k_method, learner_params, tune, default_method)
+  checked_data   <- precheck(data, pmm, formula, method, sequential, pmm_k, pmm_k_method, learner_params, tune, default_method, verbose = verbose)
   data           <- checked_data$data
   variables      <- checked_data$variables
   variables_NA   <- checked_data$variables_NA
