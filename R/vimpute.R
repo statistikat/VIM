@@ -1,6 +1,6 @@
 
 #' Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)
-#' Need of 'helper_vimpute' script
+#' @author Eileen Vattheuer, Matthias Templ, Alexander Kowarik
 
 ## PARAMETERS ##
 #' @param data
@@ -13,10 +13,12 @@
 #'    - as a **single global method** (e.g. "ranger"), applied to all variables, or
 #'    - as a **named list** (e.g. as.list(var1 = "xgboost", var2="robust")), assigning a method to each variable individually.
 #'  Supported methods:
-#     - ranger (Random Forest)
-#     - xgboost (Gradient Boosting)
-#     - regularized (glmnet regression/classification)
-#     - robust (robustbase::lmrob / glmrob) 
+#'   - ranger (Random Forest)
+#'   - xgboost (Gradient Boosting)
+#'   - regularized (glmnet regression/classification)
+#'   - robust (robustbase::lmrob / glmrob)
+#'   - gam (Generalized Additive Model via mgcv::gam)
+#'   - robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
 #' @param pmm 
 #'  Predictive Mean Matching (PMM) settings.
 #'  Can be provided:
@@ -50,8 +52,9 @@
 #'    - **Per method**    (e.g. list(ranger = list(num.trees = 600)))  
 #'    - **Global**, applied to all variables using the same method
 #' @param formula
-#'  Optional modeling formula to restrict or transform predictor variables.  
-#'  Only supported for **regularized** (glmnet) and **robust** (lmrob/glmrob) methods
+#'  Optional modeling formula to restrict or transform predictor variables.
+#'  Only supported for **regularized** (glmnet), **robust** (lmrob/glmrob),
+#'  **gam** (mgcv::gam), and **robgam** (robust GAM) methods
 #'  Provide as a named list, e.g.:
 #'    - list(mpg = mpg ~ hp + drat)  
 #'    - list(hp  = log(hp) ~ wt + cyl) 
@@ -74,19 +77,68 @@
 #'  Tuning is performed halfway through nseq iterations.
 #' @param verbose
 #'  If TRUE additional debugging output is provided
+#' @param boot
+#'  If TRUE, bootstrap resampling is applied before model fitting to account
+#'  for model uncertainty. The bootstrap strategy is controlled by \code{robustboot}.
+#'  Most effective with method = "robust". Default: FALSE
+#' @param robustboot
+#'  Bootstrap strategy when \code{boot = TRUE}. Options:
+#'  \code{"standard"} (classical bootstrap),
+#'  \code{"stratified"} (good/bad residual split, default),
+#'  \code{"quantile"} (weighted by robustness weights),
+#'  \code{"residual"} (inverse residual weighting),
+#'  \code{"psi"} (Tukey bisquare weights).
+#' @param uncert
+#'  Imputation uncertainty method applied to predictions:
+#'  \code{"none"} (point prediction, default),
+#'  \code{"normalerror"} (add N(0, sigma_hat)),
+#'  \code{"resid"} (add sampled residual),
+#'  \code{"pmm"} (predictive mean matching),
+#'  \code{"midastouch"} (covariate-distance-weighted PMM, Siddique & Belin 2008).
+#'  If \code{pmm = TRUE} is set, it takes precedence over \code{uncert}.
+#' @param m
+#'  Number of multiple imputations. Default: 1 (single imputation).
+#'  When \code{m > 1}, returns a \code{\link{vimmi}} object storing the original
+#'  data and imputed values efficiently. Use \code{\link{complete.vimmi}} to
+#'  extract completed datasets.
 #' @return
 #'  Either:
-#'    - the imputed dataset (default), or  
-#'    - a list containing the imputed dataset and prediction history, depending on the pred_history and tune settings.
+#'    - the imputed dataset (default, when \code{m = 1}), or
+#'    - a list containing the imputed dataset and prediction history (when \code{pred_history = TRUE} or \code{tune = TRUE}), or
+#'    - a \code{\link{vimmi}} object (when \code{m > 1}).
 #' @export
 #'
 #' @family imputation methods
 #' @examples
 #' \dontrun{
+#' # Single imputation (default)
 #' x <- vimpute(data = sleep, sequential = FALSE)
+#'
+#' # Sequential imputation with 3 iterations
 #' y <- vimpute(data = sleep, sequential = TRUE, nseq = 3)
+#'
+#' # Impute only selected variables
 #' z <- vimpute(data = sleep, considered_variables =
 #'        c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE)
+#'
+#' # Multiple imputation (m = 5) with bootstrap and residual uncertainty
+#' # Returns a vimmi object
+#' result <- vimpute(data = sleep, method = "ranger", sequential = FALSE,
+#'                   imp_var = FALSE, m = 5, boot = TRUE, uncert = "resid")
+#' print(result)
+#'
+#' # Extract completed datasets
+#' d1 <- complete(result, 1)         # first imputed dataset
+#' all_d <- complete(result, "all")  # list of 5 datasets
+#' long_d <- complete(result, "long") # long format with .imp column
+#'
+#' # Fit a model on each imputed dataset
+#' fits <- with(result, lm(Sleep ~ Dream + Span))
+#'
+#' # Multiple imputation with robust method and residual uncertainty
+#' result2 <- vimpute(data = sleep, method = "robust", m = 5,
+#'                    boot = TRUE, robustboot = "stratified",
+#'                    uncert = "normalerror")
 #' }
 #########################################################################################
 #########################################################################################
@@ -107,7 +159,11 @@ vimpute <- function(
     imp_var = TRUE,
     pred_history = FALSE,
     tune = FALSE,
-    verbose = FALSE
+    verbose = FALSE,
+    boot = FALSE,
+    robustboot = "stratified",
+    uncert = "none",
+    m = 1L
 ) {
 
   ..cols <- ..feature_cols <- ..reg_features <- ..relevant_features <- NULL
@@ -169,6 +225,26 @@ vimpute <- function(
     nseq <- 1
   }
 ### Check Data End ###
+
+  # Validate MI / bootstrap / uncertainty parameters (new MI/uncertainty features)
+  if (!is.logical(boot) || length(boot) != 1) stop("'boot' must be TRUE or FALSE.")
+  robustboot <- match.arg(robustboot, c("standard", "stratified", "quantile", "residual", "psi"))
+  uncert <- match.arg(uncert, c("none", "normalerror", "resid", "pmm", "midastouch"))
+  m <- as.integer(m)
+  if (m < 1L) stop("'m' must be a positive integer.")
+
+  # Reconcile pmm parameter with uncert parameter (PMM has priority)
+  has_any_pmm <- any(unlist(pmm))
+  if (has_any_pmm && uncert != "none") {
+    warning("Both 'pmm' and 'uncert' specified. 'pmm' takes precedence; 'uncert' ignored.")
+    uncert <- "none"
+  }
+
+  # Warn if m > 1 but no source of between-imputation variability
+  if (m > 1L && !boot && uncert == "none" && !has_any_pmm) {
+    warning("m > 1 without 'boot', 'uncert', or 'pmm': all imputations will be identical. ",
+            "Set boot = TRUE and/or uncert to a method like 'normalerror' for proper MI.")
+  }
   
 ### ***** Learner START ***** ################################################################################################### 
   
@@ -178,9 +254,13 @@ vimpute <- function(
   
   no_change_counter <- 0
   robust_required <- any(unlist(method) == "robust")
+  gam_required <- any(unlist(method) %in% c("gam", "robgam"))  # enable GAM-based learners when needed
   
   if (robust_required) {
     register_robust_learners()
+  }
+  if (gam_required) {
+    register_gam_learners()
   }
   
   learner_ids <- c(
@@ -191,6 +271,10 @@ vimpute <- function(
   
   if (robust_required) {
     learner_ids <- c(learner_ids, "regr.lm_rob", "classif.glm_rob")
+  }
+  if (gam_required) {
+    learner_ids <- c(learner_ids, "regr.gam_imp", "classif.gam_imp",
+                     "regr.robgam_imp", "classif.robgam_imp")
   }
   
   learners <- lapply(learner_ids, function(id) lrn(id))
@@ -219,7 +303,82 @@ vimpute <- function(
   po_ohe <- NULL # set ohe to zero, becomes true if ohe is needed
   data_new <- copy(data)
   original_data <- copy(data)  # Saves original structure of data
-  
+
+  # Multiple imputation: run m times, collect imputed values, return vimmi
+  if (m > 1L) {
+    where_matrix <- as.matrix(is.na(data))
+
+    imp_collector <- setNames(
+      lapply(variables_NA, function(v) vector("list", m)),
+      variables_NA
+    )
+
+    for (mi in seq_len(m)) {
+      if (verbose) message(sprintf("=== Multiple imputation run %d of %d ===", mi, m))
+
+      # Recurse with m = 1 to produce one completed dataset per run
+      single_result <- vimpute(
+        data = data_all_variables,
+        considered_variables = considered_variables,
+        method = method,
+        pmm = pmm,
+        pmm_k = pmm_k,
+        pmm_k_method = pmm_k_method,
+        learner_params = learner_params,
+        formula = formula,
+        sequential = sequential,
+        nseq = nseq,
+        eps = eps,
+        imp_var = FALSE,
+        pred_history = FALSE,
+        tune = tune,
+        boot = boot,
+        robustboot = robustboot,
+        uncert = uncert,
+        m = 1L,
+        verbose = verbose
+      )
+
+      imputed_dt <- if (is.list(single_result) && !is.data.frame(single_result) && "data" %in% names(single_result)) {
+        single_result$data
+      } else {
+        as.data.table(single_result)
+      }
+
+      for (v in variables_NA) {
+        miss_idx <- missing_indices[[v]]
+        imp_collector[[v]][[mi]] <- imputed_dt[[v]][miss_idx]
+      }
+    }
+
+    imp_list <- setNames(
+      lapply(variables_NA, function(v) {
+        df <- as.data.frame(imp_collector[[v]])
+        names(df) <- paste0("m", seq_len(m))
+        df
+      }),
+      variables_NA
+    )
+
+    nmis_vec <- setNames(
+      vapply(variables_NA, function(v) length(missing_indices[[v]]), integer(1)),
+      variables_NA
+    )
+
+    # Return a compact MI object (original data + imputed values only)
+    return(new_vimmi(
+      data   = as.data.frame(original_data),
+      imp    = imp_list,
+      where  = where_matrix,
+      m      = m,
+      nmis   = nmis_vec,
+      method = method,
+      boot   = boot,
+      uncert = uncert,
+      call   = match.call()
+    ))
+  }
+
   if (pred_history == TRUE) {
     history <- list() # save history of predicted values
   }
@@ -418,8 +577,9 @@ vimpute <- function(
       }
       
       if (!isFALSE(selected_formula)) {
-        if (!method[[var]] %in% c("robust", "regularized")) {
-          stop("Error: A formula can only be used with the 'robust' or 'regularized' methods.")
+        # Formulas are only supported by methods that model via formulas
+        if (!method[[var]] %in% c("robust", "regularized", "gam", "robgam")) {
+          stop("Error: A formula can only be used with the 'robust', 'regularized', 'gam', or 'robgam' methods.")
         }
       }
       
@@ -446,14 +606,18 @@ vimpute <- function(
           regularized = list(learners[["regr.cv_glmnet"]], learners[["regr.glmnet"]]),
           robust = list(learners[["regr.lm_rob"]]),
           ranger = list(learners[["regr.ranger"]]),
-          xgboost = list(learners[["regr.xgboost"]])
+          xgboost = list(learners[["regr.xgboost"]]),
+          gam = list(learners[["regr.gam_imp"]]),
+          robgam = list(learners[["regr.robgam_imp"]])
         )
       } else if (is.factor(data[[target_col]])) {
         learners_list <- list(
           regularized = list(learners[["classif.glmnet"]]),
           robust = list(learners[["classif.glm_rob"]]),
           ranger = list(learners[["classif.ranger"]]),
-          xgboost = list(learners[["classif.xgboost"]])
+          xgboost = list(learners[["classif.xgboost"]]),
+          gam = list(learners[["classif.gam_imp"]]),
+          robgam = list(learners[["classif.robgam_imp"]])
         )
       } 
       learner_candidates <- learners_list[[method_var]]
@@ -736,6 +900,44 @@ vimpute <- function(
           print(robust_params)
         }
       }
+
+      ## GAM (mgcv-based)
+      gam_params <- list()
+      if (method_var == "gam") {
+        valid_gam_params <- learners[["regr.gam_imp"]]$param_set$ids()
+        invalid <- setdiff(names(var_learner_params), valid_gam_params)
+        if (length(invalid) > 0) {
+          warning(sprintf(
+            "learner_params for variable '%s' contain invalid GAM parameters: %s. These parameters were ignored.",
+            var, paste(invalid, collapse = ", ")
+          ))
+          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
+        }
+        gam_params <- var_learner_params
+        if (verbose) {
+          cat("\n--- GAM params for variable", var, "---\n")
+          print(gam_params)
+        }
+      }
+
+      ## ROBGAM (robust GAM)
+      robgam_params <- list()
+      if (method_var == "robgam") {
+        valid_robgam_params <- learners[["regr.robgam_imp"]]$param_set$ids()
+        invalid <- setdiff(names(var_learner_params), valid_robgam_params)
+        if (length(invalid) > 0) {
+          warning(sprintf(
+            "learner_params for variable '%s' contain invalid robGAM parameters: %s. These parameters were ignored.",
+            var, paste(invalid, collapse = ", ")
+          ))
+          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
+        }
+        robgam_params <- var_learner_params
+        if (verbose) {
+          cat("\n--- robGAM params for variable", var, "---\n")
+          print(robgam_params)
+        }
+      }
       
       is_regr_task <- is.numeric(data_y_fill_final[[target_col]])
       measure <- if (is_regr_task) msr("regr.rmse") else msr("classif.acc")
@@ -751,9 +953,13 @@ vimpute <- function(
             lrn$param_set$values <- modifyList(lrn$param_set$values, glmnet_params)
           } else if (grepl("lm_rob|glm_rob", lrn$id)) {
             lrn$param_set$values <- modifyList(lrn$param_set$values, robust_params)
+          } else if (grepl("robgam_imp", lrn$id)) {
+            lrn$param_set$values <- modifyList(lrn$param_set$values, robgam_params)
+          } else if (grepl("gam_imp", lrn$id)) {
+            lrn$param_set$values <- modifyList(lrn$param_set$values, gam_params)
           }
           
-          # Klassiication: probabilistic
+          # Classification: probabilistic if available
           if (!is_regr_task) {
             if ("prob" %in% lrn$predict_types) {
               lrn$predict_type <- "prob"
@@ -803,6 +1009,16 @@ vimpute <- function(
         default_learner$param_set$values <- modifyList(default_learner$param_set$values, robust_params)
         current_learner$param_set$values <- modifyList(current_learner$param_set$values, robust_params)
         tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, robust_params)
+      } else if (grepl("robgam_imp", best_learner$id)) {
+        best_learner$param_set$values   <- modifyList(best_learner$param_set$values, robgam_params)
+        default_learner$param_set$values <- modifyList(default_learner$param_set$values, robgam_params)
+        current_learner$param_set$values <- modifyList(current_learner$param_set$values, robgam_params)
+        tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, robgam_params)
+      } else if (grepl("gam_imp", best_learner$id)) {
+        best_learner$param_set$values   <- modifyList(best_learner$param_set$values, gam_params)
+        default_learner$param_set$values <- modifyList(default_learner$param_set$values, gam_params)
+        current_learner$param_set$values <- modifyList(current_learner$param_set$values, gam_params)
+        tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, gam_params)
       }
       
       if (is.factor(data_temp[[target_col]])) {
@@ -887,6 +1103,23 @@ vimpute <- function(
               tuning.chi = p_dbl(1.2, 1.5),
               tuning.psi = p_dbl(1.2, 1.5),
               max.it     = p_int(50L, 200L)
+            )
+            return(list(space = space, n_evals = 8))
+          }
+
+          # GAM
+          if (best_learner_id %in% c("regr.gam_imp", "classif.gam_imp")) {
+            space <- ps(
+              min_unique = p_int(3L, 8L)
+            )
+            return(list(space = space, n_evals = 5))
+          }
+
+          # ROBGAM
+          if (best_learner_id %in% c("regr.robgam_imp", "classif.robgam_imp")) {
+            space <- ps(
+              alpha = p_dbl(0.5, 0.9),
+              min_unique = p_int(3L, 8L)
             )
             return(list(space = space, n_evals = 8))
           }
@@ -1546,6 +1779,10 @@ vimpute <- function(
           current_learner$param_set$values <- modifyList(current_learner$param_set$values, glmnet_params)
         } else if (grepl("lm_rob|glm_rob", best_learner$id)) {
           current_learner$param_set$values <- modifyList(current_learner$param_set$values, robust_params)
+        } else if (grepl("robgam_imp", best_learner$id)) {
+          current_learner$param_set$values <- modifyList(current_learner$param_set$values, robgam_params)
+        } else if (grepl("gam_imp", best_learner$id)) {
+          current_learner$param_set$values <- modifyList(current_learner$param_set$values, gam_params)
         }
         
         # Handling of missing values
@@ -1607,6 +1844,48 @@ vimpute <- function(
         }
         
         learner$train(task)
+
+      # Bootstrap: refit on resampled training data for model uncertainty
+        stored_model_info <- NULL
+        if (boot && !is_sc) {
+          model_info <- extract_model_info(learner, method = method_var)
+          model_info <- complete_model_info(model_info, learner = learner, task = task)
+          stored_model_info <- model_info
+
+          boot_idx <- bootstrap_resample(
+            n = nrow(data_y_fill_final),
+            strategy = robustboot,
+            weights = model_info$weights,
+            residuals = model_info$residuals,
+            alpha = 0.75
+          )
+
+          boot_data <- data_y_fill_final[boot_idx, ]
+          boot_data <- enforce_factor_levels(boot_data, factor_levels)
+
+          if (is.numeric(boot_data[[target_col]])) {
+            boot_task <- TaskRegr$new(id = paste0(target_col, "_boot"),
+                                      backend = boot_data, target = target_col)
+          } else {
+            boot_task <- TaskClassif$new(id = paste0(target_col, "_boot"),
+                                         backend = boot_data, target = target_col)
+          }
+
+          tryCatch({
+            learner$train(boot_task)
+            stored_model_info <- extract_model_info(learner, method = method_var)
+            stored_model_info <- complete_model_info(stored_model_info, learner = learner, task = boot_task)
+          }, error = function(e) {
+            if (verbose) warning(sprintf(
+              "Bootstrap refit failed for '%s': %s. Using original model.", var, e$message))
+          })
+        }
+
+        # Store model info for uncertainty methods (even without bootstrap)
+        if (is.null(stored_model_info) && uncert %in% c("normalerror", "resid") && !is_sc) {
+          stored_model_info <- extract_model_info(learner, method = method_var)
+          stored_model_info <- complete_model_info(stored_model_info, learner = learner, task = task)
+        }
         
       }
 ### Train Model End ###
@@ -1868,7 +2147,17 @@ vimpute <- function(
           preds_reg <- predict_ranger_median(reg_learner, reg_pred_data, target_name = NULL)
         }
         if (is.null(preds_reg)) {
-          preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response  # E[Y | Y>0, X]
+          if (is.null(reg_learner) || !is.function(reg_learner$predict_newdata)) {
+            positive_values <- data_temp[[var]][!is.na(data_temp[[var]]) & data_temp[[var]] > 0]
+            fallback_positive <- if (length(positive_values) > 0) {
+              stats::median(positive_values)
+            } else {
+              0
+            }
+            preds_reg <- rep(fallback_positive, nrow(reg_pred_data))
+          } else {
+            preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response  # E[Y | Y>0, X]
+          }
         }
         
         # Combine results, Impuatation = deterministic
@@ -1977,6 +2266,48 @@ vimpute <- function(
         score_current <- numeric(nrow(data))
         score_current[obs_idx] <- data[[var]][obs_idx]       # observed values
         score_current[miss_idx] <- preds        # predictions for missing rows
+      }
+
+      # --- Uncertainty injection (normalerror / resid / pmm / midastouch) ---
+      if (uncert != "none" && !has_any_pmm && inherits(preds, "numeric") && !is_sc) {
+        uncert_args <- list(preds = preds, method = uncert)
+
+        if (uncert %in% c("normalerror", "resid") && !is.null(stored_model_info)) {
+          uncert_args$scale <- stored_model_info$scale
+          uncert_args$residuals <- stored_model_info$residuals
+        }
+
+        if (uncert == "pmm") {
+          miss_idx_u <- missing_indices[[var]]
+          obs_idx_u <- setdiff(seq_len(nrow(data)), miss_idx_u)
+          uncert_args$y_obs <- data[[var]][obs_idx_u]
+          uncert_args$score_obs <- score_current[obs_idx_u]
+          uncert_args$score_miss <- score_current[miss_idx_u]
+          uncert_args$pmm_k <- 5L
+          uncert_args$pmm_k_method <- "random"
+        }
+
+        if (uncert == "midastouch") {
+          miss_idx_u <- missing_indices[[var]]
+          obs_idx_u <- setdiff(seq_len(nrow(data)), miss_idx_u)
+          uncert_args$y_obs <- data[[var]][obs_idx_u]
+          uncert_args$score_obs <- score_current[obs_idx_u]
+          uncert_args$score_miss <- score_current[miss_idx_u]
+          uncert_args$pmm_k <- 5L
+          feat_names <- setdiff(names(data), var)
+          num_feats <- feat_names[sapply(feat_names, function(f) is.numeric(data[[f]]))]
+          if (length(num_feats) > 0) {
+            uncert_args$X_obs <- as.matrix(data[obs_idx_u, num_feats, with = FALSE])
+            uncert_args$X_miss <- as.matrix(data[miss_idx_u, num_feats, with = FALSE])
+          }
+        }
+
+        preds <- do.call(inject_uncertainty, uncert_args)
+
+        # Re-round after uncertainty injection
+        if (exists("decimal_places")) {
+          preds <- round(preds, decimal_places)
+        }
       }
 ### Predict End ###################################################################################################
       

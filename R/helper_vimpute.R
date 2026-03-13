@@ -805,7 +805,8 @@ precheck <- function(
   # 2) Warn if any variable name equals a reserved method name
   #    (this would cause ambiguity in learner_params)
   # -------------------------------------------------------------------------
-  reserved_methods <- c("ranger", "xgboost", "regularized", "robust")
+  # Reserved method names used in learner_params mapping
+  reserved_methods <- c("ranger", "xgboost", "regularized", "robust", "gam", "robgam")
   conflicting_vars <- intersect(variables, reserved_methods)
   if (length(conflicting_vars) > 0) {
     warning(sprintf(
@@ -817,11 +818,10 @@ precheck <- function(
   # -------------------------------------------------------------------------
   # 3) Ensure data is a data.table
   # -------------------------------------------------------------------------
-  if (is.data.table(data)) {
-    if (isTRUE(verbose)) message("data is data.table")
-  } else if (is.matrix(data) || is.data.frame(data)) {
+  # Normalize input type to data.table
+  if (!is.data.table(data) && (is.matrix(data) || is.data.frame(data))) {
     data <- as.data.table(data)
-  } else {
+  } else if (!is.data.table(data)) {
     stop("Error: Input must be a data.frame, matrix, or data.table.")
   }
   
@@ -858,7 +858,8 @@ precheck <- function(
   # -------------------------------------------------------------------------
   # 5) Normalize 'method' argument so every NA-variable gets a valid method
   # -------------------------------------------------------------------------
-  supported_methods <- c("ranger", "regularized", "xgboost", "robust")
+  # Methods supported by vimpute()
+  supported_methods <- c("ranger", "regularized", "xgboost", "robust", "gam", "robgam")
   
   if (length(method) == 0) {
     stop("No method specified. Please provide at least one method.")
@@ -952,8 +953,8 @@ precheck <- function(
 
     for (target in formula_targets) {
       target_method <- if (target %in% names(method)) method[[target]] else default_method
-      if (!is.null(target_method) && !target_method %in% c("regularized", "robust")) {
-        stop("A formula can only be used with the 'robust' or 'regularized' methods.")
+      if (!is.null(target_method) && !target_method %in% c("regularized", "robust", "gam", "robgam")) {
+        stop("A formula can only be used with the 'robust', 'regularized', 'gam', or 'robgam' methods.")
       }
     }
   }
@@ -1044,8 +1045,6 @@ precheck <- function(
   checked_pmm_k <- map_pmm_k(variables_NA, pmm_k, checked_pmm)
   checked_pmm_k_method <- map_pmm_k_method(variables_NA, pmm_k_method, checked_pmm)
   checked_tune  <- map_tune(variables_NA, tune)
-  
-  if (isTRUE(verbose)) message("Precheck done.")
   
   return(list(
     data           = data,
@@ -1221,4 +1220,965 @@ predict_ranger_median <- function(graph_learner, newdata, target_name = NULL) {
   }
   
   apply(tree_preds, 1, median)
+}
+
+#' Bootstrap resampling with robust strategies
+#'
+#' Returns bootstrap row indices based on the chosen strategy.
+#' Strategies adapted from imputeRobust (Templ 2024).
+#'
+#' @param n Number of observations
+#' @param strategy One of "standard", "stratified", "quantile", "residual", "psi"
+#' @param weights Robustness weights from model (e.g., lmrob$rweights). Used by "quantile" for MM.
+#' @param residuals Model residuals. Used by "stratified", "residual", "psi".
+#' @param alpha Fraction of "good" observations (default 0.75). Used by "stratified", "quantile".
+#' @param best_subset Integer indices of best observations (e.g., from LTS). Used by "quantile" for LTS.
+#' @return Integer vector of length n with bootstrap row indices
+#' @keywords internal
+bootstrap_resample <- function(
+    n,
+    strategy = "stratified",
+    weights = NULL,
+    residuals = NULL,
+    alpha = 0.75,
+    best_subset = NULL
+) {
+  strategy <- match.arg(strategy, c("standard", "stratified", "quantile", "residual", "psi"))
+
+  if (strategy == "standard") {
+    return(sample.int(n, size = n, replace = TRUE))
+  }
+
+  if (strategy == "quantile") {
+    if (!is.null(best_subset)) {
+      return(sample(best_subset, size = n, replace = TRUE))
+    }
+    if (!is.null(weights)) {
+      return(sample.int(n, size = n, replace = TRUE, prob = weights))
+    }
+    warning("'quantile' strategy requires weights or best_subset. Falling back to 'standard'.")
+    return(sample.int(n, size = n, replace = TRUE))
+  }
+
+  if (is.null(residuals)) {
+    warning("Bootstrap strategy '", strategy, "' requires residuals. Falling back to 'standard'.")
+    return(sample.int(n, size = n, replace = TRUE))
+  }
+
+  if (strategy == "stratified") {
+    threshold <- quantile(residuals, alpha)
+    good_idx <- which(residuals <= threshold)
+    bad_idx <- which(residuals > threshold)
+    n_good <- round(n * alpha)
+    n_bad <- n - n_good
+    if (length(good_idx) == 0) good_idx <- seq_len(n)
+    if (length(bad_idx) == 0) bad_idx <- seq_len(n)
+    idx <- c(
+      sample(good_idx, size = n_good, replace = TRUE),
+      sample(bad_idx, size = n_bad, replace = TRUE)
+    )
+    return(idx)
+  }
+
+  if (strategy == "residual") {
+    prob <- max(abs(residuals)) - abs(residuals)
+    prob[prob <= 0] <- .Machine$double.eps
+    return(sample.int(n, size = n, replace = TRUE, prob = prob))
+  }
+
+  if (strategy == "psi") {
+    u <- residuals / mad(residuals)
+    c_tukey <- 4.685
+    w <- ifelse(abs(u) > c_tukey, 0, (1 - (u^2) / c_tukey^2)^2)
+    prob <- max(abs(w)) - abs(w)
+    prob[prob <= 0] <- .Machine$double.eps
+    return(sample.int(n, size = n, replace = TRUE, prob = prob))
+  }
+}
+
+#' Extract model diagnostics for bootstrap strategies
+#'
+#' Drills into an mlr3 learner or raw model to retrieve residuals,
+#' scale estimate, and robustness weights needed for bootstrap resampling.
+#'
+#' @param model A fitted model object (lm, lmrob, gam, ranger, or mlr3 GraphLearner)
+#' @param method The vimpute method string: "robust", "ranger", "xgboost", "regularized"
+#' @return List with components: residuals (numeric vector or NULL),
+#'   scale (numeric scalar or NULL), weights (numeric vector or NULL)
+#' @keywords internal
+extract_model_info <- function(model, method = "robust") {
+  info <- list(residuals = NULL, scale = NULL, weights = NULL)
+
+  # Unwrap mlr3 GraphLearner if needed
+  raw_model <- model
+  if (inherits(model, "GraphLearner") || inherits(model, "Learner")) {
+    if (!is.null(model$model)) {
+      model_list <- model$model
+      for (nm in names(model_list)) {
+        inner <- model_list[[nm]]
+        if (inherits(inner, "list") && "model" %in% names(inner)) {
+          raw_model <- inner$model
+          break
+        }
+        if (inherits(inner, c("lm", "lmrob", "glmrob", "gam", "ranger"))) {
+          raw_model <- inner
+          break
+        }
+      }
+    }
+  }
+
+  if (inherits(raw_model, "lmrob")) {
+    info$residuals <- tryCatch(as.numeric(residuals(raw_model)), error = function(e) NULL)
+    info$scale <- tryCatch(summary(raw_model)$scale, error = function(e) {
+      # summary.lmrob can fail with small n; fallback to residual SD
+      tryCatch(sd(residuals(raw_model)), error = function(e2) NULL)
+    })
+    info$weights <- tryCatch(raw_model$rweights, error = function(e) NULL)
+    return(info)
+  }
+
+  if (inherits(raw_model, "glmrob")) {
+    info$residuals <- tryCatch(as.numeric(residuals(raw_model)), error = function(e) NULL)
+    info$scale <- tryCatch(summary(raw_model)$dispersion, error = function(e) NULL)
+    return(info)
+  }
+
+  if (inherits(raw_model, "lm")) {
+    info$residuals <- as.numeric(residuals(raw_model))
+    info$scale <- sd(residuals(raw_model))
+    return(info)
+  }
+
+  if (inherits(raw_model, "gam")) {
+    info$residuals <- as.numeric(residuals(raw_model))
+    info$scale <- tryCatch(sqrt(summary(raw_model)$scale), error = function(e) sd(residuals(raw_model)))
+    return(info)
+  }
+
+  # Handle robGAM model info (stored as list with $mod)
+  if (is.list(raw_model) && !is.null(raw_model$mod)) {
+    mod <- raw_model$mod
+    info$residuals <- tryCatch(as.numeric(residuals(mod)), error = function(e) NULL)
+    info$scale <- if (!is.null(raw_model$scale)) raw_model$scale else
+      tryCatch(sqrt(summary(mod)$scale), error = function(e) sd(residuals(mod)))
+    if (!is.null(raw_model$weights)) info$weights <- raw_model$weights
+    if (!is.null(raw_model$subset_good)) info$best_subset <- raw_model$subset_good
+    return(info)
+  }
+
+  # For ranger/xgboost: no residuals from model object.
+  # Bootstrap uses "standard" strategy only.
+  info
+}
+
+#' Complete model diagnostics from learner predictions when the raw model
+#' does not expose them directly
+#'
+#' @param info Result from extract_model_info()
+#' @param learner A trained mlr3 learner or GraphLearner
+#' @param task A regression task used for training the learner
+#' @return Model info list with residuals/scale filled where possible
+#' @keywords internal
+complete_model_info <- function(info, learner = NULL, task = NULL) {
+  if (is.null(info) || !is.list(info)) {
+    info <- list(residuals = NULL, scale = NULL, weights = NULL)
+  }
+
+  needs_residuals <- is.null(info$residuals) || !is.numeric(info$residuals) || length(info$residuals) == 0L
+  needs_scale <- is.null(info$scale) || !is.numeric(info$scale) || length(info$scale) != 1L ||
+    !is.finite(info$scale) || info$scale <= 0
+
+  if ((!needs_residuals && !needs_scale) || is.null(learner) || is.null(task) || !inherits(task, "TaskRegr")) {
+    return(info)
+  }
+
+  truth <- tryCatch(as.numeric(task$truth()), error = function(e) NULL)
+  preds <- tryCatch(as.numeric(learner$predict(task)$response), error = function(e) NULL)
+
+  if (is.null(truth) || is.null(preds) || length(truth) != length(preds)) {
+    return(info)
+  }
+
+  residuals <- truth - preds
+  residuals <- residuals[is.finite(residuals)]
+  if (!length(residuals)) {
+    return(info)
+  }
+
+  if (needs_residuals) {
+    info$residuals <- residuals
+  }
+
+  if (needs_scale) {
+    scale_est <- stats::sd(residuals)
+    if (!is.finite(scale_est) || scale_est <= 0) {
+      scale_est <- sqrt(mean(residuals^2))
+    }
+    if (is.finite(scale_est) && scale_est > 0) {
+      info$scale <- scale_est
+    }
+  }
+
+  info
+}
+
+#' Score-based PMM donor selection
+#'
+#' For each missing value, finds k nearest observed values based on model
+#' score (predicted value) distance, then aggregates using the chosen method.
+#'
+#' @param y_obs Observed values of target variable
+#' @param score_obs Model scores for observed rows
+#' @param score_miss Model scores for missing rows
+#' @param k Number of nearest donors
+#' @param agg_method One of "mean", "median", "random", or a function
+#' @return Numeric vector of length(score_miss) with imputed values
+#' @keywords internal
+pmm_donor_selection <- function(
+    y_obs, score_obs, score_miss,
+    k = 1L, agg_method = "random"
+) {
+  k <- min(k, length(y_obs))
+
+  sapply(score_miss, function(s) {
+    idx <- order(abs(score_obs - s))[seq_len(k)]
+    neighbors <- y_obs[idx]
+
+    if (is.function(agg_method)) {
+      agg <- agg_method(neighbors)
+      if (length(agg) != 1L || !is.numeric(agg) || is.na(agg)) {
+        stop("pmm_k_method function must return exactly one non-missing numeric value.")
+      }
+      return(as.numeric(agg))
+    }
+
+    switch(agg_method,
+      "mean" = mean(neighbors),
+      "median" = median(neighbors),
+      "random" = sample(neighbors, 1),
+      sample(neighbors, 1)
+    )
+  })
+}
+
+#' Midastouch: PMM with covariate-distance-weighted donor selection
+#'
+#' For each missing value, finds k nearest donors using a combined score:
+#' closeness in predicted value (score) AND closeness in covariate space
+#' (Mahalanobis distance). Donors closer in covariate space are upweighted.
+#'
+#' Based on Siddique & Belin (2008), "Multiple imputation using an iterative
+#' hot-deck with distance-based donor selection", Statistics in Medicine.
+#'
+#' @param y_obs Observed values of the target variable
+#' @param X_obs Predictor matrix for observed rows (n_obs x p)
+#' @param X_miss Predictor matrix for missing rows (n_miss x p)
+#' @param score_obs Model predictions for observed rows
+#' @param score_miss Model predictions for missing rows
+#' @param k Number of candidate donors (default 5)
+#' @return Numeric vector of length n_miss with imputed values drawn from donors
+#' @keywords internal
+midastouch_donors <- function(
+    y_obs, X_obs, X_miss,
+    score_obs = NULL, score_miss = NULL, k = 5L
+) {
+  n_miss <- nrow(X_miss)
+  n_obs <- length(y_obs)
+  k <- min(k, n_obs)
+
+  X_obs <- as.matrix(X_obs)
+  X_miss <- as.matrix(X_miss)
+
+  # Remove columns with any NA to avoid NaN in distance computation
+  complete_cols <- apply(X_obs, 2, function(col) !any(is.na(col))) &
+                   apply(X_miss, 2, function(col) !any(is.na(col)))
+  if (sum(complete_cols) == 0) {
+    # Fallback: just use score-based PMM if no complete numeric features
+    if (!is.null(score_obs) && !is.null(score_miss)) {
+      return(pmm_donor_selection(y_obs, score_obs, score_miss, k = k, agg_method = "random"))
+    }
+    return(sample(y_obs, size = n_miss, replace = TRUE))
+  }
+  X_obs <- X_obs[, complete_cols, drop = FALSE]
+  X_miss <- X_miss[, complete_cols, drop = FALSE]
+
+  # Covariance for Mahalanobis distance (regularized)
+  cov_mat <- tryCatch({
+    S <- cov(X_obs)
+    S + diag(1e-6, ncol(S))
+  }, error = function(e) {
+    diag(apply(X_obs, 2, var, na.rm = TRUE) + 1e-6)
+  })
+
+  S_inv <- tryCatch(solve(cov_mat), error = function(e) diag(1 / diag(cov_mat)))
+
+  result <- numeric(n_miss)
+  for (i in seq_len(n_miss)) {
+    diff_mat <- sweep(X_obs, 2, X_miss[i, ], "-")
+    maha_dist <- sqrt(pmax(rowSums((diff_mat %*% S_inv) * diff_mat), 0))
+    # Replace any remaining NaN with large distance
+    maha_dist[is.na(maha_dist)] <- max(maha_dist, na.rm = TRUE) + 1
+
+    if (!is.null(score_obs) && !is.null(score_miss)) {
+      score_dist <- abs(score_obs - score_miss[i])
+      maha_range <- max(maha_dist, na.rm = TRUE) - min(maha_dist, na.rm = TRUE)
+      score_range <- max(score_dist, na.rm = TRUE) - min(score_dist, na.rm = TRUE)
+      maha_norm <- if (!is.na(maha_range) && maha_range > 0) maha_dist / maha_range else rep(0, n_obs)
+      score_norm <- if (!is.na(score_range) && score_range > 0) score_dist / score_range else rep(0, n_obs)
+      combined_dist <- 0.5 * maha_norm + 0.5 * score_norm
+    } else {
+      combined_dist <- maha_dist
+    }
+
+    donor_idx <- order(combined_dist)[seq_len(k)]
+    donor_weights <- 1 / (combined_dist[donor_idx] + .Machine$double.eps)
+    donor_weights <- donor_weights / sum(donor_weights)
+    chosen <- sample(donor_idx, size = 1, prob = donor_weights)
+    result[i] <- y_obs[chosen]
+  }
+
+  result
+}
+
+#' Inject imputation uncertainty into predictions
+#'
+#' Adds stochastic noise to point predictions to properly reflect
+#' imputation uncertainty. Called after model prediction, before
+#' value assignment.
+#'
+#' @param preds Numeric vector of predicted values for missing observations
+#' @param method One of "none", "normalerror", "resid", "pmm", "midastouch"
+#' @param scale Scale estimate (sigma hat) from model. Required for "normalerror".
+#' @param residuals Training residuals. Required for "resid".
+#' @param y_obs Observed values of target variable. Required for "pmm", "midastouch".
+#' @param score_obs Model scores for observed rows. Required for "pmm".
+#' @param score_miss Model scores for missing rows. Required for "pmm".
+#' @param pmm_k Number of donors for pmm/midastouch (default 5).
+#' @param pmm_k_method Aggregation for pmm when k > 1 (default "random").
+#' @param X_obs Predictor matrix for observed rows. Required for "midastouch".
+#' @param X_miss Predictor matrix for missing rows. Required for "midastouch".
+#' @return Numeric vector of adjusted predictions (same length as preds)
+#' @keywords internal
+inject_uncertainty <- function(
+    preds,
+    method = "none",
+    scale = NULL,
+    residuals = NULL,
+    y_obs = NULL,
+    score_obs = NULL,
+    score_miss = NULL,
+    pmm_k = 5L,
+    pmm_k_method = "random",
+    X_obs = NULL,
+    X_miss = NULL
+) {
+  method <- match.arg(method, c("none", "normalerror", "resid", "pmm", "midastouch"))
+  n_miss <- length(preds)
+
+  if (method == "none") return(preds)
+
+  if (method == "normalerror") {
+    if (is.null(scale) || length(scale) != 1L || !is.numeric(scale) || is.na(scale) || scale <= 0) {
+      warning("inject_uncertainty: scale not available for 'normalerror'. Returning point predictions.")
+      return(preds)
+    }
+    return(preds + rnorm(n_miss, mean = 0, sd = scale))
+  }
+
+  if (method == "resid") {
+    if (is.null(residuals) || length(residuals) == 0) {
+      warning("inject_uncertainty: residuals not available for 'resid'. Returning point predictions.")
+      return(preds)
+    }
+    return(preds + sample(residuals, size = n_miss, replace = TRUE))
+  }
+
+  if (method == "pmm") {
+    if (is.null(y_obs) || is.null(score_obs) || is.null(score_miss)) {
+      warning("inject_uncertainty: observed values/scores not available for 'pmm'. Returning point predictions.")
+      return(preds)
+    }
+    return(pmm_donor_selection(
+      y_obs = y_obs, score_obs = score_obs, score_miss = score_miss,
+      k = pmm_k, agg_method = pmm_k_method
+    ))
+  }
+
+  if (method == "midastouch") {
+    if (is.null(y_obs) || is.null(X_obs) || is.null(X_miss)) {
+      warning("inject_uncertainty: covariate data not available for 'midastouch'. Returning point predictions.")
+      return(preds)
+    }
+    return(midastouch_donors(
+      y_obs = y_obs, X_obs = X_obs, X_miss = X_miss,
+      score_obs = score_obs, score_miss = score_miss, k = pmm_k
+    ))
+  }
+
+  preds
+}
+
+#' Build a GAM formula with automatic smooth terms
+#'
+#' Constructs a formula for mgcv::gam() by wrapping numeric predictors with
+#' sufficient unique values in s() terms and keeping factors as linear terms.
+#'
+#' @param target Character: target variable name
+#' @param features Character vector: predictor variable names
+#' @param data Data frame used to check variable types and unique value counts
+#' @param min_unique Integer: minimum number of unique values for a numeric
+#'   predictor to be wrapped in s(). Default 4 (mgcv needs at least k=3 knots).
+#' @return A formula object suitable for mgcv::gam()
+#' @keywords internal
+build_gam_formula <- function(target, features, data, min_unique = 4L, default_k = 10L) {
+  terms <- vapply(features, function(f) {
+    col <- data[[f]]
+    n_unique <- length(unique(col[!is.na(col)]))
+    if (is.numeric(col) && n_unique >= min_unique) {
+      k <- min(default_k, max(3L, n_unique - 1L))
+      if (k >= default_k) {
+        paste0("s(", f, ")")
+      } else {
+        paste0("s(", f, ", k = ", k, ")")
+      }
+    } else {
+      f
+    }
+  }, character(1))
+  if (!length(terms)) {
+    return(as.formula(paste(target, "~ 1")))
+  }
+  as.formula(paste(target, "~", paste(terms, collapse = " + ")))
+}
+
+fit_gam_model <- function(formula, data, family = NULL, weights = NULL) {
+  args <- list(
+    formula = formula,
+    data = data,
+    control = mgcv::gam.control(maxit = 100)
+  )
+  if (!is.null(family)) {
+    args$family <- family
+  }
+  if (!is.null(weights)) {
+    args$weights <- weights
+  }
+
+  fit_once <- function(call_args) {
+    withCallingHandlers(
+      do.call(mgcv::gam, call_args),
+      warning = function(w) {
+        warn_msg <- conditionMessage(w)
+        if (grepl("Iteration limit reached without full convergence", warn_msg, fixed = TRUE) ||
+            grepl("Fitting terminated with step failure", warn_msg, fixed = TRUE)) {
+          invokeRestart("muffleWarning")
+        }
+      }
+    )
+  }
+
+  tryCatch(
+    fit_once(args),
+    error = function(e) {
+      retryable <- grepl("failed to converge", e$message, ignore.case = TRUE) ||
+        grepl("optimizer", e$message, ignore.case = TRUE)
+      if (!retryable) {
+        stop(e)
+      }
+
+      retry_args <- args
+      retry_args$method <- "REML"
+      fit_once(retry_args)
+    }
+  )
+}
+
+#' Register GAM-based mlr3 learners for vimpute
+#'
+#' Creates and registers four custom mlr3 learners:
+#' regr.gam_imp, classif.gam_imp, regr.robgam_imp, classif.robgam_imp.
+#' Called automatically by vimpute() when method includes "gam" or "robgam".
+#'
+#' @keywords internal
+register_gam_learners <- function() {
+
+  if (!requireNamespace("mgcv", quietly = TRUE)) {
+    stop("Package 'mgcv' is required for method = 'gam' or 'robgam'. Please install it.",
+         call. = FALSE)
+  }
+
+  # ---- Regression GAM Learner ----
+  LearnerRegrGAM <- R6::R6Class(
+    classname = "LearnerRegrGAM",
+    inherit = LearnerRegr,
+    public = list(
+      initialize = function() {
+        param_set <- ps(
+          min_unique = p_int(lower = 2L, upper = Inf, default = 4L)
+        )
+        super$initialize(
+          id = "regr.gam_imp",
+          feature_types = c("numeric", "integer", "factor", "ordered"),
+          predict_types = c("response"),
+          packages = c("mgcv"),
+          param_set = param_set
+        )
+        self$param_set$values <- list(min_unique = 4L)
+      }
+    ),
+    private = list(
+      .train = function(task) {
+        pv <- self$param_set$get_values()
+        data <- as.data.frame(task$data())
+        target <- task$target_names
+        features <- task$feature_names
+
+        for (col in names(data)) {
+          if (is.factor(data[[col]])) data[[col]] <- droplevels(data[[col]])
+        }
+
+        form <- build_gam_formula(target, features, data, min_unique = pv$min_unique)
+
+        model <- tryCatch(
+          fit_gam_model(form, data = data),
+          error = function(e) {
+            warning(sprintf("gam() failed for '%s': %s\nFalling back to lm()", target, e$message))
+            lm(reformulate(features, response = target), data = data)
+          }
+        )
+
+        factor_cols <- sapply(data[, features, drop = FALSE], is.factor)
+        self$state$factor_levels <- lapply(data[, names(which(factor_cols)), drop = FALSE], levels)
+
+        model
+      },
+
+      .predict = function(task) {
+        model <- self$model
+        newdata <- as.data.frame(task$data())
+
+        if (!is.null(self$state$factor_levels)) {
+          for (var in names(self$state$factor_levels)) {
+            if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
+              newdata[[var]] <- factor(newdata[[var]], levels = self$state$factor_levels[[var]])
+            }
+          }
+        }
+
+        response <- tryCatch(
+          as.numeric(predict(model, newdata = newdata, type = "response")),
+          error = function(e) {
+            warning("GAM prediction failed: ", e$message)
+            rep(NA_real_, nrow(newdata))
+          }
+        )
+
+        PredictionRegr$new(task = task, response = response)
+      }
+    )
+  )
+
+  mlr3::mlr_learners$add("regr.gam_imp", LearnerRegrGAM)
+
+  # ---- Classification GAM Learner (binary + multiclass via OvR) ----
+  LearnerClassifGAM <- R6::R6Class(
+    classname = "LearnerClassifGAM",
+    inherit = LearnerClassif,
+    public = list(
+      initialize = function() {
+        param_set <- ps(
+          min_unique = p_int(lower = 2L, upper = Inf, default = 4L)
+        )
+        super$initialize(
+          id = "classif.gam_imp",
+          feature_types = c("numeric", "integer", "factor", "ordered"),
+          predict_types = c("response", "prob"),
+          packages = c("mgcv"),
+          properties = c("twoclass", "multiclass"),
+          param_set = param_set
+        )
+        self$param_set$values <- list(min_unique = 4L)
+        self$state$models <- NULL
+        self$state$classes <- NULL
+      }
+    ),
+    private = list(
+      .train = function(task) {
+        pv <- self$param_set$get_values()
+        data <- as.data.frame(task$data())
+        y <- task$truth()
+        features <- task$feature_names
+        classes <- task$class_names
+        self$state$classes <- classes
+
+        for (col in names(data)) {
+          if (is.factor(data[[col]])) data[[col]] <- droplevels(data[[col]])
+        }
+
+        factor_cols <- sapply(data[, features, drop = FALSE], is.factor)
+        self$state$factor_levels <- lapply(data[, names(which(factor_cols)), drop = FALSE], levels)
+
+        if (length(classes) == 2L) {
+          df <- data.frame(y_bin = as.integer(y == classes[1]), data[, features, drop = FALSE])
+          form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
+          mod <- tryCatch(
+            fit_gam_model(form, data = df, family = binomial()),
+            error = function(e) {
+              warning(sprintf("gam(binomial) failed: %s\nFalling back to glm()", e$message))
+              glm(reformulate(features, response = "y_bin"), data = df, family = binomial())
+            }
+          )
+          return(list(models = list(mod), classes = classes, binary = TRUE))
+        }
+
+        # Multiclass: One-vs-Rest
+        mods <- vector("list", length(classes))
+        names(mods) <- classes
+        for (k in classes) {
+          df <- data.frame(y_bin = as.integer(y == k), data[, features, drop = FALSE])
+          form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
+          mods[[k]] <- tryCatch(
+            fit_gam_model(form, data = df, family = binomial()),
+            error = function(e) {
+              warning(sprintf("gam(binomial) OvR class '%s' failed: %s\nFalling back to glm()", k, e$message))
+              glm(reformulate(features, response = "y_bin"), data = df, family = binomial())
+            }
+          )
+        }
+        list(models = mods, classes = classes, binary = FALSE)
+      },
+
+      .predict = function(task) {
+        model_info <- self$model
+        newdata <- as.data.frame(task$data(cols = task$feature_names))
+        classes <- model_info$classes
+
+        if (!is.null(self$state$factor_levels)) {
+          for (var in names(self$state$factor_levels)) {
+            if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
+              newdata[[var]] <- factor(newdata[[var]], levels = self$state$factor_levels[[var]])
+            }
+          }
+        }
+
+        if (model_info$binary) {
+          mod <- model_info$models[[1]]
+          p1 <- tryCatch(
+            as.numeric(predict(mod, newdata = newdata, type = "response")),
+            error = function(e) rep(0.5, nrow(newdata))
+          )
+          p1 <- pmin(pmax(p1, 1e-6), 1 - 1e-6)
+          probs <- cbind(p1, 1 - p1)
+          colnames(probs) <- classes
+        } else {
+          Pk <- matrix(NA_real_, nrow(newdata), length(classes))
+          colnames(Pk) <- classes
+          for (k in classes) {
+            Pk[, k] <- tryCatch(
+              as.numeric(predict(model_info$models[[k]], newdata = newdata, type = "response")),
+              error = function(e) rep(0.5, nrow(newdata))
+            )
+            Pk[, k] <- pmin(pmax(Pk[, k], 1e-6), 1 - 1e-6)
+          }
+          Q <- Pk / (1 - Pk)
+          probs <- Q / rowSums(Q)
+        }
+
+        if (self$predict_type == "prob") {
+          PredictionClassif$new(task = task, prob = probs)
+        } else {
+          resp <- classes[max.col(probs, ties.method = "first")]
+          PredictionClassif$new(task = task, response = resp)
+        }
+      }
+    )
+  )
+
+  mlr3::mlr_learners$add("classif.gam_imp", LearnerClassifGAM)
+
+  # ---- Regression Robust GAM Learner ----
+  LearnerRegrRobGAM <- R6::R6Class(
+    classname = "LearnerRegrRobGAM",
+    inherit = LearnerRegr,
+    public = list(
+      initialize = function() {
+        param_set <- ps(
+          min_unique = p_int(lower = 2L, upper = Inf, default = 4L),
+          robust_method = p_fct(c("simple", "irw"), default = "simple"),
+          alpha = p_dbl(lower = 0.5, upper = 0.95, default = 0.75),
+          max_iter = p_int(lower = 1L, upper = 100L, default = 20L),
+          tol = p_dbl(lower = 1e-8, upper = 1e-1, default = 1e-4),
+          psi_k = p_dbl(lower = 1, upper = 10, default = 4.685)
+        )
+        super$initialize(
+          id = "regr.robgam_imp",
+          feature_types = c("numeric", "integer", "factor", "ordered"),
+          predict_types = c("response"),
+          packages = c("mgcv"),
+          param_set = param_set
+        )
+        self$param_set$values <- list(
+          min_unique = 4L, robust_method = "simple", alpha = 0.75,
+          max_iter = 20L, tol = 1e-4, psi_k = 4.685
+        )
+      }
+    ),
+    private = list(
+      .train = function(task) {
+        pv <- self$param_set$get_values()
+        data <- as.data.frame(task$data())
+        target <- task$target_names
+        features <- task$feature_names
+        n <- nrow(data)
+
+        for (col in names(data)) {
+          if (is.factor(data[[col]])) data[[col]] <- droplevels(data[[col]])
+        }
+
+        factor_cols <- sapply(data[, features, drop = FALSE], is.factor)
+        self$state$factor_levels <- lapply(data[, names(which(factor_cols)), drop = FALSE], levels)
+
+        form <- build_gam_formula(target, features, data, min_unique = pv$min_unique)
+
+        if (pv$robust_method == "simple") {
+          mod_init <- tryCatch(
+            fit_gam_model(form, data = data),
+            error = function(e) {
+              warning(sprintf("Initial gam() failed for '%s': %s", target, e$message))
+              return(NULL)
+            }
+          )
+          if (is.null(mod_init)) {
+            mod <- lm(reformulate(features, response = target), data = data)
+            return(list(mod = mod, subset_good = seq_len(n), subset_bad = integer(0),
+                        scale = sd(residuals(mod))))
+          }
+
+          resids <- residuals(mod_init)
+          cutoff <- quantile(abs(resids), probs = pv$alpha)
+          good_idx <- which(abs(resids) <= cutoff)
+          bad_idx <- which(abs(resids) > cutoff)
+
+          mod <- tryCatch(
+            fit_gam_model(form, data = data[good_idx, , drop = FALSE]),
+            error = function(e) {
+              warning(sprintf("robGAM refit on good subset failed: %s. Using initial model.", e$message))
+              mod_init
+            }
+          )
+
+          scale_est <- tryCatch(sqrt(summary(mod)$scale), error = function(e) sd(residuals(mod)))
+          list(mod = mod, subset_good = good_idx, subset_bad = bad_idx, scale = scale_est)
+
+        } else {
+          # IRW: Iterative Reweighting
+          mod <- tryCatch(
+            fit_gam_model(form, data = data),
+            error = function(e) {
+              warning(sprintf("Initial gam() for irw failed: %s", e$message))
+              return(NULL)
+            }
+          )
+          if (is.null(mod)) {
+            mod <- lm(reformulate(features, response = target), data = data)
+            return(list(mod = mod, subset_good = seq_len(n), subset_bad = integer(0),
+                        scale = sd(residuals(mod))))
+          }
+
+          weights <- rep(1, n)
+          for (iter in seq_len(pv$max_iter)) {
+            resids <- residuals(mod)
+            s <- mad(resids, constant = 1.4826)
+            if (s < .Machine$double.eps) break
+            u <- resids / (s * pv$psi_k)
+            new_weights <- ifelse(abs(u) > 1, 0, (1 - u^2)^2)
+
+            if (max(abs(new_weights - weights)) < pv$tol) break
+            weights <- new_weights
+
+            mod <- tryCatch(
+              fit_gam_model(form, data = data, weights = weights),
+              error = function(e) {
+                warning(sprintf("robGAM irw iteration %d failed: %s", iter, e$message))
+                mod
+              }
+            )
+          }
+
+          good_idx <- which(weights > 0.5)
+          bad_idx <- which(weights <= 0.5)
+          scale_est <- tryCatch(sqrt(summary(mod)$scale), error = function(e) sd(residuals(mod)))
+          list(mod = mod, subset_good = good_idx, subset_bad = bad_idx,
+               scale = scale_est, weights = weights)
+        }
+      },
+
+      .predict = function(task) {
+        model_info <- self$model
+        newdata <- as.data.frame(task$data())
+
+        if (!is.null(self$state$factor_levels)) {
+          for (var in names(self$state$factor_levels)) {
+            if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
+              newdata[[var]] <- factor(newdata[[var]], levels = self$state$factor_levels[[var]])
+            }
+          }
+        }
+
+        response <- tryCatch(
+          as.numeric(predict(model_info$mod, newdata = newdata, type = "response")),
+          error = function(e) {
+            warning("robGAM prediction failed: ", e$message)
+            rep(NA_real_, nrow(newdata))
+          }
+        )
+
+        PredictionRegr$new(task = task, response = response)
+      }
+    )
+  )
+
+  mlr3::mlr_learners$add("regr.robgam_imp", LearnerRegrRobGAM)
+
+  # ---- Classification Robust GAM Learner (binary + multiclass via OvR) ----
+  LearnerClassifRobGAM <- R6::R6Class(
+    classname = "LearnerClassifRobGAM",
+    inherit = LearnerClassif,
+    public = list(
+      initialize = function() {
+        param_set <- ps(
+          min_unique = p_int(lower = 2L, upper = Inf, default = 4L),
+          robust_method = p_fct(c("simple", "irw"), default = "simple"),
+          alpha = p_dbl(lower = 0.5, upper = 0.95, default = 0.75),
+          max_iter = p_int(lower = 1L, upper = 100L, default = 20L),
+          tol = p_dbl(lower = 1e-8, upper = 1e-1, default = 1e-4),
+          psi_k = p_dbl(lower = 1, upper = 10, default = 4.685)
+        )
+        super$initialize(
+          id = "classif.robgam_imp",
+          feature_types = c("numeric", "integer", "factor", "ordered"),
+          predict_types = c("response", "prob"),
+          packages = c("mgcv"),
+          properties = c("twoclass", "multiclass"),
+          param_set = param_set
+        )
+        self$param_set$values <- list(
+          min_unique = 4L, robust_method = "simple", alpha = 0.75,
+          max_iter = 20L, tol = 1e-4, psi_k = 4.685
+        )
+        self$state$models <- NULL
+        self$state$classes <- NULL
+      }
+    ),
+    private = list(
+      .train = function(task) {
+        pv <- self$param_set$get_values()
+        data <- as.data.frame(task$data())
+        y <- task$truth()
+        features <- task$feature_names
+        classes <- task$class_names
+        self$state$classes <- classes
+
+        for (col in names(data)) {
+          if (is.factor(data[[col]])) data[[col]] <- droplevels(data[[col]])
+        }
+
+        factor_cols <- sapply(data[, features, drop = FALSE], is.factor)
+        self$state$factor_levels <- lapply(data[, names(which(factor_cols)), drop = FALSE], levels)
+
+        fit_one_robgam <- function(df, form) {
+          n <- nrow(df)
+          if (pv$robust_method == "simple") {
+            mod_init <- tryCatch(fit_gam_model(form, data = df, family = binomial()),
+              error = function(e) glm(form, data = df, family = binomial()))
+
+            dev_resids <- residuals(mod_init, type = "deviance")
+            cutoff <- quantile(abs(dev_resids), probs = pv$alpha)
+            good_idx <- which(abs(dev_resids) <= cutoff)
+
+            mod <- tryCatch(fit_gam_model(form, data = df[good_idx, , drop = FALSE], family = binomial()),
+              error = function(e) mod_init)
+            return(mod)
+
+          } else {
+            weights <- rep(1, n)
+            mod <- tryCatch(fit_gam_model(form, data = df, family = binomial()),
+              error = function(e) glm(form, data = df, family = binomial()))
+
+            for (iter in seq_len(pv$max_iter)) {
+              dev_resids <- residuals(mod, type = "deviance")
+              s <- mad(dev_resids, constant = 1.4826)
+              if (s < .Machine$double.eps) break
+              u <- dev_resids / (s * pv$psi_k)
+              new_weights <- ifelse(abs(u) > 1, 0, (1 - u^2)^2)
+              if (max(abs(new_weights - weights)) < pv$tol) break
+              weights <- new_weights
+              mod <- tryCatch(fit_gam_model(form, data = df, weights = weights, family = binomial()),
+                error = function(e) mod)
+            }
+            return(mod)
+          }
+        }
+
+        if (length(classes) == 2L) {
+          df <- data.frame(y_bin = as.integer(y == classes[1]), data[, features, drop = FALSE])
+          form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
+          mod <- fit_one_robgam(df, form)
+          return(list(models = list(mod), classes = classes, binary = TRUE))
+        }
+
+        # Multiclass OvR
+        mods <- vector("list", length(classes))
+        names(mods) <- classes
+        for (k in classes) {
+          df <- data.frame(y_bin = as.integer(y == k), data[, features, drop = FALSE])
+          form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
+          mods[[k]] <- fit_one_robgam(df, form)
+        }
+        list(models = mods, classes = classes, binary = FALSE)
+      },
+
+      .predict = function(task) {
+        model_info <- self$model
+        newdata <- as.data.frame(task$data(cols = task$feature_names))
+        classes <- model_info$classes
+
+        if (!is.null(self$state$factor_levels)) {
+          for (var in names(self$state$factor_levels)) {
+            if (var %in% colnames(newdata) && is.factor(newdata[[var]])) {
+              newdata[[var]] <- factor(newdata[[var]], levels = self$state$factor_levels[[var]])
+            }
+          }
+        }
+
+        if (model_info$binary) {
+          p1 <- tryCatch(as.numeric(predict(model_info$models[[1]], newdata = newdata, type = "response")),
+            error = function(e) rep(0.5, nrow(newdata)))
+          p1 <- pmin(pmax(p1, 1e-6), 1 - 1e-6)
+          probs <- cbind(p1, 1 - p1)
+          colnames(probs) <- classes
+        } else {
+          Pk <- matrix(NA_real_, nrow(newdata), length(classes))
+          colnames(Pk) <- classes
+          for (k in classes) {
+            Pk[, k] <- tryCatch(as.numeric(predict(model_info$models[[k]], newdata = newdata, type = "response")),
+              error = function(e) rep(0.5, nrow(newdata)))
+            Pk[, k] <- pmin(pmax(Pk[, k], 1e-6), 1 - 1e-6)
+          }
+          Q <- Pk / (1 - Pk)
+          probs <- Q / rowSums(Q)
+        }
+
+        if (self$predict_type == "prob") {
+          PredictionClassif$new(task = task, prob = probs)
+        } else {
+          resp <- classes[max.col(probs, ties.method = "first")]
+          PredictionClassif$new(task = task, response = resp)
+        }
+      }
+    )
+  )
+
+  mlr3::mlr_learners$add("classif.robgam_imp", LearnerClassifRobGAM)
 }
