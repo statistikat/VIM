@@ -248,3 +248,101 @@ if (inherits(res_allna, "list")) {
   expect_false(any(is.na(res_allna$data_imputed)))
   expect_equal(dim(res_allna$data_imputed), c(n, 3))
 }
+
+
+# ==================================================================
+# imputeCellEM tests
+# ==================================================================
+
+# ------------------------------------------------------------------
+# 12. imputeCellEM returns correct structure
+# ------------------------------------------------------------------
+set.seed(901)
+n <- 60
+df_em <- data.frame(
+  x1 = rnorm(n),
+  x2 = rnorm(n),
+  x3 = rnorm(n)
+)
+for (j in 1:3) {
+  miss_idx <- sample(n, round(0.15 * n))
+  df_em[[j]][miss_idx] <- NA
+}
+
+res_em <- imputeCellEM(df_em, maxit_em = 20, trace = FALSE)
+
+expect_inherits(res_em, "list")
+expect_true(all(c("data_imputed", "cellweights", "mu", "Sigma",
+                   "epsilon", "converged", "iterations", "loglik")
+                %in% names(res_em)))
+expect_inherits(res_em$data_imputed, "data.frame")
+expect_equal(dim(res_em$data_imputed), c(n, 3))
+expect_equal(dim(res_em$cellweights), c(n, 3))
+expect_equal(length(res_em$mu), 3)
+expect_equal(dim(res_em$Sigma), c(3, 3))
+expect_equal(length(res_em$epsilon), 3)
+expect_inherits(res_em$converged, "logical")
+expect_true(res_em$iterations > 0)
+expect_true(length(res_em$loglik) > 0)
+
+
+# ------------------------------------------------------------------
+# 13. imputeCellEM: no NAs remain after imputation
+# ------------------------------------------------------------------
+expect_false(any(is.na(res_em$data_imputed)))
+
+
+# ------------------------------------------------------------------
+# 14. imputeCellEM handles mixed data (continuous + factor)
+# ------------------------------------------------------------------
+set.seed(902)
+n <- 80
+df_em_mixed <- data.frame(
+  x1 = rnorm(n),
+  x2 = rnorm(n),
+  x3 = factor(sample(c("A", "B", "C"), n, replace = TRUE))
+)
+df_em_mixed$x1[sample(n, 10)] <- NA
+df_em_mixed$x2[sample(n, 10)] <- NA
+df_em_mixed$x3[sample(n, 10)] <- NA
+
+res_em_mixed <- imputeCellEM(df_em_mixed, maxit_em = 20, trace = FALSE)
+
+expect_inherits(res_em_mixed$data_imputed, "data.frame")
+expect_false(any(is.na(res_em_mixed$data_imputed)))
+expect_true(is.factor(res_em_mixed$data_imputed$x3))
+# Cell weights for factor column should be 1
+expect_true(all(res_em_mixed$cellweights[, 3] == 1))
+
+
+# ------------------------------------------------------------------
+# 15. imputeCellEM converges (converged == TRUE)
+# ------------------------------------------------------------------
+set.seed(903)
+n <- 80
+df_em_conv <- data.frame(
+  x1 = rnorm(n),
+  x2 = rnorm(n),
+  x3 = rnorm(n)
+)
+df_em_conv$x1[sample(n, 8)] <- NA
+df_em_conv$x2[sample(n, 8)] <- NA
+
+res_em_conv <- imputeCellEM(df_em_conv, maxit_em = 100, eps_em = 5e-3,
+                             trace = FALSE)
+
+expect_true(res_em_conv$converged)
+
+
+# ------------------------------------------------------------------
+# 16. imputeCellEM: log-likelihood trace is non-decreasing (approx)
+# ------------------------------------------------------------------
+# The EM algorithm should produce a (approximately) non-decreasing
+# log-likelihood trace. Allow a small tolerance for numerical noise.
+ll <- res_em_conv$loglik
+if (length(ll) > 1) {
+  diffs <- diff(ll)
+  # Allow tiny decreases due to numerical precision
+  expect_true(all(diffs > -0.1),
+              info = "Log-likelihood should be approximately non-decreasing")
+}

@@ -191,8 +191,8 @@ cellWeightsFromResiduals <- function(residuals, sigma,
 #'   weights are set to 1.
 #' @param w_response numeric n-vector of cell weights for the
 #'   response variable. If \code{NULL}, all response weights are 1.
-#' @param maxiter maximum number of IRWLS iterations, Default: 50
-#' @param tol convergence tolerance on the relative change in
+#' @param maxit maximum number of IRWLS iterations, Default: 50
+#' @param eps convergence tolerance on the relative change in
 #'   coefficients, Default: 1e-6
 #' @param method weight function: \code{"huber"} or \code{"tukey"},
 #'   Default: \code{"huber"}
@@ -215,7 +215,7 @@ cellWeightsFromResiduals <- function(residuals, sigma,
 #' @author Matthias Templ
 #' @keywords internal
 cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
-                      maxiter = 50, tol = 1e-6,
+                      maxit = 50, eps = 1e-6,
                       method = "huber", alpha = NULL) {
   method <- match.arg(method, c("huber", "tukey"))
 
@@ -266,7 +266,7 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
   converged <- FALSE
   iter <- 0
 
-  for (it in seq_len(maxiter)) {
+  for (it in seq_len(maxit)) {
     iter <- it
     beta_old <- beta
 
@@ -289,7 +289,7 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
 
     # check convergence
     denom <- max(abs(beta_old), 1)
-    if (max(abs(beta - beta_old)) / denom < tol) {
+    if (max(abs(beta - beta_old)) / denom < eps) {
       converged <- TRUE
       break
     }
@@ -344,17 +344,13 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
   n <- nrow(X_int)
   p_int <- ncol(X_int)
 
-  # combined weight for each cell (i, k)
-  # w_total[i, k] = w_cell[i, k] * w_psi[i] * w_response[i]
+  # Cell weights enter linearly; psi and response weights under sqrt.
+  # X_tilde[i, k] = sqrt(w_psi[i] * w_response[i]) * w_cell[i, k] * X[i, k]
+  # y_tilde[i]    = sqrt(w_psi[i] * w_response[i]) * y[i]
   w_row <- w_psi * w_response  # n-vector
-  w_total <- w_cell_int * w_row  # n x (p+1) matrix
-
-  # weighted design: X_tilde[i, k] = sqrt(w_total[i, k]) * X[i, k]
-  sqrt_w_total <- sqrt(pmax(w_total, 0))
-  X_tilde <- sqrt_w_total * X_int
-
-  # weighted response: y_tilde[i] = sqrt(w_row[i]) * y[i]
   sqrt_w_row <- sqrt(pmax(w_row, 0))
+
+  X_tilde <- sweep(w_cell_int * X_int, 1, sqrt_w_row, "*")
   y_tilde <- sqrt_w_row * y
 
   # solve via QR decomposition

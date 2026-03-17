@@ -106,7 +106,7 @@
 #'   \code{\link{initialise}}, \code{\link{irmi}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data(sleep, package = "VIM")
 #' result <- imputeCellEM(sleep)
 #' head(result$data_imputed)
@@ -130,7 +130,7 @@
 #' }
 #'
 #' @export
-#' @importFrom VIM initialise
+#' @importFrom MASS ginv
 #' @importFrom stats dnorm rnorm cov median mad model.matrix predict
 imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
                          gamma_init = 3, eps_init = 0.1,
@@ -165,7 +165,7 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
                 converged = TRUE, iterations = 0L, loglik = numeric(0)))
   }
 
-  if (any(apply(data, 1, function(x) all(is.na(x)))))
+  if (any(rowSums(!is.na(data)) == 0))
     stop("Unit non-responses (entire row missing) detected. Remove them first.")
 
   ## ---- detect variable types ----

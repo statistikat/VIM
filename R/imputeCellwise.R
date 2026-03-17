@@ -15,9 +15,11 @@
 #' are updated from the residuals.
 #'
 #' @param data data.frame with missing values (mixed continuous + categorical).
-#' @param method weight function: \code{"huber"} (default) or \code{"tukey"}.
-#' @param alpha tuning constant. \code{NULL} (default) uses 1.345 for Huber
-#'   and 4.685 for Tukey, which give 95\% efficiency at the normal model.
+#' @param method weight function: \code{"tukey"} (default) or \code{"huber"}.
+#'   Tukey bisquare is recommended because the consistency proof requires
+#'   redescending weights.
+#' @param alpha tuning constant. \code{NULL} (default) uses 4.685 for Tukey
+#'   and 1.345 for Huber, which give 95\% efficiency at the normal model.
 #' @param maxit maximum outer IRMI iterations (default: 10).
 #' @param maxit_irwls maximum inner IRWLS iterations per regression
 #'   (default: 50).
@@ -70,7 +72,7 @@
 #'   \code{\link{irmi}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data(sleep, package = "VIM")
 #' result <- imputeCellIRMI(sleep)
 #' head(result$data_imputed)
@@ -85,9 +87,8 @@
 #' }
 #'
 #' @export
-#' @importFrom VIM initialise
 #' @importFrom stats model.matrix median mad rnorm predict sd as.formula
-imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
+imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
                             maxit = 10, maxit_irwls = 50,
                             eps = 1e-2, eps_irwls = 1e-6,
                             uncert = "pmm", trace = FALSE) {
@@ -116,7 +117,7 @@ imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
     return(list(data_imputed = data, cellweights = W,
                 converged = TRUE, iterations = 0L))
   }
-  if (any(apply(data, 1, function(x) all(is.na(x)))))
+  if (any(rowSums(!is.na(data)) == 0))
     stop("Unit non-responses (entire row missing) detected. Remove them first.")
 
   ## ---- detect variable types ----
@@ -316,24 +317,30 @@ imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
       }
     }  # end inner loop
 
-    ## ---- check convergence ----
+    ## ---- check convergence (sum only over missing cells) ----
     d <- 0
+    n_miss_total <- 0
     if (any(is_continuous)) {
       cont_cols <- which(is_continuous)
+      M_cont <- M[, cont_cols, drop = FALSE]
       d <- d + sum(
-        (as.matrix(data_previous[, cont_cols]) -
-           as.matrix(data[, cont_cols]))^2,
+        ((as.matrix(data_previous[, cont_cols]) -
+            as.matrix(data[, cont_cols]))^2)[M_cont],
         na.rm = TRUE
       )
+      n_miss_total <- n_miss_total + sum(M_cont)
     }
     if (any(is_categorical)) {
       cat_cols <- which(is_categorical)
+      M_cat <- M[, cat_cols, drop = FALSE]
       d <- d + sum(
-        as.matrix(data_previous[, cat_cols]) !=
-          as.matrix(data[, cat_cols]),
+        (as.matrix(data_previous[, cat_cols]) !=
+           as.matrix(data[, cat_cols]))[M_cat],
         na.rm = TRUE
       )
+      n_miss_total <- n_miss_total + sum(M_cat)
     }
+    if (n_miss_total > 0) d <- d / n_miss_total
 
     if (trace) {
       message(paste("  convergence criterion:", round(d, 6)))
@@ -369,9 +376,11 @@ imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
 #'
 #' @param formula model formula (e.g., \code{y ~ x1 + x2}).
 #' @param data data.frame containing the data.
-#' @param method weight function: \code{"huber"} (default) or \code{"tukey"}.
-#' @param alpha tuning constant. \code{NULL} (default) uses 1.345 for Huber
-#'   and 4.685 for Tukey.
+#' @param method weight function: \code{"tukey"} (default) or \code{"huber"}.
+#'   Tukey bisquare is recommended because the consistency proof requires
+#'   redescending weights.
+#' @param alpha tuning constant. \code{NULL} (default) uses 4.685 for Tukey
+#'   and 1.345 for Huber.
 #' @param maxit_irwls maximum IRWLS iterations (default: 50).
 #' @param eps_irwls convergence tolerance for IRWLS (default: 1e-6).
 #' @param uncert imputation uncertainty method: \code{"pmm"} (default),
@@ -406,7 +415,7 @@ imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
 #' @seealso \code{\link{imputeCellIRMI}}, \code{\link{imputeRobust}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data(sleep, package = "VIM")
 #' # Impute Dream using BodyWgt and BrainWgt as predictors
 #' result <- imputeCellM(Dream ~ BodyWgt + BrainWgt, data = sleep)
@@ -416,14 +425,14 @@ imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
 #' impvals <- imputeCellM(Dream ~ BodyWgt + BrainWgt, data = sleep,
 #'                        value_back = "ymiss")
 #'
-#' # Tukey bisquare weights
+#' # Huber weights (less aggressive downweighting)
 #' result2 <- imputeCellM(Dream ~ BodyWgt + BrainWgt, data = sleep,
-#'                        method = "tukey")
+#'                        method = "huber")
 #' }
 #'
 #' @export
 #' @importFrom stats model.frame model.extract model.matrix as.formula
-imputeCellM <- function(formula, data, method = "huber", alpha = NULL,
+imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
                         maxit_irwls = 50, eps_irwls = 1e-6,
                         uncert = "pmm", value_back = "all") {
 
@@ -767,7 +776,8 @@ imputeCellM <- function(formula, data, method = "huber", alpha = NULL,
   for (i in seq_len(n_miss)) {
     dists <- abs(pred_miss[i] - pred_obs)
     donor_idx <- order(dists)[seq_len(n_donors)]
-    ymiss[i] <- sample(y_obs[donor_idx], size = 1)
+    donors <- y_obs[donor_idx]
+    ymiss[i] <- donors[sample.int(length(donors), 1)]
   }
 
   ymiss
