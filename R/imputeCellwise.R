@@ -54,12 +54,19 @@
 #'           \item If \eqn{j} is categorical: fit \code{nnet::multinom()}
 #'             with row weights derived from the cell weight matrix and
 #'             impute by sampling from predicted probabilities.
-#'           \item Update cell weights for \eqn{j} from residuals via
-#'             \code{cellWeightsFromResiduals()}.
+#'           \item Update cell weights for \eqn{j} via univariate
+#'             standardization (median/MAD) of column \eqn{j} using
+#'             \code{cellWeights()}.
 #'         }
 #'       \item Check convergence: relative change in imputed values < \code{eps}.
 #'     }
 #' }
+#'
+#' @note Model uncertainty via bootstrap (Rubin's combining rules for
+#'   multiple imputation) is not yet implemented. The current version
+#'   provides single imputation with stochastic uncertainty (PMM or
+#'   residual draw). For valid multiple imputation, call the function
+#'   repeatedly with different seeds and combine using Rubin's rules.
 #'
 #' @author Matthias Templ
 #' @references
@@ -108,6 +115,9 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
     alpha <- if (method == "huber") 1.345 else 4.685
   }
   if (ncol(data) < 2) stop("Need at least 2 variables.")
+  if (sum(vapply(data, is.numeric, logical(1))) > nrow(data)) {
+    warning("more continuous variables than observations; results may be unstable. Consider regularization.")
+  }
   if (!any(is.na(data))) {
     message("No missing values in data. Nothing to impute.")
     n <- nrow(data)
@@ -227,7 +237,8 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
         # fit cell-weighted IRWLS
         fit <- cellIRWLS(X, y, w_cell = w_cell, w_response = w_response,
                          method = method, alpha = alpha,
-                         maxit = maxit_irwls, eps = eps_irwls)
+                         maxit = maxit_irwls, eps = eps_irwls,
+                         init = "lts")
 
         # compute predictions for all rows
         pred_all <- as.numeric(cbind(1, X) %*% fit$coefficients)
@@ -242,23 +253,23 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
           uncert = uncert
         )
 
-        # update cell weights for column j from residuals
-        resid_j <- y - pred_all
-        w_new <- cellWeightsFromResiduals(
-          resid_j, sigma = sigma_hat,
+        # update cell weights for column j via univariate standardization
+        # against median/MAD of column j (Eq. 7), not from regression residuals
+        w_new_col <- cellWeights(
+          data[, j, drop = FALSE],
           method = method, alpha = alpha
         )
         # only update weights for observed rows; imputed rows are trusted
-        W[!miss_j, j] <- w_new[!miss_j]
+        W[!miss_j, j] <- w_new_col[!miss_j, 1]
         W[miss_j, j] <- 1
 
       } else {
         ## ---- categorical response: weighted multinomial ----
         y <- data[[j]]
 
-        # row weights = geometric mean of cell weights across predictors
+        # row weights = product of predictor cell weights (Eq. 11)
         w_row <- apply(W[, pred_cols, drop = FALSE], 1, function(ww) {
-          exp(mean(log(pmax(ww, 1e-10))))
+          prod(pmax(ww, 1e-10))
         })
 
         # build formula
@@ -388,10 +399,18 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
 #' @param value_back \code{"all"} (default) returns the complete dataset,
 #'   or \code{"ymiss"} returns only the imputed values.
 #'
-#' @return If \code{value_back = "all"}, the imputed data.frame is returned
-#'   (same structure as input). If \code{value_back = "ymiss"}, a named
-#'   vector of imputed values (for rows that were originally missing) is
-#'   returned.
+#' @return If \code{value_back = "ymiss"}, a named vector of imputed values
+#'   (for rows that were originally missing) is returned. Otherwise, a list
+#'   with components:
+#'   \describe{
+#'     \item{data_imputed}{the imputed data.frame (same structure as input)}
+#'     \item{cellweights}{n x p matrix of final cell weights (1 = clean,
+#'       0 = fully downweighted). Categorical columns always have weight 1.}
+#'     \item{converged}{logical, always \code{TRUE} for single-formula
+#'       imputation}
+#'     \item{iterations}{integer, always \code{1L} for single-formula
+#'       imputation}
+#'   }
 #'
 #' @details
 #' This is a lightweight single-formula alternative to
@@ -404,6 +423,12 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
 #' \code{\link[nnet]{multinom}} is fitted instead. Categorical predictors
 #' are not subject to the cellwise contamination model (their cell weights
 #' are always 1).
+#'
+#' @note Model uncertainty via bootstrap (Rubin's combining rules for
+#'   multiple imputation) is not yet implemented. The current version
+#'   provides single imputation with stochastic uncertainty (PMM or
+#'   residual draw). For valid multiple imputation, call the function
+#'   repeatedly with different seeds and combine using Rubin's rules.
 #'
 #' @author Matthias Templ
 #' @references
@@ -451,6 +476,9 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
   if (is.null(alpha)) {
     alpha <- if (method == "huber") 1.345 else 4.685
   }
+  if (sum(vapply(data, is.numeric, logical(1))) > nrow(data)) {
+    warning("more continuous variables than observations; results may be unstable. Consider regularization.")
+  }
 
   rn <- rownames(data)
 
@@ -470,7 +498,12 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
     message(paste("No missing values in", y_var,
                   "- nothing to impute."))
     if (value_back == "ymiss") return(numeric(0))
-    return(data)
+    n <- nrow(data)
+    p_d <- ncol(data)
+    W <- matrix(1, nrow = n, ncol = p_d,
+                dimnames = list(rn, colnames(data)))
+    return(list(data_imputed = data, cellweights = W,
+                converged = TRUE, iterations = 0L))
   }
 
   ## ---- initialise missing values in predictors ----
@@ -524,7 +557,8 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
     # fit cellIRWLS
     fit <- cellIRWLS(X, y, w_cell = w_cell, w_response = w_response,
                      method = method, alpha = alpha,
-                     maxit = maxit_irwls, eps = eps_irwls)
+                     maxit = maxit_irwls, eps = eps_irwls,
+                     init = "lts")
 
     # predictions
     pred_all <- as.numeric(cbind(1, X) %*% fit$coefficients)
@@ -550,8 +584,9 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
       w_cell_raw <- .compute_predictor_cellweights(
         data_work, cont_pred, method = method, alpha = alpha
       )
+      # row weights = product of predictor cell weights (Eq. 11)
       w_row <- apply(w_cell_raw, 1, function(ww) {
-        exp(mean(log(pmax(ww, 1e-10))))
+        prod(pmax(ww, 1e-10))
       })
     } else {
       w_row <- rep(1, n)
@@ -608,7 +643,26 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
   } else {
     data[missindex, y_var] <- ymiss
     rownames(data) <- rn
-    return(data)
+
+    # Compute cell weights for the full data
+    n <- nrow(data)
+    p <- ncol(data)
+    W <- matrix(1, nrow = n, ncol = p,
+                dimnames = list(rn, colnames(data)))
+    num_cols <- which(vapply(data, is.numeric, logical(1)))
+    if (length(num_cols) > 0) {
+      W[, num_cols] <- cellWeights(
+        as.matrix(data[, num_cols, drop = FALSE]),
+        method = method, alpha = alpha
+      )
+    }
+
+    return(list(
+      data_imputed = data,
+      cellweights  = W,
+      converged    = TRUE,
+      iterations   = 1L
+    ))
   }
 }
 
@@ -781,4 +835,47 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
   }
 
   ymiss
+}
+
+
+#' Unified cellwise-robust imputation dispatcher
+#'
+#' Convenience wrapper that dispatches to one of the three cellwise-robust
+#' imputation methods: \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},
+#' or \code{\link{imputeCellEM}}.
+#'
+#' @param data data.frame with missing values (mixed continuous + categorical).
+#' @param method imputation method: \code{"cellIRMI"} (default),
+#'   \code{"cellM"}, or \code{"cellEM"}.
+#' @param ... additional arguments passed to the chosen method.
+#'
+#' @return The return value of the dispatched function. See the documentation
+#'   of the individual methods for details.
+#'
+#' @note Model uncertainty via bootstrap (Rubin's combining rules for
+#'   multiple imputation) is not yet implemented. The current version
+#'   provides single imputation with stochastic uncertainty (PMM or
+#'   residual draw). For valid multiple imputation, call the function
+#'   repeatedly with different seeds and combine using Rubin's rules.
+#'
+#' @author Matthias Templ
+#' @family imputation methods
+#' @seealso \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},
+#'   \code{\link{imputeCellEM}}
+#'
+#' @examples
+#' \donttest{
+#' data(sleep, package = "VIM")
+#' result <- imputeCellwise(sleep, method = "cellIRMI")
+#' head(result$data_imputed)
+#' }
+#'
+#' @export
+imputeCellwise <- function(data, method = c("cellIRMI", "cellM", "cellEM"), ...) {
+  method <- match.arg(method)
+  switch(method,
+    cellIRMI = imputeCellIRMI(data, ...),
+    cellM = stop("cellM requires a formula; use imputeCellM() directly"),
+    cellEM = imputeCellEM(data, ...)
+  )
 }

@@ -169,9 +169,11 @@ df_m <- data.frame(
 
 res_m <- imputeCellM(y ~ x1 + x2, data = df_m, method = "huber")
 
-expect_inherits(res_m, "data.frame")
-expect_equal(nrow(res_m), n)
-expect_false(any(is.na(res_m$y)))
+expect_inherits(res_m, "list")
+expect_true(all(c("data_imputed", "cellweights", "converged", "iterations")
+                %in% names(res_m)))
+expect_equal(nrow(res_m$data_imputed), n)
+expect_false(any(is.na(res_m$data_imputed$y)))
 
 # value_back = "ymiss" should return only imputed values
 res_ymiss <- imputeCellM(y ~ x1 + x2, data = df_m, method = "huber",
@@ -197,7 +199,7 @@ res_cellM <- imputeCellM(y ~ x1 + x2, data = df_test, method = "huber",
                           uncert = "normalerror")
 
 # imputed values should be close to the true clean values
-imputed_vals <- res_cellM$y[miss_rows]
+imputed_vals <- res_cellM$data_imputed$y[miss_rows]
 true_vals <- y_clean[miss_rows]
 mse <- mean((imputed_vals - true_vals)^2)
 # With no noise in true relationship the MSE should be small
@@ -220,7 +222,9 @@ expect_true(all(res_complete$cellweights == 1))
 
 # imputeCellM with no missing response
 res_m_complete <- imputeCellM(x1 ~ x2 + x3, data = df_complete)
-expect_equal(res_m_complete, df_complete)
+expect_inherits(res_m_complete, "list")
+expect_equal(res_m_complete$data_imputed, df_complete)
+expect_equal(res_m_complete$iterations, 0L)
 
 
 # ------------------------------------------------------------------
@@ -273,7 +277,7 @@ res_em <- imputeCellEM(df_em, maxit_em = 20, trace = FALSE)
 
 expect_inherits(res_em, "list")
 expect_true(all(c("data_imputed", "cellweights", "mu", "Sigma",
-                   "epsilon", "converged", "iterations", "loglik")
+                   "epsilon", "converged", "iterations", "pseudo_loglik")
                 %in% names(res_em)))
 expect_inherits(res_em$data_imputed, "data.frame")
 expect_equal(dim(res_em$data_imputed), c(n, 3))
@@ -283,7 +287,7 @@ expect_equal(dim(res_em$Sigma), c(3, 3))
 expect_equal(length(res_em$epsilon), 3)
 expect_inherits(res_em$converged, "logical")
 expect_true(res_em$iterations > 0)
-expect_true(length(res_em$loglik) > 0)
+expect_true(length(res_em$pseudo_loglik) > 0)
 
 
 # ------------------------------------------------------------------
@@ -335,14 +339,14 @@ expect_true(res_em_conv$converged)
 
 
 # ------------------------------------------------------------------
-# 16. imputeCellEM: log-likelihood trace is non-decreasing (approx)
+# 16. imputeCellEM: pseudo log-likelihood trace is non-decreasing (approx)
 # ------------------------------------------------------------------
-# The EM algorithm should produce a (approximately) non-decreasing
-# log-likelihood trace. Allow a small tolerance for numerical noise.
-ll <- res_em_conv$loglik
+# The ECM algorithm should produce an (approximately) non-decreasing
+# pseudo log-likelihood trace. Allow a small tolerance for numerical noise.
+ll <- res_em_conv$pseudo_loglik
 if (length(ll) > 1) {
   diffs <- diff(ll)
   # Allow tiny decreases due to numerical precision
   expect_true(all(diffs > -0.1),
-              info = "Log-likelihood should be approximately non-decreasing")
+              info = "Pseudo log-likelihood should be approximately non-decreasing")
 }

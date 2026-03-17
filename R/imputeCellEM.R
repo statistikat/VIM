@@ -32,8 +32,11 @@
 #'     contamination rates (continuous variables only)}
 #'   \item{converged}{logical indicating convergence}
 #'   \item{iterations}{number of EM iterations performed}
-#'   \item{loglik}{numeric vector of observed-data log-likelihood values,
-#'     one per iteration (computed after each M-step)}
+#'   \item{pseudo_loglik}{numeric vector of composite (pseudo)
+#'     log-likelihood values, one per iteration (computed after each
+#'     M-step). This is a sum of per-variable conditional mixture
+#'     log-likelihoods, not the proper observed-data joint
+#'     log-likelihood.}
 #'
 #' @details
 #' The algorithm proceeds as follows:
@@ -80,6 +83,25 @@
 #' a single clean component rather than a mixture of clean clusters,
 #' and in supporting mixed continuous + categorical data.
 #'
+#' The \code{pseudo_loglik} component is a composite (pseudo)
+#' log-likelihood: the sum of per-variable conditional mixture
+#' log-likelihoods, not the proper observed-data joint log-likelihood.
+#' It is useful for monitoring convergence but should not be compared
+#' across models or used for model selection criteria such as AIC/BIC.
+#'
+#' This implementation is an ECM (Expectation Conditional Maximization)
+#' variant rather than a pure EM algorithm, because the conditional
+#' variance in the E-step is computed using the updated Sigma from the
+#' current M-step rather than the Sigma from the previous iteration.
+#' As a result, strict log-likelihood monotonicity is not guaranteed,
+#' but is observed empirically in practice.
+#'
+#' @note Model uncertainty via bootstrap (Rubin's combining rules for
+#'   multiple imputation) is not yet implemented. The current version
+#'   provides single imputation with stochastic uncertainty (PMM or
+#'   residual draw). For valid multiple imputation, call the function
+#'   repeatedly with different seeds and combine using Rubin's rules.
+#'
 #' @author Matthias Templ
 #' @references
 #' A.P. Dempster, N.M. Laird, D.B. Rubin (1977) Maximum Likelihood
@@ -118,8 +140,8 @@
 #' image(result$cellweights, main = "Cell weights")
 #'
 #' # Log-likelihood trace
-#' plot(result$loglik, type = "b", xlab = "Iteration",
-#'      ylab = "Observed log-likelihood")
+#' plot(result$pseudo_loglik, type = "b", xlab = "Iteration",
+#'      ylab = "Pseudo log-likelihood")
 #'
 #' # With predictive mean matching for imputation
 #' result2 <- imputeCellEM(sleep, uncert = "pmm", trace = TRUE)
@@ -152,6 +174,9 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
     stop("eps_init must be in (0, 0.5)")
   if (ncol(data) < 2)
     stop("Need at least 2 variables.")
+  if (sum(vapply(data, is.numeric, logical(1))) > nrow(data)) {
+    warning("more continuous variables than observations; results may be unstable. Consider regularization.")
+  }
 
   ## ---- handle no missing values ----
   if (!any(is.na(data))) {
@@ -162,7 +187,8 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
                 dimnames = list(rownames(data), colnames(data)))
     return(list(data_imputed = data, cellweights = W,
                 mu = NULL, Sigma = NULL, epsilon = NULL,
-                converged = TRUE, iterations = 0L, loglik = numeric(0)))
+                converged = TRUE, iterations = 0L,
+                pseudo_loglik = numeric(0)))
   }
 
   if (any(rowSums(!is.na(data)) == 0))
@@ -217,7 +243,8 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
                 dimnames = list(rn, cn))
     return(list(data_imputed = data, cellweights = W,
                 mu = NULL, Sigma = NULL, epsilon = NULL,
-                converged = TRUE, iterations = 0L, loglik = numeric(0)))
+                converged = TRUE, iterations = 0L,
+                pseudo_loglik = numeric(0)))
   }
 
   ## ---- edge case: no continuous variables ----
@@ -232,7 +259,8 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
     return(list(data_imputed = data, cellweights = W,
                 mu = numeric(0), Sigma = matrix(0, 0, 0),
                 epsilon = numeric(0),
-                converged = TRUE, iterations = 0L, loglik = numeric(0)))
+                converged = TRUE, iterations = 0L,
+                pseudo_loglik = numeric(0)))
   }
 
   ## ---- step 1: initialise missing values ----
@@ -268,7 +296,7 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
   ## ---- EM iteration ----
   converged <- FALSE
   iterations <- 0L
-  loglik_trace <- numeric(0)
+  pseudo_loglik_trace <- numeric(0)
   param_change_history <- numeric(0)
   mu_prev <- mu
   Sigma_prev <- Sigma
@@ -291,9 +319,10 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
     X_cont <- as.matrix(data[, cont_idx, drop = FALSE])
     W_prev <- W  # snapshot of weights
 
-    # Storage for conditional moments (used for final stochastic imputation)
-    mu_cond_store <- list()
-    s2_cond_store <- list()
+    # Pre-allocated matrices for conditional moments (used for final
+    # stochastic imputation and PMM donor matching)
+    mu_cond_mat <- matrix(NA_real_, nrow = n, ncol = p_cont)
+    s2_cond_mat <- matrix(NA_real_, nrow = n, ncol = p_cont)
 
     # Buffers: collect imputed values and updated weights, apply after loop
     impute_buffer <- list()  # list of (miss_indices, j_global, values)
@@ -380,6 +409,12 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
         )
       }
 
+      # --- E-step: store conditional moments for observed cells (used by PMM) ---
+      if (length(obs_j) > 0) {
+        mu_cond_mat[obs_j, jj] <- mu_cond[obs_j]
+        s2_cond_mat[obs_j, jj] <- sigma2_cond[obs_j]
+      }
+
       # --- E-step: compute conditional expectations for missing cells ---
       if (length(miss_j) > 0) {
         impute_buffer[[length(impute_buffer) + 1L]] <- list(
@@ -387,10 +422,8 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
         )
 
         # Store conditional moments for final stochastic imputation
-        for (idx in miss_j) {
-          mu_cond_store[[paste(idx, j_global, sep = ",")]] <- mu_cond[idx]
-          s2_cond_store[[paste(idx, j_global, sep = ",")]] <- sigma2_cond[idx]
-        }
+        mu_cond_mat[miss_j, jj] <- mu_cond[miss_j]
+        s2_cond_mat[miss_j, jj] <- sigma2_cond[miss_j]
       }
     }
 
@@ -606,7 +639,7 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
                          mu, Sigma, epsilon, mu_contam,
                          gamma_vec, sigma_marg)
 
-    loglik_trace <- c(loglik_trace, ll)
+    pseudo_loglik_trace <- c(pseudo_loglik_trace, ll)
 
     if (trace) {
       message(paste("  log-likelihood:", round(ll, 4)))
@@ -665,27 +698,21 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
     obs_j <- which(!M[, j_global])
 
     for (idx in miss_j) {
-      key <- paste(idx, j_global, sep = ",")
-      mu_c <- mu_cond_store[[key]]
-      s2_c <- s2_cond_store[[key]]
+      mu_c <- mu_cond_mat[idx, jj]
+      s2_c <- s2_cond_mat[idx, jj]
 
-      if (is.null(mu_c) || is.null(s2_c)) next
+      if (is.na(mu_c) || is.na(s2_c)) next
 
       if (uncert == "conditional") {
         data[idx, j_global] <- stats::rnorm(1, mean = mu_c,
                                              sd = sqrt(s2_c))
       } else {
-        # PMM
+        # PMM: use conditional means (mu_cond) as predicted values
+        # for both missing and observed rows, so the PMM distance is
+        # |mu_cond_miss - mu_cond_obs| as required by theory
         if (length(obs_j) > 0) {
           y_obs <- X_cont[obs_j, jj]
-          # Use conditional means as predicted values for donors
-          pred_obs <- numeric(length(obs_j))
-          for (ii in seq_along(obs_j)) {
-            key_obs <- paste(obs_j[ii], j_global, sep = ",")
-            # Observed cells: predicted value is the conditional mean
-            # (but these are not stored; recompute from current mu)
-            pred_obs[ii] <- data[obs_j[ii], j_global]
-          }
+          pred_obs <- mu_cond_mat[obs_j, jj]
           data[idx, j_global] <- .pmm_impute(mu_c, y_obs,
                                                pred_obs,
                                                n_donors = 5)
@@ -708,7 +735,7 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
     epsilon      = epsilon,
     converged    = converged,
     iterations   = iterations,
-    loglik       = loglik_trace
+    pseudo_loglik = pseudo_loglik_trace
   )
 }
 

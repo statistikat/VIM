@@ -166,7 +166,8 @@ cellWeightsFromResiduals <- function(residuals, sigma,
 #'
 #' @section Algorithm:
 #' \enumerate{
-#'   \item Initialize with OLS on the cell-weighted design matrix.
+#'   \item Initialize with LTS regression (if available) or OLS on
+#'     the cell-weighted design matrix.
 #'   \item Iterate until convergence:
 #'     \enumerate{
 #'       \item Compute residuals \eqn{r = y - X \beta}.
@@ -198,6 +199,10 @@ cellWeightsFromResiduals <- function(residuals, sigma,
 #'   Default: \code{"huber"}
 #' @param alpha tuning constant. If \code{NULL}, the default for
 #'   the chosen method is used.
+#' @param init initialization method: \code{"lts"} (default) uses
+#'   \code{robustbase::ltsReg()} for a robust initial fit (LTS estimator),
+#'   falling back to OLS if \pkg{robustbase} is not available.
+#'   \code{"ols"} uses ordinary least squares initialization.
 #' @return A list with components:
 #'   \describe{
 #'     \item{coefficients}{named numeric vector of regression coefficients
@@ -216,8 +221,10 @@ cellWeightsFromResiduals <- function(residuals, sigma,
 #' @keywords internal
 cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
                       maxit = 50, eps = 1e-6,
-                      method = "huber", alpha = NULL) {
+                      method = "huber", alpha = NULL,
+                      init = c("lts", "ols")) {
   method <- match.arg(method, c("huber", "tukey"))
+  init <- match.arg(init)
 
   # --- input coercion and dimensions ---
   X <- as.matrix(X)
@@ -260,9 +267,26 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
     }
   }
 
-  # --- Step 1: initial fit via cell-weighted OLS ---
-  beta <- .weighted_qr_solve(X_int, y, w_cell_int, w_response,
-                             w_psi = rep(1, n))
+  # --- Step 1: initial fit (LTS if available, else cell-weighted OLS) ---
+  if (init == "lts" && requireNamespace("robustbase", quietly = TRUE)) {
+    lts_fit <- tryCatch({
+      robustbase::ltsReg(X, y)
+    }, error = function(e) NULL)
+    if (!is.null(lts_fit)) {
+      beta <- as.numeric(coef(lts_fit))
+      if (length(beta) != p_int) {
+        # fallback if dimensions don't match
+        beta <- .weighted_qr_solve(X_int, y, w_cell_int, w_response,
+                                   w_psi = rep(1, n))
+      }
+    } else {
+      beta <- .weighted_qr_solve(X_int, y, w_cell_int, w_response,
+                                 w_psi = rep(1, n))
+    }
+  } else {
+    beta <- .weighted_qr_solve(X_int, y, w_cell_int, w_response,
+                               w_psi = rep(1, n))
+  }
   converged <- FALSE
   iter <- 0
 
