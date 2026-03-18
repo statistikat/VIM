@@ -277,3 +277,6 @@ as.mids.vimmi <- function(x, ...) {
   long_df <- do.call(rbind, c(list(original), completed_list))
   mice::as.mids(long_df, .imp = ".imp", .id = ".id")
 }
+
+
+# test
