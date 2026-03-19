@@ -127,6 +127,9 @@ complete.vimmi <- function(data, action = 1, ...) {
   }
 
   if (is.numeric(action) && length(action) == 1L) {
+    if (!is.finite(action) || action != as.integer(action)) {
+      stop("action must be a whole number between 1 and m.")
+    }
     if (action < 1 || action > x$m) {
       stop(sprintf("action must be between 1 and %d (m).", x$m))
     }
@@ -175,9 +178,10 @@ complete.vimmi <- function(data, action = 1, ...) {
 with.vimmi <- function(data, expr, ...) {
   x <- data
   call_expr <- substitute(expr)
+  caller_env <- parent.frame()
   lapply(seq_len(x$m), function(mi) {
     d <- complete.vimmi(x, action = mi)
-    eval(call_expr, envir = d, enclos = parent.frame(2L))
+    eval(call_expr, envir = d, enclos = caller_env)
   })
 }
 
