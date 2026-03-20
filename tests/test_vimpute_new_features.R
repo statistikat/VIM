@@ -108,7 +108,7 @@ res1 <- vimpute(
   considered_variables = c("x1", "x2", "grp", "y_num"),
   method = list(y_num = "ranger"),
   sequential = FALSE,
-  verbose = FALSE
+  verbose = TRUE
 )
 
 check(is.data.table(res1), "m = 1 sollte ein data.table zurueckgeben.")
@@ -126,7 +126,7 @@ res2 <- vimpute(
   m = 3L,
   boot = TRUE,
   uncert = "resid",
-  verbose = FALSE
+  verbose = TRUE
 )
 
 check(inherits(res2, "vimmi"), "m > 1 sollte ein vimmi-Objekt zurueckgeben.")
@@ -163,7 +163,7 @@ res3 <- vimpute(
   boot = TRUE,
   robustboot = "standard",
   uncert = "normalerror",
-  verbose = FALSE
+  verbose = TRUE
 )
 
 check(!anyNA(res3$y_num), "uncert = 'normalerror' sollte y_num imputieren.")
@@ -193,7 +193,7 @@ res5 <- vimpute(
   boot = TRUE,
   robustboot = "psi",
   uncert = "normalerror",
-  verbose = FALSE
+  verbose = TRUE
 )
 
 check(!anyNA(res5$y_num), "robust + boot + robustboot = 'psi' sollte y_num imputieren.")
@@ -273,7 +273,7 @@ withCallingHandlers(
     boot = FALSE,
     uncert = "none",
     pmm = FALSE,
-    verbose = FALSE
+    verbose = TRUE
   ),
   warning = function(w) {
     warn_text <<- conditionMessage(w)
@@ -297,7 +297,7 @@ withCallingHandlers(
     pmm = TRUE,
     pmm_k = 3L,
     uncert = "resid",
-    verbose = FALSE
+    verbose = TRUE
   ),
   warning = function(w) {
     warn_text2 <<- conditionMessage(w)

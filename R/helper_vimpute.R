@@ -788,6 +788,10 @@ precheck <- function(
     pmm_k_method,
     learner_params,
     tune,
+    boot = FALSE,
+    robustboot = "stratified",
+    uncert = "none",
+    m = 1L,
     default_method = NULL,
     verbose = FALSE
 ) {
@@ -823,6 +827,19 @@ precheck <- function(
     data <- as.data.table(data)
   } else if (!is.data.table(data)) {
     stop("Error: Input must be a data.frame, matrix, or data.table.")
+  }
+
+  # -------------------------------------------------------------------------
+  # 3b) Validate MI / bootstrap / uncertainty parameters
+  # -------------------------------------------------------------------------
+  if (!is.logical(boot) || length(boot) != 1L) {
+    stop("'boot' must be TRUE or FALSE.")
+  }
+  robustboot <- match.arg(robustboot, c("standard", "stratified", "quantile", "residual", "psi"))
+  uncert <- match.arg(uncert, c("none", "normalerror", "resid", "pmm", "midastouch"))
+  m <- as.integer(m)
+  if (length(m) != 1L || is.na(m) || m < 1L) {
+    stop("'m' must be a positive integer.")
   }
   
   # -------------------------------------------------------------------------
@@ -889,12 +906,12 @@ precheck <- function(
     
   } else if (is.list(method) && length(method) == 1L && is.character(method[[1]])) {
     
-    m <- method[[1]]
-    if (!(m %in% supported_methods)) {
-      stop(sprintf("Unsupported method '%s'.", m))
+    single_method <- method[[1]]
+    if (!(single_method %in% supported_methods)) {
+      stop(sprintf("Unsupported method '%s'.", single_method))
     }
     
-    method <- setNames(as.list(rep(m, length(variables_NA))), variables_NA)
+    method <- setNames(as.list(rep(single_method, length(variables_NA))), variables_NA)
     
     # B: Named list
   } else if (is.list(method) && !is.null(names(method))) {
@@ -1055,7 +1072,11 @@ precheck <- function(
     pmm            = checked_pmm,
     pmm_k          = checked_pmm_k,
     pmm_k_method   = checked_pmm_k_method,
-    tune           = checked_tune
+    tune           = checked_tune,
+    boot           = boot,
+    robustboot     = robustboot,
+    uncert         = uncert,
+    m              = m
   ))
 }
 #

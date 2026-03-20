@@ -209,7 +209,23 @@ vimpute <- function(
     default_method <- unique(method_vector)
   }
   
-  checked_data   <- precheck(data, pmm, formula, method, sequential, pmm_k, pmm_k_method, learner_params, tune, default_method, verbose = verbose)
+  checked_data   <- precheck(
+    data = data,
+    pmm = pmm,
+    formula = formula,
+    method = method,
+    sequential = sequential,
+    pmm_k = pmm_k,
+    pmm_k_method = pmm_k_method,
+    learner_params = learner_params,
+    tune = tune,
+    boot = boot,
+    robustboot = robustboot,
+    uncert = uncert,
+    m = m,
+    default_method = default_method,
+    verbose = verbose
+  )
   data           <- checked_data$data
   variables      <- checked_data$variables
   variables_NA   <- checked_data$variables_NA
@@ -219,19 +235,16 @@ vimpute <- function(
   pmm_k          <- checked_data$pmm_k
   pmm_k_method   <- checked_data$pmm_k_method
   tune           <- checked_data$tune
+  boot           <- checked_data$boot
+  robustboot     <- checked_data$robustboot
+  uncert         <- checked_data$uncert
+  m              <- checked_data$m
   
   if (!sequential && nseq > 1) {
     if (verbose) message ("'nseq' was set to 1 because 'sequential = FALSE'.")
     nseq <- 1
   }
 ### Check Data End ###
-
-  # Validate MI / bootstrap / uncertainty parameters (new MI/uncertainty features)
-  if (!is.logical(boot) || length(boot) != 1) stop("'boot' must be TRUE or FALSE.")
-  robustboot <- match.arg(robustboot, c("standard", "stratified", "quantile", "residual", "psi"))
-  uncert <- match.arg(uncert, c("none", "normalerror", "resid", "pmm", "midastouch"))
-  m <- as.integer(m)
-  if (m < 1L) stop("'m' must be a positive integer.")
 
   # Reconcile pmm parameter with uncert parameter (PMM has priority)
   has_any_pmm <- any(unlist(pmm))
@@ -306,6 +319,10 @@ vimpute <- function(
 
   # Multiple imputation: run m times, collect imputed values, return vimmi
   if (m > 1L) {
+    if (verbose) {
+      message(paste0("***** Multiple imputation enabled (m = ", m, ")"))
+      message("***** Running repeated single imputations and collecting imputed values")
+    }
     where_matrix <- as.matrix(is.na(data))
 
     imp_collector <- setNames(
@@ -366,6 +383,9 @@ vimpute <- function(
     )
 
     # Return a compact MI object (original data + imputed values only)
+    if (verbose) {
+      message("***** Constructing compact 'vimmi' result object")
+    }
     return(new_vimmi(
       data   = as.data.frame(original_data),
       imp    = imp_list,
@@ -2199,16 +2219,6 @@ vimpute <- function(
             target = target_col
           )
           
-          mod <- switch(method_var,
-                        ranger = "classif.ranger",
-                        xgboost = "classif.xgboost",
-                        regularized = "classif.glmnet",
-                        robust = "classif.glm_rob",
-                        stop("Unknown method for classification:", method_var))
-          
-          # learner$model[[mod]]$param_set$values$predict_type <- "prob"
-          # pred_probs <- learner$predict(pred_task)$prob
-          
           learner$predict_type <- "prob"
           pred_probs <- learner$predict(pred_task)$prob
           
@@ -2502,24 +2512,7 @@ vimpute <- function(
           
           # factor targets
           if (is.factor(data_temp[[target_col]])) {
-            
-            if (method_var == "ranger") {
-              mod <- "classif.ranger"
-            }
-            
-            if (method_var == "xgboost") {
-              mod <- "classif.xgboost"
-            }
-            
-            if (method_var == "regularized") {
-              mod <- "classif.glmnet"
-            }
-            
-            if (method_var == "robust") {
-              mod <- "classif.glm_rob"
-            }
-            
-            learner$model[[mod]]$param_set$values$predict_type <- "prob"
+            learner$predict_type <- "prob"
             pred_probs <- learner$predict(pred_task)$prob
             
             formatted_output <- capture.output(print(pred_probs))
