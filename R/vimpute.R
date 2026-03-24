@@ -165,7 +165,6 @@ vimpute <- function(
     m = 1L
 ) {
 
-  ..cols <- ..feature_cols <- ..reg_features <- ..relevant_features <- NULL
   # save plan
   old_plan <- future::plan()  # Save current plan
   on.exit(future::plan(old_plan), add = TRUE)  # Restore on exit, even if error
@@ -1579,7 +1578,7 @@ vimpute <- function(
         
         if (!supports_missing_cls) {
           # e.g. log_reg: no nas allowed
-          na_rows <- !complete.cases(class_data[, ..relevant_features])
+          na_rows <- !complete.cases(subset(class_data, select = relevant_features))
           if (any(na_rows)) {
             class_data <- class_data[!na_rows]
           }
@@ -1685,7 +1684,7 @@ vimpute <- function(
         
         if (has_na_in_features && !supports_missing) {
           cols <- c(reg_features, var)
-          reg_data <- na.omit(reg_data[, ..cols])
+          reg_data <- na.omit(subset(reg_data, select = cols))
           reg_data <- enforce_factor_levels(reg_data, factor_levels)
           check_all_factor_levels(reg_data, factor_levels)
         }
