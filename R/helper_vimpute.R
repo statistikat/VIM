@@ -835,7 +835,7 @@ precheck <- function(
   if (!is.logical(boot) || length(boot) != 1L || is.na(boot)) {
     stop("'boot' must be TRUE or FALSE.")
   }
-  robustboot <- match.arg(robustboot, c("standard", "stratified", "quantile", "residual", "psi"))
+  robustboot <- match.arg(robustboot, c("standard", "stratified", "residual"))
   uncert <- match.arg(uncert, c("none", "normalerror", "resid", "pmm", "midastouch"))
   if (length(m) != 1L || is.na(m) || !is.numeric(m) || m < 1 || m != as.integer(m)) {
     stop("'m' must be a positive integer.")
@@ -1249,11 +1249,11 @@ predict_ranger_median <- function(graph_learner, newdata, target_name = NULL) {
 #' Strategies adapted from imputeRobust (Templ 2024).
 #'
 #' @param n Number of observations
-#' @param strategy One of "standard", "stratified", "quantile", "residual", "psi"
-#' @param weights Robustness weights from model (e.g., lmrob$rweights). Used by "quantile" for MM.
-#' @param residuals Model residuals. Used by "stratified", "residual", "psi".
-#' @param alpha Fraction of "good" observations (default 0.75). Used by "stratified", "quantile".
-#' @param best_subset Integer indices of best observations (e.g., from LTS). Used by "quantile" for LTS.
+#' @param strategy One of "standard", "stratified", "residual"
+#' @param weights Robustness weights from model (currently unused in active strategies).
+#' @param residuals Model residuals. Used by "stratified" and "residual".
+#' @param alpha Fraction of "good" observations (default 0.75). Used by "stratified".
+#' @param best_subset Integer indices of best observations (currently unused).
 #' @return Integer vector of length n with bootstrap row indices
 #' @keywords internal
 bootstrap_resample <- function(
@@ -1264,24 +1264,25 @@ bootstrap_resample <- function(
     alpha = 0.75,
     best_subset = NULL
 ) {
-  strategy <- match.arg(strategy, c("standard", "stratified", "quantile", "residual", "psi"))
+  strategy <- match.arg(strategy, c("standard", "stratified", "residual"))
 
   if (strategy == "standard") {
     # Classical bootstrap: sample all rows uniformly with replacement.
     return(sample.int(n, size = n, replace = TRUE))
   }
 
-  if (strategy == "quantile") {
-    # Prefer observations with high robustness weight or from the best subset.
-    if (!is.null(best_subset)) {
-      return(sample(best_subset, size = n, replace = TRUE))
-    }
-    if (!is.null(weights)) {
-      return(sample.int(n, size = n, replace = TRUE, prob = weights))
-    }
-    warning("'quantile' strategy requires weights or best_subset. Falling back to 'standard'.")
-    return(sample.int(n, size = n, replace = TRUE))
-  }
+  # Disabled for now: 'quantile' is not fully wired in vimpute().
+  # if (strategy == "quantile") {
+  #   # Prefer observations with high robustness weight or from the best subset.
+  #   if (!is.null(best_subset)) {
+  #     return(sample(best_subset, size = n, replace = TRUE))
+  #   }
+  #   if (!is.null(weights)) {
+  #     return(sample.int(n, size = n, replace = TRUE, prob = weights))
+  #   }
+  #   warning("'quantile' strategy requires weights or best_subset. Falling back to 'standard'.")
+  #   return(sample.int(n, size = n, replace = TRUE))
+  # }
 
   if (is.null(residuals)) {
     warning("Bootstrap strategy '", strategy, "' requires residuals. Falling back to 'standard'.")
@@ -1312,15 +1313,16 @@ bootstrap_resample <- function(
     return(sample.int(n, size = n, replace = TRUE, prob = prob))
   }
 
-  if (strategy == "psi") {
-    # Convert residuals to Tukey-style robust weights, then sample by them.
-    u <- residuals / mad(residuals)
-    c_tukey <- 4.685
-    w <- ifelse(abs(u) > c_tukey, 0, (1 - (u^2) / c_tukey^2)^2)
-    prob <- max(abs(w)) - abs(w)
-    prob[prob <= 0] <- .Machine$double.eps
-    return(sample.int(n, size = n, replace = TRUE, prob = prob))
-  }
+  # Disabled for now: 'psi' weighting is currently not reliable enough for use.
+  # if (strategy == "psi") {
+  #   # Convert residuals to Tukey-style robust weights, then sample by them.
+  #   u <- residuals / mad(residuals)
+  #   c_tukey <- 4.685
+  #   w <- ifelse(abs(u) > c_tukey, 0, (1 - (u^2) / c_tukey^2)^2)
+  #   prob <- max(abs(w)) - abs(w)
+  #   prob[prob <= 0] <- .Machine$double.eps
+  #   return(sample.int(n, size = n, replace = TRUE, prob = prob))
+  # }
 }
 
 #' Extract model diagnostics for bootstrap strategies

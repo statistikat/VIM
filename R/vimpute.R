@@ -85,9 +85,7 @@
 #'  Bootstrap strategy when \code{boot = TRUE}. Options:
 #'  \code{"standard"} (classical bootstrap),
 #'  \code{"stratified"} (good/bad residual split, default),
-#'  \code{"quantile"} (weighted by robustness weights),
-#'  \code{"residual"} (inverse residual weighting),
-#'  \code{"psi"} (Tukey bisquare weights).
+#'  \code{"residual"} (inverse residual weighting).
 #' @param uncert
 #'  Imputation uncertainty method applied to predictions:
 #'  \code{"none"} (point prediction, default),
