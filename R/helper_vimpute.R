@@ -832,15 +832,15 @@ precheck <- function(
   # -------------------------------------------------------------------------
   # 3b) Validate MI / bootstrap / uncertainty parameters
   # -------------------------------------------------------------------------
-  if (!is.logical(boot) || length(boot) != 1L) {
+  if (!is.logical(boot) || length(boot) != 1L || is.na(boot)) {
     stop("'boot' must be TRUE or FALSE.")
   }
   robustboot <- match.arg(robustboot, c("standard", "stratified", "quantile", "residual", "psi"))
   uncert <- match.arg(uncert, c("none", "normalerror", "resid", "pmm", "midastouch"))
-  m <- as.integer(m)
-  if (length(m) != 1L || is.na(m) || m < 1L) {
+  if (length(m) != 1L || is.na(m) || !is.numeric(m) || m < 1 || m != as.integer(m)) {
     stop("'m' must be a positive integer.")
   }
+  m <- as.integer(m)
   
   # -------------------------------------------------------------------------
   # 4) Validate formula list (if provided)
@@ -1267,10 +1267,12 @@ bootstrap_resample <- function(
   strategy <- match.arg(strategy, c("standard", "stratified", "quantile", "residual", "psi"))
 
   if (strategy == "standard") {
+    # Classical bootstrap: sample all rows uniformly with replacement.
     return(sample.int(n, size = n, replace = TRUE))
   }
 
   if (strategy == "quantile") {
+    # Prefer observations with high robustness weight or from the best subset.
     if (!is.null(best_subset)) {
       return(sample(best_subset, size = n, replace = TRUE))
     }
@@ -1287,9 +1289,11 @@ bootstrap_resample <- function(
   }
 
   if (strategy == "stratified") {
-    threshold <- quantile(residuals, alpha)
-    good_idx <- which(residuals <= threshold)
-    bad_idx <- which(residuals > threshold)
+    # Split into small- and large-error groups using absolute residual size.
+    abs_residuals <- abs(residuals)
+    threshold <- quantile(abs_residuals, alpha)
+    good_idx <- which(abs_residuals <= threshold)
+    bad_idx <- which(abs_residuals > threshold)
     n_good <- round(n * alpha)
     n_bad <- n - n_good
     if (length(good_idx) == 0) good_idx <- seq_len(n)
@@ -1302,12 +1306,14 @@ bootstrap_resample <- function(
   }
 
   if (strategy == "residual") {
+    # Downweight observations with large absolute residuals.
     prob <- max(abs(residuals)) - abs(residuals)
     prob[prob <= 0] <- .Machine$double.eps
     return(sample.int(n, size = n, replace = TRUE, prob = prob))
   }
 
   if (strategy == "psi") {
+    # Convert residuals to Tukey-style robust weights, then sample by them.
     u <- residuals / mad(residuals)
     c_tukey <- 4.685
     w <- ifelse(abs(u) > c_tukey, 0, (1 - (u^2) / c_tukey^2)^2)
