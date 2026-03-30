@@ -1935,7 +1935,7 @@ register_gam_learners <- function() {
         param_set <- ps(
           min_unique = p_int(lower = 2L, upper = Inf, default = 4L),
           robust_method = p_fct(c("simple", "irw"), default = "simple"),
-          alpha = p_dbl(lower = 0.5, upper = 0.95, default = 0.75),
+          alpha = p_dbl(lower = 0.7, upper = 0.95, default = 0.8),
           max_iter = p_int(lower = 1L, upper = 100L, default = 20L),
           tol = p_dbl(lower = 1e-8, upper = 1e-1, default = 1e-4),
           psi_k = p_dbl(lower = 1, upper = 10, default = 4.685)
@@ -1948,7 +1948,7 @@ register_gam_learners <- function() {
           param_set = param_set
         )
         self$param_set$values <- list(
-          min_unique = 4L, robust_method = "simple", alpha = 0.75,
+          min_unique = 4L, robust_method = "simple", alpha = 0.8,
           max_iter = 20L, tol = 1e-4, psi_k = 4.685
         )
       }
@@ -2079,7 +2079,7 @@ register_gam_learners <- function() {
         param_set <- ps(
           min_unique = p_int(lower = 2L, upper = Inf, default = 4L),
           robust_method = p_fct(c("simple", "irw"), default = "simple"),
-          alpha = p_dbl(lower = 0.5, upper = 0.95, default = 0.75),
+          alpha = p_dbl(lower = 0.7, upper = 0.95, default = 0.8),
           max_iter = p_int(lower = 1L, upper = 100L, default = 20L),
           tol = p_dbl(lower = 1e-8, upper = 1e-1, default = 1e-4),
           psi_k = p_dbl(lower = 1, upper = 10, default = 4.685)
@@ -2093,7 +2093,7 @@ register_gam_learners <- function() {
           param_set = param_set
         )
         self$param_set$values <- list(
-          min_unique = 4L, robust_method = "simple", alpha = 0.75,
+          min_unique = 4L, robust_method = "simple", alpha = 0.8,
           max_iter = 20L, tol = 1e-4, psi_k = 4.685
         )
         self$state$models <- NULL

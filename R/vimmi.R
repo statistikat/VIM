@@ -20,13 +20,11 @@
 #'   \item{\code{call}}{The original function call.}
 #' }
 #'
-#' Use \code{\link{complete.vimmi}} to extract completed datasets,
-#' \code{\link{with.vimmi}} to fit models across imputations, and
-#' \code{\link{as.mids.vimmi}} to convert to a mice \code{mids} object
-#' for pooling with \code{mice::pool()}.
+#' Use \code{\link{complete.vimmi}} to extract completed datasets and
+#' \code{\link{with.vimmi}} to fit models across imputations.
 #'
 #' @seealso \code{\link{vimpute}}, \code{\link{complete.vimmi}},
-#'   \code{\link{with.vimmi}}, \code{\link{as.mids.vimmi}}
+#'   \code{\link{with.vimmi}}
 #' @name vimmi
 #' @family imputation methods
 #' @examples
@@ -41,9 +39,8 @@
 #' d1 <- complete(result, 1)
 #' all_d <- complete(result, "all")
 #'
-#' # Fit models and pool
+#' # Fit models across imputations
 #' fits <- with(result, lm(Sleep ~ Dream + Span))
-#' # mice::pool(fits)  # requires mice
 #' }
 NULL
 
@@ -158,8 +155,7 @@ complete.vimmi <- function(data, action = 1, ...) {
 #' Evaluate an expression across all imputations
 #'
 #' Applies an expression (typically a model fit) to each completed dataset
-#' in a \code{vimmi} object. The results can be pooled using
-#' \code{mice::pool()} or \code{mitools::MIcombine()}.
+#' in a \code{vimmi} object.
 #'
 #' @param data A \code{vimmi} object
 #' @param expr An expression to evaluate, e.g. \code{lm(y ~ x)}
@@ -172,8 +168,6 @@ complete.vimmi <- function(data, action = 1, ...) {
 #' \dontrun{
 #' result <- vimpute(sleep, method = "ranger", m = 5, boot = TRUE, uncert = "normalerror")
 #' fits <- with(result, lm(Sleep ~ Dream + Span))
-#' # Pool with mice:
-#' # mice::pool(fits)
 #' }
 with.vimmi <- function(data, expr, ...) {
   x <- data
@@ -240,44 +234,44 @@ summary.vimmi <- function(object, ...) {
   invisible(object)
 }
 
-#' Convert a vimmi object to a mice mids object
-#'
-#' Converts a \code{vimmi} object to long format and uses
-#' \code{mice::as.mids()} to create a proper \code{mids} object.
-#' This enables use of \code{mice::pool()}, \code{mice::with.mids()},
-#' and other mice infrastructure.
-#'
-#' @param x A \code{vimmi} object
-#' @param ... Currently unused
-#' @return A \code{mids} object (from the mice package)
-#' @export
-#' @rdname as.mids.vimmi
-#' @examples
-#' \dontrun{
-#' result <- vimpute(sleep, method = "ranger", m = 5,
-#'                   boot = TRUE, uncert = "normalerror")
-#' mids_obj <- as.mids.vimmi(result)
-#' # Now use mice infrastructure:
-#' # fits <- with(mids_obj, lm(Sleep ~ Dream + Span))
-#' # mice::pool(fits)
-#' }
-as.mids.vimmi <- function(x, ...) {
-  if (!requireNamespace("mice", quietly = TRUE)) {
-    stop("Package 'mice' is required for as.mids(). Please install it.")
-  }
-
-  # Build long format: row 0 = original data, rows 1..m = completed datasets
-  original <- as.data.frame(x$data)
-  original$.imp <- 0L
-  original$.id <- seq_len(nrow(original))
-
-  completed_list <- lapply(seq_len(x$m), function(mi) {
-    d <- complete.vimmi(x, action = mi)
-    d$.imp <- mi
-    d$.id <- seq_len(nrow(d))
-    d
-  })
-
-  long_df <- do.call(rbind, c(list(original), completed_list))
-  mice::as.mids(long_df, .imp = ".imp", .id = ".id")
-}
+# #' Convert a vimmi object to a mice mids object
+# #'
+# #' Converts a \code{vimmi} object to long format and uses
+# #' \code{mice::as.mids()} to create a proper \code{mids} object.
+# #' This enables use of \code{mice::pool()}, \code{mice::with.mids()},
+# #' and other mice infrastructure.
+# #'
+# #' @param x A \code{vimmi} object
+# #' @param ... Currently unused
+# #' @return A \code{mids} object (from the mice package)
+# #' @export
+# #' @rdname as.mids.vimmi
+# #' @examples
+# #' \dontrun{
+# #' result <- vimpute(sleep, method = "ranger", m = 5,
+# #'                   boot = TRUE, uncert = "normalerror")
+# #' mids_obj <- as.mids.vimmi(result)
+# #' # Now use mice infrastructure:
+# #' # fits <- with(mids_obj, lm(Sleep ~ Dream + Span))
+# #' # mice::pool(fits)
+# #' }
+# as.mids.vimmi <- function(x, ...) {
+#   if (!requireNamespace("mice", quietly = TRUE)) {
+#     stop("Package 'mice' is required for as.mids(). Please install it.")
+#   }
+#
+#   # Build long format: row 0 = original data, rows 1..m = completed datasets
+#   original <- as.data.frame(x$data)
+#   original$.imp <- 0L
+#   original$.id <- seq_len(nrow(original))
+#
+#   completed_list <- lapply(seq_len(x$m), function(mi) {
+#     d <- complete.vimmi(x, action = mi)
+#     d$.imp <- mi
+#     d$.id <- seq_len(nrow(d))
+#     d
+#   })
+#
+#   long_df <- do.call(rbind, c(list(original), completed_list))
+#   mice::as.mids(long_df, .imp = ".imp", .id = ".id")
+# }

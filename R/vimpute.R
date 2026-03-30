@@ -1135,7 +1135,7 @@ vimpute <- function(
           # ROBGAM
           if (best_learner_id %in% c("regr.robgam_imp", "classif.robgam_imp")) {
             space <- ps(
-              alpha = p_dbl(0.5, 0.9),
+              alpha = p_dbl(0.7, 0.95),
               min_unique = p_int(3L, 8L)
             )
             return(list(space = space, n_evals = 8))
