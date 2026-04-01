@@ -85,6 +85,9 @@ Computational Statistics and Data Analysis, Elsevier, vol. 52(3), pages 1712-172
 \seealso{
 Other imputation methods: 
 \code{\link{hotdeck}()},
+\code{\link{imputeCellEM}()},
+\code{\link{imputeCellIRMI}()},
+\code{\link{imputeCellM}()},
 \code{\link{imputeRobust}()},
 \code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},

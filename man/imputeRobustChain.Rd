@@ -73,6 +73,9 @@ if(interactive()){
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
+\code{\link{imputeCellEM}()},
+\code{\link{imputeCellIRMI}()},
+\code{\link{imputeCellM}()},
 \code{\link{imputeRobust}()},
 \code{\link{irmi}()},
 \code{\link{kNN}()},

@@ -39,7 +39,9 @@ Imports:
     mlr3tuning,
     mlr3learners,
     future
-Suggests: 
+Suggests:
+    cellWise,
+    crmReg,
     dplyr,
     tinytest,
     knitr,

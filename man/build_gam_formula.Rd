@@ -4,7 +4,7 @@
 \alias{build_gam_formula}
 \title{Build a GAM formula with automatic smooth terms}
 \usage{
-build_gam_formula(target, features, data, min_unique = 4L)
+build_gam_formula(target, features, data, min_unique = 4L, default_k = 10L)
 }
 \arguments{
 \item{target}{Character: target variable name}

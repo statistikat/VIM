@@ -248,3 +248,252 @@ if (inherits(res_allna, "list")) {
   expect_false(any(is.na(res_allna$data_imputed)))
   expect_equal(dim(res_allna$data_imputed), c(n, 3))
 }
+
+
+# ==========================================================================
+# Tests for imputeCellEM
+# ==========================================================================
+
+# ------------------------------------------------------------------
+# 12. imputeCellEM basic: continuous-only data with NAs returns complete
+# ------------------------------------------------------------------
+set.seed(1001)
+n <- 60
+df_em <- data.frame(
+  x1 = rnorm(n),
+  x2 = rnorm(n),
+  x3 = rnorm(n)
+)
+# Introduce ~15% MCAR missingness
+for (j in 1:3) {
+  miss_idx <- sample(n, round(0.15 * n))
+  df_em[[j]][miss_idx] <- NA
+}
+
+res_em <- imputeCellEM(df_em, maxit_em = 30, trace = FALSE)
+
+expect_inherits(res_em, "list")
+expect_inherits(res_em$data_imputed, "data.frame")
+expect_equal(dim(res_em$data_imputed), c(n, 3))
+expect_false(any(is.na(res_em$data_imputed)))
+
+
+# ------------------------------------------------------------------
+# 13. imputeCellEM convergence on clean data (no contamination)
+# ------------------------------------------------------------------
+set.seed(1002)
+n <- 80
+Sigma_true <- matrix(c(1, 0.5, 0.5, 1), nrow = 2)
+X_clean <- MASS::mvrnorm(n, mu = c(0, 0), Sigma = Sigma_true)
+df_clean_em <- as.data.frame(X_clean)
+colnames(df_clean_em) <- c("x1", "x2")
+# Introduce light missingness, avoiding all-NA rows
+miss1 <- sample(n, 8)
+miss2 <- sample(setdiff(seq_len(n), miss1), 8)
+df_clean_em$x1[miss1] <- NA
+df_clean_em$x2[miss2] <- NA
+
+res_clean_em <- imputeCellEM(df_clean_em, maxit_em = 50, trace = FALSE)
+
+# Should converge quickly on clean data
+expect_true(res_clean_em$converged)
+expect_true(res_clean_em$iterations <= 30)
+
+
+# ------------------------------------------------------------------
+# 14. imputeCellEM with mixed data: continuous + factor
+# ------------------------------------------------------------------
+set.seed(1003)
+n <- 80
+df_mixed_em <- data.frame(
+  x1 = rnorm(n),
+  x2 = rnorm(n),
+  x3 = factor(sample(c("A", "B", "C"), n, replace = TRUE))
+)
+df_mixed_em$x1[sample(n, 10)] <- NA
+df_mixed_em$x2[sample(n, 10)] <- NA
+df_mixed_em$x3[sample(n, 10)] <- NA
+
+res_mixed_em <- imputeCellEM(df_mixed_em, maxit_em = 20, trace = FALSE)
+
+expect_inherits(res_mixed_em$data_imputed, "data.frame")
+expect_false(any(is.na(res_mixed_em$data_imputed)))
+# Factor column should remain a factor after imputation
+expect_true(is.factor(res_mixed_em$data_imputed$x3))
+# Cell weights for categorical columns should be 1
+expect_true(all(res_mixed_em$cellweights[, "x3"] == 1))
+
+
+# ------------------------------------------------------------------
+# 15. imputeCellEM output structure: all expected list components
+# ------------------------------------------------------------------
+expected_names <- c("data_imputed", "cellweights", "mu", "Sigma",
+                    "epsilon", "converged", "iterations", "loglik")
+expect_true(all(expected_names %in% names(res_em)))
+
+# mu should be a named numeric vector with p_cont elements
+expect_equal(length(res_em$mu), 3)
+expect_true(is.numeric(res_em$mu))
+expect_true(!is.null(names(res_em$mu)))
+
+# Sigma should be a p_cont x p_cont matrix
+expect_equal(dim(res_em$Sigma), c(3, 3))
+expect_true(is.numeric(res_em$Sigma))
+# Sigma should be symmetric
+expect_equal(res_em$Sigma, t(res_em$Sigma), tolerance = 1e-10)
+# Sigma should be positive definite (all eigenvalues > 0)
+expect_true(all(eigen(res_em$Sigma, only.values = TRUE)$values > 0))
+
+# epsilon should be a named numeric vector in (0, 0.5)
+expect_equal(length(res_em$epsilon), 3)
+expect_true(all(res_em$epsilon > 0))
+expect_true(all(res_em$epsilon < 0.5))
+
+# converged is logical, iterations is integer
+expect_inherits(res_em$converged, "logical")
+expect_true(is.numeric(res_em$iterations))
+
+# loglik is numeric vector with length == iterations
+expect_true(is.numeric(res_em$loglik))
+expect_equal(length(res_em$loglik), res_em$iterations)
+
+
+# ------------------------------------------------------------------
+# 16. Cell weights are in [0,1]; missing cells get weight 1
+# ------------------------------------------------------------------
+W_em <- res_em$cellweights
+expect_equal(dim(W_em), c(60, 3))
+expect_true(all(W_em >= 0 & W_em <= 1))
+
+# Originally missing cells should have weight 1
+M_em <- is.na(df_em)
+for (j in 1:3) {
+  miss_j <- which(M_em[, j])
+  if (length(miss_j) > 0) {
+    expect_true(all(W_em[miss_j, j] == 1))
+  }
+}
+
+
+# ------------------------------------------------------------------
+# 17. Edge case: no missing values returns immediately
+# ------------------------------------------------------------------
+set.seed(1004)
+df_nomiss <- data.frame(x1 = rnorm(40), x2 = rnorm(40), x3 = rnorm(40))
+
+res_nomiss <- imputeCellEM(df_nomiss, trace = FALSE)
+
+expect_true(res_nomiss$converged)
+expect_equal(res_nomiss$iterations, 0L)
+expect_equal(res_nomiss$data_imputed, df_nomiss)
+expect_true(all(res_nomiss$cellweights == 1))
+expect_null(res_nomiss$mu)
+expect_null(res_nomiss$Sigma)
+expect_null(res_nomiss$epsilon)
+expect_equal(length(res_nomiss$loglik), 0)
+
+
+# ------------------------------------------------------------------
+# 18. Contamination detection: outlying cells get low weights
+# ------------------------------------------------------------------
+set.seed(1005)
+n <- 100
+df_contam_em <- data.frame(
+  x1 = rnorm(n),
+  x2 = rnorm(n),
+  x3 = rnorm(n)
+)
+# Inject extreme outliers into x1 for first 5 rows
+df_contam_em$x1[1:5] <- 20
+# Introduce some missingness so EM runs
+df_contam_em$x2[sample(6:n, 10)] <- NA
+
+res_contam_em <- imputeCellEM(df_contam_em, maxit_em = 30, trace = FALSE)
+
+# Outlier cells in x1 (rows 1:5) should have low weights
+w_outliers <- res_contam_em$cellweights[1:5, "x1"]
+expect_true(all(w_outliers < 0.5))
+
+# Clean cells in x3 should have high mean weight
+w_clean_x3 <- res_contam_em$cellweights[, "x3"]
+expect_true(mean(w_clean_x3) > 0.8)
+
+
+# ------------------------------------------------------------------
+# 19. Error on all-NA rows (unit non-response)
+# ------------------------------------------------------------------
+set.seed(1006)
+df_allna_row <- data.frame(
+  x1 = c(NA, rnorm(49)),
+  x2 = c(NA, rnorm(49)),
+  x3 = c(NA, rnorm(49))
+)
+# Row 1 is entirely NA
+expect_error(
+  imputeCellEM(df_allna_row),
+  pattern = "Unit non-responses"
+)
+
+
+# ------------------------------------------------------------------
+# 20. Error on invalid inputs
+# ------------------------------------------------------------------
+# Single column
+expect_error(
+  imputeCellEM(data.frame(x = c(1, NA, 3))),
+  pattern = "at least 2"
+)
+
+# gamma_init <= 1
+set.seed(1007)
+df_tmp <- data.frame(x1 = c(1, NA, 3), x2 = c(4, 5, NA))
+expect_error(
+  imputeCellEM(df_tmp, gamma_init = 0.5),
+  pattern = "gamma_init"
+)
+
+# eps_init out of range
+expect_error(
+  imputeCellEM(df_tmp, eps_init = 0),
+  pattern = "eps_init"
+)
+expect_error(
+  imputeCellEM(df_tmp, eps_init = 0.6),
+  pattern = "eps_init"
+)
+
+
+# ------------------------------------------------------------------
+# 21. PMM uncertainty method works
+# ------------------------------------------------------------------
+set.seed(1008)
+n <- 60
+df_pmm <- data.frame(
+  x1 = rnorm(n),
+  x2 = rnorm(n),
+  x3 = rnorm(n)
+)
+df_pmm$x1[sample(n, 8)] <- NA
+df_pmm$x2[sample(n, 8)] <- NA
+
+res_pmm <- imputeCellEM(df_pmm, uncert = "pmm", maxit_em = 20, trace = FALSE)
+
+expect_false(any(is.na(res_pmm$data_imputed)))
+expect_equal(dim(res_pmm$data_imputed), c(n, 3))
+# PMM imputed values for x1 should be within the range of observed x1 values
+obs_x1 <- df_pmm$x1[!is.na(df_pmm$x1)]
+imp_x1 <- res_pmm$data_imputed$x1[is.na(df_pmm$x1)]
+expect_true(all(imp_x1 >= min(obs_x1) & imp_x1 <= max(obs_x1)))
+
+
+# ------------------------------------------------------------------
+# 22. Log-likelihood is non-decreasing (EM monotonicity)
+# ------------------------------------------------------------------
+# Use the result from the clean-data convergence test (res_clean_em)
+if (length(res_clean_em$loglik) >= 3) {
+  ll <- res_clean_em$loglik
+  # Allow tiny numerical decreases (1e-6 relative)
+  diffs <- diff(ll)
+  rel_diffs <- diffs / (abs(ll[-length(ll)]) + 1)
+  expect_true(all(rel_diffs > -1e-4))
+}

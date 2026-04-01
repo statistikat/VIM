@@ -115,6 +115,9 @@ Statistical Software}, 74(7), 1-16.
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
+\code{\link{imputeCellEM}()},
+\code{\link{imputeCellIRMI}()},
+\code{\link{imputeCellM}()},
 \code{\link{imputeRobust}()},
 \code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},

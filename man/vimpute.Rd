@@ -182,13 +182,16 @@ fits <- with(result, lm(Sleep ~ Dream + Span))
 # Multiple imputation with robust method and residual uncertainty
 result2 <- vimpute(data = sleep, method = "robust", m = 5,
                    boot = TRUE, robustboot = "stratified",
-                   nseq = 3, uncert = "resid")
+                   uncert = "normalerror")
 }
 }
 \seealso{
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
+\code{\link{imputeCellEM}()},
+\code{\link{imputeCellIRMI}()},
+\code{\link{imputeCellM}()},
 \code{\link{imputeRobust}()},
 \code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},

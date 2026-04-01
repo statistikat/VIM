@@ -1,40 +1,20 @@
 #' Cellwise-robust iterative regression imputation for mixed data
 #'
-#' Extends IRMI (Templ, Kowarik, Filzmoser 2011) with cellwise contamination
-#' handling. Each conditional regression uses a cell-weighted IRWLS engine
-#' where per-cell weights in the design matrix downweight contaminated cells
-#' without discarding entire observations.
-#'
-#' The algorithm works iteratively: in each outer iteration, every variable
-#' with missing values is used as response in a conditional regression on
-#' all remaining variables. For continuous responses, the custom
-#' \code{cellIRWLS()} engine fits a weighted regression where each cell in
-#' the design matrix receives its own weight reflecting potential cellwise
-#' contamination. For categorical responses, a weighted multinomial model
-#' is used. After each regression, cell weights for the response variable
-#' are updated from the residuals.
-#'
-#' @param data data.frame with missing values (mixed continuous + categorical).
-#' @param method weight function: \code{"huber"} (default) or \code{"tukey"}.
-#' @param alpha tuning constant. \code{NULL} (default) uses 1.345 for Huber
-#'   and 4.685 for Tukey, which give 95\% efficiency at the normal model.
-#' @param maxit maximum outer IRMI iterations (default: 10).
-#' @param maxit_irwls maximum inner IRWLS iterations per regression
-#'   (default: 50).
-#' @param eps convergence tolerance for outer loop (default: 1e-2).
-#' @param eps_irwls convergence tolerance for inner IRWLS (default: 1e-6).
-#' @param uncert imputation uncertainty method: \code{"pmm"} (default),
-#'   \code{"normalerror"}, or \code{"resid"}.
-#' @param trace logical; if \code{TRUE}, print progress information.
-#'
-#' @return A list with components:
-#'   \item{data_imputed}{the imputed data.frame}
-#'   \item{cellweights}{n x p matrix of final cell weights (1 = clean,
-#'     0 = fully downweighted). Categorical columns always have weight 1.}
-#'   \item{converged}{logical indicating whether the outer loop converged}
-#'   \item{iterations}{number of outer iterations used}
+#' Extends IRMI (Templ, Kowarik, and Filzmoser, 2011) with cellwise
+#' contamination handling.  Each conditional regression uses a cell-weighted
+#' IRWLS engine where per-cell weights in the design matrix downweight
+#' contaminated cells without discarding entire observations.
 #'
 #' @details
+#' The algorithm works iteratively: in each outer iteration, every variable
+#' with missing values is used as response in a conditional regression on
+#' all remaining variables.  For continuous responses, the custom
+#' \code{cellIRWLS()} engine fits a weighted regression where each cell in
+#' the design matrix receives its own weight reflecting potential cellwise
+#' contamination.  For categorical responses, a weighted multinomial model
+#' is used.  After each regression, cell weights for the response variable
+#' are updated from the residuals.
+#'
 #' The algorithm proceeds as follows:
 #' \enumerate{
 #'   \item Missing values are initialised using \code{\link{initialise}}.
@@ -55,19 +35,60 @@
 #'           \item Update cell weights for \eqn{j} from residuals via
 #'             \code{cellWeightsFromResiduals()}.
 #'         }
-#'       \item Check convergence: relative change in imputed values < \code{eps}.
+#'       \item Check convergence: relative change in imputed values
+#'         falls below \code{eps}.
 #'     }
 #' }
 #'
+#' @param data a \code{data.frame} with missing values (mixed continuous
+#'   and categorical variables are supported).
+#' @param method weight function: \code{"tukey"} (default, Tukey bisquare)
+#'   or \code{"huber"} (Huber).
+#' @param alpha tuning constant.  \code{NULL} (default) uses 1.345 for
+#'   Huber and 4.685 for Tukey, giving 95% efficiency at the normal model.
+#' @param maxit maximum number of outer IRMI iterations (default: 100).
+#' @param maxit_irwls maximum number of inner IRWLS iterations per
+#'   regression (default: 50).
+#' @param eps convergence tolerance for the outer loop (default: 5e-3).
+#'   Convergence is declared when the relative change in imputed values
+#'   falls below this threshold.
+#' @param eps_irwls convergence tolerance for the inner IRWLS
+#'   (default: 1e-6).
+#' @param uncert imputation uncertainty method: \code{"pmm"} (predictive
+#'   mean matching, default), \code{"normalerror"} (add normal noise), or
+#'   \code{"resid"} (bootstrap residual).
+#' @param weight_update strategy for updating cell weights between outer
+#'   iterations: \code{"multivariate"} (default) uses an MCD-based
+#'   multivariate update for weight coherence across variables, or
+#'   \code{"univariate"} updates each variable independently from its
+#'   residuals.
+#' @param init_weights method for initialising cell weights:
+#'   \code{"mcd"} (default) uses the minimum covariance determinant on
+#'   the continuous block, or \code{"marginal"} uses univariate
+#'   median/MAD standardisation.
+#' @param hard_threshold numeric in \eqn{[0, 1]}.  After convergence,
+#'   cells with weight below this value are flagged as contaminated
+#'   (default: 0.5).
+#' @param trace logical; if \code{TRUE}, print progress information.
+#'
+#' @return A list with components:
+#'   \item{data_imputed}{the imputed \code{data.frame}.}
+#'   \item{cellweights}{\eqn{n \times p} matrix of final cell weights
+#'     (1 = clean, 0 = fully downweighted).  Categorical columns always
+#'     have weight 1.}
+#'   \item{converged}{logical indicating whether the outer loop converged.}
+#'   \item{iterations}{number of outer iterations used.}
+#'
 #' @author Matthias Templ
 #' @references
-#' M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
-#' imputation using standard and robust methods. \emph{Journal of
-#' Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
+#' Templ, M., Kowarik, A. and Filzmoser, P. (2011).
+#' Iterative stepwise regression imputation using standard and robust
+#' methods.  \emph{Computational Statistics & Data Analysis},
+#' \strong{55}(10), 2793--2806.
 #'
 #' @family imputation methods
-#' @seealso \code{\link{imputeCellM}}, \code{\link{initialise}},
-#'   \code{\link{irmi}}
+#' @seealso \code{\link{imputeCellM}}, \code{\link{imputeCellEM}},
+#'   \code{\link{initialise}}, \code{\link{irmi}}
 #'
 #' @examples
 #' \dontrun{
@@ -76,8 +97,8 @@
 #' head(result$data_imputed)
 #' image(result$cellweights, main = "Cell weights")
 #'
-#' # With Tukey bisquare weights for stronger downweighting
-#' result2 <- imputeCellIRMI(sleep, method = "tukey", trace = TRUE)
+#' # With Huber weights (less aggressive downweighting)
+#' result2 <- imputeCellIRMI(sleep, method = "huber", trace = TRUE)
 #'
 #' # Mixed data example
 #' data(testdata)
@@ -85,12 +106,15 @@
 #' }
 #'
 #' @export
-#' @importFrom VIM initialise
 #' @importFrom stats model.matrix median mad rnorm predict sd as.formula
-imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
-                            maxit = 10, maxit_irwls = 50,
-                            eps = 1e-2, eps_irwls = 1e-6,
-                            uncert = "pmm", trace = FALSE) {
+imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
+                            maxit = 100, maxit_irwls = 50,
+                            eps = 5e-3, eps_irwls = 1e-6,
+                            uncert = "pmm",
+                            weight_update = "multivariate",
+                            init_weights = "mcd",
+                            hard_threshold = 0.5,
+                            trace = FALSE) {
 
   ## ---- input validation ----
   check_data(data)
@@ -101,7 +125,9 @@ imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
       stop("data must be a data.frame or matrix")
   }
   method <- match.arg(method, c("huber", "tukey"))
-  uncert <- match.arg(uncert, c("pmm", "normalerror", "resid"))
+  uncert <- match.arg(uncert, c("pmm", "normalerror", "resid", "none"))
+  weight_update <- match.arg(weight_update, c("multivariate", "per-variable"))
+  init_weights <- match.arg(init_weights, c("mcd", "univariate", "ddc"))
 
   if (is.null(alpha)) {
     alpha <- if (method == "huber") 1.345 else 4.685
@@ -172,12 +198,66 @@ imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
   W <- matrix(1, nrow = n, ncol = p,
               dimnames = list(rn, colnames(data)))
 
-  # initial cell weights only for continuous variables
   if (any(is_continuous)) {
-    W[, is_continuous] <- cellWeights(
-      as.matrix(data[, is_continuous, drop = FALSE]),
-      method = method, alpha = alpha
-    )
+    X_cont_init <- as.matrix(data[, is_continuous, drop = FALSE])
+    if (init_weights == "mcd") {
+      W[, is_continuous] <- cellWeightsMCD(X_cont_init,
+                                            method = method, alpha = alpha)
+    } else if (init_weights == "ddc" &&
+               requireNamespace("cellWise", quietly = TRUE)) {
+      # DDC-based initialization: detect cells, give flagged cells weight 0
+      X_ddc <- X_cont_init
+      for (jj in seq_len(ncol(X_ddc))) {
+        na_jj <- is.na(X_ddc[, jj])
+        if (any(na_jj)) X_ddc[na_jj, jj] <- median(X_ddc[, jj], na.rm = TRUE)
+      }
+      ddc_res <- tryCatch(
+        cellWise::DDC(X_ddc, DDCpars = list(fastDDC = TRUE, silent = TRUE)),
+        error = function(e) NULL
+      )
+      if (!is.null(ddc_res)) {
+        # Compute smooth cell weights from DDC standardized residuals
+        W_cont <- matrix(1, nrow = n, ncol = sum(is_continuous))
+        for (jj in seq_len(ncol(W_cont))) {
+          u <- abs(ddc_res$stdResid[, jj])
+          W_cont[, jj] <- .apply_weight_fun(u, method = method, alpha = alpha)
+          W_cont[is.na(X_cont_init[, jj]), jj] <- 1
+        }
+        W[, is_continuous] <- W_cont
+      } else {
+        W[, is_continuous] <- cellWeightsMCD(X_cont_init,
+                                              method = method, alpha = alpha)
+      }
+    } else {
+      # Univariate fallback
+      W[, is_continuous] <- cellWeights(X_cont_init,
+                                         method = method, alpha = alpha)
+    }
+  }
+
+  ## ---- step 2b: hard thresholding (detect-once) ----
+  ## Set observed cells with low initial weight to NA and re-initialise.
+  ## This removes cellwise outliers before the iterative imputation,
+  ## analogous to the DDC detect-then-impute strategy.
+  if (!is.null(hard_threshold) && hard_threshold > 0 && any(is_continuous)) {
+    n_removed <- 0L
+    for (jj in which(is_continuous)) {
+      flagged_j <- !M[, jj] & (W[, jj] < hard_threshold)
+      if (any(flagged_j)) {
+        data[[jj]][flagged_j] <- NA
+        M[flagged_j, jj] <- TRUE
+        W[flagged_j, jj] <- 1  # treated as missing now
+        n_removed <- n_removed + sum(flagged_j)
+      }
+    }
+    if (n_removed > 0) {
+      # Re-initialise the newly-missing cells
+      data <- initialise(data, mixed = NULL, method = "median")
+      # Update vars_miss
+      vars_miss <- which(colMeans(M) > 0)
+      if (trace) message(paste("  hard thresholding removed", n_removed,
+                                "outlying cells (set to NA)"))
+    }
   }
 
   ## ---- step 3: outer loop ----
@@ -232,23 +312,23 @@ imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
         pred_all <- as.numeric(cbind(1, X) %*% fit$coefficients)
         sigma_hat <- fit$sigma
 
-        # impute with uncertainty
-        data[miss_j, j] <- .add_uncertainty(
-          pred = pred_all[miss_j],
-          y_obs = y[!miss_j],
-          pred_obs = pred_all[!miss_j],
-          sigma = sigma_hat,
-          uncert = uncert
-        )
+        # impute: use deterministic predictions during iteration
+        # (uncertainty is added only to the final output)
+        data[miss_j, j] <- pred_all[miss_j]
 
         # update cell weights for column j from residuals
-        resid_j <- y - pred_all
-        w_new <- cellWeightsFromResiduals(
-          resid_j, sigma = sigma_hat,
-          method = method, alpha = alpha
-        )
-        # only update weights for observed rows; imputed rows are trusted
-        W[!miss_j, j] <- w_new[!miss_j]
+        # (skip if multivariate update will overwrite for continuous vars)
+        if (weight_update == "per-variable" || !is_continuous[j]) {
+          resid_j <- y - pred_all
+          w_new <- cellWeightsFromResiduals(
+            resid_j, sigma = sigma_hat,
+            method = method, alpha = alpha
+          )
+          # adaptive damping: lambda = 0.3 + 0.7 * t/t_max
+          lambda <- 0.3 + 0.7 * min(iterations / maxit, 1)
+          w_damped <- (1 - lambda) * W[, j] + lambda * w_new
+          W[!miss_j, j] <- w_damped[!miss_j]
+        }
         W[miss_j, j] <- 1
 
       } else {
@@ -299,11 +379,11 @@ imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
           }
         }
 
-        # sample from predicted probabilities
+        # use mode (most probable category) during iteration
+        # stochastic sampling is added in the final uncertainty step
         imputed_cats <- apply(prob_pred, 1, function(pp) {
           pp <- pmax(pp, 0)
-          pp <- pp / sum(pp)
-          sample(colnames(prob_pred), size = 1, prob = pp)
+          colnames(prob_pred)[which.max(pp)]
         })
 
         if (is.factor(data[[j]])) {
@@ -316,24 +396,55 @@ imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
       }
     }  # end inner loop
 
-    ## ---- check convergence ----
+    ## ---- multivariate weight update (Option B) ----
+    if (weight_update == "multivariate" && any(is_continuous)) {
+      X_cont_now <- as.matrix(data[, is_continuous, drop = FALSE])
+      W_mv <- cellWeightsMCD(X_cont_now, method = method, alpha = alpha)
+      # Adaptive damping on the multivariate weights too
+      lambda <- 0.3 + 0.7 * min(iterations / maxit, 1)
+      W_old_cont <- W[, is_continuous, drop = FALSE]
+      W_blended <- (1 - lambda) * W_old_cont + lambda * W_mv
+      # Only update observed cells; imputed cells keep weight 1
+      for (jj in which(is_continuous)) {
+        local_j <- match(jj, which(is_continuous))
+        obs_j <- !M[, jj]
+        W[obs_j, jj] <- W_blended[obs_j, local_j]
+        W[M[, jj], jj] <- 1
+      }
+      if (trace) {
+        n_flagged <- sum(W[, is_continuous] < hard_threshold, na.rm = TRUE)
+        message(paste("  multivariate weight update: flagged cells =", n_flagged))
+      }
+    }
+
+    ## ---- check convergence (only on imputed cells, normalized) ----
     d <- 0
+    n_imputed <- 0
     if (any(is_continuous)) {
       cont_cols <- which(is_continuous)
-      d <- d + sum(
-        (as.matrix(data_previous[, cont_cols]) -
-           as.matrix(data[, cont_cols]))^2,
-        na.rm = TRUE
-      )
+      for (jj in cont_cols) {
+        miss_jj <- M[, jj]
+        if (any(miss_jj)) {
+          prev_vals <- data_previous[[jj]][miss_jj]
+          curr_vals <- data[[jj]][miss_jj]
+          denom <- sum(prev_vals^2) + 1e-10
+          d <- d + sum((prev_vals - curr_vals)^2) / denom
+          n_imputed <- n_imputed + 1L
+        }
+      }
     }
     if (any(is_categorical)) {
       cat_cols <- which(is_categorical)
-      d <- d + sum(
-        as.matrix(data_previous[, cat_cols]) !=
-          as.matrix(data[, cat_cols]),
-        na.rm = TRUE
-      )
+      for (jj in cat_cols) {
+        miss_jj <- M[, jj]
+        if (any(miss_jj)) {
+          d <- d + sum(data_previous[[jj]][miss_jj] !=
+                         data[[jj]][miss_jj]) / sum(miss_jj)
+          n_imputed <- n_imputed + 1L
+        }
+      }
     }
+    if (n_imputed > 0) d <- d / n_imputed
 
     if (trace) {
       message(paste("  convergence criterion:", round(d, 6)))
@@ -350,6 +461,34 @@ imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
                   "Final criterion:", round(d, 6)))
   }
 
+  ## ---- add imputation uncertainty to final output ----
+  if (uncert != "none") {
+    for (j in vars_miss) {
+      miss_j <- M[, j]
+      if (!any(miss_j)) next
+      if (is_continuous[j]) {
+        pred_cols <- setdiff(seq_len(p), j)
+        X <- .build_design_matrix(data, pred_cols)
+        w_cell_raw <- W[, pred_cols, drop = FALSE]
+        w_cell <- .expand_cell_weights(data, pred_cols, w_cell_raw)
+        w_response <- W[, j]
+        fit <- cellIRWLS(X, data[[j]], w_cell = w_cell,
+                          w_response = w_response,
+                          method = method, alpha = alpha,
+                          maxit = maxit_irwls, eps = eps_irwls)
+        pred_all <- as.numeric(cbind(1, X) %*% fit$coefficients)
+        data[miss_j, j] <- .add_uncertainty(
+          pred = pred_all[miss_j],
+          y_obs = data[[j]][!miss_j],
+          pred_obs = pred_all[!miss_j],
+          sigma = fit$sigma,
+          uncert = uncert
+        )
+      }
+      # categorical variables already have stochastic sampling
+    }
+  }
+
   rownames(data) <- rn
   list(
     data_imputed = data,
@@ -362,48 +501,59 @@ imputeCellIRMI <- function(data, method = "huber", alpha = NULL,
 
 #' Cellwise M-estimation imputation
 #'
-#' Impute missing values in a single response variable using a cell-weighted
-#' M-estimation approach. Each cell in the predictor matrix receives its own
-#' weight reflecting potential cellwise contamination, so that contaminated
-#' predictor cells are downweighted without discarding entire observations.
+#' Impute missing values in a single response variable using a per-cell
+#' weighted M-estimator.  Each cell in the predictor matrix receives its
+#' own weight reflecting potential cellwise contamination, so that
+#' contaminated predictor cells are downweighted without discarding entire
+#' observations.  Consistency and asymptotic normality of the estimator
+#' under the independent cellwise contamination model are established in
+#' Templ (2026).
 #'
-#' @param formula model formula (e.g., \code{y ~ x1 + x2}).
-#' @param data data.frame containing the data.
-#' @param method weight function: \code{"huber"} (default) or \code{"tukey"}.
-#' @param alpha tuning constant. \code{NULL} (default) uses 1.345 for Huber
-#'   and 4.685 for Tukey.
-#' @param maxit_irwls maximum IRWLS iterations (default: 50).
+#' @param formula a model formula (e.g., \code{y ~ x1 + x2}).
+#' @param data a \code{data.frame} containing the variables in
+#'   \code{formula}.
+#' @param method weight function: \code{"huber"} (default, Huber) or
+#'   \code{"tukey"} (Tukey bisquare).
+#' @param alpha tuning constant.  \code{NULL} (default) uses 1.345 for
+#'   Huber and 4.685 for Tukey, giving 95% efficiency at the normal model.
+#' @param maxit_irwls maximum number of IRWLS iterations (default: 50).
 #' @param eps_irwls convergence tolerance for IRWLS (default: 1e-6).
-#' @param uncert imputation uncertainty method: \code{"pmm"} (default),
-#'   \code{"normalerror"}, or \code{"resid"}.
+#' @param uncert imputation uncertainty method: \code{"pmm"} (predictive
+#'   mean matching, default), \code{"normalerror"} (add normal noise), or
+#'   \code{"resid"} (bootstrap residual).
 #' @param value_back \code{"all"} (default) returns the complete dataset,
-#'   or \code{"ymiss"} returns only the imputed values.
+#'   or \code{"ymiss"} returns only the imputed values for the response.
 #'
-#' @return If \code{value_back = "all"}, the imputed data.frame is returned
-#'   (same structure as input). If \code{value_back = "ymiss"}, a named
-#'   vector of imputed values (for rows that were originally missing) is
-#'   returned.
+#' @return If \code{value_back = "all"}, the imputed \code{data.frame}
+#'   (same structure as input).  If \code{value_back = "ymiss"}, a named
+#'   numeric vector of imputed values for rows that were originally missing.
 #'
 #' @details
 #' This is a lightweight single-formula alternative to
-#' \code{\link{imputeCellIRMI}}. It fits one cell-weighted IRWLS regression
-#' using \code{cellIRWLS()} and imputes the missing values in the response
-#' variable. This is appropriate when only one variable needs imputation
-#' and a specific model formula is desired.
+#' \code{\link{imputeCellIRMI}}.  It fits one cell-weighted IRWLS
+#' regression using \code{cellIRWLS()} and imputes the missing values in
+#' the response variable.  This is appropriate when only one variable
+#' needs imputation and a specific model formula is desired.
 #'
 #' For categorical response variables, a weighted multinomial model via
-#' \code{\link[nnet]{multinom}} is fitted instead. Categorical predictors
+#' \code{\link[nnet]{multinom}} is fitted instead.  Categorical predictors
 #' are not subject to the cellwise contamination model (their cell weights
 #' are always 1).
 #'
 #' @author Matthias Templ
 #' @references
-#' M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
-#' imputation using standard and robust methods. \emph{Journal of
-#' Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
+#' Templ, M. (2026).  Cellwise-robust imputation for mixed data: three
+#' integrated methods.  \emph{Computational Statistics & Data Analysis},
+#' submitted.
+#'
+#' Templ, M., Kowarik, A. and Filzmoser, P. (2011).
+#' Iterative stepwise regression imputation using standard and robust
+#' methods.  \emph{Computational Statistics & Data Analysis},
+#' \strong{55}(10), 2793--2806.
 #'
 #' @family imputation methods
-#' @seealso \code{\link{imputeCellIRMI}}, \code{\link{imputeRobust}}
+#' @seealso \code{\link{imputeCellIRMI}}, \code{\link{imputeCellEM}},
+#'   \code{\link{imputeRobust}}
 #'
 #' @examples
 #' \dontrun{

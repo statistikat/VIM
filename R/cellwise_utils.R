@@ -127,6 +127,107 @@ cellWeights <- function(X, method = "huber", alpha = NULL) {
 }
 
 
+#' Compute per-cell weights using MCD-based conditional residuals
+#'
+#' For each continuous cell (i,j), computes the conditional expectation
+#' \eqn{E(x_{ij} | x_{i,-j})} under a robust Gaussian model (estimated via MCD),
+#' standardizes the residual, and applies a weight function.  This captures
+#' multivariate outlier structure that univariate standardization misses.
+#'
+#' @param X a data frame or matrix of dimension n x p (continuous columns only)
+#' @param method weight function: \code{"tukey"} or \code{"huber"},
+#'   Default: \code{"tukey"}
+#' @param alpha tuning constant. If \code{NULL}, defaults to 4.685 for
+#'   Tukey and 1.345 for Huber.
+#' @return an n x p numeric matrix of weights in \eqn{[0, 1]}
+#' @author Matthias Templ
+#' @importFrom robustbase covMcd
+#' @export
+cellWeightsMCD <- function(X, method = "tukey", alpha = NULL) {
+  method <- match.arg(method, c("huber", "tukey"))
+  X_mat <- as.matrix(X)
+  n <- nrow(X_mat)
+  p <- ncol(X_mat)
+  W <- matrix(1, nrow = n, ncol = p)
+  colnames(W) <- colnames(X_mat)
+
+  if (p < 2 || n < 2 * p) {
+    # Not enough data for MCD; fall back to univariate
+    for (j in seq_len(p)) {
+      med_j <- stats::median(X_mat[, j], na.rm = TRUE)
+      s_j <- .robust_scale(X_mat[, j])
+      u_j <- (X_mat[, j] - med_j) / s_j
+      u_j[is.na(u_j)] <- 0
+      W[, j] <- .apply_weight_fun(u_j, method = method, alpha = alpha)
+    }
+    return(W)
+  }
+
+  # Handle NAs: median-impute for MCD estimation
+  X_complete <- X_mat
+  for (j in seq_len(p)) {
+    na_j <- is.na(X_complete[, j])
+    if (any(na_j)) X_complete[na_j, j] <- stats::median(X_complete[, j], na.rm = TRUE)
+  }
+
+  # Robust covariance via MCD
+  mcd <- tryCatch(
+    robustbase::covMcd(X_complete, alpha = 0.75),
+    error = function(e) NULL
+  )
+
+  if (is.null(mcd)) {
+    # MCD failed; fall back to univariate
+    for (j in seq_len(p)) {
+      med_j <- stats::median(X_mat[, j], na.rm = TRUE)
+      s_j <- .robust_scale(X_mat[, j])
+      u_j <- (X_mat[, j] - med_j) / s_j
+      u_j[is.na(u_j)] <- 0
+      W[, j] <- .apply_weight_fun(u_j, method = method, alpha = alpha)
+    }
+    return(W)
+  }
+
+  mu_rob <- mcd$center
+  Sigma_rob <- mcd$cov
+
+  # For each variable j: compute conditional residual
+  for (j in seq_len(p)) {
+    other <- setdiff(seq_len(p), j)
+
+    # Conditional distribution: x_j | x_{-j} ~ N(mu_cond, sigma2_cond)
+    Sigma_jmj <- Sigma_rob[j, other, drop = FALSE]
+    Sigma_mjmj <- Sigma_rob[other, other, drop = FALSE]
+    Sigma_mjj <- Sigma_rob[other, j, drop = FALSE]
+
+    Sigma_mjmj_inv <- tryCatch(
+      solve(Sigma_mjmj + diag(1e-8, length(other))),
+      error = function(e) MASS::ginv(Sigma_mjmj)
+    )
+
+    beta_cond <- as.numeric(Sigma_mjmj_inv %*% Sigma_mjj)
+    sigma2_cond <- max(
+      Sigma_rob[j, j] - as.numeric(Sigma_jmj %*% Sigma_mjmj_inv %*% Sigma_mjj),
+      .Machine$double.eps * 100
+    )
+    sigma_cond <- sqrt(sigma2_cond)
+
+    # Conditional expectation for each observation
+    dev_other <- sweep(X_complete[, other, drop = FALSE], 2, mu_rob[other], "-")
+    mu_cond <- mu_rob[j] + as.numeric(dev_other %*% beta_cond)
+
+    # Standardized conditional residual
+    u_j <- (X_complete[, j] - mu_cond) / sigma_cond
+    # NAs in the original data get weight 1
+    u_j[is.na(X_mat[, j])] <- 0
+
+    W[, j] <- .apply_weight_fun(u_j, method = method, alpha = alpha)
+  }
+
+  W
+}
+
+
 #' Compute cell weights from regression residuals
 #'
 #' Given a vector of residuals and a robust scale estimate,
@@ -173,11 +274,12 @@ cellWeightsFromResiduals <- function(residuals, sigma,
 #'       \item Estimate robust scale \eqn{\sigma = \mathrm{MAD}(r)}.
 #'       \item Compute psi-weights \eqn{w^{\psi}_i} from standardized
 #'             residuals \eqn{r_i / \sigma}.
-#'       \item Form combined weights: for each cell \eqn{(i, k)},
-#'             \eqn{w^{total}_{ik} = w^{cell}_{ik} \cdot w^{\psi}_i
-#'             \cdot w^{resp}_i}.
-#'       \item Construct weighted design matrix
-#'             \eqn{\tilde{X}_{ik} = \sqrt{w^{total}_{ik}} \cdot X_{ik}}.
+#'       \item Form row weights \eqn{w^{row}_i = w^{\psi}_i \cdot w^{resp}_i}.
+#'       \item Construct weighted design matrix with cell weights entering
+#'             linearly:
+#'             \eqn{\tilde{X}_{ik} = \sqrt{w^{row}_i} \cdot w^{cell}_{ik} \cdot X_{ik}},
+#'             and weighted response
+#'             \eqn{\tilde{y}_i = \sqrt{w^{row}_i} \cdot y_i}.
 #'       \item Solve via QR decomposition:
 #'             \eqn{\beta = (\tilde{X}^T \tilde{X})^{-1} \tilde{X}^T \tilde{y}}.
 #'     }
@@ -191,8 +293,8 @@ cellWeightsFromResiduals <- function(residuals, sigma,
 #'   weights are set to 1.
 #' @param w_response numeric n-vector of cell weights for the
 #'   response variable. If \code{NULL}, all response weights are 1.
-#' @param maxiter maximum number of IRWLS iterations, Default: 50
-#' @param tol convergence tolerance on the relative change in
+#' @param maxit maximum number of IRWLS iterations, Default: 50
+#' @param eps convergence tolerance on the relative change in
 #'   coefficients, Default: 1e-6
 #' @param method weight function: \code{"huber"} or \code{"tukey"},
 #'   Default: \code{"huber"}
@@ -215,9 +317,11 @@ cellWeightsFromResiduals <- function(residuals, sigma,
 #' @author Matthias Templ
 #' @keywords internal
 cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
-                      maxiter = 50, tol = 1e-6,
-                      method = "huber", alpha = NULL) {
+                      maxit = 50, eps = 1e-6,
+                      method = "tukey", alpha = NULL,
+                      init = "s-estimator", damping = TRUE) {
   method <- match.arg(method, c("huber", "tukey"))
+  init <- match.arg(init, c("s-estimator", "ols"))
 
   # --- input coercion and dimensions ---
   X <- as.matrix(X)
@@ -260,13 +364,36 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
     }
   }
 
-  # --- Step 1: initial fit via cell-weighted OLS ---
-  beta <- .weighted_qr_solve(X_int, y, w_cell_int, w_response,
-                             w_psi = rep(1, n))
+  # --- Step 1: initial fit ---
+  if (init == "s-estimator" && n > 2 * p_int &&
+      requireNamespace("robustbase", quietly = TRUE)) {
+    # Use S-estimator via lmrob.S for high-breakdown initialization
+    # Apply to unweighted X to preserve S-estimator's breakdown properties;
+    # cell weights are incorporated in the subsequent IRWLS iterations.
+    s_fit <- tryCatch({
+      robustbase::lmrob.S(X_int, y, control = robustbase::lmrob.control(
+        method = "S", k.max = 200, refine.tol = 1e-7
+      ))
+    }, error = function(e) NULL)
+
+    if (!is.null(s_fit)) {
+      beta <- s_fit$coefficients
+    } else {
+      # S-estimator failed; fall back to cell-weighted OLS
+      beta <- .weighted_qr_solve(X_int, y, w_cell_int, w_response,
+                                 w_psi = rep(1, n))
+    }
+  } else {
+    # Cell-weighted OLS initialization
+    beta <- .weighted_qr_solve(X_int, y, w_cell_int, w_response,
+                               w_psi = rep(1, n))
+  }
+
   converged <- FALSE
   iter <- 0
+  w_psi_prev <- rep(1, n)
 
-  for (it in seq_len(maxiter)) {
+  for (it in seq_len(maxit)) {
     iter <- it
     beta_old <- beta
 
@@ -280,8 +407,17 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
     }
 
     # psi-weights from residuals
-    w_psi <- cellWeightsFromResiduals(r, sigma,
-                                      method = method, alpha = alpha)
+    w_psi_new <- cellWeightsFromResiduals(r, sigma,
+                                          method = method, alpha = alpha)
+
+    # adaptive damping: lambda increases from 0.3 to 1.0 over iterations
+    if (damping && method == "tukey") {
+      lambda <- 0.3 + 0.7 * min(it / maxit, 1)
+      w_psi <- (1 - lambda) * w_psi_prev + lambda * w_psi_new
+    } else {
+      w_psi <- w_psi_new
+    }
+    w_psi_prev <- w_psi
 
     # solve weighted LS
     beta <- .weighted_qr_solve(X_int, y, w_cell_int, w_response,
@@ -289,7 +425,7 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
 
     # check convergence
     denom <- max(abs(beta_old), 1)
-    if (max(abs(beta - beta_old)) / denom < tol) {
+    if (max(abs(beta - beta_old)) / denom < eps) {
       converged <- TRUE
       break
     }
@@ -344,17 +480,15 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
   n <- nrow(X_int)
   p_int <- ncol(X_int)
 
-  # combined weight for each cell (i, k)
-  # w_total[i, k] = w_cell[i, k] * w_psi[i] * w_response[i]
+  # Row weights from psi and response weights
   w_row <- w_psi * w_response  # n-vector
-  w_total <- w_cell_int * w_row  # n x (p+1) matrix
-
-  # weighted design: X_tilde[i, k] = sqrt(w_total[i, k]) * X[i, k]
-  sqrt_w_total <- sqrt(pmax(w_total, 0))
-  X_tilde <- sqrt_w_total * X_int
-
-  # weighted response: y_tilde[i] = sqrt(w_row[i]) * y[i]
   sqrt_w_row <- sqrt(pmax(w_row, 0))
+
+  # Cell weights enter LINEARLY in the design matrix:
+  #   X_tilde[i, k] = sqrt(w_row[i]) * w_cell[i, k] * X[i, k]
+  #   y_tilde[i]    = sqrt(w_row[i]) * y[i]
+  # This solves: min sum_i w_row_i * (y_i - sum_k w_cell_{ik} X_{ik} beta_k)^2
+  X_tilde <- sqrt_w_row * w_cell_int * X_int
   y_tilde <- sqrt_w_row * y
 
   # solve via QR decomposition

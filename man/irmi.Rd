@@ -165,6 +165,9 @@ DOI: 10.1007/978-3-031-30073-8
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
+\code{\link{imputeCellEM}()},
+\code{\link{imputeCellIRMI}()},
+\code{\link{imputeCellM}()},
 \code{\link{imputeRobust}()},
 \code{\link{imputeRobustChain}()},
 \code{\link{kNN}()},
