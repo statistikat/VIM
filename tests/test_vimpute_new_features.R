@@ -317,4 +317,28 @@ if (requireNamespace("mice", quietly = TRUE)) {
   cat("mice nicht installiert, as.mids.vimmi wurde nicht getestet.\n")
 }
 
-cat("\nAlle einfachen Tests fuer das neue vimpute sind durchgelaufen.\n")
+show_test("15) makeNA und donorcond")
+set.seed(20260428)
+dt12 <- make_data(80L)
+dt12[is.na(x1), x1 := 0]
+dt12[is.na(y_num), y_num := 999]
+sentinel_idx <- which(dt12$y_num == 999)
+donor_rows <- setdiff(seq_len(nrow(dt12)), sentinel_idx)[1:5]
+dt12[donor_rows, y_num := -abs(y_num) - 1]
+
+res12 <- vimpute(
+  data = dt12,
+  considered_variables = c("x1", "x2", "y_num"),
+  method = list(y_num = "ranger"),
+  makeNA = list(y_num = 999),
+  donorcond = list(y_num = ">0"),
+  pmm = TRUE,
+  pmm_k = 3L,
+  sequential = FALSE,
+  verbose = FALSE
+)
+
+check(!any(res12$y_num == 999), "makeNA-Werte sollten nach der Imputation nicht erhalten bleiben.")
+check(all(res12$y_num_imp[sentinel_idx]), "Durch makeNA erzeugte fehlende Werte sollten als imputiert markiert werden.")
+check(all(res12$y_num[sentinel_idx] > 0), "Imputierte Werte sollten die donorcond-Bedingung erfuellen.")
+cat("makeNA und donorcond funktionieren.\n")
