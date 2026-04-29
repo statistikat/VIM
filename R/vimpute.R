@@ -60,6 +60,15 @@
 #'    - list(hp  = log(hp) ~ wt + cyl) 
 #'  For X: follows the rules of model.matrix
 #'  For Y: transformations supported are log(), exp(), sqrt(), I(1/..). Only applicable for numeric variables.
+#' @param makeNA
+#'  Optional named list that defines additional values to be treated as imputable missing
+#'  values per variable, similar to \code{kNN()}. For variables listed in \code{makeNA},
+#'  only the specified values are imputed; existing \code{NA} values are left untouched.
+#'  Variables not listed in \code{makeNA} continue to impute regular \code{NA} values.
+#' @param donorcond
+#'  Optional named list of donor conditions per variable, similar to \code{kNN()}.
+#'  Rows whose observed target values do not satisfy the condition are excluded from the
+#'  donor pool for model fitting for that variable.
 #' @param sequential
 #'  If TRUE, all variables with missing data are imputed sequentially across iterations.
 #' @param nseq
@@ -151,6 +160,8 @@ vimpute <- function(
     pmm_k_method = "mean",
     learner_params = NULL,
     formula = FALSE, 
+    makeNA = NULL,
+    donorcond = NULL,
     sequential = TRUE,
     nseq = 10,
     eps = 0.005, 
@@ -181,6 +192,80 @@ vimpute <- function(
   # only defined variables
   data_all_variables <- as.data.table(data)
   data <-  as.data.table(data)[, considered_variables, with = FALSE]
+  
+  # implement makeNA
+  makeNA_match <- setNames(vector("list", length(considered_variables)), considered_variables)
+  donor_mask <- setNames(vector("list", length(considered_variables)), considered_variables)
+  for (var in considered_variables) {
+    makeNA_match[[var]] <- rep(FALSE, nrow(data))
+    donor_mask[[var]] <- rep(TRUE, nrow(data))
+  }
+
+  # implement donorcond:  conditions for "donors", ie training data for model based approaches
+  if (!is.null(donorcond)) {
+    if (!is.list(donorcond) || is.null(names(donorcond)) || any(!nzchar(names(donorcond)))) {
+      stop("'donorcond' must be a named list.")
+    }
+    unknown_donorcond <- setdiff(names(donorcond), considered_variables)
+    if (length(unknown_donorcond) > 0L) {
+      warning(sprintf(
+        "Unknown variable name(s) in 'donorcond': %s",
+        paste(unknown_donorcond, collapse = ", ")
+      ))
+    }
+    for (var in names(donorcond)) {
+      cond <- donorcond[[var]]
+      if (is.null(cond) || length(cond) == 0L) next
+      x <- data[[var]]
+      condition_string <- paste0("x", cond, collapse = "&")
+      donor_ok <- tryCatch(
+        eval(parse(text = condition_string), envir = list(x = x)),
+        error = function(e) {
+          stop(sprintf("Invalid donor condition for '%s': %s", var, e$message), call. = FALSE)
+        }
+      )
+      if (!is.logical(donor_ok) || length(donor_ok) != nrow(data)) {
+        stop(sprintf(
+          "Condition in 'donorcond' for '%s' must evaluate to a logical vector of length %d.",
+          var, nrow(data)
+        ))
+      }
+      donor_ok[is.na(donor_ok)] <- FALSE
+      donor_mask[[var]] <- donor_ok
+    }
+  }
+
+  #set missing values in makeNA to NA
+  if (!is.null(makeNA)) {
+    if (!is.list(makeNA) || is.null(names(makeNA)) || any(!nzchar(names(makeNA)))) {
+      stop("'makeNA' must be a named list.")
+    }
+    unknown_makeNA <- setdiff(names(makeNA), considered_variables)
+    if (length(unknown_makeNA) > 0L) {
+      stop(sprintf(
+        "Unknown variable name(s) in 'makeNA': %s",
+        paste(unknown_makeNA, collapse = ", ")
+      ))
+    }
+    for (var in names(makeNA)) {
+      values <- makeNA[[var]]
+      if (length(values) == 0L) next
+      idx <- data[[var]] %in% values
+      idx[is.na(idx)] <- FALSE
+      makeNA_match[[var]] <- idx
+      if (any(idx)) {
+        set(data, i = which(idx), j = var, value = NA)
+      }
+    }
+  }
+
+  # find values to impute
+  makeNA_vars <- if (is.null(makeNA)) character(0) else names(makeNA)
+  impute_mask <- setNames(vector("list", length(considered_variables)), considered_variables)
+  for (var in considered_variables) {
+    impute_mask[[var]] <- if (var %in% makeNA_vars) makeNA_match[[var]] else is.na(data[[var]])
+  }
+  variables_to_impute <- names(impute_mask)[vapply(impute_mask, any, logical(1))]
   
   # save factor levels
   factor_levels <- list()
@@ -221,6 +306,7 @@ vimpute <- function(
     uncert = uncert,
     m = m,
     default_method = default_method,
+    variables_NA = variables_to_impute,
     verbose = verbose
   )
   data           <- checked_data$data
@@ -303,8 +389,8 @@ vimpute <- function(
   if(verbose){
     message(paste("***** Find Missing Indices"))
   }
-  missing_indices <- setNames(lapply(variables, function(var) { #original NAs
-    na_idx <- which(is.na(data[[var]]))
+  missing_indices <- setNames(lapply(variables, function(var) {
+    na_idx <- which(impute_mask[[var]])
     if (length(na_idx) > 0) return(na_idx) else return(integer(0))
   }), variables)
   missing_indices <- missing_indices[!sapply(missing_indices, is.null)]
@@ -320,7 +406,10 @@ vimpute <- function(
       message(paste0("***** Multiple imputation enabled (m = ", m, ")"))
       message("***** Running repeated single imputations and collecting imputed values")
     }
-    where_matrix <- as.matrix(is.na(data))
+    where_matrix <- matrix(FALSE, nrow = nrow(data), ncol = length(variables), dimnames = list(NULL, variables))
+    for (v in variables_NA) {
+      where_matrix[missing_indices[[v]], v] <- TRUE
+    }
 
     imp_collector <- setNames(
       lapply(variables_NA, function(v) vector("list", m)),
@@ -340,6 +429,8 @@ vimpute <- function(
         pmm_k_method = pmm_k_method,
         learner_params = learner_params,
         formula = formula,
+        makeNA = makeNA,
+        donorcond = donorcond,
         sequential = sequential,
         nseq = nseq,
         eps = eps,
@@ -462,8 +553,9 @@ vimpute <- function(
         rewrited_formula <- rewrite_formula (selected_formula, target_col) # write formula in the correct way
         
         # Remove missing values (na.omit)  -> for Training
+        # remove donors not fullfilling donorcond
         data <- enforce_factor_levels(data, factor_levels)  
-        data_clean <- na.omit(data)
+        data_clean <- na.omit(data[donor_mask[[target_col]]])
         
         check_all_factor_levels(data_clean, factor_levels)
         
@@ -509,7 +601,7 @@ vimpute <- function(
         
         # Impute missing values (Median/Mode)  -> for prediction 
         # Train on complete targets only (mlr3 disallows NA in target)
-        data_train_mm <- data[!is.na(get(target_col))]
+        data_train_mm <- data[donor_mask[[target_col]] & !is.na(get(target_col))]
         if (is_target_numeric) {
           task_mm <- TaskRegr$new(id = "imputation_task_mm", backend = data_train_mm, target = target_col)
         } else {
@@ -585,6 +677,8 @@ vimpute <- function(
         check_all_factor_levels(data_temp, factor_levels)
         
       }
+
+      donor_ok_rows <- if (!isFALSE(selected_formula)) rep(TRUE, nrow(data_temp)) else donor_mask[[target_col]]
       
       if (!isFALSE(selected_formula) && "Intercept" %in% colnames(data_temp)) {
         data_temp <- data_temp[, !colnames(data_temp) %in% "Intercept", with = FALSE]
@@ -677,10 +771,10 @@ vimpute <- function(
         
         # OHE on data
         if (task_type == "regr") {
-          train_dt <- data_temp[!is.na(get(target_col))]
+          train_dt <- data_temp[donor_ok_rows & !is.na(get(target_col))]
           train_task <- as_task_regr(train_dt, target = target_col)  
         } else {
-          train_dt <- data_temp[!is.na(get(target_col))]
+          train_dt <- data_temp[donor_ok_rows & !is.na(get(target_col))]
           train_task <- as_task_classif(train_dt, target = target_col)  
         }
         
@@ -746,7 +840,7 @@ vimpute <- function(
       # }
       
       # If NA in target variable --> only train with the data that has no NA in Y
-      data_y_fill <- data_y_fill[!is.na(get(target_col))]
+      data_y_fill <- data_y_fill[donor_ok_rows & !is.na(get(target_col))]
       
       # If the learner does not support missing values -> use na.omit()
       data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
@@ -1609,7 +1703,7 @@ vimpute <- function(
         if (length(relevant_features) == 0) stop("No relevant features for classification for ", var)
         
         # Prepare classification data 
-        class_data <- data_temp[!is.na(data_temp[[var]]), c(relevant_features, var, zero_flag_col), with = FALSE] # not using NAs for training
+        class_data <- data_temp[donor_ok_rows & !is.na(data_temp[[var]]), c(relevant_features, var, zero_flag_col), with = FALSE]
         if (nrow(class_data) == 0) stop("No rows left for classification for ", var)
         
         # Harmonize factor-levels -> no new levels and no lost levels
@@ -1723,7 +1817,7 @@ vimpute <- function(
         }
         
         # 2) Regression
-        reg_data <- data_temp[data_temp[[var]] > 0,]  # only positive values
+        reg_data <- data_temp[donor_ok_rows & data_temp[[var]] > 0,]  # only positive values
         # Same features as classification
         reg_features <- relevant_features
         # Regression without NA in target
