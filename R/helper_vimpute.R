@@ -56,14 +56,20 @@ register_robust_learners <- function() {
         target = task$target_names
         features = task$feature_names
 
-        factor_cols = sapply(data, is.factor)
-        if (any(factor_cols)) {
-          for (col in names(data)[factor_cols]) {
-            data[[col]] = droplevels(data[[col]])
-          }
+        sanitized = sanitize_model_features(data, target, features)
+        data = sanitized$data
+        features = sanitized$features
+        self$state$feature_names = features
+        self$state$factor_levels = sanitized$factor_levels
+
+        if (length(sanitized$dropped) > 0L) {
+          warning(sprintf(
+            "Dropping constant or single-level predictors for '%s': %s",
+            target, paste(sanitized$dropped, collapse = ", ")
+          ))
         }
 
-        formula = reformulate(features, response = target)
+        formula = build_feature_formula(target, features)
         control = do.call(robustbase::lmrob.control, pv)
 
         model = tryCatch(
@@ -83,14 +89,13 @@ register_robust_learners <- function() {
           self$state$used_fallback = FALSE
         }
 
-        factor_col_names = names(data)[factor_cols]  # Namen der Faktor-Spalten
-        self$state$factor_levels = lapply(data[, factor_col_names, drop = FALSE], levels)
         return(model)
       },
 
       .predict = function(task) {
         model = self$model
         newdata = as.data.frame(task$data())
+        feature_names = if (is.null(self$state$feature_names)) character(0) else self$state$feature_names
 
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
@@ -104,6 +109,7 @@ register_robust_learners <- function() {
             }
           }
         }
+        newdata = newdata[, feature_names, drop = FALSE]
 
         response = tryCatch({
           predict(model, newdata = newdata)
@@ -174,17 +180,39 @@ register_robust_learners <- function() {
       .train = function(task) {
         data <- as.data.frame(task$data())
         y    <- task$truth()
-        X    <- data[, task$feature_names, drop = FALSE]
+        target_name <- task$target_names
+        features <- task$feature_names
         classes <- task$class_names
         self$state$classes <- classes
 
-        # robust factor handling: droplevels etc. (optional nach Bedarf)
-        # ...
+        data[[target_name]] <- y
+        sanitized <- sanitize_model_features(data, target_name, features)
+        data <- sanitized$data
+        y <- data[[target_name]]
+        features <- sanitized$features
+        X <- data[, features, drop = FALSE]
+        self$state$feature_names <- features
+        self$state$factor_levels <- sanitized$factor_levels
+
+        if (length(sanitized$dropped) > 0L) {
+          warning(sprintf(
+            "Dropping constant or single-level predictors for '%s': %s",
+            target_name, paste(sanitized$dropped, collapse = ", ")
+          ))
+        }
 
         if (length(classes) == 2L) {
           # Binär: ein robustes Logit
           df <- data.frame(y = as.factor(y), X)
-          mod <- robustbase::glmrob(y ~ ., data = df, family = binomial())
+          prob <- mean(as.character(df$y) == classes[1])
+          if (prob %in% c(0, 1)) {
+            mod <- new_constant_binomial_model(prob)
+          } else {
+            mod <- tryCatch(
+              robustbase::glmrob(build_feature_formula("y", features), data = df, family = binomial()),
+              error = function(e) glm(build_feature_formula("y", features), data = df, family = binomial())
+            )
+          }
           self$state$models <- list(mod)
         } else {
           # Multiclass: One-vs-Rest
@@ -194,8 +222,15 @@ register_robust_learners <- function() {
             # y_k = 1{y==k} vs rest
             yk <- factor(ifelse(y == k, 1L, 0L))
             df <- data.frame(y = yk, X)
-            # robustes Logit
-            mods[[k]] <- robustbase::glmrob(y ~ ., data = df, family = binomial())
+            prob <- mean(as.character(df$y) == "1")
+            if (prob %in% c(0, 1)) {
+              mods[[k]] <- new_constant_binomial_model(prob)
+            } else {
+              mods[[k]] <- tryCatch(
+                robustbase::glmrob(build_feature_formula("y", features), data = df, family = binomial()),
+                error = function(e) glm(build_feature_formula("y", features), data = df, family = binomial())
+              )
+            }
           }
           self$state$models <- mods
         }
@@ -205,15 +240,23 @@ register_robust_learners <- function() {
       .predict = function(task) {
         data <- as.data.frame(task$data(cols = task$feature_names))
         classes <- self$state$classes
+        feature_names <- if (is.null(self$state$feature_names)) character(0) else self$state$feature_names
+
+        if (!is.null(self$state$factor_levels)) {
+          for (var in names(self$state$factor_levels)) {
+            if (var %in% colnames(data) && is.factor(data[[var]])) {
+              data[[var]] <- factor(data[[var]], levels = self$state$factor_levels[[var]])
+            }
+          }
+        }
+        data <- data[, feature_names, drop = FALSE]
 
         if (length(classes) == 2L) {
           mod <- self$state$models[[1]]
-          p1  <- tryCatch(
-            stats::predict(mod, newdata = data, type = "response"),
-            error = function(e) rep(NA_real_, nrow(data))
-          )
+          p1  <- predict_binomial_response(mod, data, fallback = 0.5)
           # p(y=positive), definiere Klassenreihenfolge wie in task$class_names
           # Nehmen wir classes[1] als "positive" für Konsistenz:
+          p1 <- pmin(pmax(p1, 1e-6), 1 - 1e-6)
           probs <- cbind(p1, 1 - p1)
           colnames(probs) <- classes
           if (self$predict_type == "prob") {
@@ -229,10 +272,7 @@ register_robust_learners <- function() {
           Pk   <- matrix(NA_real_, nrow(data), length(classes))
           colnames(Pk) <- classes
           for (k in classes) {
-            Pk[, k] <- tryCatch(
-              stats::predict(mods[[k]], newdata = data, type = "response"),
-              error = function(e) rep(NA_real_, nrow(data))
-            )
+            Pk[, k] <- predict_binomial_response(mods[[k]], data, fallback = 0.5)
             # clamp to avoid 0/1 pathological odds
             Pk[, k] <- pmin(pmax(Pk[, k], 1e-6), 1 - 1e-6)
           }
@@ -310,6 +350,86 @@ needs_ranger_classif <- function(y, X) {
     qr(mm)$rank < ncol(mm)
   }
   imbalance || high_dim || rare_levels || multicollinear
+}
+#
+#
+#
+sanitize_model_features <- function(data, target, features) {
+  data <- as.data.frame(data)
+
+  if (target %in% names(data) && is.factor(data[[target]])) {
+    data[[target]] <- droplevels(data[[target]])
+  }
+
+  keep_features <- character(0)
+  dropped_features <- character(0)
+
+  for (feature in features) {
+    if (!feature %in% names(data)) next
+
+    col <- data[[feature]]
+
+    if (is.ordered(col)) {
+      col <- factor(as.character(col))
+      data[[feature]] <- col
+    }
+
+    if (is.factor(col)) {
+      col <- droplevels(col)
+      data[[feature]] <- col
+      if (nlevels(col) >= 2L) {
+        keep_features <- c(keep_features, feature)
+      } else {
+        dropped_features <- c(dropped_features, feature)
+      }
+    } else {
+      n_unique <- length(unique(stats::na.omit(col)))
+      if (n_unique >= 2L) {
+        keep_features <- c(keep_features, feature)
+      } else {
+        dropped_features <- c(dropped_features, feature)
+      }
+    }
+  }
+
+  data <- data[, c(target, keep_features), drop = FALSE]
+  factor_cols <- keep_features[vapply(data[, keep_features, drop = FALSE], is.factor, logical(1))]
+  factor_levels <- lapply(data[, factor_cols, drop = FALSE], levels)
+
+  list(
+    data = data,
+    features = keep_features,
+    dropped = dropped_features,
+    factor_levels = factor_levels
+  )
+}
+#
+#
+#
+build_feature_formula <- function(target, features) {
+  if (!length(features)) {
+    return(as.formula(paste(target, "~ 1")))
+  }
+  reformulate(features, response = target)
+}
+#
+#
+#
+new_constant_binomial_model <- function(prob) {
+  structure(list(prob = as.numeric(prob)), class = "vimpute_constant_binomial")
+}
+#
+#
+#
+predict_binomial_response <- function(model, newdata, fallback = 0.5) {
+  if (inherits(model, "vimpute_constant_binomial")) {
+    return(rep(model$prob, nrow(newdata)))
+  }
+
+  tryCatch(
+    as.numeric(stats::predict(model, newdata = newdata, type = "response")),
+    error = function(e) rep(fallback, nrow(newdata))
+  )
 }
 #
 #
@@ -1775,8 +1895,17 @@ register_gam_learners <- function() {
         target <- task$target_names
         features <- task$feature_names
 
-        for (col in names(data)) {
-          if (is.factor(data[[col]])) data[[col]] <- droplevels(data[[col]])
+        sanitized <- sanitize_model_features(data, target, features)
+        data <- sanitized$data
+        features <- sanitized$features
+        self$state$feature_names <- features
+        self$state$factor_levels <- sanitized$factor_levels
+
+        if (length(sanitized$dropped) > 0L) {
+          warning(sprintf(
+            "Dropping constant or single-level predictors for '%s': %s",
+            target, paste(sanitized$dropped, collapse = ", ")
+          ))
         }
 
         form <- build_gam_formula(target, features, data, min_unique = pv$min_unique)
@@ -1785,12 +1914,9 @@ register_gam_learners <- function() {
           fit_gam_model(form, data = data),
           error = function(e) {
             warning(sprintf("gam() failed for '%s': %s\nFalling back to lm()", target, e$message))
-            lm(reformulate(features, response = target), data = data)
+            lm(build_feature_formula(target, features), data = data)
           }
         )
-
-        factor_cols <- sapply(data[, features, drop = FALSE], is.factor)
-        self$state$factor_levels <- lapply(data[, names(which(factor_cols)), drop = FALSE], levels)
 
         model
       },
@@ -1798,6 +1924,7 @@ register_gam_learners <- function() {
       .predict = function(task) {
         model <- self$model
         newdata <- as.data.frame(task$data())
+        feature_names <- if (is.null(self$state$feature_names)) character(0) else self$state$feature_names
 
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
@@ -1806,6 +1933,7 @@ register_gam_learners <- function() {
             }
           }
         }
+        newdata <- newdata[, feature_names, drop = FALSE]
 
         response <- tryCatch(
           as.numeric(predict(model, newdata = newdata, type = "response")),
@@ -1848,28 +1976,42 @@ register_gam_learners <- function() {
       .train = function(task) {
         pv <- self$param_set$get_values()
         data <- as.data.frame(task$data())
+        target_name <- task$target_names
         y <- task$truth()
         features <- task$feature_names
         classes <- task$class_names
         self$state$classes <- classes
 
-        for (col in names(data)) {
-          if (is.factor(data[[col]])) data[[col]] <- droplevels(data[[col]])
-        }
+        data[[target_name]] <- y
+        sanitized <- sanitize_model_features(data, target_name, features)
+        data <- sanitized$data
+        y <- data[[target_name]]
+        features <- sanitized$features
+        self$state$feature_names <- features
+        self$state$factor_levels <- sanitized$factor_levels
 
-        factor_cols <- sapply(data[, features, drop = FALSE], is.factor)
-        self$state$factor_levels <- lapply(data[, names(which(factor_cols)), drop = FALSE], levels)
+        if (length(sanitized$dropped) > 0L) {
+          warning(sprintf(
+            "Dropping constant or single-level predictors for '%s': %s",
+            target_name, paste(sanitized$dropped, collapse = ", ")
+          ))
+        }
 
         if (length(classes) == 2L) {
           df <- data.frame(y_bin = as.integer(y == classes[1]), data[, features, drop = FALSE])
-          form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
-          mod <- tryCatch(
-            fit_gam_model(form, data = df, family = binomial()),
-            error = function(e) {
-              warning(sprintf("gam(binomial) failed: %s\nFalling back to glm()", e$message))
-              glm(reformulate(features, response = "y_bin"), data = df, family = binomial())
-            }
-          )
+          prob <- mean(df$y_bin == 1)
+          if (prob %in% c(0, 1)) {
+            mod <- new_constant_binomial_model(prob)
+          } else {
+            form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
+            mod <- tryCatch(
+              fit_gam_model(form, data = df, family = binomial()),
+              error = function(e) {
+                warning(sprintf("gam(binomial) failed: %s\nFalling back to glm()", e$message))
+                glm(build_feature_formula("y_bin", features), data = df, family = binomial())
+              }
+            )
+          }
           return(list(models = list(mod), classes = classes, binary = TRUE))
         }
 
@@ -1878,14 +2020,19 @@ register_gam_learners <- function() {
         names(mods) <- classes
         for (k in classes) {
           df <- data.frame(y_bin = as.integer(y == k), data[, features, drop = FALSE])
-          form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
-          mods[[k]] <- tryCatch(
-            fit_gam_model(form, data = df, family = binomial()),
-            error = function(e) {
-              warning(sprintf("gam(binomial) OvR class '%s' failed: %s\nFalling back to glm()", k, e$message))
-              glm(reformulate(features, response = "y_bin"), data = df, family = binomial())
-            }
-          )
+          prob <- mean(df$y_bin == 1)
+          if (prob %in% c(0, 1)) {
+            mods[[k]] <- new_constant_binomial_model(prob)
+          } else {
+            form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
+            mods[[k]] <- tryCatch(
+              fit_gam_model(form, data = df, family = binomial()),
+              error = function(e) {
+                warning(sprintf("gam(binomial) OvR class '%s' failed: %s\nFalling back to glm()", k, e$message))
+                glm(build_feature_formula("y_bin", features), data = df, family = binomial())
+              }
+            )
+          }
         }
         list(models = mods, classes = classes, binary = FALSE)
       },
@@ -1894,6 +2041,7 @@ register_gam_learners <- function() {
         model_info <- self$model
         newdata <- as.data.frame(task$data(cols = task$feature_names))
         classes <- model_info$classes
+        feature_names <- if (is.null(self$state$feature_names)) character(0) else self$state$feature_names
 
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
@@ -1902,13 +2050,11 @@ register_gam_learners <- function() {
             }
           }
         }
+        newdata <- newdata[, feature_names, drop = FALSE]
 
         if (model_info$binary) {
           mod <- model_info$models[[1]]
-          p1 <- tryCatch(
-            as.numeric(predict(mod, newdata = newdata, type = "response")),
-            error = function(e) rep(0.5, nrow(newdata))
-          )
+          p1 <- predict_binomial_response(mod, newdata, fallback = 0.5)
           p1 <- pmin(pmax(p1, 1e-6), 1 - 1e-6)
           probs <- cbind(p1, 1 - p1)
           colnames(probs) <- classes
@@ -1916,10 +2062,7 @@ register_gam_learners <- function() {
           Pk <- matrix(NA_real_, nrow(newdata), length(classes))
           colnames(Pk) <- classes
           for (k in classes) {
-            Pk[, k] <- tryCatch(
-              as.numeric(predict(model_info$models[[k]], newdata = newdata, type = "response")),
-              error = function(e) rep(0.5, nrow(newdata))
-            )
+            Pk[, k] <- predict_binomial_response(model_info$models[[k]], newdata, fallback = 0.5)
             Pk[, k] <- pmin(pmax(Pk[, k], 1e-6), 1 - 1e-6)
           }
           Q <- Pk / (1 - Pk)
@@ -1971,14 +2114,19 @@ register_gam_learners <- function() {
         data <- as.data.frame(task$data())
         target <- task$target_names
         features <- task$feature_names
+        sanitized <- sanitize_model_features(data, target, features)
+        data <- sanitized$data
+        features <- sanitized$features
         n <- nrow(data)
+        self$state$feature_names <- features
+        self$state$factor_levels <- sanitized$factor_levels
 
-        for (col in names(data)) {
-          if (is.factor(data[[col]])) data[[col]] <- droplevels(data[[col]])
+        if (length(sanitized$dropped) > 0L) {
+          warning(sprintf(
+            "Dropping constant or single-level predictors for '%s': %s",
+            target, paste(sanitized$dropped, collapse = ", ")
+          ))
         }
-
-        factor_cols <- sapply(data[, features, drop = FALSE], is.factor)
-        self$state$factor_levels <- lapply(data[, names(which(factor_cols)), drop = FALSE], levels)
 
         form <- build_gam_formula(target, features, data, min_unique = pv$min_unique)
 
@@ -1991,7 +2139,7 @@ register_gam_learners <- function() {
             }
           )
           if (is.null(mod_init)) {
-            mod <- lm(reformulate(features, response = target), data = data)
+            mod <- lm(build_feature_formula(target, features), data = data)
             return(list(mod = mod, subset_good = seq_len(n), subset_bad = integer(0),
                         scale = sd(residuals(mod))))
           }
@@ -2022,7 +2170,7 @@ register_gam_learners <- function() {
             }
           )
           if (is.null(mod)) {
-            mod <- lm(reformulate(features, response = target), data = data)
+            mod <- lm(build_feature_formula(target, features), data = data)
             return(list(mod = mod, subset_good = seq_len(n), subset_bad = integer(0),
                         scale = sd(residuals(mod))))
           }
@@ -2058,6 +2206,7 @@ register_gam_learners <- function() {
       .predict = function(task) {
         model_info <- self$model
         newdata <- as.data.frame(task$data())
+        feature_names <- if (is.null(self$state$feature_names)) character(0) else self$state$feature_names
 
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
@@ -2066,6 +2215,7 @@ register_gam_learners <- function() {
             }
           }
         }
+        newdata <- newdata[, feature_names, drop = FALSE]
 
         response <- tryCatch(
           as.numeric(predict(model_info$mod, newdata = newdata, type = "response")),
@@ -2116,23 +2266,36 @@ register_gam_learners <- function() {
       .train = function(task) {
         pv <- self$param_set$get_values()
         data <- as.data.frame(task$data())
+        target_name <- task$target_names
         y <- task$truth()
         features <- task$feature_names
         classes <- task$class_names
         self$state$classes <- classes
 
-        for (col in names(data)) {
-          if (is.factor(data[[col]])) data[[col]] <- droplevels(data[[col]])
-        }
+        data[[target_name]] <- y
+        sanitized <- sanitize_model_features(data, target_name, features)
+        data <- sanitized$data
+        y <- data[[target_name]]
+        features <- sanitized$features
+        self$state$feature_names <- features
+        self$state$factor_levels <- sanitized$factor_levels
 
-        factor_cols <- sapply(data[, features, drop = FALSE], is.factor)
-        self$state$factor_levels <- lapply(data[, names(which(factor_cols)), drop = FALSE], levels)
+        if (length(sanitized$dropped) > 0L) {
+          warning(sprintf(
+            "Dropping constant or single-level predictors for '%s': %s",
+            target_name, paste(sanitized$dropped, collapse = ", ")
+          ))
+        }
 
         fit_one_robgam <- function(df, form) {
           n <- nrow(df)
+          prob <- mean(df$y_bin == 1)
+          if (prob %in% c(0, 1)) {
+            return(new_constant_binomial_model(prob))
+          }
           if (pv$robust_method == "simple") {
             mod_init <- tryCatch(fit_gam_model(form, data = df, family = binomial()),
-              error = function(e) glm(form, data = df, family = binomial()))
+              error = function(e) glm(build_feature_formula("y_bin", features), data = df, family = binomial()))
 
             dev_resids <- residuals(mod_init, type = "deviance")
             cutoff <- quantile(abs(dev_resids), probs = pv$alpha)
@@ -2145,7 +2308,7 @@ register_gam_learners <- function() {
           } else {
             weights <- rep(1, n)
             mod <- tryCatch(fit_gam_model(form, data = df, family = binomial()),
-              error = function(e) glm(form, data = df, family = binomial()))
+              error = function(e) glm(build_feature_formula("y_bin", features), data = df, family = binomial()))
 
             for (iter in seq_len(pv$max_iter)) {
               dev_resids <- residuals(mod, type = "deviance")
@@ -2184,6 +2347,7 @@ register_gam_learners <- function() {
         model_info <- self$model
         newdata <- as.data.frame(task$data(cols = task$feature_names))
         classes <- model_info$classes
+        feature_names <- if (is.null(self$state$feature_names)) character(0) else self$state$feature_names
 
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
@@ -2192,10 +2356,10 @@ register_gam_learners <- function() {
             }
           }
         }
+        newdata <- newdata[, feature_names, drop = FALSE]
 
         if (model_info$binary) {
-          p1 <- tryCatch(as.numeric(predict(model_info$models[[1]], newdata = newdata, type = "response")),
-            error = function(e) rep(0.5, nrow(newdata)))
+          p1 <- predict_binomial_response(model_info$models[[1]], newdata, fallback = 0.5)
           p1 <- pmin(pmax(p1, 1e-6), 1 - 1e-6)
           probs <- cbind(p1, 1 - p1)
           colnames(probs) <- classes
@@ -2203,8 +2367,7 @@ register_gam_learners <- function() {
           Pk <- matrix(NA_real_, nrow(newdata), length(classes))
           colnames(Pk) <- classes
           for (k in classes) {
-            Pk[, k] <- tryCatch(as.numeric(predict(model_info$models[[k]], newdata = newdata, type = "response")),
-              error = function(e) rep(0.5, nrow(newdata)))
+            Pk[, k] <- predict_binomial_response(model_info$models[[k]], newdata, fallback = 0.5)
             Pk[, k] <- pmin(pmax(Pk[, k], 1e-6), 1 - 1e-6)
           }
           Q <- Pk / (1 - Pk)
