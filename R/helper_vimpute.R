@@ -95,7 +95,7 @@ register_robust_learners <- function() {
       .predict = function(task) {
         model = self$model
         newdata = as.data.frame(task$data())
-        feature_names = self$state$feature_names %||% character(0)
+        feature_names = if (is.null(self$state$feature_names)) character(0) else self$state$feature_names
 
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
@@ -253,9 +253,7 @@ register_robust_learners <- function() {
         if (length(classes) == 2L) {
           mod <- self$state$models[[1]]
           p1  <- predict_binomial_response(mod, data, fallback = 0.5)
-          # p(y=positive), definiere Klassenreihenfolge wie in task$class_names
-          # Nehmen wir classes[1] als "positive" für Konsistenz:
-          p1 <- pmin(pmax(p1, 1e-6), 1 - 1e-6)
+          p1 <- sanitize_binary_probs(p1, fallback = 0.5)
           probs <- cbind(p1, 1 - p1)
           colnames(probs) <- classes
           if (self$predict_type == "prob") {
@@ -272,13 +270,9 @@ register_robust_learners <- function() {
           colnames(Pk) <- classes
           for (k in classes) {
             Pk[, k] <- predict_binomial_response(mods[[k]], data, fallback = 0.5)
-            # clamp to avoid 0/1 pathological odds
-            Pk[, k] <- pmin(pmax(Pk[, k], 1e-6), 1 - 1e-6)
+            Pk[, k] <- sanitize_binary_probs(Pk[, k], fallback = 0.5)
           }
-          # OvR-Normalisierung: q_k = p_k/(1-p_k); p_tilde_k = q_k / sum_j q_j
-          Q <- Pk / (1 - Pk)
-          row_sums <- rowSums(Q)
-          probs <- Q / row_sums
+          probs <- normalize_multiclass_probs(Pk)
 
           if (self$predict_type == "prob") {
             pred <- mlr3::PredictionClassif$new(task = task, prob = probs)
@@ -429,6 +423,61 @@ predict_binomial_response <- function(model, newdata, fallback = 0.5) {
     as.numeric(stats::predict(model, newdata = newdata, type = "response")),
     error = function(e) rep(fallback, nrow(newdata))
   )
+}
+#
+#
+#
+sanitize_binary_probs <- function(p1, fallback = 0.5) {
+  p1 <- as.numeric(p1)
+  bad <- !is.finite(p1)
+  if (any(bad)) {
+    p1[bad] <- fallback
+  }
+  pmin(pmax(p1, 1e-6), 1 - 1e-6)
+}
+#
+#
+#
+normalize_multiclass_probs <- function(Pk, fallback = NULL) {
+  Pk <- as.matrix(Pk)
+  if (!ncol(Pk)) {
+    return(Pk)
+  }
+
+  bad <- !is.finite(Pk)
+  if (any(bad)) {
+    Pk[bad] <- 0
+  }
+
+  Pk <- pmin(pmax(Pk, 1e-6), 1 - 1e-6)
+  Q <- Pk / (1 - Pk)
+  row_sums <- rowSums(Q)
+  invalid_rows <- !is.finite(row_sums) | row_sums <= 0
+
+  probs <- Q
+  if (any(!invalid_rows)) {
+    probs[!invalid_rows, ] <- Q[!invalid_rows, , drop = FALSE] / row_sums[!invalid_rows]
+  }
+
+  if (is.null(fallback)) {
+    fallback <- rep(1 / ncol(Pk), ncol(Pk))
+  }
+  fallback <- as.numeric(fallback)
+  if (length(fallback) != ncol(Pk) || any(!is.finite(fallback)) || sum(fallback) <= 0) {
+    fallback <- rep(1 / ncol(Pk), ncol(Pk))
+  } else {
+    fallback <- fallback / sum(fallback)
+  }
+
+  if (any(invalid_rows)) {
+    probs[invalid_rows, ] <- matrix(
+      rep(fallback, sum(invalid_rows)),
+      nrow = sum(invalid_rows),
+      byrow = TRUE
+    )
+  }
+
+  probs
 }
 #
 #
@@ -2140,7 +2189,7 @@ register_gam_learners <- function() {
         if (model_info$binary) {
           mod <- model_info$models[[1]]
           p1 <- predict_binomial_response(mod, newdata, fallback = 0.5)
-          p1 <- pmin(pmax(p1, 1e-6), 1 - 1e-6)
+          p1 <- sanitize_binary_probs(p1, fallback = 0.5)
           probs <- cbind(p1, 1 - p1)
           colnames(probs) <- classes
         } else {
@@ -2148,10 +2197,9 @@ register_gam_learners <- function() {
           colnames(Pk) <- classes
           for (k in classes) {
             Pk[, k] <- predict_binomial_response(model_info$models[[k]], newdata, fallback = 0.5)
-            Pk[, k] <- pmin(pmax(Pk[, k], 1e-6), 1 - 1e-6)
+            Pk[, k] <- sanitize_binary_probs(Pk[, k], fallback = 0.5)
           }
-          Q <- Pk / (1 - Pk)
-          probs <- Q / rowSums(Q)
+          probs <- normalize_multiclass_probs(Pk)
         }
 
         if (self$predict_type == "prob") {
@@ -2459,7 +2507,7 @@ register_gam_learners <- function() {
         if (model_info$binary) {
           p1 <- tryCatch(as.numeric(predict(model_info$models[[1]], newdata = newdata, type = "response")),
             error = function(e) rep(0.5, nrow(newdata)))
-          p1 <- pmin(pmax(p1, 1e-6), 1 - 1e-6)
+          p1 <- sanitize_binary_probs(p1, fallback = 0.5)
           probs <- cbind(p1, 1 - p1)
           colnames(probs) <- classes
         } else {
@@ -2468,10 +2516,9 @@ register_gam_learners <- function() {
           for (k in classes) {
             Pk[, k] <- tryCatch(as.numeric(predict(model_info$models[[k]], newdata = newdata, type = "response")),
               error = function(e) rep(0.5, nrow(newdata)))
-            Pk[, k] <- pmin(pmax(Pk[, k], 1e-6), 1 - 1e-6)
+            Pk[, k] <- sanitize_binary_probs(Pk[, k], fallback = 0.5)
           }
-          Q <- Pk / (1 - Pk)
-          probs <- Q / rowSums(Q)
+          probs <- normalize_multiclass_probs(Pk)
         }
 
         if (self$predict_type == "prob") {

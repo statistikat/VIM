@@ -2312,6 +2312,18 @@ vimpute <- function(
           
           learner$predict_type <- "prob"
           pred_probs <- learner$predict(pred_task)$prob
+          pred_probs <- as.matrix(pred_probs)
+          bad_probs <- !is.finite(pred_probs)
+          if (any(bad_probs)) {
+            pred_probs[bad_probs] <- 0
+          }
+          row_sums <- rowSums(pred_probs)
+          bad_rows <- !is.finite(row_sums) | row_sums <= 0
+          if (any(bad_rows)) {
+            pred_probs[bad_rows, ] <- 1 / ncol(pred_probs)
+            row_sums[bad_rows] <- 1
+          }
+          pred_probs <- pred_probs / row_sums
           
           if (isFALSE(sequential) || i == nseq) {
             preds <- apply(pred_probs, 1, function(probs) {
@@ -2611,6 +2623,18 @@ vimpute <- function(
             if (is.null(pred_probs)) {
               stop("Error in the calculation of prediction probabilities.")
             }
+            pred_probs <- as.matrix(pred_probs)
+            bad_probs <- !is.finite(pred_probs)
+            if (any(bad_probs)) {
+              pred_probs[bad_probs] <- 0
+            }
+            row_sums <- rowSums(pred_probs)
+            bad_rows <- !is.finite(row_sums) | row_sums <= 0
+            if (any(bad_rows)) {
+              pred_probs[bad_rows, ] <- 1 / ncol(pred_probs)
+              row_sums[bad_rows] <- 1
+            }
+            pred_probs <- pred_probs / row_sums
             
             preds <- apply(pred_probs, 1, function(probs) {
               sample(levels(data_temp[[target_col]]), size = 1, prob = probs) # at last iteration: stochastic class assignment
