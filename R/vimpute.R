@@ -847,6 +847,31 @@ vimpute <- function(
       data_y_fill_final <- enforce_factor_levels(data_y_fill_final, factor_levels) 
       
       
+      n_train <- nrow(data_y_fill_final)
+
+      if (n_train == 0L) {
+        warning(sprintf(
+          "No observed values for target '%s' after donor filtering. Using simple fallback imputation.",
+          target_col
+        ))
+        if (is.numeric(original_data[[target_col]])) {
+          fill_val <- median(data[[target_col]], na.rm = TRUE)
+        } else {
+          fill_val <- names(which.max(table(data[[target_col]], useNA = "no")))
+        }
+        data[missing_indices[[var]], (var) := fill_val]
+        next
+      }
+
+      if (method_var == "gam" && n_train < 2L) {
+        warning(sprintf(
+          "Too few observations (%d) to train GAM for '%s'. Falling back to 'robust'.",
+          n_train, target_col
+        ))
+        method_var <- "robust"
+      }
+
+      
       # Create task
       if (is.numeric(data_y_fill_final[[target_col]])) {
         task <- TaskRegr$new(id = target_col, backend = data_y_fill_final, target = target_col)
