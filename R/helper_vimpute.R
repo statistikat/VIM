@@ -1050,9 +1050,6 @@ precheck <- function(
   }
 
   # -------------------------------------------------------------------------
-  # 5) Normalize 'method' argument so every variable has a method
-  # -------------------------------------------------------------------------
-  # -------------------------------------------------------------------------
   # 5) Normalize 'method' argument so every NA-variable gets a valid method
   # -------------------------------------------------------------------------
   # Methods supported by vimpute()
@@ -1195,44 +1192,60 @@ precheck <- function(
     }
   }
 
-   # -------------------------------------------------------------------------
-   # 6.5) Validation for GAM and RobGAM methods (single-level factors)
-   # -------------------------------------------------------------------------
-   for (var in variables_NA) {
-     if (method[[var]] %in% c("gam", "robgam")) {
-       
-       predictors <- setdiff(names(data), var)
-       y_obs <- data[[var]][!is.na(data[[var]])]
-       
-       # Check for single-level factor predictors
-       has_single_level <- FALSE
-       for (col in predictors) {
-         col_data <- data[[col]]
-         if (is.factor(col_data)) {
-           col_data <- droplevels(col_data)
-           if (nlevels(col_data) < 2) {
-             has_single_level <- TRUE
-             break
-           }
-         }
-       }
-       
-       if (has_single_level) {
-         warning(sprintf(
-           "Method '%s' for variable '%s' has single-level factor predictors. Switching to 'robust'.",
-           method[[var]], var
-         ))
-         method[[var]] <- "robust"
-       }
-       
-       # Check if target is numeric and has too few unique values
-       if (is.numeric(y_obs) && length(unique(y_obs[!is.na(y_obs)])) < 2) {
-         warning(sprintf("Target '%s' has too few unique values for '%s'. Falling back to 'robust'.", var, method[[var]]))
-         method[[var]] <- "robust"
-       }
-     }
-   }
+# -------------------------------------------------------------------------
+# 6.5) Validation for GAM and RobGAM methods
+# -------------------------------------------------------------------------
+  for (var in variables_NA) {
 
+    y_obs <- data[[var]][!is.na(data[[var]])]
+
+    # ---- A) robgam only supports numeric targets ----
+    if (method[[var]] == "robgam" && !is.numeric(y_obs)) {
+      warning(sprintf(
+        "Target '%s' is non-numeric. Method 'robgam' is regression-only. Falling back to 'gam'.",
+        var
+      ))
+      method[[var]] <- "gam"
+    }
+
+    # ---- B) Further checks for GAM / RobGAM ----
+    if (method[[var]] %in% c("gam", "robgam")) {
+
+      predictors <- setdiff(names(data), var)
+
+      # B1) Check for single-level factor predictors
+      has_single_level <- FALSE
+      for (col in predictors) {
+        col_data <- data[[col]]
+        if (is.factor(col_data)) {
+          col_data <- droplevels(col_data)
+          if (nlevels(col_data) < 2L) {
+            has_single_level <- TRUE
+            break
+          }
+        }
+      }
+
+      if (has_single_level) {
+        warning(sprintf(
+          "Method '%s' for variable '%s' has single-level factor predictors. Falling back to 'robust'.",
+          method[[var]], var
+        ))
+        method[[var]] <- "robust"
+        next
+      }
+
+      # B2) Numeric target but too few unique values
+      if (is.numeric(y_obs) && length(unique(y_obs)) < 2L) {
+        warning(sprintf(
+          "Target '%s' has too few unique values for method '%s'. Falling back to 'robust'.",
+          var, method[[var]]
+        ))
+        method[[var]] <- "robust"
+        next
+      }
+    }
+  }
 
   # -------------------------------------------------------------------------
   # 7) Warning for variables with > 50% missing values
