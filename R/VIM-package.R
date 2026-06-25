@@ -31,14 +31,14 @@ utils::globalVariables(c("self", "super"))
 #' Animals_na
 #'
 #' @description Average log brain and log body weights for 28 Species
-#' @details The original data can be found in package MASS. 
+#' @details The original data can be found in package MASS.
 #' 10 values on brain weight are set to be missing.
 #'
 #' @name Animals_na
 #' @docType data
 #' @source P. J. Rousseeuw and A. M. Leroy (1987) Robust Regression and Outlier Detection. Wiley, p. 57.
 #' @references Venables, W. N. and Ripley, B. D. (1999) Modern Applied Statistics with S-PLUS. Third Edition. Springer.
-#' 
+#'
 #' Templ, M. (2022) Visualization and Imputation of Missing Values. Springer Publishing. Upcoming book.
 #' @keywords datasets
 #' @format A data frame with 28 observations on the following 2 variables.
@@ -99,7 +99,6 @@ NULL
 #' aggr(bcancer)
 #'
 NULL
-
 
 
 #' Brittleness index data set
@@ -193,7 +192,7 @@ NULL
 
 #' C-horizon of the Kola data with missing values
 #'
-#' This data set is the same as 
+#' This data set is the same as
 #' in package `mvoutlier`, except that values below the detection limit
 #' are coded as `NA`.
 #'
@@ -402,7 +401,6 @@ NULL
 NULL
 
 
-
 #' Synthetic subset of the Austrian structural business statistics data
 #'
 #' Synthetic subset of the Austrian structural business statistics (SBS) data,
@@ -429,7 +427,34 @@ NULL
 NULL
 
 
-
+#' Synthetic Austrian Structural Business Survey data
+#'
+#' A synthetic, non-confidential enterprise-level data set inspired by the
+#' Austrian Leistungs- und Strukturstatistik from reporting years 2021 onward.
+#'
+#' The variables cover the main dimensions described in the Statistik Austria
+#' standard documentation: economic activity, NUTS2 region, data source,
+#' employment structure, turnover, intermediate consumption, gross value added,
+#' personnel costs, gross operating surplus, and tangible investment.
+#'
+#' The monetary variables are expressed in thousand euros. The observations are
+#' generated synthetically and do not contain real enterprise records.
+#' A companion `validate::validator` rule list is stored in
+#' `data/lse_synthetic_rules.rds`.
+#'
+#' @name lse_synthetic
+#' @docType data
+#' @format A data frame with 10000 observations and 38 variables.
+#' @source Statistik Austria, Standard-Dokumentation zur Leistungs- und
+#' Strukturstatistik ab 2021,
+#' \url{https://www.statistik.at/fileadmin/shared/QM/Standarddokumentationen/U/std_u_ls_ab_2021.pdf}
+#' @keywords datasets
+#' @examples
+#'
+#' data(lse_synthetic)
+#' str(lse_synthetic)
+#'
+NULL
 
 
 #' Mammal sleep data
@@ -458,9 +483,6 @@ NULL
 #' aggr(sleep)
 #'
 NULL
-
-
-
 
 
 #' Tropical Atmosphere Ocean (TAO) project data
@@ -504,7 +526,6 @@ NULL
 #' data(toydataMiss)
 #'
 NULL
-
 
 
 #' Simulated data set for testing purpose
@@ -605,23 +626,23 @@ NULL
 #' @name VIM-package
 #' @aliases VIM-package VIM
 #' @description
-#' VIM provides tools for visualization, imputation, and exploration of missing 
+#' VIM provides tools for visualization, imputation, and exploration of missing
 #' and multivariate data.
 #' @details
-#' This package includes advanced imputation methods, robust statistics, 
+#' This package includes advanced imputation methods, robust statistics,
 #' and tools for data preprocessing and diagnostics.
 #' @author Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
 #'
 #' Maintainer: Matthias Templ <matthias.templ@@gmail.com>
-#' @references 
+#' @references
 #' M. Templ (2023) *Visualization and Imputation of Missing Values*. Springer Publishing.
-#' Series in Computational Statistics. Cham. Switzerland. 463 pages. 
+#' Series in Computational Statistics. Cham. Switzerland. 463 pages.
 #' DOI: 10.1007/978-3-031-30073-8
-#' 
+#'
 #' A. Kowarik, M. Templ (2016) Imputation with
 #' R package VIM.  *Journal of
 #' Statistical Software*, 74(7), 1-16.
-#' 
+#'
 #' M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
 #' data using visualization tools.  *Journal of Advances in Data Analysis
 #' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
@@ -631,7 +652,6 @@ NULL
 #' Computational Statistics and Data Analysis*, Vol. 55, pp. 2793-2806.
 #' @keywords internal
 "_PACKAGE"
-
 
 
 setGeneric("plot")

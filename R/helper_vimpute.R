@@ -308,6 +308,15 @@ register_restricted_learners <- function() {
               }
               "`rules` must be a validate::validator object."
             }
+          ),
+          formula = paradox::p_uty(
+            default = NULL,
+            custom_check = function(x) {
+              if (is.null(x) || inherits(x, "formula")) {
+                return(TRUE)
+              }
+              "`formula` must be NULL or a formula object."
+            }
           )
         )
 
@@ -337,6 +346,12 @@ register_restricted_learners <- function() {
         target <- task$target_names
         features <- task$feature_names
         rules <- .restricted_filter_rules(rules, target)
+        formula <- pv$formula
+        if (is.null(formula)) {
+          formula <- stats::reformulate(features, response = target)
+        } else {
+          formula <- .restricted_validate_formula(formula, target, data)
+        }
 
         factor_cols <- vapply(data, is.factor, logical(1))
         if (any(factor_cols)) {
@@ -345,7 +360,6 @@ register_restricted_learners <- function() {
           }
         }
 
-        formula <- stats::reformulate(features, response = target)
         train_frame <- stats::model.frame(
           formula,
           data,
@@ -418,6 +432,36 @@ register_restricted_learners <- function() {
   )
 
   mlr3::mlr_learners$add("regr.restricted", LearnerRegrRestricted)
+}
+
+.restricted_validate_formula <- function(formula, target, data) {
+  if (!inherits(formula, "formula")) {
+    stop("Restricted regression `formula` must be a formula object.", call. = FALSE)
+  }
+  if (length(formula) != 3L) {
+    stop("Restricted regression `formula` must have a left-hand side.", call. = FALSE)
+  }
+
+  lhs <- formula[[2L]]
+  if (!is.symbol(lhs) || !identical(as.character(lhs), target)) {
+    stop(
+      "Restricted regression `formula` must use the imputed variable `",
+      target,
+      "` as an untransformed left-hand side.",
+      call. = FALSE
+    )
+  }
+
+  missing_vars <- setdiff(all.vars(formula), colnames(data))
+  if (length(missing_vars) > 0L) {
+    stop(
+      "Restricted regression `formula` references variables not found in `data`: ",
+      paste(missing_vars, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  formula
 }
 
 #
@@ -1275,8 +1319,8 @@ precheck <- function(
 
     for (target in formula_targets) {
       target_method <- if (target %in% names(method)) method[[target]] else default_method
-      if (!is.null(target_method) && !target_method %in% c("regularized", "robust", "gam", "robgam")) {
-        stop("A formula can only be used with the 'robust', 'regularized', 'gam', or 'robgam' methods.")
+      if (!is.null(target_method) && !target_method %in% c("regularized", "robust", "gam", "robgam", "restricted")) {
+        stop("A formula can only be used with the 'robust', 'regularized', 'gam', 'robgam', or 'restricted' methods.")
       }
     }
   }

@@ -55,7 +55,8 @@
 #' @param formula
 #'  Optional modeling formula to restrict or transform predictor variables.
 #'  Only supported for **regularized** (glmnet), **robust** (lmrob/glmrob),
-#'  **gam** (mgcv::gam), and **robgam** (robust GAM) methods
+#'  **gam** (mgcv::gam), **robgam** (robust GAM), and **restricted**
+#'  methods
 #'  Provide as a named list, e.g.:
 #'    - list(mpg = mpg ~ hp + drat)  
 #'    - list(hp  = log(hp) ~ wt + cyl) 
@@ -551,9 +552,33 @@ vimpute <- function(
       # Extract method-specific-learner
       var_learner_params <- learner_params[[var]]
       if (is.null(var_learner_params)) var_learner_params <- list()
+      method_var <- method[[var]]
       
 ### ***** Formula Extraction Start ***** ###################################################################################################
-      if (!isFALSE(formula) && (!isFALSE(selected_formula))) {
+      if (!isFALSE(formula) && (!isFALSE(selected_formula)) && method_var == "restricted") {
+        if (!is.null(identify_lhs_transformation(selected_formula))) {
+          stop("A formula for method 'restricted' must use an untransformed target variable.")
+        }
+        identified_variables <- identify_variables(selected_formula, data, var)
+        target_col <- var
+        formula_feature_cols <- identified_variables$predictor_variables
+        restricted_rule_cols <- character(0)
+        if (!is.null(var_learner_params$rules) &&
+            inherits(var_learner_params$rules, "validator")) {
+          restricted_rules <- .restricted_filter_rules(var_learner_params$rules, target_col)
+          restricted_rule_matrix <- validate::variables(restricted_rules, as = "matrix")
+          restricted_rule_cols <- colnames(restricted_rule_matrix)[
+            colSums(restricted_rule_matrix) > 0
+          ]
+          restricted_rule_cols <- setdiff(restricted_rule_cols, target_col)
+        }
+        feature_cols <- unique(c(formula_feature_cols, restricted_rule_cols))
+        selected_cols <- unique(c(target_col, feature_cols))
+        data_temp <- as.data.table(data[, selected_cols, with = FALSE])
+        data_temp <- enforce_factor_levels(data_temp, factor_levels)
+        check_all_factor_levels(data_temp, factor_levels)
+        lhs_transformation <- NULL
+      } else if (!isFALSE(formula) && (!isFALSE(selected_formula))) {
         identified_variables <- identify_variables(selected_formula, data, var)
         target_col <- var
         feature_cols <- identified_variables$predictor_variables 
@@ -693,9 +718,10 @@ vimpute <- function(
         
       }
 
-      donor_ok_rows <- if (!isFALSE(selected_formula)) rep(TRUE, nrow(data_temp)) else donor_mask[[target_col]]
+      uses_model_matrix_formula <- !isFALSE(selected_formula) && method_var != "restricted"
+      donor_ok_rows <- if (uses_model_matrix_formula) rep(TRUE, nrow(data_temp)) else donor_mask[[target_col]]
       
-      if (!isFALSE(selected_formula) && "Intercept" %in% colnames(data_temp)) {
+      if (uses_model_matrix_formula && "Intercept" %in% colnames(data_temp)) {
         data_temp <- data_temp[, !colnames(data_temp) %in% "Intercept", with = FALSE]
         if (exists("mm_data", inherits = FALSE)) {
           mm_data <- mm_data[, !colnames(mm_data) %in% "Intercept", with = FALSE]
@@ -704,12 +730,10 @@ vimpute <- function(
       
       if (!isFALSE(selected_formula)) {
         # Formulas are only supported by methods that model via formulas
-        if (!method[[var]] %in% c("robust", "regularized", "gam", "robgam")) {
-          stop("Error: A formula can only be used with the 'robust', 'regularized', 'gam', or 'robgam' methods.")
+        if (!method_var %in% c("robust", "regularized", "gam", "robgam", "restricted")) {
+          stop("Error: A formula can only be used with the 'robust', 'regularized', 'gam', 'robgam', or 'restricted' methods.")
         }
       }
-      
-      method_var <- method[[var]]
       
       # Custom ranger median prediction
       use_median <- FALSE
@@ -1098,6 +1122,9 @@ vimpute <- function(
       ## RESTRICTED (ECOSolveR / validate)
       if (method_var == "restricted") {
         valid_restricted_params <- learners[["regr.restricted"]]$param_set$ids()
+        if (!isFALSE(selected_formula) && is.null(var_learner_params$formula)) {
+          var_learner_params$formula <- selected_formula
+        }
         invalid <- setdiff(names(var_learner_params), valid_restricted_params)
         
         if (length(invalid) > 0) {
@@ -2131,7 +2158,7 @@ vimpute <- function(
         # Not semicontinuous
         feature_cols <- setdiff(variables, var)
         
-        if (!isFALSE(selected_formula)) {
+        if (uses_model_matrix_formula) {
           backend_data <- mm_data[missing_idx, ]
           backend_data <- enforce_factor_levels(backend_data, factor_levels)
           
@@ -2166,7 +2193,7 @@ vimpute <- function(
         # Semicontinuous
         feature_cols <- setdiff(variables, c(var, zero_flag_col))
         
-        if (!isFALSE(selected_formula)) {
+        if (uses_model_matrix_formula) {
           class_pred_data <- mm_data[missing_idx, ]
           class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
           

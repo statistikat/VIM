@@ -182,4 +182,108 @@ if (
   expect_equal(sum(imp$amount_imp), length(missing_idx) + 2L)
   expect_true(any(imp$amount_imp & imp$c1 == "A"))
   expect_true(all(rule_values))
+
+  n_formula <- 80L
+  formula_data <- data.frame(
+    y = 10 + 2 * seq_len(n_formula),
+    x_signal = seq_len(n_formula),
+    x_noise = 10 + 2 * seq_len(n_formula),
+    lower = 0,
+    upper = 200
+  )
+  formula_missing_idx <- c(12L, 24L, 36L)
+  expected_formula_y <- formula_data$y[formula_missing_idx]
+  formula_data$y[formula_missing_idx] <- NA_real_
+  formula_data$x_noise[formula_missing_idx] <- -1000
+  formula_rules <- validate::validator(y >= lower, y <= upper, lower <= upper)
+
+  formula_imp <- vimpute(
+    formula_data,
+    method = list(y = "restricted"),
+    formula = list(y = y ~ x_signal),
+    pmm = FALSE,
+    sequential = FALSE,
+    learner_params = list(y = list(rules = formula_rules))
+  )
+
+  expect_false(anyNA(formula_imp$y))
+  expect_equal(sum(formula_imp$y_imp), length(formula_missing_idx))
+  expect_true(max(abs(formula_imp$y[formula_missing_idx] - expected_formula_y)) < 1e-6)
+  expect_true(all(validate::values(validate::confront(formula_imp, formula_rules))))
+
+  utils::data("lse_synthetic", package = "VIM")
+  rules_path <- system.file("data", "lse_synthetic_rules.rds", package = "VIM")
+  if (!nzchar(rules_path)) {
+    rules_path <- file.path(getwd(), "data", "lse_synthetic_rules.rds")
+  }
+  lse_rules <- readRDS(rules_path)
+  lse_accounting_rules <- lse_rules$accounting
+  lse_edit_rules <- lse_rules$edit
+
+  numeric_cols <- c(
+    "persons_employed", "employees_paid", "self_employed",
+    "employees_male", "employees_female", "employees_blue_collar",
+    "employees_white_collar", "apprentices", "marginal_employees",
+    "turnover_total", "turnover_domestic", "turnover_exports",
+    "e_commerce_turnover", "material_costs", "purchased_services",
+    "rents_leasing", "other_operating_expense", "intermediate_consumption",
+    "gross_value_added", "personnel_costs", "wages_salaries",
+    "social_security_costs", "other_personnel_costs",
+    "gross_operating_surplus", "investments_tangible",
+    "investment_machinery", "investment_buildings", "investment_software"
+  )
+  edit_cols <- c(
+    "reporting_year", "onace_section", "onace_group", "nuts2",
+    "data_source", "survey_mode", "employment_size_class",
+    "turnover_size_class", numeric_cols
+  )
+  lse_complete <- lse_synthetic[seq_len(80L), edit_cols]
+  expect_true(all(validate::values(validate::confront(lse_synthetic, lse_edit_rules))))
+
+  lse_missing <- lse_complete[, numeric_cols]
+  missing_map <- list(
+    turnover_total = c(2L, 7L),
+    intermediate_consumption = c(13L, 18L),
+    gross_value_added = c(24L, 31L),
+    personnel_costs = c(39L, 45L),
+    investments_tangible = c(52L, 60L)
+  )
+  for (var in names(missing_map)) {
+    lse_missing[missing_map[[var]], var] <- NA_real_
+  }
+
+  lse_imp <- vimpute(
+    lse_missing,
+    method = "restricted",
+    pmm = FALSE,
+    sequential = FALSE,
+    learner_params = list(restricted = list(rules = lse_accounting_rules))
+  )
+
+  lse_complete[, numeric_cols] <- as.data.frame(lse_imp)[, numeric_cols]
+  lse_rule_values <- validate::values(
+    validate::confront(
+      lse_complete,
+      lse_edit_rules
+    )
+  )
+  expected_nimp <- sum(lengths(missing_map))
+
+  expect_false(anyNA(as.data.frame(lse_imp)[, names(missing_map), drop = FALSE]))
+  expect_equal(sum(lse_imp$turnover_total_imp), length(missing_map$turnover_total))
+  expect_equal(
+    sum(lse_imp$intermediate_consumption_imp),
+    length(missing_map$intermediate_consumption)
+  )
+  expect_equal(sum(lse_imp$gross_value_added_imp), length(missing_map$gross_value_added))
+  expect_equal(sum(lse_imp$personnel_costs_imp), length(missing_map$personnel_costs))
+  expect_equal(
+    sum(lse_imp$investments_tangible_imp),
+    length(missing_map$investments_tangible)
+  )
+  expect_equal(
+    sum(as.data.frame(lse_imp)[paste0(names(missing_map), "_imp")]),
+    expected_nimp
+  )
+  expect_true(all(lse_rule_values))
 }
