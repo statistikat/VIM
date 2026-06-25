@@ -183,7 +183,7 @@ res4 <- vimpute(
 check(!anyNA(res4$y_num), "uncert = 'midastouch' sollte y_num imputieren.")
 cat("uncert = 'midastouch' funktioniert.\n")
 
-show_test("7) robuster Bootstrap mit robustboot = 'psi'")
+show_test("7) robuster Bootstrap mit robustboot = 'residual'")
 dt5 <- make_data(100L)
 res5 <- vimpute(
   data = dt5,
@@ -191,12 +191,12 @@ res5 <- vimpute(
   method = list(y_num = "robust"),
   sequential = FALSE,
   boot = TRUE,
-  robustboot = "psi",
+  robustboot = "residual",
   uncert = "normalerror",
   verbose = TRUE
 )
 
-check(!anyNA(res5$y_num), "robust + boot + robustboot = 'psi' sollte y_num imputieren.")
+check(!anyNA(res5$y_num), "robust + boot + robustboot = 'residual' sollte y_num imputieren.")
 cat("robustboot funktioniert.\n")
 
 show_test("8) Methode gam fuer numerisches Ziel")

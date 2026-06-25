@@ -151,7 +151,7 @@ if (
   )
 
   expect_false(anyNA(imp$amount))
-  expect_equal(sum(imp$amount_imp), length(missing_idx) + 1L)
+  expect_equal(sum(imp$amount_imp), length(missing_idx) + 2L)
   expect_true(all(rule_values))
 
   conditional_rules <- validate::validator(
@@ -179,7 +179,7 @@ if (
   )
 
   expect_false(anyNA(imp$amount))
-  expect_equal(sum(imp$amount_imp), length(missing_idx) + 1L)
+  expect_equal(sum(imp$amount_imp), length(missing_idx) + 2L)
   expect_true(any(imp$amount_imp & imp$c1 == "A"))
   expect_true(all(rule_values))
 }

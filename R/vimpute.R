@@ -359,6 +359,7 @@ vimpute <- function(
   }
   if (restricted_required) {
     register_restricted_learners()
+  }
   if (gam_required) {
     register_gam_learners()
   }
@@ -374,6 +375,7 @@ vimpute <- function(
   }
   if (restricted_required) {
     learner_ids <- c(learner_ids, "regr.restricted")
+  }
   if (gam_required) {
     learner_ids <- c(learner_ids, "regr.gam_imp", "classif.gam_imp",
                      "regr.robgam_imp", "classif.robgam_imp")
