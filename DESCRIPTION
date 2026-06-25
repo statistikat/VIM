@@ -52,7 +52,9 @@ Suggests:
     enetLTS,
     robmixglm,
     stringr,
-    glmnet
+    glmnet,
+    validate,
+    ECOSolveR
 Description: Provides methods for imputation and visualization of 
     missing values. It includes graphical tools to explore the amount, structure 
     and patterns of missing and/or imputed values, supporting exploratory 
@@ -79,7 +81,7 @@ License: GPL (>= 2)
 URL: https://github.com/statistikat/VIM
 Repository: CRAN
 LinkingTo: Rcpp
-RoxygenNote: 7.3.3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0
