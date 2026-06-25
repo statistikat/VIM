@@ -50,12 +50,6 @@ regression_restricted <- function(
       call. = FALSE
     )
   }
-  if (length(rules) > 0L && !all(rules$is_linear())) {
-    stop(
-      "`regression_restricted()` currently supports only linear validation rules.",
-      call. = FALSE
-    )
-  }
   if (!identical(family, "AUTO") || !isFALSE(robust) || !isFALSE(mod_cat)) {
     warning(
       "`family`, `robust`, and `mod_cat` are accepted for compatibility with ",
@@ -225,7 +219,71 @@ regression_restricted <- function(
     return(empty)
   }
 
-  linear <- .restricted_validator_mip_matrix(rules)
+  exprs <- .restricted_validator_exprs(rules)
+  uses_lhs <- vapply(exprs, function(expr) lhs %in% all.vars(expr), logical(1))
+  if (!any(uses_lhs)) {
+    return(empty)
+  }
+
+  constraints <- list()
+  lhs_exprs <- exprs[uses_lhs]
+  linear_flags <- rules$is_linear()[uses_lhs]
+
+  if (any(linear_flags)) {
+    linear <- .restricted_validator_mip_matrix(lhs_exprs[linear_flags])
+    constraints[[length(constraints) + 1L]] <- .restricted_constraints_from_linear(
+      linear = linear,
+      lhs = lhs,
+      data_pred = data_pred,
+      X_pred = X_pred,
+      eps = eps
+    )
+  }
+
+  if (any(!linear_flags)) {
+    for (expr in lhs_exprs[!linear_flags]) {
+      conditional <- .restricted_conditional_linear_rule(expr, lhs)
+      if (is.null(conditional)) {
+        stop(
+          "`regression_restricted()` currently supports only linear validation rules ",
+          "or simple `if` rules involving the imputed variable `", lhs, "`.",
+          call. = FALSE
+        )
+      }
+
+      active <- .restricted_eval_condition(conditional$condition, data_pred)
+      if (any(active)) {
+        linear <- .restricted_validator_mip_matrix(list(conditional$consequence))
+        constraints[[length(constraints) + 1L]] <- .restricted_constraints_from_linear(
+          linear = linear,
+          lhs = lhs,
+          data_pred = data_pred,
+          X_pred = X_pred,
+          eps = eps,
+          active = active
+        )
+      }
+    }
+  }
+
+  .restricted_combine_constraints(constraints, p)
+}
+
+.restricted_constraints_from_linear <- function(linear, lhs, data_pred,
+                                                X_pred, eps = 0.001,
+                                                active = rep(TRUE, nrow(data_pred))) {
+  p <- ncol(X_pred)
+  empty <- list(
+    C = matrix(numeric(0), nrow = 0L, ncol = p),
+    d = numeric(0),
+    Aeq = matrix(numeric(0), nrow = 0L, ncol = p),
+    beq = numeric(0)
+  )
+
+  if (!any(active)) {
+    return(empty)
+  }
+
   A_rule <- linear$A
   b_rule <- linear$b
   operators <- linear$operator
@@ -243,6 +301,8 @@ regression_restricted <- function(
   d_vals <- numeric(0)
   Aeq_rows <- list()
   beq_vals <- numeric(0)
+  X_active <- X_pred[active, , drop = FALSE]
+  data_active <- data_pred[active, , drop = FALSE]
 
   for (rule_pos in relevant) {
     coefs <- A_rule[rule_pos, , drop = FALSE]
@@ -263,7 +323,7 @@ regression_restricted <- function(
     }
 
     if (length(other_coefs) > 0L) {
-      other_data <- data_pred[, names(other_coefs), drop = FALSE]
+      other_data <- data_active[, names(other_coefs), drop = FALSE]
       if (anyNA(other_data)) {
         stop(
           "Validation rule for `",
@@ -274,11 +334,11 @@ regression_restricted <- function(
       }
       row_offset <- as.vector(as.matrix(other_data) %*% as.numeric(other_coefs))
     } else {
-      row_offset <- rep(0, nrow(data_pred))
+      row_offset <- rep(0, nrow(data_active))
     }
 
     rhs <- b_rule[[rule_pos]] - row_offset
-    lhs_rows <- lhs_coef * X_pred
+    lhs_rows <- lhs_coef * X_active
 
     if (identical(operators[[rule_pos]], "==")) {
       Aeq_rows[[length(Aeq_rows) + 1L]] <- lhs_rows
@@ -300,15 +360,68 @@ regression_restricted <- function(
   list(C = C, d = d_vals, Aeq = Aeq, beq = beq_vals)
 }
 
-.restricted_validator_mip_matrix <- function(rules) {
-  exprs <- rules$exprs(
-    lin_eq_eps = 0,
-    lin_ineq_eps = 0,
-    replace_in = FALSE,
-    vectorize = FALSE,
-    expand_assignments = TRUE,
-    expand_groups = TRUE
+.restricted_combine_constraints <- function(constraints, p) {
+  constraints <- constraints[vapply(constraints, function(x) {
+    nrow(x$C) > 0L || nrow(x$Aeq) > 0L
+  }, logical(1))]
+
+  if (length(constraints) == 0L) {
+    return(list(
+      C = matrix(numeric(0), nrow = 0L, ncol = p),
+      d = numeric(0),
+      Aeq = matrix(numeric(0), nrow = 0L, ncol = p),
+      beq = numeric(0)
+    ))
+  }
+
+  list(
+    C = do.call(rbind, lapply(constraints, `[[`, "C")),
+    d = unlist(lapply(constraints, `[[`, "d"), use.names = FALSE),
+    Aeq = do.call(rbind, lapply(constraints, `[[`, "Aeq")),
+    beq = unlist(lapply(constraints, `[[`, "beq"), use.names = FALSE)
   )
+}
+
+.restricted_conditional_linear_rule <- function(expr, lhs) {
+  expr <- .restricted_consume_parentheses(expr)
+  if (!is.call(expr) || !identical(as.character(expr[[1L]]), "if") || length(expr) != 3L) {
+    return(NULL)
+  }
+
+  condition <- expr[[2L]]
+  consequence <- expr[[3L]]
+  if (lhs %in% all.vars(condition) || !(lhs %in% all.vars(consequence))) {
+    return(NULL)
+  }
+
+  if (inherits(try(.restricted_linear_mip_rule(consequence), silent = TRUE), "try-error")) {
+    return(NULL)
+  }
+
+  list(condition = condition, consequence = consequence)
+}
+
+.restricted_eval_condition <- function(condition, data) {
+  value <- eval(condition, envir = data, enclos = parent.frame())
+  if (length(value) == 1L) {
+    value <- rep(value, nrow(data))
+  }
+  if (length(value) != nrow(data)) {
+    stop("Conditional validation rule did not evaluate row-wise.", call. = FALSE)
+  }
+  if (anyNA(value)) {
+    stop("Conditional validation rule contains missing condition values.", call. = FALSE)
+  }
+  as.logical(value)
+}
+
+.restricted_validator_mip_matrix <- function(rules) {
+  exprs <- if (inherits(rules, "validator")) {
+    .restricted_validator_exprs(rules)
+  } else {
+    as.list(rules)
+  }
+
   exprs <- lapply(exprs, .restricted_rewrite_in_range)
   expanded <- .restricted_expand_rule_expressions(exprs)
   exprs <- expanded$exprs
@@ -339,6 +452,17 @@ regression_restricted <- function(
     A = A,
     operator = vapply(mip_rules, `[[`, character(1), "op"),
     b = vapply(mip_rules, `[[`, numeric(1), "b")
+  )
+}
+
+.restricted_validator_exprs <- function(rules) {
+  rules$exprs(
+    lin_eq_eps = 0,
+    lin_ineq_eps = 0,
+    replace_in = FALSE,
+    vectorize = FALSE,
+    expand_assignments = TRUE,
+    expand_groups = TRUE
   )
 }
 
