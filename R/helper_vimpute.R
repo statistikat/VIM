@@ -257,7 +257,135 @@ register_robust_learners <- function() {
   
 }
 
-# 
+register_restricted_learners <- function() {
+  if ("regr.restricted" %in% mlr3::mlr_learners$keys()) {
+    return(invisible(TRUE))
+  }
+
+  LearnerRegrRestricted <- R6::R6Class(
+    classname = "LearnerRegrRestricted",
+    inherit = LearnerRegr,
+    public = list(
+      initialize = function() {
+        param_set <- ps(
+          rules = paradox::p_uty(
+            custom_check = function(x) {
+              if (inherits(x, "validator")) {
+                return(TRUE)
+              }
+              "`rules` must be a validate::validator object."
+            }
+          )
+        )
+
+        super$initialize(
+          id = "regr.restricted",
+          feature_types = c("numeric", "integer", "factor", "ordered"),
+          predict_types = c("response"),
+          packages = c("ECOSolveR", "validate", "stats"),
+          man = "VIM::regression_restricted",
+          param_set = param_set
+        )
+      }
+    ),
+    private = list(
+      .train = function(task) {
+        pv <- self$param_set$get_values()
+        rules <- pv$rules
+        if (is.null(rules) || !inherits(rules, "validator")) {
+          stop(
+            "`rules` must be supplied as a validate::validator object ",
+            "via learner_params for method 'restricted'.",
+            call. = FALSE
+          )
+        }
+
+        data <- as.data.frame(task$data(cols = c(task$target_names, task$feature_names)))
+        target <- task$target_names
+        features <- task$feature_names
+
+        factor_cols <- vapply(data, is.factor, logical(1))
+        if (any(factor_cols)) {
+          for (col in names(data)[factor_cols]) {
+            data[[col]] <- droplevels(data[[col]])
+          }
+        }
+
+        formula <- stats::reformulate(features, response = target)
+        train_frame <- stats::model.frame(
+          formula,
+          data,
+          na.action = stats::na.fail
+        )
+        terms_obj <- stats::terms(train_frame)
+        x_terms <- stats::delete.response(terms_obj)
+        xlevels <- .getXlevels(terms_obj, train_frame)
+        X_train <- stats::model.matrix(x_terms, train_frame)
+
+        factor_col_names <- names(data)[factor_cols]
+        self$state$target <- target
+        self$state$features <- features
+        self$state$rules <- rules
+        self$state$x_terms <- x_terms
+        self$state$xlevels <- xlevels
+        self$state$contrasts <- attr(X_train, "contrasts")
+        self$state$factor_levels <- lapply(data[, factor_col_names, drop = FALSE], levels)
+
+        list(
+          X_train = X_train,
+          y_train = stats::model.response(train_frame)
+        )
+      },
+
+      .predict = function(task) {
+        model <- self$model
+        newdata <- as.data.frame(task$data(cols = self$state$features))
+
+        if (!is.null(self$state$factor_levels)) {
+          for (var in names(self$state$factor_levels)) {
+            if (var %in% colnames(newdata)) {
+              newdata[[var]] <- factor(newdata[[var]], levels = self$state$factor_levels[[var]])
+            }
+          }
+        }
+
+        pred_frame <- stats::model.frame(
+          self$state$x_terms,
+          newdata,
+          na.action = stats::na.pass,
+          xlev = self$state$xlevels
+        )
+        X_pred <- stats::model.matrix(
+          self$state$x_terms,
+          pred_frame,
+          contrasts.arg = self$state$contrasts
+        )
+
+        constraints <- .restricted_validate_constraints(
+          rules = self$state$rules,
+          lhs = self$state$target,
+          data_pred = newdata,
+          X_pred = X_pred
+        )
+
+        beta <- .restricted_ecos_lm(
+          X = model$X_train,
+          y = model$y_train,
+          C = constraints$C,
+          d = constraints$d,
+          Aeq = constraints$Aeq,
+          beq = constraints$beq
+        )
+
+        response <- as.vector(X_pred %*% beta)
+        PredictionRegr$new(task = task, response = response)
+      }
+    )
+  )
+
+  mlr3::mlr_learners$add("regr.restricted", LearnerRegrRestricted)
+}
+
 # task = mlr3::tsk("iris")$filter(1:1000)  # binary classification
 # learner = mlr3::lrn("classif.glm_rob", predict_type = "prob")
 # learner$train(task)
@@ -740,7 +868,7 @@ map_learner_params <- function(variables, method, learner_params) {
   
   # 3) Mixed (Variable- and Method-Keys at same time)
   if (has_var_keys && has_meth_keys) {
-    warning("Mixed learner_params keys (variables AND methods) are not allowed. All learner_params were ignored. Hint: ensure no variable shares a name with a reserved method (ranger, xgboost, regularized, robust).")
+    warning("Mixed learner_params keys (variables AND methods) are not allowed. All learner_params were ignored. Hint: ensure no variable shares a name with a reserved method (ranger, xgboost, regularized, robust, restricted).")
     return(setNames(vector("list", length(variables)), variables))
   }
   
@@ -804,7 +932,7 @@ precheck <- function(
   # 2) Warn if any variable name equals a reserved method name
   #    (this would cause ambiguity in learner_params)
   # -------------------------------------------------------------------------
-  reserved_methods <- c("ranger", "xgboost", "regularized", "robust")
+  reserved_methods <- c("ranger", "xgboost", "regularized", "robust", "restricted")
   conflicting_vars <- intersect(variables, reserved_methods)
   if (length(conflicting_vars) > 0) {
     warning(sprintf(
@@ -857,7 +985,7 @@ precheck <- function(
   # -------------------------------------------------------------------------
   # 5) Normalize 'method' argument so every NA-variable gets a valid method
   # -------------------------------------------------------------------------
-  supported_methods <- c("ranger", "regularized", "xgboost", "robust")
+  supported_methods <- c("ranger", "regularized", "xgboost", "robust", "restricted")
   
   if (length(method) == 0) {
     stop("No method specified. Please provide at least one method.")

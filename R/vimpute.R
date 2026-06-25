@@ -17,6 +17,7 @@
 #     - xgboost (Gradient Boosting)
 #     - regularized (glmnet regression/classification)
 #     - robust (robustbase::lmrob / glmrob) 
+#     - restricted (ECOSolveR least-squares regression with validate rules)
 #' @param pmm 
 #'  Predictive Mean Matching (PMM) settings.
 #'  Can be provided:
@@ -170,9 +171,13 @@ vimpute <- function(
   
   no_change_counter <- 0
   robust_required <- any(unlist(method) == "robust")
+  restricted_required <- any(unlist(method) == "restricted")
   
   if (robust_required) {
     register_robust_learners()
+  }
+  if (restricted_required) {
+    register_restricted_learners()
   }
   
   learner_ids <- c(
@@ -184,6 +189,9 @@ vimpute <- function(
   if (robust_required) {
     learner_ids <- c(learner_ids, "regr.lm_rob", "classif.glm_rob")
   }
+  if (restricted_required) {
+    learner_ids <- c(learner_ids, "regr.restricted")
+  }
   
   learners <- lapply(learner_ids, function(id) lrn(id))
   names(learners) <- learner_ids
@@ -192,6 +200,13 @@ vimpute <- function(
       register_robust_learners()
       learners[["regr.lm_rob"]] <- lrn("regr.lm_rob")
       learners[["classif.glm_rob"]] <- lrn("classif.glm_rob")
+    }
+    learners
+  }
+  ensure_restricted_learners <- function(learners) {
+    if (is.null(learners[["regr.restricted"]])) {
+      register_restricted_learners()
+      learners[["regr.restricted"]] <- lrn("regr.restricted")
     }
     learners
   }
@@ -418,10 +433,14 @@ vimpute <- function(
         learners_list <- list(
           regularized = list(learners[["regr.cv_glmnet"]], learners[["regr.glmnet"]]),
           robust = list(learners[["regr.lm_rob"]]),
+          restricted = list(learners[["regr.restricted"]]),
           ranger = list(learners[["regr.ranger"]]),
           xgboost = list(learners[["regr.xgboost"]])
         )
       } else if (is.factor(data[[target_col]])) {
+        if (identical(method_var, "restricted")) {
+          stop("Method 'restricted' is only available for numeric target variables.")
+        }
         learners_list <- list(
           regularized = list(learners[["classif.glmnet"]]),
           robust = list(learners[["classif.glm_rob"]]),
@@ -592,6 +611,7 @@ vimpute <- function(
         num.trees = 500,
         num.threads = optimal_threads
       )
+      restricted_params <- list()
       
       ## RANGER
       if (method_var == "ranger") {
@@ -693,6 +713,34 @@ vimpute <- function(
         }
       }
       
+      ## RESTRICTED (ECOSolveR / validate)
+      if (method_var == "restricted") {
+        valid_restricted_params <- learners[["regr.restricted"]]$param_set$ids()
+        invalid <- setdiff(names(var_learner_params), valid_restricted_params)
+        
+        if (length(invalid) > 0) {
+          warning(sprintf(
+            "learner_params for variable '%s' contain invalid restricted-regression parameters: %s. These parameters were ignored.",
+            var, paste(invalid, collapse = ", ")
+          ))
+          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
+        }
+        
+        if (is.null(var_learner_params$rules)) {
+          stop(sprintf(
+            "Method 'restricted' for variable '%s' requires learner_params with a validate::validator object named 'rules'.",
+            var
+          ))
+        }
+        
+        restricted_params <- var_learner_params
+        
+        if (verbose) {
+          cat("\n--- restricted params for variable", var, "---\n")
+          print(restricted_params)
+        }
+      }
+      
       is_regr_task <- is.numeric(data_y_fill_final[[target_col]])
       measure <- if (is_regr_task) msr("regr.rmse") else msr("classif.acc")
 
@@ -707,6 +755,8 @@ vimpute <- function(
             lrn$param_set$values <- modifyList(lrn$param_set$values, glmnet_params)
           } else if (grepl("lm_rob|glm_rob", lrn$id)) {
             lrn$param_set$values <- modifyList(lrn$param_set$values, robust_params)
+          } else if (grepl("restricted", lrn$id)) {
+            lrn$param_set$values <- modifyList(lrn$param_set$values, restricted_params)
           }
           
           # Klassiication: probabilistic
@@ -759,6 +809,11 @@ vimpute <- function(
         default_learner$param_set$values <- modifyList(default_learner$param_set$values, robust_params)
         current_learner$param_set$values <- modifyList(current_learner$param_set$values, robust_params)
         tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, robust_params)
+      } else if (grepl("restricted", best_learner$id)) {
+        best_learner$param_set$values   <- modifyList(best_learner$param_set$values, restricted_params)
+        default_learner$param_set$values <- modifyList(default_learner$param_set$values, restricted_params)
+        current_learner$param_set$values <- modifyList(current_learner$param_set$values, restricted_params)
+        tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, restricted_params)
       }
       
       if (is.factor(data_temp[[target_col]])) {
@@ -1391,6 +1446,8 @@ vimpute <- function(
           regr_learner$param_set$values <- modifyList(regr_learner$param_set$values, xgboost_params)
         } else if (grepl("ranger", best_learner$id)) {
           regr_learner$param_set$values <- modifyList(regr_learner$param_set$values, ranger_params)
+        } else if (grepl("restricted", best_learner$id)) {
+          regr_learner$param_set$values <- modifyList(regr_learner$param_set$values, restricted_params)
         }
         
         # Hyperparameter-Cache for classification
@@ -1502,6 +1559,8 @@ vimpute <- function(
           current_learner$param_set$values <- modifyList(current_learner$param_set$values, glmnet_params)
         } else if (grepl("lm_rob|glm_rob", best_learner$id)) {
           current_learner$param_set$values <- modifyList(current_learner$param_set$values, robust_params)
+        } else if (grepl("restricted", best_learner$id)) {
+          current_learner$param_set$values <- modifyList(current_learner$param_set$values, restricted_params)
         }
         
         # Handling of missing values

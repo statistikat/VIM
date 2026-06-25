@@ -1,21 +1,27 @@
-if (requireNamespace("validate", quietly = TRUE)) {
-  expect_error(
-    regression_restricted(
-      y ~ x,
-      data.frame(y = c(1, NA), x = c(1, 2)),
-      rules = list()
-    )
-  )
-}
-
 if (
   requireNamespace("validate", quietly = TRUE) &&
     requireNamespace("ECOSolveR", quietly = TRUE)
 ) {
+  expect_error(
+    vimpute(
+      data.frame(y = c(1, NA), x = c(1, 2)),
+      method = list(y = "restricted"),
+      pmm = FALSE,
+      sequential = FALSE,
+      learner_params = list(y = list())
+    )
+  )
+
   test_df <- data.frame(y = c(1, 2, NA), x = c(1, 2, 3))
   rules <- validate::validator(y >= 4)
 
-  imp <- regression_restricted(y ~ x, test_df, rules = rules)
+  imp <- vimpute(
+    test_df,
+    method = list(y = "restricted"),
+    pmm = FALSE,
+    sequential = FALSE,
+    learner_params = list(restricted = list(rules = rules))
+  )
 
   expect_false(anyNA(imp$y))
   expect_true(imp$y[3] >= 4 - 1e-6)
@@ -36,6 +42,7 @@ if (
   full_data$lower <- full_data$amount - 0.5
   full_data$upper <- full_data$amount + 0.5
 
+  full_data <- full_data[, c("amount", "x1", "x2", "lower", "upper")]
   rules <- validate::validator(
     amount >= lower,
     amount <= upper,
@@ -49,14 +56,19 @@ if (
   data_with_missing <- full_data
   data_with_missing$amount[missing_idx] <- NA_real_
 
-  imp <- regression_restricted(
-    amount ~ x1 + x2 + lower + upper,
+  imp <- vimpute(
     data_with_missing,
-    rules = rules
+    method = list(amount = "restricted"),
+    pmm = FALSE,
+    sequential = FALSE,
+    learner_params = list(amount = list(rules = rules))
   )
 
   rule_values <- validate::values(
-    validate::confront(imp[, names(full_data), drop = FALSE], rules)
+    validate::confront(
+      as.data.frame(imp)[, names(full_data), drop = FALSE],
+      rules
+    )
   )
 
   expect_false(anyNA(imp$amount))
@@ -68,14 +80,19 @@ if (
     data.frame(amount = NA, x1 = 3, x2 = 5, lower = 20.5, upper = 21)
   )
 
-  imp <- regression_restricted(
-    amount ~ x1 + x2,
+  imp <- vimpute(
     data_with_missing,
-    rules = rules
+    method = list(amount = "restricted"),
+    pmm = FALSE,
+    sequential = FALSE,
+    learner_params = list(amount = list(rules = rules))
   )
 
   rule_values <- validate::values(
-    validate::confront(imp[, names(full_data), drop = FALSE], rules)
+    validate::confront(
+      as.data.frame(imp)[, names(full_data), drop = FALSE],
+      rules
+    )
   )
 
   expect_false(anyNA(imp$amount))
@@ -95,24 +112,40 @@ if (
     rep(c("C", "A", "B"), length.out = nrow(categorical_data)),
     levels = c("A", "B", "C")
   )
-
+  categorical_data <- rbind(
+    categorical_data,
+    data.frame(
+      x1 = 4,
+      x2 = 4,
+      amount = NA,
+      lower = 1,
+      upper = 15,
+      c1 = "A",
+      c2 = "B",
+      c3 = "C"
+    )
+  )
   categorical_rules <- validate::validator(
     amount >= lower,
     amount <= upper,
     amount >= 0,
     lower <= upper,
-    (c1 == "A") + (c2 == "A") + (c3 == "A") <= 2
+    (c1 == "A") <= 2,
+    (c2 == "A") <= 2,
+    (c3 == "A") <= 2
   )
 
-  imp <- regression_restricted(
-    amount ~ x1 + x2,
+  imp <- vimpute(
     categorical_data,
-    rules = categorical_rules
+    method = list(amount = "restricted"),
+    pmm = FALSE,
+    sequential = FALSE,
+    learner_params = list(amount = list(rules = categorical_rules))
   )
 
   rule_values <- validate::values(
     validate::confront(
-      imp[, c(names(full_data), "c1", "c2", "c3"), drop = FALSE],
+      as.data.frame(imp)[, c(names(full_data), "c1", "c2", "c3"), drop = FALSE],
       categorical_rules
     )
   )
@@ -130,15 +163,17 @@ if (
     if (c1 == "A") amount >= 2
   )
 
-  imp <- regression_restricted(
-    amount ~ x1 + x2,
+  imp <- vimpute(
     categorical_data,
-    rules = conditional_rules
+    method = list(amount = "restricted"),
+    pmm = FALSE,
+    sequential = FALSE,
+    learner_params = list(amount = list(rules = conditional_rules))
   )
 
   rule_values <- validate::values(
     validate::confront(
-      imp[, c(names(full_data), "c1", "c2", "c3"), drop = FALSE],
+      as.data.frame(imp)[, c(names(full_data), "c1", "c2", "c3"), drop = FALSE],
       conditional_rules
     )
   )
