@@ -1,3 +1,13 @@
+.restricted_filter_rules <- function(rules, variable) {
+  rule_variables <- validate::variables(rules, as = "matrix")
+
+  if (!variable %in% colnames(rule_variables)) {
+    return(rules[integer(0)])
+  }
+
+  rules[which(rule_variables[, variable])]
+}
+
 .restricted_validate_constraints <- function(rules, lhs, data_pred, X_pred,
                                              eps = 0.001) {
   p <- ncol(X_pred)

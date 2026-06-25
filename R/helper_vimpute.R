@@ -336,6 +336,7 @@ register_restricted_learners <- function() {
         data <- as.data.frame(task$data(cols = c(task$target_names, task$feature_names)))
         target <- task$target_names
         features <- task$feature_names
+        rules <- .restricted_filter_rules(rules, target)
 
         factor_cols <- vapply(data, is.factor, logical(1))
         if (any(factor_cols)) {
