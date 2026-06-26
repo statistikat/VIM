@@ -1,4 +1,6 @@
 # VIM 7.1.0
+- add experimental `tabimpute()` support for zero-shot missing-data imputation
+  via an optional Python TabImpute backend imported lazily through `reticulate`
 - improve `vimpute()` compatibility and validation
 - make `rangerImpute()`, `xgboostImpute()`, and `regressionImp()` delegate to `vimpute()`
 - vimpute: fall back from regularized to robust models when too few predictor columns remain after preprocessing

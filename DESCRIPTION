@@ -34,7 +34,9 @@ Imports:
     data.table(>= 1.9.4),
     keras,
     tensorflow,
-    stringr
+    stringr,
+    stringi,
+    lgr,
     mlr3,
     mlr3pipelines,
     R6,
@@ -54,8 +56,8 @@ Suggests:
     pdist,
     enetLTS,
     robmixglm,
-    stringr,
-    glmnet
+    glmnet,
+    reticulate
 Description: Provides methods for imputation and visualization of 
     missing values. It includes graphical tools to explore the amount, structure 
     and patterns of missing and/or imputed values, supporting exploratory 

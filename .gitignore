@@ -12,3 +12,7 @@ VIM.Rcheck/
 VIM_*.tar.gz
 **/.vscode/
 .codex
+renv.lock
+.Rprofile
+renv/activate.R
+renv/settings.json
