@@ -208,8 +208,13 @@ if (
 
   expect_false(anyNA(formula_imp$y))
   expect_equal(sum(formula_imp$y_imp), length(formula_missing_idx))
-  expect_true(max(abs(formula_imp$y[formula_missing_idx] - expected_formula_y)) < 1e-6)
-  expect_true(all(validate::values(validate::confront(formula_imp, formula_rules))))
+  expect_true(
+    max(abs(formula_imp$y[formula_missing_idx] - expected_formula_y)) < 1e-6
+  )
+  expect_true(all(validate::values(validate::confront(
+    formula_imp,
+    formula_rules
+  ))))
 
   utils::data("lse_synthetic", package = "VIM")
   rules_path <- system.file("data", "lse_synthetic_rules.rds", package = "VIM")
@@ -221,24 +226,51 @@ if (
   lse_edit_rules <- lse_rules$edit
 
   numeric_cols <- c(
-    "persons_employed", "employees_paid", "self_employed",
-    "employees_male", "employees_female", "employees_blue_collar",
-    "employees_white_collar", "apprentices", "marginal_employees",
-    "turnover_total", "turnover_domestic", "turnover_exports",
-    "e_commerce_turnover", "material_costs", "purchased_services",
-    "rents_leasing", "other_operating_expense", "intermediate_consumption",
-    "gross_value_added", "personnel_costs", "wages_salaries",
-    "social_security_costs", "other_personnel_costs",
-    "gross_operating_surplus", "investments_tangible",
-    "investment_machinery", "investment_buildings", "investment_software"
+    "persons_employed",
+    "employees_paid",
+    "self_employed",
+    "employees_male",
+    "employees_female",
+    "employees_blue_collar",
+    "employees_white_collar",
+    "apprentices",
+    "marginal_employees",
+    "turnover_total",
+    "turnover_domestic",
+    "turnover_exports",
+    "e_commerce_turnover",
+    "material_costs",
+    "purchased_services",
+    "rents_leasing",
+    "other_operating_expense",
+    "intermediate_consumption",
+    "gross_value_added",
+    "personnel_costs",
+    "wages_salaries",
+    "social_security_costs",
+    "other_personnel_costs",
+    "gross_operating_surplus",
+    "investments_tangible",
+    "investment_machinery",
+    "investment_buildings",
+    "investment_software"
   )
   edit_cols <- c(
-    "reporting_year", "onace_section", "onace_group", "nuts2",
-    "data_source", "survey_mode", "employment_size_class",
-    "turnover_size_class", numeric_cols
+    "reporting_year",
+    "onace_section",
+    "onace_group",
+    "nuts2",
+    "data_source",
+    "survey_mode",
+    "employment_size_class",
+    "turnover_size_class",
+    numeric_cols
   )
   lse_complete <- lse_synthetic[seq_len(80L), edit_cols]
-  expect_true(all(validate::values(validate::confront(lse_synthetic, lse_edit_rules))))
+  expect_true(all(validate::values(validate::confront(
+    lse_synthetic,
+    lse_edit_rules
+  ))))
 
   lse_missing <- lse_complete[, numeric_cols]
   missing_map <- list(
@@ -269,14 +301,26 @@ if (
   )
   expected_nimp <- sum(lengths(missing_map))
 
-  expect_false(anyNA(as.data.frame(lse_imp)[, names(missing_map), drop = FALSE]))
-  expect_equal(sum(lse_imp$turnover_total_imp), length(missing_map$turnover_total))
+  expect_false(anyNA(as.data.frame(lse_imp)[,
+    names(missing_map),
+    drop = FALSE
+  ]))
+  expect_equal(
+    sum(lse_imp$turnover_total_imp),
+    length(missing_map$turnover_total)
+  )
   expect_equal(
     sum(lse_imp$intermediate_consumption_imp),
     length(missing_map$intermediate_consumption)
   )
-  expect_equal(sum(lse_imp$gross_value_added_imp), length(missing_map$gross_value_added))
-  expect_equal(sum(lse_imp$personnel_costs_imp), length(missing_map$personnel_costs))
+  expect_equal(
+    sum(lse_imp$gross_value_added_imp),
+    length(missing_map$gross_value_added)
+  )
+  expect_equal(
+    sum(lse_imp$personnel_costs_imp),
+    length(missing_map$personnel_costs)
+  )
   expect_equal(
     sum(lse_imp$investments_tangible_imp),
     length(missing_map$investments_tangible)
