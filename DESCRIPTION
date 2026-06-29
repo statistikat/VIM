@@ -52,8 +52,10 @@ Suggests:
     enetLTS,
     robmixglm,
     stringr,
-    glmnet
-Description: Provides methods for imputation and visualization of 
+    glmnet,
+    cellWise,
+    crmReg
+Description: Provides methods for imputation and visualization of
     missing values. It includes graphical tools to explore the amount, structure 
     and patterns of missing and/or imputed values, supporting exploratory 
     data analysis and helping to investigate potential missingness mechanisms
