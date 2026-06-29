@@ -40,10 +40,6 @@ Can be provided either:
 \item as a \strong{single global method} (e.g. "ranger"), applied to all variables, or
 \item as a \strong{named list} (e.g. as.list(var1 = "xgboost", var2="robust")), assigning a method to each variable individually.
 Supported methods:
-\item ranger (Random Forest)
-\item xgboost (Gradient Boosting)
-\item regularized (glmnet regression/classification)
-\item robust (robustbase::lmrob / glmrob)
 \item gam (Generalized Additive Model via mgcv::gam)
 \item robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
 }}
@@ -92,7 +88,8 @@ Can be provided in \strong{three ways}:
 
 \item{formula}{Optional modeling formula to restrict or transform predictor variables.
 Only supported for \strong{regularized} (glmnet), \strong{robust} (lmrob/glmrob),
-\strong{gam} (mgcv::gam), and \strong{robgam} (robust GAM) methods
+\strong{gam} (mgcv::gam), \strong{robgam} (robust GAM), and \strong{restricted}
+methods
 Provide as a named list, e.g.:
 \itemize{
 \item list(mpg = mpg ~ hp + drat)
