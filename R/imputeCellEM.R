@@ -935,6 +935,12 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
 #'   covariances on observed cells only.
 #' @param uncert imputation uncertainty: \code{"conditional"} (default)
 #'   adds noise from the conditional normal distribution.
+#' @param init_method initialisation for missing values before iteration:
+#'   \code{"median"} (default), \code{"knn"}, or \code{"irmi"}.
+#' @param m number of multiple imputations (default: 1). If \code{m > 1},
+#'   a list of imputed datasets is returned.
+#' @param boot logical; if \code{TRUE}, bootstrap resampling propagates
+#'   parameter uncertainty across the \code{m} imputations.
 #' @param trace logical; if \code{TRUE}, print progress information.
 #'
 #' @return A list with components:
@@ -973,6 +979,7 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
 #'
 #' @importFrom robustbase covMcd
 #' @importFrom MASS ginv
+#' @importFrom utils tail
 #' @export
 imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
                            method = "tukey", alpha = NULL,

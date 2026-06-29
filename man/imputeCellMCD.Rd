@@ -48,8 +48,17 @@ receiving weight 0 (requires the \pkg{cellWise} package);
 \code{"pairwise"} uses pairwise robust (Gnanadesikan--Kettenring)
 covariances on observed cells only.}
 
+\item{init_method}{initialisation for missing values before iteration:
+\code{"median"} (default), \code{"knn"}, or \code{"irmi"}.}
+
 \item{uncert}{imputation uncertainty: \code{"conditional"} (default)
 adds noise from the conditional normal distribution.}
+
+\item{m}{number of multiple imputations (default: 1). If \code{m > 1},
+a list of imputed datasets is returned.}
+
+\item{boot}{logical; if \code{TRUE}, bootstrap resampling propagates
+parameter uncertainty across the \code{m} imputations.}
 
 \item{trace}{logical; if \code{TRUE}, print progress information.}
 }
