@@ -2,8 +2,7 @@
 % Please edit documentation in R/vimpute.R
 \name{vimpute}
 \alias{vimpute}
-\title{Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)
-Need of 'helper_vimpute' script}
+\title{Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)}
 \usage{
 vimpute(
   data,
@@ -15,13 +14,19 @@ vimpute(
   pmm_k_method = "mean",
   learner_params = NULL,
   formula = FALSE,
+  makeNA = NULL,
+  donorcond = NULL,
   sequential = TRUE,
   nseq = 10,
   eps = 0.005,
   imp_var = TRUE,
   pred_history = FALSE,
   tune = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  boot = FALSE,
+  robustboot = "stratified",
+  uncert = "none",
+  m = 1L
 )
 }
 \arguments{
@@ -35,6 +40,12 @@ Can be provided either:
 \item as a \strong{single global method} (e.g. "ranger"), applied to all variables, or
 \item as a \strong{named list} (e.g. as.list(var1 = "xgboost", var2="robust")), assigning a method to each variable individually.
 Supported methods:
+\item ranger (Random Forest)
+\item xgboost (Gradient Boosting)
+\item regularized (glmnet regression/classification)
+\item robust (robustbase::lmrob / glmrob)
+\item gam (Generalized Additive Model via mgcv::gam)
+\item robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
 }}
 
 \item{pmm}{Predictive Mean Matching (PMM) settings.
@@ -80,7 +91,8 @@ Can be provided in \strong{three ways}:
 }}
 
 \item{formula}{Optional modeling formula to restrict or transform predictor variables.
-Only supported for \strong{regularized} (glmnet) and \strong{robust} (lmrob/glmrob) methods
+Only supported for \strong{regularized} (glmnet), \strong{robust} (lmrob/glmrob),
+\strong{gam} (mgcv::gam), and \strong{robgam} (robust GAM) methods
 Provide as a named list, e.g.:
 \itemize{
 \item list(mpg = mpg ~ hp + drat)
@@ -88,6 +100,15 @@ Provide as a named list, e.g.:
 For X: follows the rules of model.matrix
 For Y: transformations supported are log(), exp(), sqrt(), I(1/..). Only applicable for numeric variables.
 }}
+
+\item{makeNA}{Optional named list that defines additional values to be treated as imputable missing
+values per variable, similar to \code{kNN()}. For variables listed in \code{makeNA},
+only the specified values are imputed; existing \code{NA} values are left untouched.
+Variables not listed in \code{makeNA} continue to impute regular \code{NA} values.}
+
+\item{donorcond}{Optional named list of donor conditions per variable, similar to \code{kNN()}.
+Rows whose observed target values do not satisfy the condition are excluded from the
+donor pool for model fitting for that variable.}
 
 \item{sequential}{If TRUE, all variables with missing data are imputed sequentially across iterations.}
 
@@ -107,24 +128,70 @@ Tuning is performed halfway through nseq iterations.
 }}
 
 \item{verbose}{If TRUE additional debugging output is provided}
+
+\item{boot}{If TRUE, bootstrap resampling is applied before model fitting to account
+for model uncertainty. The bootstrap strategy is controlled by \code{robustboot}.
+Most effective with method = "robust". Default: FALSE}
+
+\item{robustboot}{Bootstrap strategy when \code{boot = TRUE}. Options:
+\code{"standard"} (classical bootstrap),
+\code{"stratified"} (good/bad residual split, default),
+\code{"residual"} (inverse residual weighting).}
+
+\item{uncert}{Imputation uncertainty method applied to predictions:
+\code{"none"} (point prediction, default),
+\code{"normalerror"} (add N(0, sigma_hat)),
+\code{"resid"} (add sampled residual),
+\code{"pmm"} (predictive mean matching),
+\code{"midastouch"} (covariate-distance-weighted PMM, Siddique & Belin 2008).
+If \code{pmm = TRUE} is set, it takes precedence over \code{uncert}.}
+
+\item{m}{Number of multiple imputations. Default: 1 (single imputation).
+When \code{m > 1}, returns a \code{\link{vimmi}} object storing the original
+data and imputed values efficiently. Use \code{\link{complete.vimmi}} to
+extract completed datasets.}
 }
 \value{
 Either:
 \itemize{
-\item the imputed dataset (default), or
-\item a list containing the imputed dataset and prediction history, depending on the pred_history and tune settings.
+\item the imputed dataset (default, when \code{m = 1}), or
+\item a list containing the imputed dataset and prediction history (when \code{pred_history = TRUE} or \code{tune = TRUE}), or
+\item a \code{\link{vimmi}} object (when \code{m > 1}).
 }
 }
 \description{
 Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)
-Need of 'helper_vimpute' script
 }
 \examples{
 \dontrun{
+# Single imputation (default)
 x <- vimpute(data = sleep, sequential = FALSE)
+
+# Sequential imputation with 3 iterations
 y <- vimpute(data = sleep, sequential = TRUE, nseq = 3)
+
+# Impute only selected variables
 z <- vimpute(data = sleep, considered_variables =
        c("Sleep", "Dream", "Span", "BodyWgt"), sequential = FALSE)
+
+# Multiple imputation (m = 5) with bootstrap and residual uncertainty
+# Returns a vimmi object
+result <- vimpute(data = sleep, method = "ranger", sequential = FALSE,
+                  imp_var = FALSE, m = 5, boot = TRUE, uncert = "resid")
+print(result)
+
+# Extract completed datasets
+d1 <- complete(result, 1)         # first imputed dataset
+all_d <- complete(result, "all")  # list of 5 datasets
+long_d <- complete(result, "long") # long format with .imp column
+
+# Fit a model on each imputed dataset
+fits <- with(result, lm(Sleep ~ Dream + Span))
+
+# Multiple imputation with robust method and residual uncertainty
+result2 <- vimpute(data = sleep, method = "robust", m = 5,
+                   boot = TRUE, robustboot = "stratified",
+                   uncert = "normalerror")
 }
 }
 \seealso{
@@ -145,6 +212,10 @@ Other imputation methods:
 \code{\link{rangerImpute}()},
 \code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
+\code{\link{vimmi}},
 \code{\link{xgboostImpute}()}
+}
+\author{
+Eileen Vattheuer, Matthias Templ, Alexander Kowarik
 }
 \concept{imputation methods}

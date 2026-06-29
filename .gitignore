@@ -10,3 +10,5 @@ CLAUDE.md
 .claude
 VIM.Rcheck/
 VIM_*.tar.gz
+**/.vscode/
+.codex
