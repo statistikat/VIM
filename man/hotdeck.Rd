@@ -94,6 +94,11 @@ Statistical Software}, 74(7), 1-16.
 \seealso{
 Other imputation methods: 
 \code{\link{impPCA}()},
+\code{\link{imputeCellEM}()},
+\code{\link{imputeCellIRMI}()},
+\code{\link{imputeCellM}()},
+\code{\link{imputeCellMCD}()},
+\code{\link{imputeCellwise}()},
 \code{\link{imputeRobust}()},
 \code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},

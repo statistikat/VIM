@@ -47,6 +47,11 @@ rangerImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
+\code{\link{imputeCellEM}()},
+\code{\link{imputeCellIRMI}()},
+\code{\link{imputeCellM}()},
+\code{\link{imputeCellMCD}()},
+\code{\link{imputeCellwise}()},
 \code{\link{imputeRobust}()},
 \code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},
