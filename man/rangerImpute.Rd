@@ -60,6 +60,7 @@ Other imputation methods:
 \code{\link{medianSamp}()},
 \code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
+\code{\link{vimmi}},
 \code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}
 }

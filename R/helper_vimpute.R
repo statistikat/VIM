@@ -1015,6 +1015,14 @@ precheck <- function(
   if (!is.logical(boot) || length(boot) != 1L || is.na(boot)) {
     stop("'boot' must be TRUE or FALSE.")
   }
+  # 'psi'/'quantile' robustboot strategies are currently disabled; fall back
+  # to 'standard' with a warning rather than erroring (see bootstrap_resample).
+  if (length(robustboot) == 1L && robustboot %in% c("psi", "quantile")) {
+    warning(sprintf(
+      "robustboot strategy '%s' is not available; falling back to 'standard'.",
+      robustboot))
+    robustboot <- "standard"
+  }
   robustboot <- match.arg(robustboot, c("standard", "stratified", "residual"))
   uncert <- match.arg(uncert, c("none", "normalerror", "resid", "pmm", "midastouch"))
   if (length(m) != 1L || is.na(m) || !is.numeric(m) || m < 1 || m != as.integer(m)) {
@@ -1496,6 +1504,14 @@ bootstrap_resample <- function(
     alpha = 0.75,
     best_subset = NULL
 ) {
+  # 'psi' and 'quantile' strategies are currently disabled (not reliable
+  # enough); fall back to 'standard' with a warning instead of erroring.
+  if (length(strategy) == 1L && strategy %in% c("psi", "quantile")) {
+    warning(sprintf(
+      "robustboot strategy '%s' is not available; falling back to 'standard'.",
+      strategy))
+    strategy <- "standard"
+  }
   strategy <- match.arg(strategy, c("standard", "stratified", "residual"))
 
   if (strategy == "standard") {

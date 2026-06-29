@@ -42,26 +42,10 @@ suppressPackageStartupMessages({
   library(mgcv)
 })
 
-find_package_root <- function(start = getwd()) {
-  current <- normalizePath(start, winslash = "/", mustWork = TRUE)
-
-  repeat {
-    if (file.exists(file.path(current, "DESCRIPTION")) && dir.exists(file.path(current, "R"))) {
-      return(current)
-    }
-    parent <- dirname(current)
-    if (identical(parent, current)) {
-      stop("Could not find package root.", call. = FALSE)
-    }
-    current <- parent
-  }
-}
-
-root_dir <- find_package_root()
-
-source(file.path(root_dir, "R", "helper_vimpute.R"))
-source(file.path(root_dir, "R", "vimmi.R"))
-source(file.path(root_dir, "R", "vimpute.R"))
+# Use the installed/loaded package. R CMD check runs tests from VIM.Rcheck/tests
+# where the R/ source dir is absent, so source()-ing R/ files is not possible;
+# the exported functions are available via the package namespace instead.
+suppressPackageStartupMessages(library(VIM))
 
 check <- function(ok, message) {
   if (!isTRUE(ok)) stop(message, call. = FALSE)
