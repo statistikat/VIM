@@ -115,6 +115,11 @@ Statistical Software}, 74(7), 1-16.
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
+\code{\link{imputeCellEM}()},
+\code{\link{imputeCellIRMI}()},
+\code{\link{imputeCellM}()},
+\code{\link{imputeCellMCD}()},
+\code{\link{imputeCellwise}()},
 \code{\link{imputeRobust}()},
 \code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},
@@ -123,6 +128,7 @@ Other imputation methods:
 \code{\link{rangerImpute}()},
 \code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
+\code{\link{vimmi}},
 \code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}
 }

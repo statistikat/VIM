@@ -56,9 +56,13 @@ Suggests:
     pdist,
     enetLTS,
     robmixglm,
+    stringr,
     glmnet,
-    reticulate
-Description: Provides methods for imputation and visualization of 
+    reticulate,
+    cellWise,
+    crmReg,
+    mice
+Description: Provides methods for imputation and visualization of
     missing values. It includes graphical tools to explore the amount, structure 
     and patterns of missing and/or imputed values, supporting exploratory 
     data analysis and helping to investigate potential missingness mechanisms

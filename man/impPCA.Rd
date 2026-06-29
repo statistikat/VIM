@@ -85,6 +85,11 @@ Computational Statistics and Data Analysis, Elsevier, vol. 52(3), pages 1712-172
 \seealso{
 Other imputation methods: 
 \code{\link{hotdeck}()},
+\code{\link{imputeCellEM}()},
+\code{\link{imputeCellIRMI}()},
+\code{\link{imputeCellM}()},
+\code{\link{imputeCellMCD}()},
+\code{\link{imputeCellwise}()},
 \code{\link{imputeRobust}()},
 \code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},
@@ -94,6 +99,7 @@ Other imputation methods:
 \code{\link{rangerImpute}()},
 \code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
+\code{\link{vimmi}},
 \code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}
 }

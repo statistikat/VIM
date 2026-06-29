@@ -54,6 +54,11 @@ imp_testdata2 <- matchImpute(dt,match_var=c("c1","c2","b1","b2"))
 Other imputation methods: 
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
+\code{\link{imputeCellEM}()},
+\code{\link{imputeCellIRMI}()},
+\code{\link{imputeCellM}()},
+\code{\link{imputeCellMCD}()},
+\code{\link{imputeCellwise}()},
 \code{\link{imputeRobust}()},
 \code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},
@@ -62,6 +67,7 @@ Other imputation methods:
 \code{\link{rangerImpute}()},
 \code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
+\code{\link{vimmi}},
 \code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}
 }
