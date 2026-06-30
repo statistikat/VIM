@@ -511,7 +511,9 @@
   expr
 }
 
-.restricted_ecos_lm <- function(X, y, C, d, Aeq, beq) {
+.restricted_ecos_lm <- function(X, y, C, d, Aeq, beq,
+                                robust = FALSE, huber_k = 1.345,
+                                save_optimization_problem = FALSE) {
   solver <- .restricted_ecos_solver()
 
   X <- as.matrix(X)
@@ -535,48 +537,166 @@
     )
   }
 
-  cvec <- c(rep(0, p), 1)
-  G_soc <- cbind(rbind(rep(0, p), X), c(-1, rep(0, n)))
-  h_soc <- c(0, y)
-
-  if (nrow(C) > 0L) {
-    G_linear <- cbind(C, rep(0, nrow(C)))
-    G <- rbind(G_linear, G_soc)
-    h <- c(d, h_soc)
-  } else {
-    G <- G_soc
-    h <- h_soc
-  }
-
   if (nrow(Aeq) > 0L) {
-    A <- cbind(Aeq, rep(0, nrow(Aeq)))
-    b <- beq
-  } else {
-    A <- NULL
-    b <- NULL
+    equality_qr <- qr(Aeq)
+    equality_residual <- beq - qr.fitted(equality_qr, beq)
+    equality_tolerance <- sqrt(.Machine$double.eps) *
+      max(1, max(abs(beq)))
+    if (max(abs(equality_residual)) > equality_tolerance) {
+      stop(
+        "Restricted regression equality constraints are inconsistent.",
+        call. = FALSE
+      )
+    }
+
+    independent_qr <- qr(t(Aeq))
+    independent_rows <- independent_qr$pivot[
+      seq_len(independent_qr$rank)
+    ]
+    Aeq <- Aeq[independent_rows, , drop = FALSE]
+    beq <- beq[independent_rows]
   }
 
-  dims <- list(l = as.integer(nrow(C)), q = as.integer(n + 1L), e = 0L)
+  if (isTRUE(robust)) {
+    # Keep the coefficient restrictions unchanged and replace only the
+    # least-squares residual cone with a sparse Huber-loss epigraph.
+    if (!is.numeric(huber_k) || length(huber_k) != 1L ||
+        !is.finite(huber_k) || huber_k <= 0) {
+      stop("`huber_k` must be a finite positive number.", call. = FALSE)
+    }
+
+    residual_scale <- .restricted_robust_scale(X, y)
+    nvar <- p + 1L + 3L * n
+    t_pos <- p + 1L
+    z_pos <- p + 1L + seq_len(n)
+    v_pos <- p + 1L + n + seq_len(n)
+    w_pos <- p + 1L + 2L * n + seq_len(n)
+
+    cvec <- numeric(nvar)
+    cvec[t_pos] <- 0.5
+    cvec[w_pos] <- huber_k
+
+    C_index <- which(C != 0, arr.ind = TRUE)
+    row_pos <- seq_len(n)
+    absolute_offset <- nrow(C)
+    soc_offset <- nrow(C) + 2L * n
+    G <- Matrix::sparseMatrix(
+      i = c(
+        C_index[, 1L],
+        absolute_offset + row_pos,
+        absolute_offset + row_pos,
+        absolute_offset + n + row_pos,
+        absolute_offset + n + row_pos,
+        soc_offset + 1L,
+        soc_offset + 1L + row_pos,
+        soc_offset + n + 2L
+      ),
+      j = c(
+        C_index[, 2L],
+        v_pos,
+        w_pos,
+        v_pos,
+        w_pos,
+        t_pos,
+        z_pos,
+        t_pos
+      ),
+      x = c(
+        C[C_index],
+        rep(1, n),
+        rep(-1, n),
+        rep(-1, n),
+        rep(-1, n),
+        -1,
+        rep(-2, n),
+        -1
+      ),
+      dims = c(nrow(C) + 3L * n + 2L, nvar)
+    )
+    h <- c(d, numeric(2L * n), 1, numeric(n), -1)
+
+    Aeq_index <- which(Aeq != 0, arr.ind = TRUE)
+    X_index <- which(X != 0, arr.ind = TRUE)
+    residual_offset <- nrow(Aeq)
+    A <- Matrix::sparseMatrix(
+      i = c(
+        Aeq_index[, 1L],
+        residual_offset + X_index[, 1L],
+        residual_offset + row_pos,
+        residual_offset + row_pos
+      ),
+      j = c(Aeq_index[, 2L], X_index[, 2L], z_pos, v_pos),
+      x = c(
+        Aeq[Aeq_index],
+        X[X_index] / residual_scale,
+        rep(-1, n),
+        rep(-1, n)
+      ),
+      dims = c(nrow(Aeq) + n, nvar)
+    )
+    b <- c(beq, y / residual_scale)
+    dims <- list(
+      l = as.integer(nrow(C) + 2L * n),
+      q = as.integer(n + 2L),
+      e = 0L
+    )
+    loss <- list(type = "huber", k = huber_k, scale = residual_scale)
+  } else {
+    cvec <- c(rep(0, p), 1)
+    G_soc <- cbind(rbind(rep(0, p), X), c(-1, rep(0, n)))
+    h_soc <- c(0, y)
+
+    if (nrow(C) > 0L) {
+      G_linear <- cbind(C, rep(0, nrow(C)))
+      G <- rbind(G_linear, G_soc)
+      h <- c(d, h_soc)
+    } else {
+      G <- G_soc
+      h <- h_soc
+    }
+
+    if (nrow(Aeq) > 0L) {
+      A <- cbind(Aeq, rep(0, nrow(Aeq)))
+      b <- beq
+    } else {
+      A <- NULL
+      b <- NULL
+    }
+
+    dims <- list(l = as.integer(nrow(C)), q = as.integer(n + 1L), e = 0L)
+    loss <- list(type = "least_squares")
+  }
+
   control <- if (is.function(solver$control)) {
     solver$control(verbose = 0L)
   } else {
     list()
   }
-  solution <- solver$solve(
-    c = cvec,
-    G = G,
-    h = h,
-    dims = dims,
-    A = A,
-    b = b,
-    control = control
+  optimization_problem <- list(
+    solver = solver$package,
+    arguments = list(
+      c = cvec,
+      G = G,
+      h = h,
+      dims = dims,
+      A = A,
+      b = b,
+      control = control
+    ),
+    coefficient_names = colnames(X),
+    loss = loss
+  )
+  solution <- do.call(
+    solver$solve,
+    optimization_problem$arguments
   )
 
   exitflag <- solution$retcodes[["exitFlag"]]
   if (is.null(exitflag)) {
     exitflag <- solution$retcodes[["exitflag"]]
   }
-  if (!identical(as.integer(exitflag), 0L)) {
+  exitflag <- as.integer(exitflag)
+  if (!(exitflag %in% c(0L, 10L))) {
     stop(
       "Restricted regression optimization failed for solver `",
       solver$package,
@@ -585,10 +705,47 @@
       call. = FALSE
     )
   }
+  if (identical(exitflag, 10L)) {
+    warning(
+      "Restricted regression solver `",
+      solver$package,
+      "` returned a close-to-optimal solution.",
+      call. = FALSE
+    )
+  }
 
   beta <- solution$x[seq_len(p)]
   names(beta) <- colnames(X)
+  if (isTRUE(save_optimization_problem)) {
+    attr(beta, "optimization_problem") <- optimization_problem
+  }
   beta
+}
+
+.restricted_robust_scale <- function(X, y) {
+  fit <- stats::lm.fit(x = X, y = y)
+  residuals <- as.numeric(fit$residuals)
+  scale <- stats::mad(residuals, constant = 1.4826, na.rm = TRUE)
+
+  if (!is.finite(scale) || scale <= 0) {
+    scale <- stats::IQR(residuals, na.rm = TRUE) / 1.349
+  }
+  if (!is.finite(scale) || scale <= 0) {
+    scale <- stats::sd(residuals, na.rm = TRUE)
+  }
+  if (!is.finite(scale) || scale <= 0) {
+    scale <- stats::mad(y, constant = 1.4826, na.rm = TRUE)
+  }
+  if (!is.finite(scale) || scale <= 0) {
+    scale <- stats::sd(y, na.rm = TRUE)
+  }
+  if (!is.finite(scale) || scale <= 0) {
+    scale <- 1
+  }
+
+  scale_floor <- sqrt(.Machine$double.eps) *
+    max(1, stats::median(abs(y), na.rm = TRUE))
+  max(scale, scale_floor)
 }
 
 .restricted_ecos_solver <- function() {

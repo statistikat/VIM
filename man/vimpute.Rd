@@ -84,7 +84,13 @@ Can be provided in \strong{three ways}:
 \item \strong{Per variable}  (e.g. list(mpg = list(num.trees = 500)))
 \item \strong{Per method}    (e.g. list(ranger = list(num.trees = 600)))
 \item \strong{Global}, applied to all variables using the same method
-}}
+}
+For \code{restricted}, set \code{save_optimization_problem = TRUE} to attach
+the exact ECOS problem arguments to the returned object under the
+\code{restricted_optimization_problems} attribute.
+Set \code{robust = TRUE} to replace least squares with Huber loss;
+\code{huber_k} controls its tuning constant and defaults to \code{1.345}.
+}
 
 \item{formula}{Optional modeling formula to restrict or transform predictor variables.
 Only supported for \strong{regularized} (glmnet), \strong{robust} (lmrob/glmrob),

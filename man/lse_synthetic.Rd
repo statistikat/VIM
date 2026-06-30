@@ -24,8 +24,7 @@ personnel costs, gross operating surplus, and tangible investment.
 
 The monetary variables are expressed in thousand euros. The observations are
 generated synthetically and do not contain real enterprise records.
-A companion \code{validate::validator} rule list is stored in
-\code{data/lse_synthetic_rules.rds}.
+Companion validation rules are available as \code{lse_synthetic_rules}.
 }
 \examples{
 

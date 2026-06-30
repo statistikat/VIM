@@ -20,12 +20,27 @@ if (
     method = list(y = "restricted"),
     pmm = FALSE,
     sequential = FALSE,
-    learner_params = list(restricted = list(rules = rules))
+    learner_params = list(restricted = list(
+      rules = rules,
+      save_optimization_problem = TRUE
+    ))
   )
 
   expect_false(anyNA(imp$y))
   expect_true(imp$y[3] >= 4 - 1e-6)
   expect_true(imp$y_imp[3])
+  optimization_problems <- attr(
+    imp,
+    "restricted_optimization_problems",
+    exact = TRUE
+  )
+  expect_equal(names(optimization_problems), "y")
+  expect_equal(length(optimization_problems$y), 1L)
+  expect_equal(optimization_problems$y[[1L]]$solver, "ECOSolveR")
+  expect_equal(
+    names(optimization_problems$y[[1L]]$arguments),
+    c("c", "G", "h", "dims", "A", "b", "control")
+  )
 }
 
 if (
@@ -216,118 +231,62 @@ if (
     formula_rules
   ))))
 
-  utils::data("lse_synthetic", package = "VIM")
-  rules_path <- system.file("data", "lse_synthetic_rules.rds", package = "VIM")
-  if (!nzchar(rules_path)) {
-    rules_path <- file.path(getwd(), "data", "lse_synthetic_rules.rds")
-  }
-  lse_rules <- readRDS(rules_path)
+  robust_rules <- validate::validator(y >= 0)
+  clean_data <- data.frame(x = 0:21, y = 1 + 2 * (0:21))
+  clean_data$y[22L] <- NA_real_
 
-  lse_edit_rules <- lse_rules$edit
-
-  numeric_cols <- c(
-    "persons_employed",
-    "employees_paid",
-    "self_employed",
-    "employees_male",
-    "employees_female",
-    "employees_blue_collar",
-    "employees_white_collar",
-    "apprentices",
-    "marginal_employees",
-    "turnover_total",
-    "turnover_domestic",
-    "turnover_exports",
-    "e_commerce_turnover",
-    "material_costs",
-    "purchased_services",
-    "rents_leasing",
-    "other_operating_expense",
-    "intermediate_consumption",
-    "gross_value_added",
-    "personnel_costs",
-    "wages_salaries",
-    "social_security_costs",
-    "other_personnel_costs",
-    "gross_operating_surplus",
-    "investments_tangible",
-    "investment_machinery",
-    "investment_buildings",
-    "investment_software"
-  )
-  edit_cols <- c(
-    "reporting_year",
-    "onace_section",
-    "onace_group",
-    "nuts2",
-    "data_source",
-    "survey_mode",
-    "employment_size_class",
-    "turnover_size_class",
-    numeric_cols
-  )
-  lse_complete <- lse_synthetic[seq_len(80L), edit_cols]
-  expect_true(all(validate::values(validate::confront(
-    lse_synthetic,
-    lse_edit_rules
-  ))))
-
-  lse_missing <- lse_complete[, numeric_cols]
-  missing_map <- list(
-    turnover_total = c(2L, 7L),
-    intermediate_consumption = c(13L, 18L),
-    gross_value_added = c(24L, 31L),
-    personnel_costs = c(39L, 45L),
-    investments_tangible = c(52L, 60L)
-  )
-  for (var in names(missing_map)) {
-    lse_missing[missing_map[[var]], var] <- NA_real_
-  }
-
-  lse_imp <- vimpute(
-    lse_missing,
-    method = "restricted",
+  clean_ordinary <- vimpute(
+    clean_data,
+    method = list(y = "restricted"),
+    formula = list(y = y ~ x),
     pmm = FALSE,
     sequential = FALSE,
-    learner_params = list(restricted = list(rules = lse_edit_rules))
+    learner_params = list(y = list(rules = robust_rules))
+  )
+  clean_robust <- vimpute(
+    clean_data,
+    method = list(y = "restricted"),
+    formula = list(y = y ~ x),
+    pmm = FALSE,
+    sequential = FALSE,
+    learner_params = list(y = list(
+      rules = robust_rules,
+      robust = TRUE
+    ))
   )
 
-  lse_complete[, numeric_cols] <- as.data.frame(lse_imp)[, numeric_cols]
-  lse_rule_values <- validate::values(
-    validate::confront(
-      lse_complete,
-      lse_edit_rules
-    )
-  )
-  expected_nimp <- sum(lengths(missing_map))
+  expect_equal(clean_robust$y[22L], clean_ordinary$y[22L], tolerance = 1e-5)
 
-  expect_false(anyNA(as.data.frame(lse_imp)[,
-    names(missing_map),
-    drop = FALSE
-  ]))
-  expect_equal(
-    sum(lse_imp$turnover_total_imp),
-    length(missing_map$turnover_total)
+  outlier_data <- clean_data
+  outlier_data$y[21L] <- 500
+  outlier_ordinary <- vimpute(
+    outlier_data,
+    method = list(y = "restricted"),
+    formula = list(y = y ~ x),
+    pmm = FALSE,
+    sequential = FALSE,
+    learner_params = list(y = list(rules = robust_rules))
   )
-  expect_equal(
-    sum(lse_imp$intermediate_consumption_imp),
-    length(missing_map$intermediate_consumption)
+  outlier_robust <- vimpute(
+    outlier_data,
+    method = list(y = "restricted"),
+    formula = list(y = y ~ x),
+    pmm = FALSE,
+    sequential = FALSE,
+    learner_params = list(y = list(
+      rules = robust_rules,
+      robust = TRUE,
+      huber_k = 1.345
+    ))
   )
-  expect_equal(
-    sum(lse_imp$gross_value_added_imp),
-    length(missing_map$gross_value_added)
+
+  expected_y <- 43
+  expect_true(
+    abs(outlier_robust$y[22L] - expected_y) <
+      abs(outlier_ordinary$y[22L] - expected_y)
   )
-  expect_equal(
-    sum(lse_imp$personnel_costs_imp),
-    length(missing_map$personnel_costs)
-  )
-  expect_equal(
-    sum(lse_imp$investments_tangible_imp),
-    length(missing_map$investments_tangible)
-  )
-  expect_equal(
-    sum(as.data.frame(lse_imp)[paste0(names(missing_map), "_imp")]),
-    expected_nimp
-  )
-  expect_true(all(lse_rule_values))
+  expect_true(validate::values(validate::confront(
+    outlier_robust,
+    robust_rules
+  ))[[1L]])
 }

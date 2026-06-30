@@ -439,8 +439,7 @@ NULL
 #'
 #' The monetary variables are expressed in thousand euros. The observations are
 #' generated synthetically and do not contain real enterprise records.
-#' A companion `validate::validator` rule list is stored in
-#' `data/lse_synthetic_rules.rds`.
+#' Companion validation rules are available as [lse_synthetic_rules].
 #'
 #' @name lse_synthetic
 #' @docType data
@@ -453,6 +452,24 @@ NULL
 #'
 #' data(lse_synthetic)
 #' str(lse_synthetic)
+#'
+NULL
+
+
+#' Validation rules for the synthetic LSE data
+#'
+#' Accounting, additional edit, and combined validation rules for
+#' [lse_synthetic].
+#'
+#' @name lse_synthetic_rules
+#' @docType data
+#' @format A named list with three `validate::validator` objects:
+#' `accounting`, `extra`, and `edit`.
+#' @keywords datasets
+#' @examples
+#'
+#' data(lse_synthetic_rules)
+#' names(lse_synthetic_rules)
 #'
 NULL
 

@@ -52,6 +52,11 @@
 #'    - **Per variable**  (e.g. list(mpg = list(num.trees = 500)))  
 #'    - **Per method**    (e.g. list(ranger = list(num.trees = 600)))  
 #'    - **Global**, applied to all variables using the same method
+#'  For `restricted`, set `save_optimization_problem = TRUE` to attach the
+#'  exact ECOS problem arguments to the returned object under the
+#'  `restricted_optimization_problems` attribute.
+#'  Set `robust = TRUE` to replace least squares with Huber loss; `huber_k`
+#'  controls its tuning constant and defaults to `1.345`.
 #' @param formula
 #'  Optional modeling formula to restrict or transform predictor variables.
 #'  Only supported for **regularized** (glmnet), **robust** (lmrob/glmrob),
@@ -324,6 +329,41 @@ vimpute <- function(
   robustboot     <- checked_data$robustboot
   uncert         <- checked_data$uncert
   m              <- checked_data$m
+
+  restricted_problem_store <- NULL
+  save_restricted_problem <- vapply(variables_NA, function(var) {
+    identical(method[[var]], "restricted") &&
+      isTRUE(learner_params[[var]]$save_optimization_problem)
+  }, logical(1))
+  if (any(save_restricted_problem)) {
+    existing_stores <- lapply(
+      variables_NA[save_restricted_problem],
+      function(var) learner_params[[var]]$optimization_problem_store
+    )
+    existing_stores <- Filter(is.environment, existing_stores)
+    restricted_problem_store <- if (length(existing_stores) > 0L) {
+      existing_stores[[1L]]
+    } else {
+      new.env(parent = emptyenv())
+    }
+    for (var in variables_NA[save_restricted_problem]) {
+      learner_params[[var]]$optimization_problem_store <- restricted_problem_store
+    }
+  }
+
+  attach_restricted_problems <- function(x) {
+    if (is.null(restricted_problem_store)) {
+      return(x)
+    }
+    problem_names <- ls(restricted_problem_store, all.names = TRUE)
+    problems <- mget(
+      problem_names,
+      envir = restricted_problem_store,
+      inherits = FALSE
+    )
+    attr(x, "restricted_optimization_problems") <- problems
+    x
+  }
   
   if (!sequential && nseq > 1) {
     if (verbose) message ("'nseq' was set to 1 because 'sequential = FALSE'.")
@@ -490,7 +530,7 @@ vimpute <- function(
     if (verbose) {
       message("***** Constructing compact 'vimmi' result object")
     }
-    return(new_vimmi(
+    result <- new_vimmi(
       data   = as.data.frame(original_data),
       imp    = imp_list,
       where  = where_matrix,
@@ -500,7 +540,8 @@ vimpute <- function(
       boot   = boot,
       uncert = uncert,
       call   = match.call()
-    ))
+    )
+    return(attach_restricted_problems(result))
   }
 
   if (pred_history == TRUE) {
@@ -2873,7 +2914,7 @@ vimpute <- function(
   any_tuned <- any(unlist(tune))
   
   if (!pred_history && !any_tuned) {
-    return(result)
+    return(attach_restricted_problems(result))
   }
   
   
@@ -2887,5 +2928,5 @@ vimpute <- function(
     output$tuning_log <- tuning_log
     
   } 
-  return(output)    
+  return(attach_restricted_problems(output))
 }

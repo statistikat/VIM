@@ -30,6 +30,7 @@ Imports:
     laeken,
     ranger,
     MASS,
+    Matrix,
     xgboost,
     data.table(>= 1.9.4),
     mlr3,

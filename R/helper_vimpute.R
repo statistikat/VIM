@@ -291,10 +291,6 @@ register_robust_learners <- function() {
 }
 
 register_restricted_learners <- function() {
-  if ("regr.restricted" %in% mlr3::mlr_learners$keys()) {
-    return(invisible(TRUE))
-  }
-
   LearnerRegrRestricted <- R6::R6Class(
     classname = "LearnerRegrRestricted",
     inherit = LearnerRegr,
@@ -316,6 +312,21 @@ register_restricted_learners <- function() {
                 return(TRUE)
               }
               "`formula` must be NULL or a formula object."
+            }
+          ),
+          robust = paradox::p_lgl(default = FALSE),
+          huber_k = paradox::p_dbl(
+            lower = .Machine$double.eps,
+            default = 1.345
+          ),
+          save_optimization_problem = paradox::p_lgl(default = FALSE),
+          optimization_problem_store = paradox::p_uty(
+            default = NULL,
+            custom_check = function(x) {
+              if (is.null(x) || is.environment(x)) {
+                return(TRUE)
+              }
+              "`optimization_problem_store` must be NULL or an environment."
             }
           )
         )
@@ -386,6 +397,7 @@ register_restricted_learners <- function() {
       },
 
       .predict = function(task) {
+        pv <- self$param_set$get_values()
         model <- self$model
         newdata <- as.data.frame(task$data(cols = self$state$features))
 
@@ -416,14 +428,31 @@ register_restricted_learners <- function() {
           X_pred = X_pred
         )
 
+        save_problem <- isTRUE(pv$save_optimization_problem)
+        huber_k <- pv$huber_k
+        if (is.null(huber_k)) {
+          huber_k <- 1.345
+        }
         beta <- .restricted_ecos_lm(
           X = model$X_train,
           y = model$y_train,
           C = constraints$C,
           d = constraints$d,
           Aeq = constraints$Aeq,
-          beq = constraints$beq
+          beq = constraints$beq,
+          robust = isTRUE(pv$robust),
+          huber_k = huber_k,
+          save_optimization_problem = save_problem
         )
+
+        if (save_problem && is.environment(pv$optimization_problem_store)) {
+          target <- self$state$target
+          previous <- pv$optimization_problem_store[[target]]
+          pv$optimization_problem_store[[target]] <- c(
+            previous,
+            list(attr(beta, "optimization_problem", exact = TRUE))
+          )
+        }
 
         response <- as.vector(X_pred %*% beta)
         PredictionRegr$new(task = task, response = response)
@@ -688,8 +717,12 @@ identify_variables <- function(formula, data, target_col) {
 
   # Extract formula as character string
   formchar <- as.character(formula)
-  lhs <- gsub("^I\\(1/|log\\(|sqrt\\(|boxcox\\(|exp\\(|\\)$| ", "", formchar[2])   # Entferne Transformationen und Leerzeichen von der linken Seite
-  rhs <- ifelse(length(formchar) > 2, gsub(" ", "", formchar[3]), "")
+  lhs <- gsub(
+    "^I\\(1/|log\\(|sqrt\\(|boxcox\\(|exp\\(|\\)$|\\s+",
+    "",
+    formchar[2]
+  )
+  rhs <- ifelse(length(formchar) > 2, gsub("\\s+", "", formchar[3]), "")
 
   # Decompose the right-hand side according to all relevant operators
   rhs_vars <- if (rhs != "") unlist(strsplit(rhs, "[-+*:/%()]")) else character(0)
