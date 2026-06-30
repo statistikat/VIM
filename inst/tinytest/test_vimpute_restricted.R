@@ -222,7 +222,7 @@ if (
     rules_path <- file.path(getwd(), "data", "lse_synthetic_rules.rds")
   }
   lse_rules <- readRDS(rules_path)
-  lse_accounting_rules <- lse_rules$accounting
+
   lse_edit_rules <- lse_rules$edit
 
   numeric_cols <- c(
@@ -289,7 +289,7 @@ if (
     method = "restricted",
     pmm = FALSE,
     sequential = FALSE,
-    learner_params = list(restricted = list(rules = lse_accounting_rules))
+    learner_params = list(restricted = list(rules = lse_edit_rules))
   )
 
   lse_complete[, numeric_cols] <- as.data.frame(lse_imp)[, numeric_cols]

@@ -8,8 +8,13 @@
   rules[which(rule_variables[, variable])]
 }
 
-.restricted_validate_constraints <- function(rules, lhs, data_pred, X_pred,
-                                             eps = 0.001) {
+.restricted_validate_constraints <- function(
+  rules,
+  lhs,
+  data_pred,
+  X_pred,
+  eps = 0.001
+) {
   p <- ncol(X_pred)
   empty <- list(
     C = matrix(numeric(0), nrow = 0L, ncol = p),
@@ -34,7 +39,9 @@
 
   if (any(linear_flags)) {
     linear <- .restricted_validator_mip_matrix(lhs_exprs[linear_flags])
-    constraints[[length(constraints) + 1L]] <- .restricted_constraints_from_linear(
+    constraints[[
+      length(constraints) + 1L
+    ]] <- .restricted_constraints_from_linear(
       linear = linear,
       lhs = lhs,
       data_pred = data_pred,
@@ -45,19 +52,29 @@
 
   if (any(!linear_flags)) {
     for (expr in lhs_exprs[!linear_flags]) {
-      conditional <- .restricted_conditional_linear_rule(expr, lhs)
-      if (is.null(conditional)) {
+      active_rule <- .restricted_conditional_linear_rule(expr, lhs)
+      if (is.null(active_rule)) {
+        active_rule <- .restricted_disjunctive_linear_rule(expr, lhs)
+      }
+      if (is.null(active_rule)) {
         stop(
           "Restricted regression currently supports only linear validation rules ",
-          "or simple `if` rules involving the imputed variable `", lhs, "`.",
+          "and simple conditional or disjunctive rules involving the imputed ",
+          "variable `",
+          lhs,
+          "`.",
           call. = FALSE
         )
       }
 
-      active <- .restricted_eval_condition(conditional$condition, data_pred)
+      active <- .restricted_eval_condition(active_rule$condition, data_pred)
       if (any(active)) {
-        linear <- .restricted_validator_mip_matrix(list(conditional$consequence))
-        constraints[[length(constraints) + 1L]] <- .restricted_constraints_from_linear(
+        linear <- .restricted_validator_mip_matrix(list(
+          active_rule$consequence
+        ))
+        constraints[[
+          length(constraints) + 1L
+        ]] <- .restricted_constraints_from_linear(
           linear = linear,
           lhs = lhs,
           data_pred = data_pred,
@@ -72,9 +89,14 @@
   .restricted_combine_constraints(constraints, p)
 }
 
-.restricted_constraints_from_linear <- function(linear, lhs, data_pred,
-                                                X_pred, eps = 0.001,
-                                                active = rep(TRUE, nrow(data_pred))) {
+.restricted_constraints_from_linear <- function(
+  linear,
+  lhs,
+  data_pred,
+  X_pred,
+  eps = 0.001,
+  active = rep(TRUE, nrow(data_pred))
+) {
   p <- ncol(X_pred)
   empty <- list(
     C = matrix(numeric(0), nrow = 0L, ncol = p),
@@ -148,10 +170,15 @@
       beq_vals <- c(beq_vals, rhs)
     } else if (operators[[rule_pos]] %in% c("<=", "<")) {
       C_rows[[length(C_rows) + 1L]] <- lhs_rows
-      d_vals <- c(d_vals, if (identical(operators[[rule_pos]], "<")) rhs - eps else rhs)
+      d_vals <- c(
+        d_vals,
+        if (identical(operators[[rule_pos]], "<")) rhs - eps else rhs
+      )
     } else {
       stop(
-        "Unsupported validation operator `", operators[[rule_pos]], "`.",
+        "Unsupported validation operator `",
+        operators[[rule_pos]],
+        "`.",
         call. = FALSE
       )
     }
@@ -164,9 +191,13 @@
 }
 
 .restricted_combine_constraints <- function(constraints, p) {
-  constraints <- constraints[vapply(constraints, function(x) {
-    nrow(x$C) > 0L || nrow(x$Aeq) > 0L
-  }, logical(1))]
+  constraints <- constraints[vapply(
+    constraints,
+    function(x) {
+      nrow(x$C) > 0L || nrow(x$Aeq) > 0L
+    },
+    logical(1)
+  )]
 
   if (length(constraints) == 0L) {
     return(list(
@@ -187,7 +218,11 @@
 
 .restricted_conditional_linear_rule <- function(expr, lhs) {
   expr <- .restricted_consume_parentheses(expr)
-  if (!is.call(expr) || !identical(as.character(expr[[1L]]), "if") || length(expr) != 3L) {
+  if (
+    !is.call(expr) ||
+      !identical(as.character(expr[[1L]]), "if") ||
+      length(expr) != 3L
+  ) {
     return(NULL)
   }
 
@@ -197,11 +232,47 @@
     return(NULL)
   }
 
-  if (inherits(try(.restricted_linear_mip_rule(consequence), silent = TRUE), "try-error")) {
+  is_nonlinear <- inherits(
+    try(.restricted_linear_mip_rule(consequence), silent = TRUE),
+    "try-error"
+  )
+  if (is_nonlinear) {
     return(NULL)
   }
 
   list(condition = condition, consequence = consequence)
+}
+
+.restricted_disjunctive_linear_rule <- function(expr, lhs) {
+  expr <- .restricted_consume_parentheses(expr)
+  if (
+    !is.call(expr) ||
+      !(as.character(expr[[1L]]) %in% c("|", "||")) ||
+      length(expr) != 3L
+  ) {
+    return(NULL)
+  }
+
+  lhs_branch <- lhs %in% all.vars(expr[[2L]])
+  rhs_branch <- lhs %in% all.vars(expr[[3L]])
+  if (identical(lhs_branch, rhs_branch)) {
+    return(NULL)
+  }
+
+  consequence <- if (lhs_branch) expr[[2L]] else expr[[3L]]
+  alternative <- if (lhs_branch) expr[[3L]] else expr[[2L]]
+  is_nonlinear <- inherits(
+    try(.restricted_linear_mip_rule(consequence), silent = TRUE),
+    "try-error"
+  )
+  if (is_nonlinear) {
+    return(NULL)
+  }
+
+  list(
+    condition = call("!", alternative),
+    consequence = consequence
+  )
 }
 
 .restricted_eval_condition <- function(condition, data) {
@@ -210,10 +281,16 @@
     value <- rep(value, nrow(data))
   }
   if (length(value) != nrow(data)) {
-    stop("Conditional validation rule did not evaluate row-wise.", call. = FALSE)
+    stop(
+      "Conditional validation rule did not evaluate row-wise.",
+      call. = FALSE
+    )
   }
   if (anyNA(value)) {
-    stop("Conditional validation rule contains missing condition values.", call. = FALSE)
+    stop(
+      "Conditional validation rule contains missing condition values.",
+      call. = FALSE
+    )
   }
   as.logical(value)
 }
@@ -237,9 +314,12 @@
     )
   }
 
-  variables <- sort(unique(unlist(lapply(mip_rules, function(rule) {
-    names(rule$a)
-  }), use.names = FALSE)))
+  variables <- sort(unique(unlist(
+    lapply(mip_rules, function(rule) {
+      names(rule$a)
+    }),
+    use.names = FALSE
+  )))
   A <- matrix(
     0,
     nrow = length(mip_rules),
@@ -274,7 +354,10 @@
   if (is.null(original_names)) {
     original_names <- paste0("V", seq_along(exprs))
   }
-  original_names[original_names == ""] <- paste0("V", which(original_names == ""))
+  original_names[original_names == ""] <- paste0(
+    "V",
+    which(original_names == "")
+  )
 
   out_exprs <- list()
   out_names <- character(0)
@@ -351,11 +434,17 @@
   if (op == "*") {
     left_constant <- .restricted_numeric_constant(expr[[2L]])
     if (!is.null(left_constant)) {
-      return(.restricted_linear_mip_rule(expr[[3L]], sign = sign * left_constant))
+      return(.restricted_linear_mip_rule(
+        expr[[3L]],
+        sign = sign * left_constant
+      ))
     }
     right_constant <- .restricted_numeric_constant(expr[[3L]])
     if (!is.null(right_constant)) {
-      return(.restricted_linear_mip_rule(expr[[2L]], sign = sign * right_constant))
+      return(.restricted_linear_mip_rule(
+        expr[[2L]],
+        sign = sign * right_constant
+      ))
     }
   }
 
@@ -409,9 +498,11 @@
 }
 
 .restricted_rewrite_in_range <- function(expr) {
-  if (is.call(expr) &&
+  if (
+    is.call(expr) &&
       identical(as.character(expr[[1L]]), "in_range") &&
-      length(expr) == 4L) {
+      length(expr) == 4L
+  ) {
     return(substitute(
       (variable >= lower) & (variable <= upper),
       list(variable = expr[[2L]], lower = expr[[3L]], upper = expr[[4L]])
