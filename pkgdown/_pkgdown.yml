@@ -1,6 +1,8 @@
 development:
   mode: unreleased
 
+url: https://statistikat.github.io/VIM/
+
 template:
   params:
     bootswatch: cosmo
@@ -14,6 +16,15 @@ reference:
   - maxCat
   - sampleCat
   - medianSamp
+  - imputeCellMM
+  - imputeCellReg
+- title: Multiple imputation objects
+  desc: Helpers for working with vimmi multiple-imputation objects
+  contents:
+  - complete
+  - complete.vimmi
+  - with.vimmi
+  - as.mids.vimmi
 - title: Plotting functions
   desc: Functions to visualize missing and imputed values. See [the visualization vignette](http://statistikat.github.io/VIM/articles/VisualImp.html) for an overview.
   contents:
@@ -39,3 +50,4 @@ reference:
   - prepare
   - gapMiss
   - tableMiss
+  - cellWeightsMCD
