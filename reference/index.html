@@ -90,6 +90,26 @@
         </td>
         <td><p>Iterative EM PCA imputation</p></td>
       </tr><tr><td>
+          <p><code><a href="imputeCellEM.html">imputeCellEM()</a></code> </p>
+        </td>
+        <td><p>Cellwise-robust EM imputation for mixed data</p></td>
+      </tr><tr><td>
+          <p><code><a href="imputeCellIRMI.html">imputeCellIRMI()</a></code> </p>
+        </td>
+        <td><p>Cellwise-robust iterative regression imputation for mixed data</p></td>
+      </tr><tr><td>
+          <p><code><a href="imputeCellM.html">imputeCellM()</a></code> </p>
+        </td>
+        <td><p>Cellwise M-estimation imputation</p></td>
+      </tr><tr><td>
+          <p><code><a href="imputeCellMCD.html">imputeCellMCD()</a></code> </p>
+        </td>
+        <td><p>Cellwise MCD-based imputation for mixed data</p></td>
+      </tr><tr><td>
+          <p><code><a href="imputeCellwise.html">imputeCellwise()</a></code> </p>
+        </td>
+        <td><p>Unified cellwise-robust imputation dispatcher</p></td>
+      </tr><tr><td>
           <p><code><a href="imputeRobust.html">imputeRobust()</a></code> </p>
         </td>
         <td><p>Robust imputation</p></td>
@@ -126,9 +146,13 @@
         </td>
         <td><p>Random aggregation function for a factor variable</p></td>
       </tr><tr><td>
+          <p><code><a href="vimmi.html">print(<i>&lt;vimmi&gt;</i>)</a></code> <code><a href="vimmi.html">summary(<i>&lt;vimmi&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>VIM Multiple Imputations (vimmi)</p></td>
+      </tr><tr><td>
           <p><code><a href="vimpute.html">vimpute()</a></code> </p>
         </td>
-        <td><p>Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted) Need of 'helper_vimpute' script</p></td>
+        <td><p>Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)</p></td>
       </tr><tr><td>
           <p><code><a href="xgboostImpute.html">xgboostImpute()</a></code> </p>
         </td>
@@ -141,6 +165,34 @@
           <p><code><a href="maxCat.html">maxCat()</a></code> </p>
         </td>
         <td><p>Aggregation function for a factor variable</p></td>
+      </tr><tr><td>
+          <p><code><a href="imputeCellMM.html">imputeCellMM()</a></code> </p>
+        </td>
+        <td><p>Cell-weighted MM imputation for mixed data (Path A)</p></td>
+      </tr><tr><td>
+          <p><code><a href="imputeCellReg.html">imputeCellReg()</a></code> </p>
+        </td>
+        <td><p>Cellwise-robust regression imputation for mixed data</p></td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h2 id="multiple-imputation-objects">Multiple imputation objects <a href="#multiple-imputation-objects" class="anchor" aria-hidden="true"></a></h2>
+          <p class="section-desc"></p><p>Helpers for working with vimmi multiple-imputation objects</p>
+        </th>
+      </tr></tbody><tbody><tr><td>
+          <p><code><a href="complete.html">complete()</a></code> </p>
+        </td>
+        <td><p>Extract completed datasets</p></td>
+      </tr><tr><td>
+          <p><code><a href="complete.vimmi.html">complete(<i>&lt;vimmi&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Extract completed datasets from a vimmi object</p></td>
+      </tr><tr><td>
+          <p><code><a href="with.vimmi.html">with(<i>&lt;vimmi&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Evaluate an expression across all imputations</p></td>
+      </tr><tr><td>
+          <p><code><a href="as.mids.vimmi.html">as.mids.vimmi()</a></code> </p>
+        </td>
+        <td><p>Convert a vimmi object to a mice mids object</p></td>
       </tr></tbody><tbody><tr><th colspan="2">
           <h2 id="plotting-functions">Plotting functions <a href="#plotting-functions" class="anchor" aria-hidden="true"></a></h2>
           <p class="section-desc"></p><p>Functions to visualize missing and imputed values. See <a href="http://statistikat.github.io/VIM/articles/VisualImp.html" class="external-link">the visualization vignette</a> for an overview.</p>
@@ -333,6 +385,10 @@
           <p><code><a href="tableMiss.html">tableMiss()</a></code> </p>
         </td>
         <td><p>create table with highlighted missings/imputations</p></td>
+      </tr><tr><td>
+          <p><code><a href="cellWeightsMCD.html">cellWeightsMCD()</a></code> </p>
+        </td>
+        <td><p>Compute per-cell weights using MCD-based conditional residuals</p></td>
       </tr></tbody></table></div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
