@@ -32,7 +32,9 @@ This vignette demonstrates how to use the `vimpute()` function for flexible miss
 - `pmm_k_method`: Strategy for selecting PMM donor values from the `k` nearest candidates.
 - `learner_params`: Optional learner-specific parameter lists for each variable (e.g. `ranger` settings such as `median = TRUE`).
 - `formula`: If not all variables are used as predictors, or if transformations or interactions are required 
-             (applies to all X, for Y only transformations are possible). Only applicable for the methods "robust" and "regularized". Provide as a list for each variable that requires specific conditions.
+             (applies to all X, for Y only transformations are possible). Only applicable for the methods `"robust"`, `"regularized"`, `"gam"` and `"robgam"`. Provide as a list for each variable that requires specific conditions.
+- `makeNA`: Optional named list of values that should be treated as imputable missing values for selected variables.
+- `donorcond`: Optional named list of donor conditions used to restrict the observed training values for selected variables.
 - `sequential`: Specifies whether the imputation should be performed sequentially.
 - `nseq`: The number of sequential iterations, if `sequential` is TRUE.
 - `eps`: The convergence threshold for sequential imputation.
@@ -40,6 +42,10 @@ This vignette demonstrates how to use the `vimpute()` function for flexible miss
 - `pred_history`: If enabled, saves the prediction history.
 - `tune`: Whether to perform hyperparameter tuning.
 - `verbose`: If enabled, prints additional debugging output.
+- `boot`: Whether to refit models on bootstrap samples to add model uncertainty.
+- `robustboot`: Bootstrap sampling strategy used when `boot = TRUE`.
+- `uncert`: Prediction uncertainty method (`"none"`, `"normalerror"`, `"resid"`, `"pmm"`, `"midastouch"`).
+- `m`: Number of multiple imputations. If `m > 1`, a `vimmi` object is returned.
 
 ## Data
 
@@ -116,8 +122,14 @@ Specifies the method used for imputation of each variable. If `method` is not pr
 - **`"xgboost"`**: Gradient Boosted Trees  
   - State-of-the-art tree boosting  
   - Handles mixed data types well  
+- **`"gam"`**: Generalized Additive Models (`mgcv`)
+  - Supports smooth terms for numeric predictors
+  - Can be used for numeric and factor targets
+- **`"robgam"`**: Robust GAM
+  - Adds robust weighting / refitting to GAM-style models
+  - Designed for settings with potential outliers
 
-You can provide `method` globally as a single value/function (applies to all variables), or as a named list per variable.
+You can provide `method` globally as a single method name (applies to all variables), or as a named list per variable.
 
 ```{r, include=TRUE, results='hide', message=FALSE, warning=FALSE}
 result_mixed <- vimpute(
@@ -181,14 +193,16 @@ If `pmm_k = 1` (or `NULL`, which defaults to 1 when PMM is active), the closest 
 If `pmm_k > 1`, the final imputed value is derived from the `k` nearest donors using `pmm_k_method` (e.g. `"mean"`, `"median"`, `"random"` or a custom function).  
 If `pmm = FALSE`, raw model predictions are used.
 
-You can provide `pmm` globally as a single value/function (applies to all numeric variables), or as a named list per variable.
+In sequential imputation, the convergence criterion is computed from the raw model prediction when PMM is active. This avoids unstable stopping behavior caused by stochastic or donor-based PMM values while still returning the PMM-imputed values in the final data.
+
+You can provide `pmm` globally as a single logical value (applies to all numeric variables), or as a named list per variable.
 
 #### Parameter `pmm_k`
 <small>*(default: NULL)*</small>
 
 `pmm_k` defines how many nearest donor candidates are considered when PMM is enabled.
 
-You can provide `pmm_k` globally as a single value/function (applies to all variables), or as a named list per variable.
+You can provide `pmm_k` globally as a single integer value (applies to all variables where PMM is active), or as a named list per variable.
 
 #### Parameter `pmm_k_method`
 <small>*(default: "mean")*</small>
@@ -214,6 +228,17 @@ result <- vimpute(
     Dream = "median",
     Sleep = "random"
   )
+)
+```
+
+Custom aggregation functions are also possible. The function receives the nearest donor values and must return exactly one non-missing numeric value.
+
+```{r, eval = FALSE}
+result <- vimpute(
+  data = data,
+  pmm = list(Dream = TRUE),
+  pmm_k = list(Dream = 5),
+  pmm_k_method = list(Dream = function(x) mean(x, trim = 0.2))
 )
 ```
 
@@ -281,7 +306,7 @@ Specifies custom model formulas for imputation of each variable, offering precis
 ```{r, eval = FALSE}
 result <- vimpute(
   data = data,
-  method = setNames(as.list(rep("regularized", ncol(data))), names(data))
+  method = setNames(as.list(rep("regularized", ncol(data))), names(data)),
   formula = list(
     NonD ~ Dream + Sleep,              # Linear combination
     Span ~ Dream:Sleep + Gest,         # With interaction term
@@ -310,9 +335,101 @@ result <- vimpute(
 
 **Notes:**
 
-- Only works with methods `"robust"` and `"regularized"`
+- Only works with methods `"robust"`, `"regularized"`, `"gam"` and `"robgam"`
 - All model.matrix-compatible functions work for predictors (for more information see ?model.matrix) 
 - Response transformations (left side) are automatically back-transformed
+
+```{r, eval = FALSE}
+result_gam <- vimpute(
+  data = data,
+  method = list(Gest = "gam"),
+  formula = list(Gest = log(Gest) ~ Sleep + Dream + Span),
+  sequential = FALSE
+)
+```
+
+
+#### Parameter `makeNA`
+<small>*(default: NULL)*</small>
+
+`makeNA` defines values that should be treated as missing for selected variables.
+This is useful when special codes such as `-999`, `"unknown"` or `"not measured"` should be imputed, while regular `NA` values in the same variable should remain untouched.
+
+```{r, eval = FALSE}
+result <- vimpute(
+  data = data,
+  method = list(Dream = "ranger"),
+  makeNA = list(Dream = -999)
+)
+```
+
+If a variable is listed in `makeNA`, only the matching values are imputed for that variable. Variables not listed in `makeNA` continue to use regular `NA` values as the imputation target.
+
+
+#### Parameter `donorcond`
+<small>*(default: NULL)*</small>
+
+`donorcond` restricts which observed values are allowed to act as donors / training observations for a target variable.
+Conditions are supplied as character strings and evaluated on the target values via the temporary variable `x`.
+
+```{r, eval = FALSE}
+result <- vimpute(
+  data = data,
+  method = list(Dream = "ranger"),
+  donorcond = list(Dream = "> quantile(x, 0.1, na.rm = TRUE)")
+)
+```
+
+This can be useful when implausible observed values should not be used for model fitting, while the target variable itself remains part of the imputation workflow.
+
+
+#### Parameters `boot`, `robustboot` and `uncert`
+<small>*(defaults: `boot = FALSE`, `robustboot = "stratified"`, `uncert = "none"`)*</small>
+
+These arguments control additional imputation uncertainty.
+
+- `boot = TRUE` refits the imputation model on a bootstrap sample.
+- `robustboot` controls how bootstrap rows are sampled (`"standard"`, `"stratified"` or `"residual"`).
+- `uncert` adds uncertainty to numeric predictions:
+  - `"normalerror"` adds normal noise using the model scale estimate.
+  - `"resid"` adds sampled residuals.
+  - `"pmm"` uses score-based predictive mean matching.
+  - `"midastouch"` uses PMM with covariate-distance weighting.
+
+```{r, eval = FALSE}
+result <- vimpute(
+  data = data,
+  method = list(Dream = "ranger"),
+  boot = TRUE,
+  robustboot = "standard",
+  uncert = "normalerror"
+)
+```
+
+If explicit `pmm = TRUE` is used for a variable, it takes precedence over `uncert`.
+
+
+#### Parameter `m`
+<small>*(default: 1)*</small>
+
+`m` controls multiple imputation. If `m > 1`, `vimpute()` returns a `vimmi` object instead of a single completed dataset.
+
+```{r, eval = FALSE}
+mi <- vimpute(
+  data = data,
+  method = list(Dream = "ranger"),
+  m = 5,
+  boot = TRUE,
+  uncert = "resid",
+  imp_var = FALSE
+)
+
+completed_1 <- complete(mi, 1)
+completed_all <- complete(mi, "all")
+completed_long <- complete(mi, "long")
+```
+
+The `vimmi` object stores the original data and the imputed values efficiently. It can be inspected with `print()` and `summary()`, and completed datasets can be extracted with `complete()`. If the `mice` package is installed, `as.mids.vimmi()` can be used to convert a `vimmi` object to a `mice::mids` object for downstream pooling workflows.
 
 
 #### Parameter `tune` 
@@ -336,6 +453,8 @@ Whether to perform hyperparameter tuning (only possible if seq = TRUE):
    - Recommended: TRUE for optimal performance
 
 You can provide `tune` either as a single global TRUE/FALSE value (applies to all variables), or as a named list per variable.
+
+When tuning is enabled, `vimpute()` returns a list containing the imputed data and a `tuning_log` component. If `pred_history = TRUE` is also enabled, the list contains both `pred_history` and `tuning_log`.
 
 
 #### Parameters `nseq` and `eps`
