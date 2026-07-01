@@ -338,7 +338,7 @@ vimpute <- function(
 
   # Warn if m > 1 but no source of between-imputation variability
   if (m > 1L && !boot && uncert == "none" && !has_any_pmm) {
-    warning("m > 1 without 'boot', 'uncert', or 'pmm': numeric point predictions may be identical across imputations. ",
+    warning("m > 1 without 'boot', 'uncert', or 'pmm': all imputations will be identical. ",
             "Set boot = TRUE and/or uncert to a method like 'normalerror' for proper MI variability.")
   }
 
