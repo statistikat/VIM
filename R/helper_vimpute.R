@@ -1,3 +1,8 @@
+# =============================================================================
+# Chapter 1: Robust learner registration
+# =============================================================================
+
+# Registers robust mlr3 learners for regression and classification.
 register_robust_learners <- function() {
 
   # Robust Regression Learner
@@ -125,42 +130,6 @@ register_robust_learners <- function() {
 
   mlr3::mlr_learners$add("regr.lm_rob", LearnerRegrRobustLM)
 
-
-  # robust Classification Learner
-  # LearnerClassifGlmRob <- R6::R6Class(
-  #   inherit = mlr3::LearnerClassif,
-  #   public = list(
-  #     initialize = function() {
-  #       super$initialize(
-  #         id = "classif.glm_rob",
-  #         feature_types = c("numeric", "integer", "factor", "ordered"),
-  #         predict_types = c("response", "prob"),
-  #         packages = c("mlr3learners"),
-  #         properties = c("twoclass", "multiclass")
-  #       )
-  #       self$state$learner = NULL
-  #     }
-  #   ),
-  #
-  #   private = list(
-  #     .train = function(task) {
-  #       n_classes = length(task$class_names)
-  #       if (n_classes == 2) {
-  #         self$state$learner = mlr3::lrn("classif.log_reg", predict_type = self$predict_type)
-  #       } else {
-  #         self$state$learner = mlr3::lrn("classif.multinom", predict_type = self$predict_type)
-  #       }
-  #       self$state$learner$train(task)
-  #     },
-  #
-  #     .predict = function(task) {
-  #       if (is.null(self$state$learner)) stop("Model not trained yet")
-  #       pred = self$state$learner$predict(task)
-  #       return(pred)
-  #     }
-  #   )
-  # )
-
   LearnerClassifGlmRob <- R6::R6Class(
     inherit = mlr3::LearnerClassif,
     public = list(
@@ -201,7 +170,7 @@ register_robust_learners <- function() {
         }
 
         if (length(classes) == 2L) {
-          # Binär: ein robustes Logit
+          # Binary case: one robust logistic model.
           df <- data.frame(y = as.factor(y), X)
           prob <- mean(as.character(df$y) == classes[1])
           if (prob %in% c(0, 1)) {
@@ -297,12 +266,11 @@ register_robust_learners <- function() {
 # pred = learner$predict(task)
 # print(pred)
 
-### +++++++++++++++++++++++++++++++++ Helper Functions +++++++++++++++++++++++++++++++++ ###
+# =============================================================================
+# Chapter 2: Data and model preparation
+# =============================================================================
 
-
-#
-#
-#
+# Adds dummy rows so all factor levels are represented in the training data.
 ensure_dummy_rows_for_factors <- function(dt, target_col) {
   dt <- data.table::copy(dt)
 
@@ -328,9 +296,7 @@ ensure_dummy_rows_for_factors <- function(dt, target_col) {
   }
   dt
 }
-#
-#
-#
+# Checks whether classification data should use a ranger fallback.
 needs_ranger_classif <- function(y, X) {
   tab <- table(y)
   imbalance <- min(tab) / sum(tab) < 0.05
@@ -344,9 +310,7 @@ needs_ranger_classif <- function(y, X) {
   }
   imbalance || high_dim || rare_levels || multicollinear
 }
-#
-#
-#
+# Drops constant predictors and normalizes factor levels for model fitting.
 sanitize_model_features <- function(data, target, features) {
   data <- as.data.frame(data)
 
@@ -396,24 +360,18 @@ sanitize_model_features <- function(data, target, features) {
     factor_levels = factor_levels
   )
 }
-#
-#
-#
+# Builds a safe model formula from the target and feature list.
 build_feature_formula <- function(target, features) {
   if (!length(features)) {
     return(as.formula(paste(target, "~ 1")))
   }
   reformulate(features, response = target)
 }
-#
-#
-#
+# Creates a constant binomial fallback model for degenerate class data.
 new_constant_binomial_model <- function(prob) {
   structure(list(prob = as.numeric(prob)), class = "vimpute_constant_binomial")
 }
-#
-#
-#
+# Returns robust binomial probabilities with a fallback for prediction errors.
 predict_binomial_response <- function(model, newdata, fallback = 0.5) {
   if (inherits(model, "vimpute_constant_binomial")) {
     return(rep(model$prob, nrow(newdata)))
@@ -424,9 +382,7 @@ predict_binomial_response <- function(model, newdata, fallback = 0.5) {
     error = function(e) rep(fallback, nrow(newdata))
   )
 }
-#
-#
-#
+# Clips binary probabilities to valid numeric values.
 sanitize_binary_probs <- function(p1, fallback = 0.5) {
   p1 <- as.numeric(p1)
   bad <- !is.finite(p1)
@@ -435,9 +391,7 @@ sanitize_binary_probs <- function(p1, fallback = 0.5) {
   }
   pmin(pmax(p1, 1e-6), 1 - 1e-6)
 }
-#
-#
-#
+# Normalizes one-vs-rest probabilities into multiclass probabilities.
 normalize_multiclass_probs <- function(Pk, fallback = NULL) {
   Pk <- as.matrix(Pk)
   if (!ncol(Pk)) {
@@ -479,11 +433,11 @@ normalize_multiclass_probs <- function(Pk, fallback = NULL) {
 
   probs
 }
-#
-#
-#
-# left handside formula
-# extracts the left side of a formula and returns the name of the applied transformation (e.g. log)
+# =============================================================================
+# Chapter 3: Formulas and transformations
+# =============================================================================
+
+# Detects transformations on the formula left-hand side, e.g. log or sqrt.
 identify_lhs_transformation <- function(formula) {
   lhs <- as.character(formula)[2]  # Extract the left side of the formula
 
@@ -492,17 +446,13 @@ identify_lhs_transformation <- function(formula) {
 
   for (t in transformations) {
     if (grepl(paste0("^", t), lhs)) {
-      return(ifelse(t == "I\\(1/", "inverse", gsub("\\\\", "", t)))  # "I(1/" wird als "inverse" benannt
+      return(ifelse(t == "I\\(1/", "inverse", gsub("\\\\", "", t)))  # Names "I(1/" as "inverse".
     }
   }
 
   return(NULL)  # No transformation
 }
-#
-#
-#
-# Transformation
-# Identifies which variables need to be transformed in a formula, extracts transformations and operators, checks for existing variables and missing values and returns the results in a list.
+# Analyzes a formula for variables, transformations, operators, and missing values.
 identify_variables <- function(formula, data, target_col) {
   data <- as.data.frame(data)
 
@@ -513,7 +463,7 @@ identify_variables <- function(formula, data, target_col) {
 
   # Extract formula as character string
   formchar <- as.character(formula)
-  lhs <- gsub("^I\\(1/|log\\(|sqrt\\(|boxcox\\(|exp\\(|\\)$| ", "", formchar[2])   # Entferne Transformationen und Leerzeichen von der linken Seite
+  lhs <- gsub("^I\\(1/|log\\(|sqrt\\(|boxcox\\(|exp\\(|\\)$| ", "", formchar[2])   # Remove transformations and spaces from the left-hand side.
   rhs <- ifelse(length(formchar) > 2, gsub(" ", "", formchar[3]), "")
 
   # Decompose the right-hand side according to all relevant operators
@@ -580,11 +530,7 @@ identify_variables <- function(formula, data, target_col) {
 
   return(result)
 }
-#
-#
-#
-# Find formula
-# Selects from a list of formulas the one whose left side corresponds to the cleaned answer variable by removing transformations and spaces.
+# Selects the matching formula for a target variable from a formula list.
 select_formula <- function(formula_list, response_variable) {
   # Remove transformations and spaces from response variable
   response_variable_cleaned <- gsub("^I\\(1/|^log\\(|^sqrt\\(|^boxcox\\(|^exp\\(|\\)$| ", "", response_variable)
@@ -598,10 +544,11 @@ select_formula <- function(formula_list, response_variable) {
   if (length(selected_formula) == 0) return(FALSE)
   return(selected_formula[[1]])
 }
-#
-#
-#
-#
+# =============================================================================
+# Chapter 4: Argument mapping and prechecks
+# =============================================================================
+
+# Maps PMM settings to imputable variables and disables PMM for non-numeric data.
 map_pmm <- function(variables_NA, pmm, original_data) {
 
   user_set_pmm_per_variable <- is.list(pmm)
@@ -653,11 +600,7 @@ map_pmm <- function(variables_NA, pmm, original_data) {
 
   stop("pmm must be either a single logical or a named list of logicals.")
 }
-#
-#
-#
-#
-# Maps PMM-k values per NA variable, respecting PMM on/off flags.
+# Maps the PMM donor count k per variable while respecting active PMM flags.
 map_pmm_k <- function(variables_NA, pmm_k, pmm) {
 
   user_set_k_per_variable <- is.list(pmm_k)   # TRUE = user explicitly set per-variable
@@ -729,10 +672,7 @@ map_pmm_k <- function(variables_NA, pmm_k, pmm) {
 
   stop("pmm_k must be a single integer, a named list, or NULL.")
 }
-#
-#
-#
-#
+# Maps the PMM aggregation method per variable.
 map_pmm_k_method <- function(variables_NA, pmm_k_method, pmm) {
   allowed <- c("mean", "median", "random")
   normalize_method <- function(x, var_name = NULL) {
@@ -834,10 +774,7 @@ map_pmm_k_method <- function(variables_NA, pmm_k_method, pmm) {
 
   stop("pmm_k_method must be a single method, a function, a named list, or NULL.")
 }
-#
-#
-#
-#
+# Maps tuning flags to variables with missing values.
 map_tune <- function(variables_NA, tune) {
 
   # Single TRUE/FALSE → applies to all
@@ -865,10 +802,7 @@ map_tune <- function(variables_NA, tune) {
 
   stop("tune must be a single logical or a named list.")
 }
-#
-#
-#
-# Checking learner_params
+# Maps user-defined learner parameters by variable or method.
 map_learner_params <- function(variables, method, learner_params) {
 
   # 0) Empty
@@ -893,7 +827,7 @@ map_learner_params <- function(variables, method, learner_params) {
   has_meth_keys          <- length(meth_keys) > 0
   has_any_var_or_method  <- has_var_keys || has_meth_keys
 
-  # 2) GLOBAL-MODUS: only okay if ONE Method and NO var-/method-Key
+  # 2) Global mode: only valid with one method and no variable or method key.
   if (!has_any_var_or_method) {
     if (only_one_method) {
       out <- setNames(vector("list", length(variables)), variables)
@@ -920,7 +854,7 @@ map_learner_params <- function(variables, method, learner_params) {
     ))
   }
 
-  # 5) VARIABLE-MODUS
+  # 5) Variable mode
   if (has_var_keys && !has_meth_keys) {
     out <- setNames(vector("list", length(variables)), variables)
     for (v in variables) {
@@ -929,7 +863,7 @@ map_learner_params <- function(variables, method, learner_params) {
     return(out)
   }
 
-  # 6) METHOD-MODUS
+  # 6) Method mode
   if (!has_var_keys && has_meth_keys) {
     out <- setNames(vector("list", length(variables)), variables)
     for (v in variables) {
@@ -944,8 +878,7 @@ map_learner_params <- function(variables, method, learner_params) {
 }
 #
 #
-# Precheck
-# Performs a series of preliminary checks, including checking for missing values, data types, formulas, PMM settings and supported methods, and returns the checked data and variable information.
+# Validates inputs, variable types, methods, formulas, PMM, and tuning before imputation.
 precheck <- function(
     data,
     pmm,
@@ -1319,10 +1252,11 @@ precheck <- function(
     m              = m
   ))
 }
-#
-#
-#
-# Semicontinous variables
+# =============================================================================
+# Chapter 5: Factor levels, value ranges, and result formatting
+# =============================================================================
+
+# Detects semicontinuous numeric variables with a concentration at zero.
 is_semicontinuous <- function(x) {
   is.numeric(x) &&
     any(x == 0, na.rm = TRUE) &&
@@ -1331,10 +1265,7 @@ is_semicontinuous <- function(x) {
     !all(na.omit(x) %in% c(0, 1))  # check that it is not binary
 }
 
-#
-#
-#
-# factor levels
+# Enforces original factor levels in a result dataset.
 enforce_factor_levels <- function(df, original_levels) {
   for (colname in names(original_levels)) {
     levels <- original_levels[[colname]]
@@ -1357,10 +1288,7 @@ enforce_factor_levels <- function(df, original_levels) {
   return(df)
 }
 
-#
-#
-#
-# check levels
+# Stops on factor-level mismatches between data and reference levels.
 check_all_factor_levels <- function(df, factor_levels) {
   for (var in names(factor_levels)) {
     if (var %in% names(df) && is.factor(df[[var]])) {
@@ -1378,58 +1306,47 @@ check_all_factor_levels <- function(df, factor_levels) {
   }
 }
 
-#
-#
-#
-# new levels -> NA
-set_new_levels_to_na <- function(df, factor_levels, data_y_fill_final, skip_methods = c("xgboost"), method_var = NULL) {
-  if (!is.null(method_var) && !(method_var %in% skip_methods)) {
-    for (col in names(factor_levels)) {
-      if (col %in% names(df) && is.factor(df[[col]]) && col %in% names(data_y_fill_final)) {
-        valid_levels <- levels(data_y_fill_final[[col]])
-        df[[col]][!df[[col]] %in% valid_levels & !is.na(df[[col]])] <- NA
-      }
-    }
-  }
-  return(df)
-}
+# UNUSED: Replaced new factor levels with NA; currently not called anywhere.
+# set_new_levels_to_na <- function(df, factor_levels, data_y_fill_final, skip_methods = c("xgboost"), method_var = NULL) {
+#   if (!is.null(method_var) && !(method_var %in% skip_methods)) {
+#     for (col in names(factor_levels)) {
+#       if (col %in% names(df) && is.factor(df[[col]]) && col %in% names(data_y_fill_final)) {
+#         valid_levels <- levels(data_y_fill_final[[col]])
+#         df[[col]][!df[[col]] %in% valid_levels & !is.na(df[[col]])] <- NA
+#       }
+#     }
+#   }
+#   return(df)
+# }
 
+# UNUSED: Warned about factor-level mismatches; currently not called anywhere.
+# check_factor_levels <- function(data, original_levels) {
+#   for (colname in names(original_levels)) {
+#     if (colname %in% names(data)) {
+#       if (is.factor(data[[colname]])) {
+#         data_levels <- levels(data[[colname]])
+#         ref_levels <- original_levels[[colname]]
 #
+#         missing_levels <- setdiff(ref_levels, data_levels)
+#         if (length(missing_levels) > 0) {
+#           warning(sprintf("Column '%s': Missing levels in factor: %s", colname, paste(missing_levels, collapse = ", ")))
+#         }
 #
+#         new_levels <- setdiff(data_levels, ref_levels)
+#         if (length(new_levels) > 0) {
+#           warning(sprintf("Column '%s': New levels in factor: %s", colname, paste(new_levels, collapse = ", ")))
+#         }
 #
-#
-check_factor_levels <- function(data, original_levels) {
-  for (colname in names(original_levels)) {
-    if (colname %in% names(data)) {
-      if (is.factor(data[[colname]])) {
-        data_levels <- levels(data[[colname]])
-        ref_levels <- original_levels[[colname]]
+#         invalid_values <- setdiff(unique(as.character(data[[colname]])), ref_levels)
+#         if (length(invalid_values) > 0) {
+#           warning(sprintf("Column '%s': Invalid value: %s", colname, paste(invalid_values, collapse = ", ")))
+#         }
+#       }
+#     }
+#   }
+# }
 
-        # 1. Check for missing levels (levels in the original that are not in the current factor)
-        missing_levels <- setdiff(ref_levels, data_levels)
-        if (length(missing_levels) > 0) {
-          warning(sprintf("Column '%s': Missing levels in factor: %s", colname, paste(missing_levels, collapse = ", ")))
-        }
-
-        # 2. Check for new levels (levels in the data factor that are not in the original)
-        new_levels <- setdiff(data_levels, ref_levels)
-        if (length(new_levels) > 0) {
-          warning(sprintf("Column '%s': New levels in factor: %s", colname, paste(new_levels, collapse = ", ")))
-        }
-
-        # 3. Check whether values in the data factor are outside the defined levels (can happen if factors are not set correctly)
-        invalid_values <- setdiff(unique(as.character(data[[colname]])), ref_levels)
-        if (length(invalid_values) > 0) {
-          warning(sprintf("Column '%s': Invalid value: %s", colname, paste(invalid_values, collapse = ", ")))
-        }
-      }
-    }
-  }
-}
-#
-#
-#
-# helper: inverse Transformation
+# Back-transforms model predictions to the original scale.
 inverse_transform <- function(x, method) {
   switch(method,
          exp = log(x),
@@ -1439,19 +1356,13 @@ inverse_transform <- function(x, method) {
          stop("Unknown transformation: ", method)
   )
 }
-#
-#
-#
-# helper decimal places
+# Determines the number of visible decimal places for a numeric value.
 get_decimal_places <- function(x) {
   if (is.na(x)) return(0)
   if (x == floor(x)) return(0)
   nchar(sub(".*\\.", "", as.character(x)))
 }
-#
-#
-#
-# helper: ranger regression prediction via per-tree median
+# Computes ranger regression predictions as the median across tree predictions.
 predict_ranger_median <- function(graph_learner, newdata, target_name = NULL) {
   model_names <- names(graph_learner$model)
   ranger_idx <- grep("regr\\.ranger$", model_names)
@@ -1483,6 +1394,10 @@ predict_ranger_median <- function(graph_learner, newdata, target_name = NULL) {
   apply(tree_preds, 1, median)
 }
 
+# =============================================================================
+# Chapter 6: Bootstrap, uncertainty, and donor selection
+# =============================================================================
+
 #' Bootstrap resampling with robust strategies
 #'
 #' Returns bootstrap row indices based on the chosen strategy.
@@ -1496,6 +1411,7 @@ predict_ranger_median <- function(graph_learner, newdata, target_name = NULL) {
 #' @param best_subset Integer indices of best observations (currently unused).
 #' @return Integer vector of length n with bootstrap row indices
 #' @keywords internal
+# Creates bootstrap indices using standard, stratified, or residual-weighted sampling.
 bootstrap_resample <- function(
     n,
     strategy = "stratified",
@@ -1583,6 +1499,7 @@ bootstrap_resample <- function(
 #' @return List with components: residuals (numeric vector or NULL),
 #'   scale (numeric scalar or NULL), weights (numeric vector or NULL)
 #' @keywords internal
+# Extracts residuals, scale estimates, and weights from trained models or learners.
 extract_model_info <- function(model, method = "robust") {
   info <- list(residuals = NULL, scale = NULL, weights = NULL)
 
@@ -1657,6 +1574,7 @@ extract_model_info <- function(model, method = "robust") {
 #' @param task A regression task used for training the learner
 #' @return Model info list with residuals/scale filled where possible
 #' @keywords internal
+# Completes missing model diagnostics using training predictions.
 complete_model_info <- function(info, learner = NULL, task = NULL) {
   if (is.null(info) || !is.list(info)) {
     info <- list(residuals = NULL, scale = NULL, weights = NULL)
@@ -1712,6 +1630,7 @@ complete_model_info <- function(info, learner = NULL, task = NULL) {
 #' @param agg_method One of "mean", "median", "random", or a function
 #' @return Numeric vector of length(score_miss) with imputed values
 #' @keywords internal
+# Selects PMM donors by distance between observed and missing scores.
 pmm_donor_selection <- function(
     y_obs, score_obs, score_miss,
     k = 1L, agg_method = "random"
@@ -1756,6 +1675,7 @@ pmm_donor_selection <- function(
 #' @param k Number of candidate donors (default 5)
 #' @return Numeric vector of length n_miss with imputed values drawn from donors
 #' @keywords internal
+# Selects Midastouch donors using score and covariate distances.
 midastouch_donors <- function(
     y_obs, X_obs, X_miss,
     score_obs = NULL, score_miss = NULL, k = 5L
@@ -1837,6 +1757,7 @@ midastouch_donors <- function(
 #' @param X_miss Predictor matrix for missing rows. Required for "midastouch".
 #' @return Numeric vector of adjusted predictions (same length as preds)
 #' @keywords internal
+# Adds stochastic imputation uncertainty to predictions.
 inject_uncertainty <- function(
     preds,
     method = "none",
@@ -1896,6 +1817,605 @@ inject_uncertainty <- function(
   preds
 }
 
+# =============================================================================
+# Chapter 7: Result construction, tuning, and matrix helpers
+# =============================================================================
+
+# Builds the final return value, including optional prediction history and tuning logs.
+build_vimpute_result <- function(data, data_new, imp_var, factor_levels,
+                                 pred_history = FALSE, history = NULL,
+                                 tune = FALSE, tuning_log = list()) {
+  result <- as.data.table(if (imp_var) data_new else data)
+  result <- enforce_factor_levels(result, factor_levels)
+
+  any_tuned <- any(unlist(tune))
+
+  if (!pred_history && !any_tuned) {
+    return(result)
+  }
+
+  output <- list(data = result)
+
+  if (pred_history) {
+    output$pred_history <- rbindlist(history, fill = TRUE)
+  }
+  if (any_tuned) {
+    output$tuning_log <- tuning_log
+  }
+
+  output
+}
+
+# Runs model prediction, back-transformation, uncertainty handling, and PMM for one variable.
+predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, feature_cols,
+                                learner, factor_levels, backend_data, target_col,
+                                method_var, ranger_median, sequential, i, nseq,
+                                lhs_transformation, missing_indices, pmm, pmm_k,
+                                pmm_k_method, uncert, has_any_pmm,
+                                stored_model_info, verbose = FALSE) {
+  pred_task <- NULL
+  score_current <- NULL
+  miss_idx <- missing_indices[[var]]
+  obs_idx <- setdiff(seq_len(nrow(data)), miss_idx)
+
+  if (is_sc) {
+    zero_prob_col <- paste0(var, "_zero_prob")
+
+    class_learner <- learner$classifier
+    if ("prob" %in% class_learner$predict_types) {
+      class_learner$predict_type <- "prob"
+    } else {
+      class_learner$predict_type <- "response"
+      warning(sprintf("predict_type 'prob' not supported by learner '%s'; fallback to 'response'", class_learner$id))
+    }
+
+    class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
+    class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
+    check_all_factor_levels(class_pred_data, factor_levels)
+
+    if (anyNA(class_pred_data)) {
+      class_pred_data <- impute_missing_values(class_pred_data, data_temp)
+    }
+
+    factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
+    reserve_level <- ".__IMPUTEOOR_NEW__"
+    for (col in factor_cols) {
+      train_levels <- factor_levels[[col]]
+      if (!(reserve_level %in% train_levels)) {
+        train_levels <- c(train_levels, reserve_level)
+      }
+      class_pred_data[[col]][!class_pred_data[[col]] %in% train_levels] <- reserve_level
+      class_pred_data[[col]] <- factor(class_pred_data[[col]], levels = train_levels)
+    }
+
+    pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
+    pi_hat <- if (!is.null(pred_probs) && "positive" %in% colnames(pred_probs)) {
+      pred_probs[, "positive"]
+    } else {
+      as.numeric(class_learner$predict_newdata(class_pred_data)$response == "positive")
+    }
+
+    if (!zero_prob_col %in% names(data)) {
+      data[[zero_prob_col]] <- NA_real_
+    }
+    data[[zero_prob_col]][missing_idx] <- pi_hat
+
+    reg_learner <- learner$regressor
+    reg_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
+    reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
+    check_all_factor_levels(reg_pred_data, factor_levels)
+
+    if (anyNA(reg_pred_data)) {
+      reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[missing_idx])
+    }
+
+    preds_reg <- NULL
+    if (method_var == "ranger" && isTRUE(ranger_median) && !is.null(reg_learner)) {
+      preds_reg <- predict_ranger_median(reg_learner, reg_pred_data, target_name = NULL)
+    }
+    if (is.null(preds_reg)) {
+      if (is.null(reg_learner) || !is.function(reg_learner$predict_newdata)) {
+        positive_values <- data_temp[[var]][!is.na(data_temp[[var]]) & data_temp[[var]] > 0]
+        fallback_positive <- if (length(positive_values) > 0) {
+          stats::median(positive_values)
+        } else {
+          0
+        }
+        preds_reg <- rep(fallback_positive, nrow(reg_pred_data))
+      } else {
+        preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response
+      }
+    }
+
+    preds <- pi_hat * preds_reg
+  } else {
+    bdt <- as.data.table(backend_data)
+    bdt <- enforce_factor_levels(bdt, factor_levels)
+    check_all_factor_levels(bdt, factor_levels)
+
+    if (method_var == "ranger") {
+      bdt <- set_out_of_range_factor_levels_to_na(bdt, data_temp)
+    }
+
+    if (anyNA(bdt)) {
+      bdt <- impute_missing_values(bdt, data_temp)
+    }
+
+    backend_data <- mlr3::as_data_backend(bdt)
+
+    if (is.factor(data_temp[[target_col]])) {
+      backend_dt <- if (inherits(backend_data, "DataBackend")) {
+        rows <- backend_data$row_ids
+        if (is.null(rows)) rows <- seq_len(backend_data$nrow)
+        as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
+      } else {
+        as.data.table(backend_data)
+      }
+      if (anyNA(backend_dt[[target_col]])) {
+        mode_value <- names(which.max(table(data_temp[[target_col]], useNA = "no")))
+        backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <- mode_value
+      }
+      pred_task <- TaskClassif$new(
+        id = target_col,
+        backend = backend_dt,
+        target = target_col
+      )
+
+      learner$predict_type <- "prob"
+      pred_probs <- learner$predict(pred_task)$prob
+      pred_probs <- as.matrix(pred_probs)
+      bad_probs <- !is.finite(pred_probs)
+      if (any(bad_probs)) {
+        pred_probs[bad_probs] <- 0
+      }
+      row_sums <- rowSums(pred_probs)
+      bad_rows <- !is.finite(row_sums) | row_sums <= 0
+      if (any(bad_rows)) {
+        pred_probs[bad_rows, ] <- 1 / ncol(pred_probs)
+        row_sums[bad_rows] <- 1
+      }
+      pred_probs <- pred_probs / row_sums
+
+      if (isFALSE(sequential) || i == nseq) {
+        preds <- apply(pred_probs, 1, function(probs) {
+          sample(levels(data_temp[[target_col]]), size = 1, prob = probs)
+        })
+      } else {
+        preds <- apply(pred_probs, 1, which.max)
+        preds <- levels(data_temp[[target_col]])[preds]
+      }
+    } else if (is.numeric(data_temp[[target_col]])) {
+      backend_dt <- if (inherits(backend_data, "DataBackend")) {
+        rows <- backend_data$row_ids
+        if (is.null(rows)) rows <- seq_len(backend_data$nrow)
+        as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
+      } else {
+        as.data.table(backend_data)
+      }
+      if (anyNA(backend_dt[[target_col]])) {
+        backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <-
+          median(data_temp[[target_col]], na.rm = TRUE)
+      }
+      pred_task <- TaskRegr$new(
+        id = target_col,
+        backend = backend_dt,
+        target = target_col
+      )
+      preds <- NULL
+      if (method_var == "ranger" && isTRUE(ranger_median)) {
+        preds <- predict_ranger_median(learner, bdt, target_name = target_col)
+      }
+      if (is.null(preds)) {
+        preds <- learner$predict(pred_task)$response
+      }
+    } else {
+      stop("Error: Target variable is neither numeric nor a factor!")
+    }
+  }
+
+  if (!is.null(lhs_transformation)) {
+    preds <- inverse_transform(preds, lhs_transformation)
+  }
+
+  if (inherits(preds, "numeric")) {
+    decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
+    preds <- round(preds, decimal_places)
+  }
+
+  raw_model_preds <- preds
+
+  if (inherits(preds, "numeric")) {
+    score_current <- numeric(nrow(data))
+    score_current[obs_idx] <- data[[var]][obs_idx]
+    score_current[miss_idx] <- preds
+  }
+
+  if (uncert != "none" && !has_any_pmm && inherits(preds, "numeric") && !is_sc) {
+    uncert_args <- list(preds = preds, method = uncert)
+
+    if (uncert %in% c("normalerror", "resid") && !is.null(stored_model_info)) {
+      uncert_args$scale <- stored_model_info$scale
+      uncert_args$residuals <- stored_model_info$residuals
+    }
+
+    if (uncert == "pmm") {
+      valid_obs <- !is.na(data[[var]][obs_idx]) & is.finite(score_current[obs_idx])
+      obs_idx_u <- obs_idx[valid_obs]
+      if (length(obs_idx_u) == 0L) {
+        warning(sprintf("No valid uncertainty PMM donors available for '%s'. Returning point predictions.", var))
+        uncert_args$method <- "none"
+      } else {
+        uncert_args$y_obs <- data[[var]][obs_idx_u]
+        uncert_args$score_obs <- score_current[obs_idx_u]
+        uncert_args$score_miss <- score_current[miss_idx]
+        uncert_args$pmm_k <- 5L
+        uncert_args$pmm_k_method <- "random"
+      }
+    }
+
+    if (uncert == "midastouch") {
+      valid_obs <- !is.na(data[[var]][obs_idx]) & is.finite(score_current[obs_idx])
+      obs_idx_u <- obs_idx[valid_obs]
+      if (length(obs_idx_u) == 0L) {
+        warning(sprintf("No valid midastouch donors available for '%s'. Returning point predictions.", var))
+        uncert_args$method <- "none"
+      } else {
+        uncert_args$y_obs <- data[[var]][obs_idx_u]
+        uncert_args$score_obs <- score_current[obs_idx_u]
+        uncert_args$score_miss <- score_current[miss_idx]
+        uncert_args$pmm_k <- 5L
+        feat_names <- setdiff(names(data), var)
+        num_feats <- feat_names[sapply(feat_names, function(f) is.numeric(data[[f]]))]
+        if (length(num_feats) > 0) {
+          uncert_args$X_obs <- as.matrix(data[obs_idx_u, num_feats, with = FALSE])
+          uncert_args$X_miss <- as.matrix(data[miss_idx, num_feats, with = FALSE])
+        }
+      }
+    }
+
+    preds <- do.call(inject_uncertainty, uncert_args)
+
+    if (exists("decimal_places")) {
+      preds <- round(preds, decimal_places)
+    }
+  }
+
+  convergence_preds <- if (inherits(raw_model_preds, "numeric") && (isTRUE(pmm[[var]]) || uncert %in% c("pmm", "midastouch"))) {
+    raw_model_preds
+  } else {
+    preds
+  }
+
+  if (pmm[[var]] && is.numeric(data_temp[[var]]) && length(miss_idx) > 0) {
+    if (verbose) {
+      message("***** PMM / Score-kNN for predictions")
+    }
+
+    valid_obs <- !is.na(data[[var]][obs_idx]) & is.finite(score_current[obs_idx])
+    obs_idx <- obs_idx[valid_obs]
+    y_obs <- data[[var]][obs_idx]
+    if (length(y_obs) == 0L) {
+      warning(sprintf("No valid PMM donors available for '%s'. Keeping model predictions.", var))
+    }
+
+    if (length(y_obs) > 0L && pmm_k[[var]] >= 1 && is.numeric(data_temp[[var]])) {
+      score_obs <- score_current[obs_idx]
+      score_miss <- score_current[miss_idx]
+      k <- min(pmm_k[[var]], length(y_obs))
+      pmm_method_var <- pmm_k_method[[var]]
+
+      preds <- sapply(score_miss, function(s) {
+        idx <- order(abs(score_obs - s))[1:k]
+        neighbors <- y_obs[idx]
+        if (is.function(pmm_method_var)) {
+          agg <- pmm_method_var(neighbors)
+          if (length(agg) != 1L || !is.numeric(agg) || is.na(agg)) {
+            stop(sprintf(
+              "pmm_k_method function for '%s' must return exactly one non-missing numeric value.",
+              var
+            ))
+          }
+          as.numeric(agg)
+        } else if (pmm_method_var == "mean") {
+          mean(neighbors)
+        } else if (pmm_method_var == "median") {
+          median(neighbors)
+        } else {
+          sample(neighbors, 1)
+        }
+      })
+    }
+
+    decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
+    preds <- round(preds, decimal_places)
+  }
+
+  list(
+    preds = preds,
+    convergence_preds = convergence_preds,
+    pred_task = pred_task,
+    data = data
+  )
+}
+
+# Applies final predictions to data, convergence data, and optional imputation flags.
+apply_imputations <- function(data, data_new, convergence_data, var, missing_idx,
+                              preds, convergence_preds, original_data,
+                              factor_levels, imp_var) {
+  if (length(missing_idx) > 0) {
+    is_target_numeric <- is.numeric(original_data[[var]])
+
+    if (is_target_numeric) {
+      if (is.factor(data[[var]])) {
+        data[, (var) := as.numeric(as.character(get(var)))]
+      }
+      if (exists("data_new") && is.factor(data_new[[var]])) {
+        data_new[, (var) := as.numeric(as.character(get(var)))]
+      }
+
+      data[missing_idx, (var) := as.numeric(preds)]
+      convergence_data[missing_idx, (var) := as.numeric(convergence_preds)]
+    } else if (is.factor(original_data[[var]])) {
+      data[missing_idx, (var) := factor(preds, levels = factor_levels[[var]])]
+      convergence_data[missing_idx, (var) := factor(convergence_preds, levels = factor_levels[[var]])]
+    } else {
+      stop(paste("Unknown data type for variable:", var))
+    }
+
+    data <- copy(data)
+  }
+
+  if (length(missing_idx) > 0 && imp_var) {
+    imp_col <- paste0(var, "_imp")
+    if (!is.null(missing_idx) && length(missing_idx) > 0) {
+      if (!(imp_col %in% colnames(data_new))) {
+        data_new[, (imp_col) := FALSE]
+      }
+
+      data_new[, (var) := data[[var]]]
+
+      if (length(preds) == length(missing_idx) && !all(is.na(preds))) {
+        set(data_new, i = missing_idx, j = imp_col, value = TRUE)
+      } else {
+        warning(paste("Warning: `preds` is empty or does not have the same length as `missing_idx` for ", var))
+      }
+    }
+  }
+
+  list(data = data, data_new = data_new, convergence_data = convergence_data)
+}
+
+# Evaluates sequential convergence and signals whether the iteration loop should stop.
+check_convergence <- function(sequential, i, variables_NA, missing_indices,
+                              convergence_prev, convergence_data, original_data,
+                              eps, no_change_counter, verbose,
+                              data_temp, target_col, learner, pred_task) {
+  if (!sequential || i == 1) {
+    return(list(no_change_counter = 0, should_break = FALSE))
+  }
+
+  num_diff <- 0
+  cat_diff <- 0
+
+  for (v in variables_NA) {
+    idx <- missing_indices[[v]]
+    if (length(idx) == 0) next
+
+    old_vals <- convergence_prev[[v]][idx]
+    new_vals <- convergence_data[[v]][idx]
+
+    if (is.numeric(original_data[[v]])) {
+      d_var <- mean((new_vals - old_vals)^2, na.rm = TRUE)
+      if (is.finite(d_var)) {
+        num_diff <- num_diff + d_var
+      }
+    } else if (is.factor(original_data[[v]])) {
+      old_chr <- as.character(old_vals)
+      new_chr <- as.character(new_vals)
+      d_var <- mean(old_chr != new_chr, na.rm = TRUE)
+      if (is.finite(d_var)) {
+        cat_diff <- cat_diff + d_var
+      }
+    }
+  }
+
+  total_diff <- num_diff + cat_diff
+
+  if (verbose) {
+    message(sprintf(
+      "Iteration %d: num_diff = %.6f, cat_diff = %.6f, total_diff = %.6f",
+      i, num_diff, cat_diff, total_diff
+    ))
+  }
+
+  if (total_diff >= eps) {
+    return(list(no_change_counter = 0, should_break = FALSE))
+  }
+
+  no_change_counter <- no_change_counter + 1
+  if (no_change_counter < 2) {
+    return(list(no_change_counter = no_change_counter, should_break = FALSE))
+  }
+
+  if (verbose) {
+    message("Convergence achieved after two consecutive iterations without changes in imputations")
+    print(paste("stop after", i, "iterations"))
+  }
+
+  if (is.factor(data_temp[[target_col]]) && !is.null(pred_task)) {
+    learner$predict_type <- "prob"
+    pred_probs <- learner$predict(pred_task)$prob
+
+    if (is.null(pred_probs)) {
+      stop("Error in the calculation of prediction probabilities.")
+    }
+    pred_probs <- as.matrix(pred_probs)
+    bad_probs <- !is.finite(pred_probs)
+    if (any(bad_probs)) {
+      pred_probs[bad_probs] <- 0
+    }
+    row_sums <- rowSums(pred_probs)
+    bad_rows <- !is.finite(row_sums) | row_sums <= 0
+    if (any(bad_rows)) {
+      pred_probs[bad_rows, ] <- 1 / ncol(pred_probs)
+      row_sums[bad_rows] <- 1
+    }
+    pred_probs <- pred_probs / row_sums
+
+    apply(pred_probs, 1, function(probs) {
+      sample(levels(data_temp[[target_col]]), size = 1, prob = probs)
+    })
+  }
+
+  list(no_change_counter = no_change_counter, should_break = TRUE)
+}
+
+# Determines safe cross-validation folds for sample size and class counts.
+safe_cv_folds <- function(task, max_folds = 5L) {
+  if (task$nrow < 2L) {
+    return(NA_integer_)
+  }
+
+  folds <- min(as.integer(max_folds), task$nrow)
+  if (identical(task$task_type, "classif")) {
+    class_counts <- table(task$truth())
+    folds <- min(folds, min(class_counts))
+  }
+
+  if (!is.finite(folds) || folds < 2L) {
+    return(NA_integer_)
+  }
+
+  as.integer(folds)
+}
+
+# Normalizes model-matrix column names for mlr3-compatible feature names.
+clean_model_matrix_colnames <- function(names) {
+  names <- make.names(names, unique = TRUE)
+  patterns <- c("\\(", "\\)", ":", "\\*", "\\^", "%in%", "/", "-", "\\+", " ")
+  replacements <- c("", "", "_int_", "_cross_", "_pow_", "_nest_", "_sub_", "_minus_", "_plus_", "")
+  for (i in seq_along(patterns)) {
+    names <- gsub(patterns[i], replacements[i], names)
+  }
+  names
+}
+
+# Deterministically fills remaining predictor missings from reference data.
+impute_missing_values <- function(data, ref_data) {
+  for (col in colnames(data)) {
+    if (any(is.na(data[[col]]))) {
+      if (is.numeric(ref_data[[col]])) {
+        fill_val <- median(ref_data[[col]], na.rm = TRUE)
+        if (!is.finite(fill_val) || is.na(fill_val)) {
+          fill_val <- 0
+        }
+        data[[col]][is.na(data[[col]])] <- fill_val
+      } else if (is.factor(ref_data[[col]])) {
+        mode_value <- names(which.max(table(ref_data[[col]], useNA = "no")))
+        if (is.null(mode_value) || length(mode_value) == 0L || is.na(mode_value)) {
+          mode_value <- levels(ref_data[[col]])[1L]
+        }
+        data[[col]][is.na(data[[col]])] <- mode_value
+      } else if (is.character(ref_data[[col]])) {
+        mode_value <- names(which.max(table(ref_data[[col]], useNA = "no")))
+        if (is.null(mode_value) || length(mode_value) == 0L || is.na(mode_value)) {
+          mode_value <- ""
+        }
+        data[[col]][is.na(data[[col]])] <- mode_value
+      }
+    }
+  }
+  data
+}
+
+# Sets factor values outside the reference levels to NA.
+set_out_of_range_factor_levels_to_na <- function(data, ref_data) {
+  for (col in colnames(data)) {
+    if (is.factor(data[[col]])) {
+      known_levels <- levels(ref_data[[col]])
+      unknown_idx <- !data[[col]] %in% known_levels
+      if (any(unknown_idx, na.rm = TRUE)) {
+        data[[col]][unknown_idx] <- NA
+      }
+    }
+  }
+  data
+}
+
+# Builds the hyperparameter search space for the selected learner.
+build_vimpute_search_space <- function(best_learner_id, task) {
+  n <- task$nrow
+  size <- if (n <= 5000) "small" else if (n <= 100000) "medium" else "large"
+
+  if (best_learner_id %in% c("regr.cv_glmnet", "regr.glmnet", "classif.glmnet")) {
+    lambda_upper <- if (size == "small") 1 else 0.5
+    if (best_learner_id == "regr.cv_glmnet") {
+      upper_nfolds <- if (size == "small") 5L else 3L
+      space <- ps(
+        alpha  = p_dbl(0, 1),
+        lambda = p_dbl(1e-4, lambda_upper, logscale = TRUE),
+        nfolds = p_int(3L, upper_nfolds)
+      )
+    } else {
+      space <- ps(
+        alpha  = p_dbl(0, 1),
+        lambda = p_dbl(1e-4, lambda_upper, logscale = TRUE)
+      )
+    }
+    return(list(space = space, n_evals = if (size == "small") 10 else if (size == "medium") 12 else 8))
+  }
+
+  if (best_learner_id %in% c("regr.ranger", "classif.ranger")) {
+    space <- ps(
+      num.trees       = p_int(if (size == "large") 200L else 300L,
+                              if (size == "small") 900L else 600L),
+      min.node.size   = p_int(if (size == "small") 3L else 10L,
+                              if (size == "small") 10L else 50L),
+      sample.fraction = p_dbl(if (size == "large") 0.6 else 0.8, 1.0)
+    )
+    return(list(space = space, n_evals = if (size == "small") 15 else if (size == "medium") 12 else 10))
+  }
+
+  if (best_learner_id %in% c("regr.xgboost", "classif.xgboost")) {
+    space <- ps(
+      nrounds          = p_int(100L, if (size == "small") 500L else 300L),
+      eta              = p_dbl(0.05, 0.3, logscale = TRUE),
+      max_depth        = p_int(2L, if (size == "small") 8L else 6L),
+      subsample        = p_dbl(0.5, 1.0),
+      colsample_bytree = p_dbl(0.5, 1.0)
+    )
+    return(list(space = space, n_evals = if (size == "small") 20 else if (size == "medium") 15 else 12))
+  }
+
+  if (best_learner_id %in% c("regr.lm_rob", "classif.glm_rob")) {
+    space <- ps(
+      tuning.chi = p_dbl(1.2, 1.5),
+      tuning.psi = p_dbl(1.2, 1.5),
+      max.it     = p_int(50L, 200L)
+    )
+    return(list(space = space, n_evals = 8))
+  }
+
+  if (best_learner_id %in% c("regr.gam_imp", "classif.gam_imp")) {
+    space <- ps(min_unique = p_int(3L, 8L))
+    return(list(space = space, n_evals = 5))
+  }
+
+  if (best_learner_id %in% c("regr.robgam_imp", "classif.robgam_imp")) {
+    space <- ps(
+      alpha = p_dbl(0.7, 0.95),
+      min_unique = p_int(3L, 8L)
+    )
+    return(list(space = space, n_evals = 8))
+  }
+
+  list(space = NULL, n_evals = 10)
+}
+
+# =============================================================================
+# Chapter 8: GAM and RobGAM helpers
+# =============================================================================
+
 #' Build a GAM formula with automatic smooth terms
 #'
 #' Constructs a formula for mgcv::gam() by wrapping numeric predictors with
@@ -1908,6 +2428,7 @@ inject_uncertainty <- function(
 #'   predictor to be wrapped in s(). Default 4 (mgcv needs at least k=3 knots).
 #' @return A formula object suitable for mgcv::gam()
 #' @keywords internal
+# Builds GAM formulas with automatic smooth terms for suitable numeric features.
 build_gam_formula <- function(target, features, data, min_unique = 4L, default_k = 10L) {
   terms <- vapply(features, function(f) {
     col <- data[[f]]
@@ -1929,6 +2450,7 @@ build_gam_formula <- function(target, features, data, min_unique = 4L, default_k
   as.formula(paste(target, "~", paste(terms, collapse = " + ")))
 }
 
+# Fits a GAM model with defensive mgcv fallbacks for numerical issues.
 fit_gam_model <- function(formula, data, family = NULL, weights = NULL) {
   args <- list(
     formula = formula,
@@ -1978,6 +2500,7 @@ fit_gam_model <- function(formula, data, family = NULL, weights = NULL) {
 #' Called automatically by vimpute() when method includes "gam" or "robgam".
 #'
 #' @keywords internal
+# Registers GAM and RobGAM learners for regression and classification.
 register_gam_learners <- function() {
 
   if (!requireNamespace("mgcv", quietly = TRUE)) {
@@ -2115,22 +2638,22 @@ register_gam_learners <- function() {
 
         if (length(classes) == 2L) {
           df <- data.frame(y_bin = as.integer(y == classes[1]), data[, features, drop = FALSE])
-                     # ====== NEW: Check for single-level factors before GAM ======
-           for (feat in features) {
-             if (is.factor(df[[feat]])) {
-               df[[feat]] <- droplevels(df[[feat]])
-               if (nlevels(df[[feat]]) < 2) {
-                 warning(sprintf("Feature '%s' collapsed to single level for class '%s'. Removing feature.", feat, classes[1]))
-                 features <- setdiff(features, feat)
-               }
-             }
-           }
-           
-           if (length(features) == 0) {
-             warning(sprintf("No valid features remain for class '%s'. Using constant model.", classes[1]))
-             return(list(models = list(new_constant_binomial_model(mean(df$y_bin))), classes = classes, binary = TRUE))
-           }
-           # ======= END NEW CODE =======
+          # Guard against single-level factor predictors before fitting GAM.
+          for (feat in features) {
+            if (is.factor(df[[feat]])) {
+              df[[feat]] <- droplevels(df[[feat]])
+              if (nlevels(df[[feat]]) < 2) {
+                warning(sprintf("Feature '%s' collapsed to single level for class '%s'. Removing feature.", feat, classes[1]))
+                features <- setdiff(features, feat)
+              }
+            }
+          }
+
+          if (length(features) == 0) {
+            warning(sprintf("No valid features remain for class '%s'. Using constant model.", classes[1]))
+            return(list(models = list(new_constant_binomial_model(mean(df$y_bin))), classes = classes, binary = TRUE))
+          }
+
           prob <- mean(df$y_bin == 1)
           if (prob %in% c(0, 1)) {
             mod <- new_constant_binomial_model(prob)
@@ -2166,33 +2689,33 @@ register_gam_learners <- function() {
         names(mods) <- classes
         for (k in classes) {
           df <- data.frame(y_bin = as.integer(y == k), data[, features, drop = FALSE])
-           # ====== NEW: Check for single-level factors before GAM ======
-           features_k <- features
-           for (feat in features_k) {
-             if (is.factor(df[[feat]])) {
-               df[[feat]] <- droplevels(df[[feat]])
-               if (nlevels(df[[feat]]) < 2) {
-                 warning(sprintf("Feature '%s' collapsed to single level for class '%s'. Removing feature.", feat, k))
-                 features_k <- setdiff(features_k, feat)
-               }
-             }
-           }
-           
-           if (length(features_k) == 0) {
-             mods[[k]] <- new_constant_binomial_model(mean(df$y_bin))
-             next
-           }
-           # ======= END NEW CODE =======
+          # Guard against single-level factor predictors before fitting GAM.
+          features_k <- features
+          for (feat in features_k) {
+            if (is.factor(df[[feat]])) {
+              df[[feat]] <- droplevels(df[[feat]])
+              if (nlevels(df[[feat]]) < 2) {
+                warning(sprintf("Feature '%s' collapsed to single level for class '%s'. Removing feature.", feat, k))
+                features_k <- setdiff(features_k, feat)
+              }
+            }
+          }
+
+          if (length(features_k) == 0) {
+            mods[[k]] <- new_constant_binomial_model(mean(df$y_bin))
+            next
+          }
+
           prob <- mean(df$y_bin == 1)
           if (prob %in% c(0, 1)) {
             mods[[k]] <- new_constant_binomial_model(prob)
           } else {
-            form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
+            form <- build_gam_formula("y_bin", features_k, df, min_unique = pv$min_unique)
             mods[[k]] <- tryCatch(
               fit_gam_model(form, data = df, family = binomial()),
               error = function(e) {
                 warning(sprintf("gam(binomial) OvR class '%s' failed: %s\nFalling back to glm()", k, e$message))
-                glm(build_feature_formula("y_bin", features), data = df, family = binomial())
+                glm(build_feature_formula("y_bin", features_k), data = df, family = binomial())
               }
             )
           }
@@ -2446,6 +2969,10 @@ register_gam_learners <- function() {
                }
              )
 
+            if (inherits(mod_init, "vimpute_constant_binomial")) {
+              return(mod_init)
+            }
+
             dev_resids <- residuals(mod_init, type = "deviance")
             cutoff <- quantile(abs(dev_resids), probs = pv$alpha)
             good_idx <- which(abs(dev_resids) <= cutoff)
@@ -2476,19 +3003,19 @@ register_gam_learners <- function() {
 
         if (length(classes) == 2L) {
           df <- data.frame(y_bin = as.integer(y == classes[1]), data[, features, drop = FALSE])
-           # ====== NEW ======
-           for (feat in features) {
-             if (is.factor(df[[feat]])) {
-               df[[feat]] <- droplevels(df[[feat]])
-               if (nlevels(df[[feat]]) < 2) {
-                 features <- setdiff(features, feat)
-               }
-             }
-           }
-           if (length(features) == 0) {
-             return(list(models = list(new_constant_binomial_model(mean(df$y_bin))), classes = classes, binary = TRUE))
-           }
-           # ======= END =======
+          # Guard against single-level factor predictors before fitting robust GAM.
+          for (feat in features) {
+            if (is.factor(df[[feat]])) {
+              df[[feat]] <- droplevels(df[[feat]])
+              if (nlevels(df[[feat]]) < 2) {
+                features <- setdiff(features, feat)
+              }
+            }
+          }
+          if (length(features) == 0) {
+            return(list(models = list(new_constant_binomial_model(mean(df$y_bin))), classes = classes, binary = TRUE))
+          }
+
           form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
           mod <- fit_one_robgam(df, form)
           return(list(models = list(mod), classes = classes, binary = TRUE))
@@ -2499,22 +3026,22 @@ register_gam_learners <- function() {
         names(mods) <- classes
         for (k in classes) {
           df <- data.frame(y_bin = as.integer(y == k), data[, features, drop = FALSE])
-           # ====== NEW ======
-           features_k <- features
-           for (feat in features_k) {
-             if (is.factor(df[[feat]])) {
-               df[[feat]] <- droplevels(df[[feat]])
-               if (nlevels(df[[feat]]) < 2) {
-                 features_k <- setdiff(features_k, feat)
-               }
-             }
-           }
-           if (length(features_k) == 0) {
-             mods[[k]] <- new_constant_binomial_model(mean(df$y_bin))
-             next
-           }
-           # ======= END =======
-          form <- build_gam_formula("y_bin", features, df, min_unique = pv$min_unique)
+          # Guard against single-level factor predictors before fitting robust GAM.
+          features_k <- features
+          for (feat in features_k) {
+            if (is.factor(df[[feat]])) {
+              df[[feat]] <- droplevels(df[[feat]])
+              if (nlevels(df[[feat]]) < 2) {
+                features_k <- setdiff(features_k, feat)
+              }
+            }
+          }
+          if (length(features_k) == 0) {
+            mods[[k]] <- new_constant_binomial_model(mean(df$y_bin))
+            next
+          }
+
+          form <- build_gam_formula("y_bin", features_k, df, min_unique = pv$min_unique)
           mods[[k]] <- fit_one_robgam(df, form)
         }
         list(models = mods, classes = classes, binary = FALSE)

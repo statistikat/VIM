@@ -338,10 +338,10 @@ vimpute <- function(
 
   # Warn if m > 1 but no source of between-imputation variability
   if (m > 1L && !boot && uncert == "none" && !has_any_pmm) {
-    warning("m > 1 without 'boot', 'uncert', or 'pmm': all imputations will be identical. ",
-            "Set boot = TRUE and/or uncert to a method like 'normalerror' for proper MI.")
+    warning("m > 1 without 'boot', 'uncert', or 'pmm': numeric point predictions may be identical across imputations. ",
+            "Set boot = TRUE and/or uncert to a method like 'normalerror' for proper MI variability.")
   }
-  
+
 ### ***** Learner START ***** ################################################################################################### 
   
   # Possible extension
@@ -490,6 +490,8 @@ vimpute <- function(
   if (pred_history == TRUE) {
     history <- list() # save history of predicted values
   }
+
+  convergence_data <- copy(data)
   
   count_tuned_better <- 0
   count_default_better <- 0
@@ -505,7 +507,7 @@ vimpute <- function(
       message(paste("ITERATION", i, "von", nseq))
     }
     iteration_times <- list()
-    data_prev <- copy(data)
+    convergence_prev <- copy(convergence_data)
     
     for (var in variables_NA) {
       if(verbose){
@@ -585,17 +587,7 @@ vimpute <- function(
         data_temp <- mm_task_na_omit$data()
         data_temp <- as.data.table(data_temp)
         
-        clean_colnames <- function(names) {
-          names <- make.names(names, unique = TRUE)
-          patterns <- c("\\(", "\\)", ":", "\\*", "\\^", "%in%", "/", "-", "\\+", " ")
-          replacements <- c("", "", "_int_", "_cross_", "_pow_", "_nest_", "_sub_", "_minus_", "_plus_", "")
-          for (i in seq_along(patterns)) {
-            names <- gsub(patterns[i], replacements[i], names)
-          }
-          
-          return(names)
-        }
-        setnames(data_temp, clean_colnames(names(data_temp)))
+        setnames(data_temp, clean_model_matrix_colnames(names(data_temp)))
         data_temp <- enforce_factor_levels(data_temp, factor_levels)  
         check_all_factor_levels(data_temp, factor_levels)
         
@@ -633,7 +625,7 @@ vimpute <- function(
         po_task_mm <- pipeline_impute$predict(task_mm_pred)[[1]]
         mm_data <- po_task_mm$data() # mm_data = transformed data with missings filled in, data_temp = transformed data without missings
         mm_data <- as.data.table(mm_data)
-        setnames(mm_data, clean_colnames(names(mm_data)))
+        setnames(mm_data, clean_model_matrix_colnames(names(mm_data)))
         mm_data <- enforce_factor_levels(mm_data, factor_levels)
         check_all_factor_levels(mm_data, factor_levels)
         
@@ -859,7 +851,21 @@ vimpute <- function(
         } else {
           fill_val <- names(which.max(table(data[[target_col]], useNA = "no")))
         }
+        if (is.numeric(original_data[[target_col]]) && (!is.finite(fill_val) || is.na(fill_val))) {
+          stop(sprintf("No finite fallback value available for target '%s'.", target_col))
+        }
+        if (!is.numeric(original_data[[target_col]]) && (is.null(fill_val) || length(fill_val) == 0L || is.na(fill_val))) {
+          stop(sprintf("No fallback level available for target '%s'.", target_col))
+        }
         data[missing_indices[[var]], (var) := fill_val]
+        if (imp_var) {
+          imp_col <- paste0(var, "_imp")
+          if (!(imp_col %in% colnames(data_new))) {
+            data_new[, (imp_col) := FALSE]
+          }
+          data_new[, (var) := data[[var]]]
+          set(data_new, i = missing_indices[[var]], j = imp_col, value = TRUE)
+        }
         next
       }
 
@@ -868,7 +874,13 @@ vimpute <- function(
           "Too few observations (%d) to train GAM for '%s'. Falling back to 'robust'.",
           n_train, target_col
         ))
+        learners <- ensure_robust_learners(learners)
         method_var <- "robust"
+        learner_candidates <- if (is.numeric(data[[target_col]])) {
+          list(learners[["regr.lm_rob"]])
+        } else {
+          list(learners[["classif.glm_rob"]])
+        }
       }
 
       
@@ -885,7 +897,7 @@ vimpute <- function(
       if(verbose){
         message(paste("***** Create Learner"))
       }
-      max_threads <- future::availableCores() -1
+      max_threads <- max(1L, future::availableCores() - 1L)
       if (nrow(data_y_fill_final) < 10000) {
         optimal_threads <- 1
       } else if (nrow(data_y_fill_final) < 100000) {
@@ -909,7 +921,11 @@ vimpute <- function(
       if (method_var == "xgboost") {
         
         # All valid xgboost parameters in mlr3
-        valid_xgb_params <- learners[["regr.xgboost"]]$param_set$ids()
+        valid_xgb_params <- if (is.numeric(data[[target_col]])) {
+          learners[["regr.xgboost"]]$param_set$ids()
+        } else {
+          learners[["classif.xgboost"]]$param_set$ids()
+        }
         
         # Invalid parameters
         invalid <- setdiff(names(var_learner_params), valid_xgb_params)
@@ -941,7 +957,11 @@ vimpute <- function(
       if (method_var == "ranger") {
         
         # All valid ranger params
-        valid_ranger_params <- learners[["regr.ranger"]]$param_set$ids()
+        valid_ranger_params <- if (is.numeric(data[[target_col]])) {
+          learners[["regr.ranger"]]$param_set$ids()
+        } else {
+          learners[["classif.ranger"]]$param_set$ids()
+        }
         
         # Invalid parameters
         invalid <- setdiff(names(var_learner_params), valid_ranger_params)
@@ -1078,7 +1098,8 @@ vimpute <- function(
       is_regr_task <- is.numeric(data_y_fill_final[[target_col]])
       measure <- if (is_regr_task) msr("regr.rmse") else msr("classif.acc")
 
-      if (length(learner_candidates) > 1) {
+      cv_folds <- safe_cv_folds(task, 5L)
+      if (length(learner_candidates) > 1 && !is.na(cv_folds)) {
         resample_results <- lapply(learner_candidates, function(lrn) {
           
           if (grepl("xgboost", lrn$id)) {
@@ -1103,7 +1124,7 @@ vimpute <- function(
               lrn$predict_type <- "response"
             }
           }
-          resample(task, lrn, rsmp("cv", folds = 5))
+          resample(task, lrn, rsmp("cv", folds = cv_folds))
         })
         
         scores <- sapply(resample_results, function(res) res$aggregate(measure))
@@ -1180,93 +1201,8 @@ vimpute <- function(
       # Per Variable tune once in the middle of the seq
       if (!tuning_status[[var]] && isTRUE(tune[[var]]) && i == round(nseq / 2)) {
         
-        # ------------------------------------------------------------
-        # Adaptive Search Space Builder (small vs large dataset)
-        build_search_space <- function(best_learner_id, task) {
-          n <- task$nrow
-          size <- if (n <= 5000) "small" else if (n <= 100000) "medium" else "large"
-          
-          # GLMNET
-          if (best_learner_id %in% c("regr.cv_glmnet", "regr.glmnet", "classif.glmnet")) {
-            lambda_upper <- if (size == "small") 1 else 0.5
-            
-            if (best_learner_id == "regr.cv_glmnet") {
-              upper_nfolds <- if (size == "small") 5L else 3L
-              space <- ps(
-                alpha  = p_dbl(0, 1),
-                lambda = p_dbl(1e-4, lambda_upper, logscale = TRUE),
-                nfolds = p_int(3L, upper_nfolds)
-              )
-            } else {
-              space <- ps(
-                alpha  = p_dbl(0, 1),
-                lambda = p_dbl(1e-4, lambda_upper, logscale = TRUE)
-              )
-            }
-            return(list(space = space, n_evals = if (size == "small") 10 else if (size == "medium") 12 else 8))
-          }
-          
-          # RANGER
-          if (best_learner_id %in% c("regr.ranger", "classif.ranger")) {
-            space <- ps(
-              num.trees       = p_int(if (size == "large") 200L else 300L, 
-                                      if (size == "small") 900L else 600L),
-              min.node.size   = p_int(if (size == "small") 3L else 10L,   
-                                      if (size == "small") 10L else 50L),
-              sample.fraction = p_dbl(if (size == "large") 0.6  else 0.8, 1.0)
-              # Optional: mtry relative to p
-              # mtry = p_int(max(1L, floor(sqrt(length(task$feature_names))*0.8)),
-              #              max(1L, floor(sqrt(length(task$feature_names))*1.2)))
-            )
-            return(list(space = space, n_evals = if (size == "small") 15 else if (size == "medium") 12 else 10))
-          }
-          
-          # XGBOOST
-          if (best_learner_id %in% c("regr.xgboost", "classif.xgboost")) {
-            space <- ps(
-              nrounds          = p_int(100L, if (size == "small") 500L else 300L),
-              eta              = p_dbl(0.05, 0.3, logscale = TRUE),
-              max_depth        = p_int(2L,   if (size == "small") 8L    else 6L),
-              subsample        = p_dbl(0.5,  1.0),
-              colsample_bytree = p_dbl(0.5,  1.0)
-            )
-            return(list(space = space, n_evals = if (size == "small") 20 else if (size == "medium") 15 else 12))
-          }
-          
-          # ROBUST
-          if (best_learner_id %in% c("regr.lm_rob", "classif.glm_rob")) {
-            space <- ps(
-              tuning.chi = p_dbl(1.2, 1.5),
-              tuning.psi = p_dbl(1.2, 1.5),
-              max.it     = p_int(50L, 200L)
-            )
-            return(list(space = space, n_evals = 8))
-          }
-
-          # GAM
-          if (best_learner_id %in% c("regr.gam_imp", "classif.gam_imp")) {
-            space <- ps(
-              min_unique = p_int(3L, 8L)
-            )
-            return(list(space = space, n_evals = 5))
-          }
-
-          # ROBGAM
-          if (best_learner_id %in% c("regr.robgam_imp", "classif.robgam_imp")) {
-            space <- ps(
-              alpha = p_dbl(0.7, 0.95),
-              min_unique = p_int(3L, 8L)
-            )
-            return(list(space = space, n_evals = 8))
-          }
-          
-          # Fallback
-          list(space = NULL, n_evals = 10)
-        }
-        # ------------------------------------------------------------
-        
         best_learner_id <- best_learner$id
-        ss <- build_search_space(best_learner_id, task)
+        ss <- build_vimpute_search_space(best_learner_id, task)
         search_space <- ss$space
         n_evals      <- ss$n_evals
         
@@ -1303,7 +1239,10 @@ vimpute <- function(
                 }
                 
                 # Resample
-                folds <- if (task$nrow <= 3000) 5L else 3L
+                folds <- safe_cv_folds(task, if (task$nrow <= 3000) 5L else 3L)
+                if (is.na(folds)) {
+                  stop("Too few usable observations per fold for cross-validation.")
+                }
                 resampling <- rsmp("cv", folds = folds)
                 resampling$instantiate(task)
                 
@@ -1396,7 +1335,10 @@ vimpute <- function(
                   default_learner$param_set$values$nrounds <- 100L
                 }
               }
-              folds <- if (task$nrow <= 3000) 5L else 3L
+              folds <- safe_cv_folds(task, if (task$nrow <= 3000) 5L else 3L)
+              if (is.na(folds)) {
+                stop("Too few usable observations for cross-validation.")
+              }
               resampling <- rsmp("cv", folds = folds); resampling$instantiate(task)
               msr_obj <- msr("regr.rmse")
               
@@ -1696,6 +1638,18 @@ vimpute <- function(
         warning(sprintf("Variable '%s' is semikontinuous; regularized (glmnet) is unstable here. Switching to 'robust'.", var))
         learners <- ensure_robust_learners(learners)
         method_var <- "robust"
+        robust_learner_id <- if (is.numeric(data[[target_col]])) "regr.lm_rob" else "classif.glm_rob"
+        best_learner <- lrn(robust_learner_id)
+        current_learner <- best_learner$clone(deep = TRUE)
+        default_learner <- best_learner$clone(deep = TRUE)
+        tuned_learner <- best_learner$clone(deep = TRUE)
+        if (is.numeric(data[[target_col]])) {
+          robust_params <- var_learner_params[intersect(names(var_learner_params), best_learner$param_set$ids())]
+          best_learner$param_set$values <- modifyList(best_learner$param_set$values, robust_params)
+          current_learner$param_set$values <- modifyList(current_learner$param_set$values, robust_params)
+          default_learner$param_set$values <- modifyList(default_learner$param_set$values, robust_params)
+          tuned_learner$param_set$values <- modifyList(tuned_learner$param_set$values, robust_params)
+        }
       }
       
       if (is_sc) {
@@ -2031,36 +1985,6 @@ vimpute <- function(
         message("***** Identify missing values *****")
       }
       
-      # Impute missing values
-      impute_missing_values <- function(data, ref_data) {
-        for (col in colnames(data)) {
-          if (any(is.na(data[[col]]))) {
-            if (is.numeric(ref_data[[col]])) {
-              data[[col]][is.na(data[[col]])] <- median(ref_data[[col]], na.rm = TRUE)
-            } else if (is.factor(ref_data[[col]])) {
-              mode_value <- names(which.max(table(ref_data[[col]], useNA = "no")))
-              data[[col]][is.na(data[[col]])] <- mode_value
-            }
-          }
-        }
-        return(data)
-      }
-      
-      # Imputeoor for Ranger (Out-of-Range-Level)
-      imputeoor <- function(data, ref_data) {
-        for (col in colnames(data)) {
-          if (is.factor(data[[col]])) {
-            known_levels <- levels(ref_data[[col]])
-            unknown_idx <- !data[[col]] %in% known_levels
-            if (any(unknown_idx, na.rm = TRUE)) {
-              # All unknown levels to NA 
-              data[[col]][unknown_idx] <- NA
-            }
-          }
-        }
-        return(data)
-      }
-      
       # Missing indices
       missing_idx <- missing_indices[[var]]
       if (length(missing_idx) == 0) next
@@ -2078,7 +2002,7 @@ vimpute <- function(
           
           # Ranger-specific handling for new levels
           if (method_var == "ranger") {
-            backend_data <- imputeoor(backend_data, data_temp)
+            backend_data <- set_out_of_range_factor_levels_to_na(backend_data, data_temp)
           }
           
           # Impute Missing Values
@@ -2094,7 +2018,7 @@ vimpute <- function(
           backend_data <- enforce_factor_levels(backend_data, factor_levels)
           
           if (method_var == "ranger") {
-            backend_data <- imputeoor(backend_data, data_temp)
+            backend_data <- set_out_of_range_factor_levels_to_na(backend_data, data_temp)
           }
           
           if (!supports_missing) {
@@ -2112,7 +2036,7 @@ vimpute <- function(
           class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
           
           if (method_var == "ranger") {
-            class_pred_data <- imputeoor(class_pred_data, data_temp)
+            class_pred_data <- set_out_of_range_factor_levels_to_na(class_pred_data, data_temp)
           }
           
           if (anyNA(class_pred_data)) { # Nnew
@@ -2132,7 +2056,7 @@ vimpute <- function(
         reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
         
         if (method_var == "ranger") { #Nnew
-          reg_pred_data <- imputeoor(reg_pred_data, data_temp) #Nnew
+          reg_pred_data <- set_out_of_range_factor_levels_to_na(reg_pred_data, data_temp) #Nnew
         }
         
         # Replace new levels (Log-Regression) with modus
@@ -2155,345 +2079,41 @@ vimpute <- function(
       }
 ### Identify NAs End ###
       
-### *****Select suitable task type Start***** ###################################################################################################
-      
-      if (!is_sc) {
-        
-        if (is.numeric(data_temp[[target_col]])) {
-          backend_dt <- if (inherits(backend_data, "DataBackend")) {
-            rows <- backend_data$row_ids
-            if (is.null(rows)) rows <- seq_len(backend_data$nrow)
-            as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
-          } else {
-            as.data.table(backend_data)
-          }
-          if (anyNA(backend_dt[[target_col]])) {
-            backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <-
-              median(data_temp[[target_col]], na.rm = TRUE)
-          }
-          pred_task <- TaskRegr$new(
-            id = target_col,
-            backend = backend_dt,
-            target = target_col
-          )
-        } else if (is.factor(data_temp[[target_col]])) {
-          backend_dt <- if (inherits(backend_data, "DataBackend")) {
-            rows <- backend_data$row_ids
-            if (is.null(rows)) rows <- seq_len(backend_data$nrow)
-            as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
-          } else {
-            as.data.table(backend_data)
-          }
-          if (anyNA(backend_dt[[target_col]])) {
-            mode_value <- names(which.max(table(data_temp[[target_col]], useNA = "no")))
-            backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <- mode_value
-          }
-          pred_task <- TaskClassif$new(
-            id = target_col,
-            backend = backend_dt,
-            target = target_col
-          )
-        } else {
-          stop("Error: Target variable is neither numeric nor a factor!")
-        }
-      }
-      
-### Select suitable task type End ####
-      
 ### *****Predict Start***** ###################################################################################################
       if(verbose){
         message("***** Predict")
       }
-      
-      if (is_sc) {
-
-        zero_flag_col <- paste0(var, "_zero_flag")
-        zero_prob_col <- paste0(var, "_zero_prob")     # numeric Prob-column
-        relevant_features <- setdiff(names(data_temp), c(var, zero_flag_col, zero_prob_col))
-        
-        # 1) classification (null vs positive) P(Y > 0 | X)
-        class_learner <- learner$classifier
-        
-        # Safety: classifier -> probabilities 
-        if ("prob" %in% class_learner$predict_types) {
-          class_learner$predict_type <- "prob"
-        } else {
-          class_learner$predict_type <- "response"  # Fallback
-          warning(sprintf("predict_type 'prob' not supported by learner '%s'; fallback to 'response'", class_learner$id))
-        }
-        
-        class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
-
-        # Factor Level Handling
-        class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
-        check_all_factor_levels(class_pred_data, factor_levels)
-        
-        supports_missing_cls <- "missings" %in% class_learner$properties
-        # If no missings accepted -> NAs in Newdata 
-        
-        if (anyNA(class_pred_data)) {
-          class_pred_data <- impute_missing_values(class_pred_data, data_temp)
-        }
-        
-        factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
-
-        # ensure reserve level exists in prediction data ###
-        reserve_level <- ".__IMPUTEOOR_NEW__"
-        for (col in factor_cols) {
-          train_levels <- factor_levels[[col]]
-          if (!(reserve_level %in% train_levels)) train_levels <- c(train_levels, reserve_level)
-          # All unknown levels -> reserve_level
-          class_pred_data[[col]][!class_pred_data[[col]] %in% train_levels] <- reserve_level
-          # Set factor levels 
-          class_pred_data[[col]] <- factor(class_pred_data[[col]], levels = train_levels)
-        }
-        
-        # Prediction
-        pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
-        # pred_probs[, "positive"] = P(Y>0 | X)
-        pi_hat <- if (!is.null(pred_probs) && "positive" %in% colnames(pred_probs)) {
-          pred_probs[, "positive"]
-        } else {
-          # Fallback 'response'
-          as.numeric(class_learner$predict_newdata(class_pred_data)$response == "positive")
-        }
-        
-        
-        # Save probability in the main dataset (stable row count)
-        if (!zero_prob_col %in% names(data)) {
-          data[[zero_prob_col]] <- NA_real_
-        }
-        data[[zero_prob_col]][missing_idx] <- pi_hat
-        
-        # 2) regression: for positive predictions E[Y | Y > 0, X]
-        reg_learner <- learner$regressor
-        reg_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
-        
-        # Factorlevels
-        reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
-        check_all_factor_levels(reg_pred_data, factor_levels)
-        
-        # Fill NA in feature
-        if (anyNA(reg_pred_data)) {
-          reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[missing_idx])
-        }
-        
-        preds_reg <- NULL
-        if (method_var == "ranger" && isTRUE(ranger_median) && !is.null(reg_learner)) {
-          preds_reg <- predict_ranger_median(reg_learner, reg_pred_data, target_name = NULL)
-        }
-        if (is.null(preds_reg)) {
-          if (is.null(reg_learner) || !is.function(reg_learner$predict_newdata)) {
-            positive_values <- data_temp[[var]][!is.na(data_temp[[var]]) & data_temp[[var]] > 0]
-            fallback_positive <- if (length(positive_values) > 0) {
-              stats::median(positive_values)
-            } else {
-              0
-            }
-            preds_reg <- rep(fallback_positive, nrow(reg_pred_data))
-          } else {
-            preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response  # E[Y | Y>0, X]
-          }
-        }
-        
-        # Combine results, Impuatation = deterministic
-        # Y_imputed = P(Y > 0 | X) * E[Y | Y > 0, X]
-        preds <- pi_hat * preds_reg
-        # data_temp[[var]][missing_idx] <- preds
-        
-      } else {
-        # Not semicontinuous
-        bdt <- as.data.table(backend_data)
-        bdt <- enforce_factor_levels(bdt, factor_levels)
-        check_all_factor_levels(bdt, factor_levels)
-        
-        if (method_var == "ranger") { 
-          bdt <- imputeoor(bdt, data_temp) 
-        }
-        
-        if (anyNA(bdt)) {
-          bdt <- impute_missing_values(bdt, data_temp)
-        }
-        
-        backend_data <- mlr3::as_data_backend(bdt)
-        
-        if (is.factor(data_temp[[target_col]])) {
-          backend_dt <- if (inherits(backend_data, "DataBackend")) {
-            rows <- backend_data$row_ids
-            if (is.null(rows)) rows <- seq_len(backend_data$nrow)
-            as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
-          } else {
-            as.data.table(backend_data)
-          }
-          if (anyNA(backend_dt[[target_col]])) {
-            mode_value <- names(which.max(table(data_temp[[target_col]], useNA = "no")))
-            backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <- mode_value
-          }
-          pred_task <- TaskClassif$new(
-            id = target_col,
-            backend = backend_dt,
-            target = target_col
-          )
-          
-          learner$predict_type <- "prob"
-          pred_probs <- learner$predict(pred_task)$prob
-          pred_probs <- as.matrix(pred_probs)
-          bad_probs <- !is.finite(pred_probs)
-          if (any(bad_probs)) {
-            pred_probs[bad_probs] <- 0
-          }
-          row_sums <- rowSums(pred_probs)
-          bad_rows <- !is.finite(row_sums) | row_sums <= 0
-          if (any(bad_rows)) {
-            pred_probs[bad_rows, ] <- 1 / ncol(pred_probs)
-            row_sums[bad_rows] <- 1
-          }
-          pred_probs <- pred_probs / row_sums
-          
-          if (isFALSE(sequential) || i == nseq) {
-            preds <- apply(pred_probs, 1, function(probs) {
-              sample(levels(data_temp[[target_col]]), size = 1, prob = probs)
-            })
-          } else {
-            preds <- apply(pred_probs, 1, which.max)
-            preds <- levels(data_temp[[target_col]])[preds]
-          }
-          
-        } else {
-          backend_dt <- if (inherits(backend_data, "DataBackend")) {
-            rows <- backend_data$row_ids
-            if (is.null(rows)) rows <- seq_len(backend_data$nrow)
-            as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
-          } else {
-            as.data.table(backend_data)
-          }
-          if (anyNA(backend_dt[[target_col]])) {
-            backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <-
-              median(data_temp[[target_col]], na.rm = TRUE)
-          }
-          pred_task <- TaskRegr$new(
-            id = target_col,
-            backend = backend_dt,
-            target = target_col
-          )
-          preds <- NULL
-          if (method_var == "ranger" && isTRUE(ranger_median)) {
-            preds <- predict_ranger_median(learner, bdt, target_name = target_col)
-          }
-          if (is.null(preds)) {
-            preds <- learner$predict(pred_task)$response
-          }
-        }
-      }
-      
-      if (!is.null(lhs_transformation)) {
-        preds <- inverse_transform(preds, lhs_transformation)
-      }
-      
-      if (inherits(preds, "numeric")) {
-        decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
-        preds <- round(preds, decimal_places)
-      }
-      
-      # Store model score used for prediction for pmm (numeric targets only)
-      if (inherits(preds, "numeric")) {
-        miss_idx <- missing_indices[[var]]
-        obs_idx <- setdiff(seq_len(nrow(data)), miss_idx)
-        
-        # Store score for PMM
-        score_current <- numeric(nrow(data))
-        score_current[obs_idx] <- data[[var]][obs_idx]       # observed values
-        score_current[miss_idx] <- preds        # predictions for missing rows
-      }
-
-      # --- Uncertainty injection (normalerror / resid / pmm / midastouch) ---
-      if (uncert != "none" && !has_any_pmm && inherits(preds, "numeric") && !is_sc) {
-        uncert_args <- list(preds = preds, method = uncert)
-
-        if (uncert %in% c("normalerror", "resid") && !is.null(stored_model_info)) {
-          uncert_args$scale <- stored_model_info$scale
-          uncert_args$residuals <- stored_model_info$residuals
-        }
-
-        if (uncert == "pmm") {
-          miss_idx_u <- missing_indices[[var]]
-          obs_idx_u <- setdiff(seq_len(nrow(data)), miss_idx_u)
-          uncert_args$y_obs <- data[[var]][obs_idx_u]
-          uncert_args$score_obs <- score_current[obs_idx_u]
-          uncert_args$score_miss <- score_current[miss_idx_u]
-          uncert_args$pmm_k <- 5L
-          uncert_args$pmm_k_method <- "random"
-        }
-
-        if (uncert == "midastouch") {
-          miss_idx_u <- missing_indices[[var]]
-          obs_idx_u <- setdiff(seq_len(nrow(data)), miss_idx_u)
-          uncert_args$y_obs <- data[[var]][obs_idx_u]
-          uncert_args$score_obs <- score_current[obs_idx_u]
-          uncert_args$score_miss <- score_current[miss_idx_u]
-          uncert_args$pmm_k <- 5L
-          feat_names <- setdiff(names(data), var)
-          num_feats <- feat_names[sapply(feat_names, function(f) is.numeric(data[[f]]))]
-          if (length(num_feats) > 0) {
-            uncert_args$X_obs <- as.matrix(data[obs_idx_u, num_feats, with = FALSE])
-            uncert_args$X_miss <- as.matrix(data[miss_idx_u, num_feats, with = FALSE])
-          }
-        }
-
-        preds <- do.call(inject_uncertainty, uncert_args)
-
-        # Re-round after uncertainty injection
-        if (exists("decimal_places")) {
-          preds <- round(preds, decimal_places)
-        }
-      }
+      prediction_result <- predict_imputations(
+        is_sc = is_sc,
+        var = var,
+        data = data,
+        data_temp = data_temp,
+        missing_idx = missing_idx,
+        feature_cols = feature_cols,
+        learner = learner,
+        factor_levels = factor_levels,
+        backend_data = backend_data,
+        target_col = target_col,
+        method_var = method_var,
+        ranger_median = ranger_median,
+        sequential = sequential,
+        i = i,
+        nseq = nseq,
+        lhs_transformation = lhs_transformation,
+        missing_indices = missing_indices,
+        pmm = pmm,
+        pmm_k = pmm_k,
+        pmm_k_method = pmm_k_method,
+        uncert = uncert,
+        has_any_pmm = has_any_pmm,
+        stored_model_info = stored_model_info,
+        verbose = verbose
+      )
+      preds <- prediction_result$preds
+      convergence_preds <- prediction_result$convergence_preds
+      pred_task <- prediction_result$pred_task
+      data <- prediction_result$data
 ### Predict End ###################################################################################################
-      
-### ***** PMM / Score-kNN Start ***** ###################################################################################################
-      if(verbose){
-        message("***** PMM / Score-kNN for predictions")
-      }
-      
-      if (pmm[[var]] && is.numeric(data_temp[[var]]) && length(miss_idx) > 0) {
-        
-        # Observed values
-        y_obs <- data[[var]][obs_idx]
-        
-        if (pmm_k[[var]] >= 1 && is.numeric(data_temp[[var]])) {
-          # Score-based kNN PMM (1D score, numeric targets only)
-          score_obs  <- score_current[obs_idx]
-          score_miss <- score_current[miss_idx]
-          k <- min(pmm_k[[var]], length(y_obs))
-          pmm_method_var <- pmm_k_method[[var]]
-          
-          preds <- sapply(score_miss, function(s) {
-            idx <- order(abs(score_obs - s))[1:k]  # find k nearest neighbors
-            neighbors <- y_obs[idx]
-            if (is.function(pmm_method_var)) {
-              agg <- pmm_method_var(neighbors)
-              if (length(agg) != 1L || !is.numeric(agg) || is.na(agg)) {
-                stop(sprintf(
-                  "pmm_k_method function for '%s' must return exactly one non-missing numeric value.",
-                  var
-                ))
-              }
-              as.numeric(agg)
-            } else if (pmm_method_var == "mean") {
-              mean(neighbors)
-            } else if (pmm_method_var == "median") {
-              median(neighbors)
-            } else {
-              sample(neighbors, 1)
-            }
-          })
-        }
-        
-        # Round only final imputation
-        decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
-        preds <- round(preds, decimal_places)
-        #preds <- preds[miss_idx]
-      }
-### PMM / Score-kNN End ###
       
       
 ### *****Prediction History Start***** ###################################################################################################
@@ -2514,292 +2134,64 @@ vimpute <- function(
       if(verbose){
         message(paste("***** Replace values with new predictions"))
       }
-      # preds <- preds[miss_idx]
-      if (length(missing_idx) > 0) {
-        
-        # orginal numeric
-        is_target_numeric <- is.numeric(original_data[[var]])
-        
-        if (is_target_numeric) {
-          # if factor because of semicontinous -> numeric
-          if (is.factor(data[[var]])) {
-            data[, (var) := as.numeric(as.character(get(var)))]
-          }
-          if (exists("data_new") && is.factor(data_new[[var]])) {
-            data_new[, (var) := as.numeric(as.character(get(var)))]
-          }
-          
-          # numeric imputation
-          data[missing_idx, (var) := as.numeric(preds)]
-          
-        } else if (is.factor(original_data[[var]])) {
-          
-          # factor imputation
-          data[missing_idx, (var) := factor(preds, levels = factor_levels[[var]])]
-          
-        } else {
-          stop(paste("Unknown data type for variable:", var))
-        }
-        
-        data <- copy(data)
-      }
-      
+      imputation_result <- apply_imputations(
+        data = data,
+        data_new = data_new,
+        convergence_data = convergence_data,
+        var = var,
+        missing_idx = missing_idx,
+        preds = preds,
+        convergence_preds = convergence_preds,
+        original_data = original_data,
+        factor_levels = factor_levels,
+        imp_var = imp_var
+      )
+      data <- imputation_result$data
+      data_new <- imputation_result$data_new
+      convergence_data <- imputation_result$convergence_data
 ### Replace missing values with predicted values End ###
-      
-### *****Import Variable Start***** ###################################################################################################
-      if(verbose){
-        message(paste("***** Import Variable (imp_var = TRUE)"))
-      }
-      if (length(missing_idx) > 0) {
-        if (imp_var) {
-          imp_col <- paste0(var, "_imp")    # Name  _imp-Spalte
-          
-          # Check whether the variable contains missing values using `missing_idx`.
-          if (!is.null(missing_idx) && length(missing_idx) > 0) {
-            # If `_imp` column does not exist, create it as a boolean variable
-            if (!(imp_col %in% colnames(data_new))) {
-              data_new[, (imp_col) := FALSE]
-            }
-            
-            data_new[, (var) := data[[var]]]
-            
-            # Ensure that `preds` is not NULL or empty
-            if (length((preds)) == length(missing_idx) && !all(is.na((preds)))) {
-              # Set the imputation as TRUE for missing values
-              set(data_new, i = missing_idx, j = imp_col, value = TRUE)
-            } else {
-              warning(paste("Warning: `preds` is empty or does not have the same length as `missing_idx` for ", var))
-            }
-          }
-        }
-      }
+
       var_end_time <- Sys.time()
       var_time <- difftime(var_end_time, var_start_time, units = "secs")
       iteration_times[[var]] <- round(as.numeric(var_time), 2)
       if(verbose){
-        message(paste("time used for", var, ":", iteration_times[[var]], "Sekunden"))
+        message(paste("time used for", var, ":", iteration_times[[var]], "seconds"))
       }
     }
-### Import Variable END ###
+### Variable loop END ###
     
 ### *****Stop Criteria Start***** ###################################################################################################
-    if (sequential && i != 1) {
-      
-      num_diff <- 0
-      cat_diff <- 0
-      
-      # Variables with missings
-      for (v in variables_NA) {
-        
-        idx <- missing_indices[[v]]
-        if (length(idx) == 0) next  # no NAs
-        
-        old_vals <- data_prev[[v]][idx]  # values of earlier iterations
-        new_vals <- data[[v]][idx]       # actual values
-        
-        # numeric
-        if (is.numeric(original_data[[v]])) {
-          
-          d_var <- mean((new_vals - old_vals)^2, na.rm = TRUE)
-          if (is.finite(d_var)) {
-            num_diff <- num_diff + d_var
-          }
-          
-          # categorical
-        } else if (is.factor(original_data[[v]])) {
-          
-          old_chr <- as.character(old_vals)
-          new_chr <- as.character(new_vals)
-          
-          # Proportion of imputed cells whose class has changed
-          d_var <- mean(old_chr != new_chr, na.rm = TRUE)
-          if (is.finite(d_var)) {
-            cat_diff <- cat_diff + d_var
-          }
-        }
-        
-      } # end for v in variables_NA
-      
-      total_diff <- num_diff + cat_diff
-      
-      if (verbose) {
-        message(sprintf(
-          "Iteration %d: num_diff = %.6f, cat_diff = %.6f, total_diff = %.6f",
-          i, num_diff, cat_diff, total_diff
-        ))
-      }
-      
-      # Convergence
-      if (total_diff < eps) {
-        no_change_counter <- no_change_counter + 1
-        if (no_change_counter >= 2) {
-          if (verbose) {
-            message("Convergence achieved after two consecutive iterations without changes in imputations")
-            print(paste("stop after", i, "iterations"))
-          }
-          
-          # factor targets
-          if (is.factor(data_temp[[target_col]])) {
-            learner$predict_type <- "prob"
-            pred_probs <- learner$predict(pred_task)$prob
-            
-            formatted_output <- capture.output(print(pred_probs))
-            
-            if (is.null(pred_probs)) {
-              stop("Error in the calculation of prediction probabilities.")
-            }
-            pred_probs <- as.matrix(pred_probs)
-            bad_probs <- !is.finite(pred_probs)
-            if (any(bad_probs)) {
-              pred_probs[bad_probs] <- 0
-            }
-            row_sums <- rowSums(pred_probs)
-            bad_rows <- !is.finite(row_sums) | row_sums <= 0
-            if (any(bad_rows)) {
-              pred_probs[bad_rows, ] <- 1 / ncol(pred_probs)
-              row_sums[bad_rows] <- 1
-            }
-            pred_probs <- pred_probs / row_sums
-            
-            preds <- apply(pred_probs, 1, function(probs) {
-              sample(levels(data_temp[[target_col]]), size = 1, prob = probs) # at last iteration: stochastic class assignment
-            })
-          }
-          
-          break
-        }
-      } else {
-        no_change_counter <- 0
-      }
-      
-    } else {
-      no_change_counter <- 0
+    convergence_result <- check_convergence(
+      sequential = sequential,
+      i = i,
+      variables_NA = variables_NA,
+      missing_indices = missing_indices,
+      convergence_prev = convergence_prev,
+      convergence_data = convergence_data,
+      original_data = original_data,
+      eps = eps,
+      no_change_counter = no_change_counter,
+      verbose = verbose,
+      data_temp = data_temp,
+      target_col = target_col,
+      learner = learner,
+      pred_task = pred_task
+    )
+    no_change_counter <- convergence_result$no_change_counter
+    if (isTRUE(convergence_result$should_break)) {
+      break
     }
   }
-    
-  #   if (sequential && i != 1) {
-  #     is_dt <- inherits(data, "data.table")
-  #     
-  #     # Automatic detection of the variable types
-  #     numeric_cols <- names(data)[sapply(data, is.numeric)]
-  #     factor_cols <- names(data)[sapply(data, is.factor)]
-  #     
-  #     # Calculation of numerical differences
-  #     if (length(numeric_cols) > 0) {  
-  #       epsilon <- 1e-8  # Avoid division by zero  
-  #       
-  #       if (is_dt) {  
-  #         # Calculate standard deviation of each column in data_prev  
-  #         std_dev <- sapply(data_prev[, mget(numeric_cols)], sd, na.rm = TRUE)  
-  #         
-  #         # Calculate normalized relative change  
-  #         num_diff <- sum(abs(data[, mget(numeric_cols)] - data_prev[, mget(numeric_cols)]) /  
-  #                           (std_dev + epsilon), na.rm = TRUE)
-  #       } else {  
-  #         std_dev <- sapply(data_prev[, numeric_cols, drop = FALSE], sd, na.rm = TRUE)  
-  #         num_diff <- sum(abs(data[, numeric_cols, drop = FALSE] - data_prev[, numeric_cols, drop = FALSE]) /  
-  #                           (std_dev + epsilon), na.rm = TRUE)
-  #       }  
-  #     } else {  
-  #       num_diff <- 0  
-  #     }
-  #     
-  #     
-  #     if (length(factor_cols) > 0) {
-  #       
-  #       # comparison as character
-  #       data_fac_chr      <- data[,       lapply(.SD, as.character), .SDcols = factor_cols]
-  #       data_prev_fac_chr <- data_prev[,  lapply(.SD, as.character), .SDcols = factor_cols]
-  #       
-  #       # Differences
-  #       cat_changes <- sum(data_fac_chr != data_prev_fac_chr, na.rm = TRUE)
-  #       total_cat_values <- sum(!is.na(data_prev_fac_chr))
-  #       
-  #       cat_diff <- if (total_cat_values > 0) {
-  #         cat_changes / (total_cat_values + 1e-8)
-  #       } else {
-  #         0
-  #       }
-  #       
-  #     } else {
-  #       cat_diff <- 0  # If there are no categorical columns
-  #     }
-  #     
-  #     # Calculate total change
-  #     total_diff <- num_diff + cat_diff
-  #     
-  #     # Prove convergence
-  #     if (total_diff < eps) {
-  #       no_change_counter <- no_change_counter + 1
-  #       if (no_change_counter >= 2) {
-  #         if(verbose){
-  #           message("Convergence achieved after two consecutive iterations without changes")
-  #           print(paste("stop after", i, "iterations"))
-  #         }
-  #         
-  #         if (is.factor(data_temp[[target_col]])) {
-  #           
-  #           if (method_var == "ranger") {
-  #             mod <- "classif.ranger"
-  #           }
-  #           
-  #           if (method_var == "xgboost") {
-  #             mod <- "classif.xgboost"
-  #           }
-  #           
-  #           if (method_var == "regularized") {
-  #             mod <- "classif.glmnet"
-  #           }
-  #           
-  #           if (method_var == "robust") {
-  #             mod <- "classif.glm_rob"
-  #           }
-  #           
-  #           learner$model[[mod]]$param_set$values$predict_type <- "prob"
-  #           pred_probs <- learner$predict(pred_task)$prob
-  #           
-  #           formatted_output <- capture.output(print(pred_probs))
-  #           
-  #           if (is.null(pred_probs)) {
-  #             stop("Error in the calculation of prediction probabilities.")
-  #           }
-  #           
-  #           preds <- apply(pred_probs, 1, function(probs) {
-  #             sample(levels(data_temp[[target_col]]), size = 1, prob = probs) # at last iteration: stochastic class assignment
-  #           })
-  #         }
-  #         
-  #         break
-  #       }
-  #     } else {
-  #       no_change_counter <- 0
-  #     }
-  #   } else {
-  #     no_change_counter <- 0
-  #   }
-  # }
 ### Stop criteria END ###
   
-  result <- as.data.table(if (imp_var) data_new else data)  # Default: Return `data` only
-  result <- enforce_factor_levels(result, factor_levels)
-  
-  
-  any_tuned <- any(unlist(tune))
-  
-  if (!pred_history && !any_tuned) {
-    return(result)
-  }
-  
-  
-  output <- list(data = result)   
-  
-  if (pred_history) {
-    pred_result <- rbindlist(history, fill = TRUE)
-    output$pred_history <- pred_result
-  }
-  if (any_tuned) {
-    output$tuning_log <- tuning_log
-    
-  } 
-  return(output)    
+  return(build_vimpute_result(
+    data = data,
+    data_new = data_new,
+    imp_var = imp_var,
+    factor_levels = factor_levels,
+    pred_history = pred_history,
+    history = history,
+    tune = tune,
+    tuning_log = tuning_log
+  ))
 }
