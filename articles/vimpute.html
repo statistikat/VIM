@@ -150,8 +150,15 @@ lists for each variable (e.g. <code>ranger</code> settings such as
 <code>formula</code>: If not all variables are used as predictors,
 or if transformations or interactions are required (applies to all X,
 for Y only transformations are possible). Only applicable for the
-methods “robust” and “regularized”. Provide as a list for each variable
-that requires specific conditions.</li>
+methods <code>"robust"</code>, <code>"regularized"</code>,
+<code>"gam"</code> and <code>"robgam"</code>. Provide as a list for each
+variable that requires specific conditions.</li>
+<li>
+<code>makeNA</code>: Optional named list of values that should be
+treated as imputable missing values for selected variables.</li>
+<li>
+<code>donorcond</code>: Optional named list of donor conditions used
+to restrict the observed training values for selected variables.</li>
 <li>
 <code>sequential</code>: Specifies whether the imputation should be
 performed sequentially.</li>
@@ -172,6 +179,19 @@ history.</li>
 <li>
 <code>verbose</code>: If enabled, prints additional debugging
 output.</li>
+<li>
+<code>boot</code>: Whether to refit models on bootstrap samples to
+add model uncertainty.</li>
+<li>
+<code>robustboot</code>: Bootstrap sampling strategy used when
+<code>boot = TRUE</code>.</li>
+<li>
+<code>uncert</code>: Prediction uncertainty method
+(<code>"none"</code>, <code>"normalerror"</code>, <code>"resid"</code>,
+<code>"pmm"</code>, <code>"midastouch"</code>).</li>
+<li>
+<code>m</code>: Number of multiple imputations. If
+<code>m &gt; 1</code>, a <code>vimmi</code> object is returned.</li>
 </ul>
 </div>
 </div>
@@ -300,13 +320,28 @@ logit, multiclass via one-vs-rest</li>
 <ul>
 <li>State-of-the-art tree boosting<br>
 </li>
-<li>Handles mixed data types well</li>
+<li>Handles mixed data types well<br>
+</li>
+</ul>
+</li>
+<li>
+<strong><code>"gam"</code></strong>: Generalized Additive Models
+(<code>mgcv</code>)
+<ul>
+<li>Supports smooth terms for numeric predictors</li>
+<li>Can be used for numeric and factor targets</li>
+</ul>
+</li>
+<li>
+<strong><code>"robgam"</code></strong>: Robust GAM
+<ul>
+<li>Adds robust weighting / refitting to GAM-style models</li>
+<li>Designed for settings with potential outliers</li>
 </ul>
 </li>
 </ul>
-<p>You can provide <code>method</code> globally as a single
-value/function (applies to all variables), or as a named list per
-variable.</p>
+<p>You can provide <code>method</code> globally as a single method name
+(applies to all variables), or as a named list per variable.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result_mixed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">data</span>,</span>
@@ -355,7 +390,11 @@ the <code>k</code> nearest donors using <code>pmm_k_method</code>
 (e.g. <code>"mean"</code>, <code>"median"</code>, <code>"random"</code>
 or a custom function).<br>
 If <code>pmm = FALSE</code>, raw model predictions are used.</p>
-<p>You can provide <code>pmm</code> globally as a single value/function
+<p>In sequential imputation, the convergence criterion is computed from
+the raw model prediction when PMM is active. This avoids unstable
+stopping behavior caused by stochastic or donor-based PMM values while
+still returning the PMM-imputed values in the final data.</p>
+<p>You can provide <code>pmm</code> globally as a single logical value
 (applies to all numeric variables), or as a named list per variable.</p>
 </div>
 <div class="section level4">
@@ -364,8 +403,8 @@ If <code>pmm = FALSE</code>, raw model predictions are used.</p>
 <p><small><em>(default: NULL)</em></small></p>
 <p><code>pmm_k</code> defines how many nearest donor candidates are
 considered when PMM is enabled.</p>
-<p>You can provide <code>pmm_k</code> globally as a single
-value/function (applies to all variables), or as a named list per
+<p>You can provide <code>pmm_k</code> globally as a single integer value
+(applies to all variables where PMM is active), or as a named list per
 variable.</p>
 </div>
 <div class="section level4">
@@ -405,6 +444,16 @@ list per variable.</p>
 <span>    Sleep <span class="op">=</span> <span class="st">"random"</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>Custom aggregation functions are also possible. The function receives
+the nearest donor values and must return exactly one non-missing numeric
+value.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">data</span>,</span>
+<span>  pmm <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Dream <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  pmm_k <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Dream <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,</span>
+<span>  pmm_k_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Dream <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">x</span>, trim <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="parameter-learner_params">Parameter <code>learner_params</code><a class="anchor" aria-label="anchor" href="#parameter-learner_params"></a>
@@ -417,7 +466,7 @@ and each method should receive its own parameter configuration.</p>
 <p>You can provide <code>learner_params</code> globally (when one method
 is used for all variables), as a method-level list, or as a named list
 per variable.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">data</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Dream <span class="op">=</span> <span class="st">"ranger"</span>, Sleep <span class="op">=</span> <span class="st">"xgboost"</span><span class="op">)</span>,</span>
@@ -444,7 +493,7 @@ imputing a particular variable</p></li>
 variables</p></li>
 <li>
 <p>Example:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">formula</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="va">income</span> <span class="op">~</span> <span class="va">education</span> <span class="op">+</span> <span class="va">age</span>,</span>
 <span>  <span class="va">blood_pressure</span> <span class="op">~</span> <span class="va">weight</span> <span class="op">+</span> <span class="va">age</span></span>
@@ -467,7 +516,7 @@ variables</p></li>
 </li>
 <li>
 <p>Example with transformations:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">formula</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">income</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/poly.html" class="external-link">poly</a></span><span class="op">(</span><span class="va">age</span>, <span class="fl">2</span><span class="op">)</span> <span class="op">+</span> <span class="va">education</span>,</span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">blood_pressure</span><span class="op">)</span> <span class="op">~</span> <span class="va">weight</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="fl">1</span><span class="op">/</span><span class="va">age</span><span class="op">)</span></span>
@@ -482,7 +531,7 @@ variables</p></li>
 syntax (on the right side)</p></li>
 <li>
 <p>Example:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">formula</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="va">price</span> <span class="op">~</span> <span class="va">sqft</span> <span class="op">*</span> <span class="va">neighborhood</span> <span class="op">+</span> <span class="va">year_built</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -491,15 +540,16 @@ syntax (on the right side)</p></li>
 </li>
 </ol>
 <p><strong>Example Demonstration:</strong></p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">vimpute</span>(</span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">method =</span> <span class="fu">setNames</span>(<span class="fu">as.list</span>(<span class="fu">rep</span>(<span class="st">"regularized"</span>, <span class="fu">ncol</span>(data))), <span class="fu">names</span>(data))</span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="at">formula =</span> <span class="fu">list</span>(</span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>    NonD <span class="sc">~</span> Dream <span class="sc">+</span> Sleep,              <span class="co"># Linear combination</span></span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>    Span <span class="sc">~</span> Dream<span class="sc">:</span>Sleep <span class="sc">+</span> Gest,         <span class="co"># With interaction term</span></span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>    <span class="fu">log</span>(Gest) <span class="sc">~</span> Sleep <span class="sc">+</span> <span class="fu">exp</span>(Span)      <span class="co"># With transformations</span></span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>  )</span>
-<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">data</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">as.list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"regularized"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  formula <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    <span class="va">NonD</span> <span class="op">~</span> <span class="va">Dream</span> <span class="op">+</span> <span class="va">Sleep</span>,              <span class="co"># Linear combination</span></span>
+<span>    <span class="va">Span</span> <span class="op">~</span> <span class="va">Dream</span><span class="op">:</span><span class="va">Sleep</span> <span class="op">+</span> <span class="va">Gest</span>,         <span class="co"># With interaction term</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">Gest</span><span class="op">)</span> <span class="op">~</span> <span class="va">Sleep</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">Span</span><span class="op">)</span>      <span class="co"># With transformations</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p><strong>Interpreting the Example:</strong></p>
 <ol style="list-style-type: decimal">
 <li>For <code>NonD</code>:
@@ -537,20 +587,137 @@ are used as predictors</li>
 </ol>
 <p><strong>Notes:</strong></p>
 <ul>
-<li>Only works with methods <code>"robust"</code> and
-<code>"regularized"</code>
+<li>Only works with methods <code>"robust"</code>,
+<code>"regularized"</code>, <code>"gam"</code> and
+<code>"robgam"</code>
 </li>
 <li>All model.matrix-compatible functions work for predictors (for more
 information see ?model.matrix)</li>
 <li>Response transformations (left side) are automatically
 back-transformed</li>
 </ul>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result_gam</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">data</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Gest <span class="op">=</span> <span class="st">"gam"</span><span class="op">)</span>,</span>
+<span>  formula <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Gest <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">Gest</span><span class="op">)</span> <span class="op">~</span> <span class="va">Sleep</span> <span class="op">+</span> <span class="va">Dream</span> <span class="op">+</span> <span class="va">Span</span><span class="op">)</span>,</span>
+<span>  sequential <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level4">
+<h4 id="parameter-makena">Parameter <code>makeNA</code><a class="anchor" aria-label="anchor" href="#parameter-makena"></a>
+</h4>
+<p><small><em>(default: NULL)</em></small></p>
+<p><code>makeNA</code> defines values that should be treated as missing
+for selected variables. This is useful when special codes such as
+<code>-999</code>, <code>"unknown"</code> or <code>"not measured"</code>
+should be imputed, while regular <code>NA</code> values in the same
+variable should remain untouched.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">data</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Dream <span class="op">=</span> <span class="st">"ranger"</span><span class="op">)</span>,</span>
+<span>  makeNA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Dream <span class="op">=</span> <span class="op">-</span><span class="fl">999</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>If a variable is listed in <code>makeNA</code>, only the matching
+values are imputed for that variable. Variables not listed in
+<code>makeNA</code> continue to use regular <code>NA</code> values as
+the imputation target.</p>
+</div>
+<div class="section level4">
+<h4 id="parameter-donorcond">Parameter <code>donorcond</code><a class="anchor" aria-label="anchor" href="#parameter-donorcond"></a>
+</h4>
+<p><small><em>(default: NULL)</em></small></p>
+<p><code>donorcond</code> restricts which observed values are allowed to
+act as donors / training observations for a target variable. Conditions
+are supplied as character strings and evaluated on the target values via
+the temporary variable <code>x</code>.</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">data</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Dream <span class="op">=</span> <span class="st">"ranger"</span><span class="op">)</span>,</span>
+<span>  donorcond <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Dream <span class="op">=</span> <span class="st">"&gt; quantile(x, 0.1, na.rm = TRUE)"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>This can be useful when implausible observed values should not be
+used for model fitting, while the target variable itself remains part of
+the imputation workflow.</p>
+</div>
+<div class="section level4">
+<h4 id="parameters-boot-robustboot-and-uncert">Parameters <code>boot</code>, <code>robustboot</code> and
+<code>uncert</code><a class="anchor" aria-label="anchor" href="#parameters-boot-robustboot-and-uncert"></a>
+</h4>
+<p><small><em>(defaults: <code>boot = FALSE</code>,
+<code>robustboot = "stratified"</code>,
+<code>uncert = "none"</code>)</em></small></p>
+<p>These arguments control additional imputation uncertainty.</p>
+<ul>
+<li>
+<code>boot = TRUE</code> refits the imputation model on a bootstrap
+sample.</li>
+<li>
+<code>robustboot</code> controls how bootstrap rows are sampled
+(<code>"standard"</code>, <code>"stratified"</code> or
+<code>"residual"</code>).</li>
+<li>
+<code>uncert</code> adds uncertainty to numeric predictions:
+<ul>
+<li>
+<code>"normalerror"</code> adds normal noise using the model scale
+estimate.</li>
+<li>
+<code>"resid"</code> adds sampled residuals.</li>
+<li>
+<code>"pmm"</code> uses score-based predictive mean matching.</li>
+<li>
+<code>"midastouch"</code> uses PMM with covariate-distance
+weighting.</li>
+</ul>
+</li>
+</ul>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">data</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Dream <span class="op">=</span> <span class="st">"ranger"</span><span class="op">)</span>,</span>
+<span>  boot <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  robustboot <span class="op">=</span> <span class="st">"standard"</span>,</span>
+<span>  uncert <span class="op">=</span> <span class="st">"normalerror"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>If explicit <code>pmm = TRUE</code> is used for a variable, it takes
+precedence over <code>uncert</code>.</p>
+</div>
+<div class="section level4">
+<h4 id="parameter-m">Parameter <code>m</code><a class="anchor" aria-label="anchor" href="#parameter-m"></a>
+</h4>
+<p><small><em>(default: 1)</em></small></p>
+<p><code>m</code> controls multiple imputation. If
+<code>m &gt; 1</code>, <code><a href="../reference/vimpute.html">vimpute()</a></code> returns a
+<code>vimmi</code> object instead of a single completed dataset.</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">mi</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">data</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Dream <span class="op">=</span> <span class="st">"ranger"</span><span class="op">)</span>,</span>
+<span>  m <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  boot <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  uncert <span class="op">=</span> <span class="st">"resid"</span>,</span>
+<span>  imp_var <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">completed_1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/complete.html">complete</a></span><span class="op">(</span><span class="va">mi</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">completed_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/complete.html">complete</a></span><span class="op">(</span><span class="va">mi</span>, <span class="st">"all"</span><span class="op">)</span></span>
+<span><span class="va">completed_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/complete.html">complete</a></span><span class="op">(</span><span class="va">mi</span>, <span class="st">"long"</span><span class="op">)</span></span></code></pre></div>
+<p>The <code>vimmi</code> object stores the original data and the
+imputed values efficiently. It can be inspected with
+<code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> and <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, and completed datasets
+can be extracted with <code><a href="../reference/complete.html">complete()</a></code>. If the <code>mice</code>
+package is installed, <code><a href="../reference/as.mids.vimmi.html">as.mids.vimmi()</a></code> can be used to
+convert a <code>vimmi</code> object to a <code><a href="https://amices.org/mice/reference/mids.html" class="external-link">mice::mids</a></code> object
+for downstream pooling workflows.</p>
 </div>
 <div class="section level4">
 <h4 id="parameter-tune">Parameter <code>tune</code><a class="anchor" aria-label="anchor" href="#parameter-tune"></a>
 </h4>
 <p><small><em>(default: FALSE)</em></small></p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">data</span>,</span>
 <span>  tune <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -575,12 +742,16 @@ iterations)</li>
 <p>You can provide <code>tune</code> either as a single global
 TRUE/FALSE value (applies to all variables), or as a named list per
 variable.</p>
+<p>When tuning is enabled, <code><a href="../reference/vimpute.html">vimpute()</a></code> returns a list
+containing the imputed data and a <code>tuning_log</code> component. If
+<code>pred_history = TRUE</code> is also enabled, the list contains both
+<code>pred_history</code> and <code>tuning_log</code>.</p>
 </div>
 <div class="section level4">
 <h4 id="parameters-nseq-and-eps">Parameters <code>nseq</code> and <code>eps</code><a class="anchor" aria-label="anchor" href="#parameters-nseq-and-eps"></a>
 </h4>
 <p><small><em>(default: 10 and default: 0.005)</em></small></p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">data</span>,</span>
 <span>  nseq <span class="op">=</span> <span class="fl">20</span>,</span>
@@ -604,7 +775,7 @@ iterations</li>
 <h4 id="parameter-imp_var">Parameter <code>imp_var</code><a class="anchor" aria-label="anchor" href="#parameter-imp_var"></a>
 </h4>
 <p><small><em>(default: TRUE)</em></small></p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">data</span>,</span>
 <span>  imp_var <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -618,7 +789,7 @@ diagnostic analyses.</p>
 <h4 id="parameter-pred_history">Parameter <code>pred_history</code><a class="anchor" aria-label="anchor" href="#parameter-pred_history"></a>
 </h4>
 <p><small><em>(default: FALSE)</em></small></p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">pred_history</span>, <span class="fl">9</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    iteration variable index predicted_values</span></span>
 <span><span class="co">#&gt;        &lt;int&gt;   &lt;char&gt; &lt;int&gt;            &lt;num&gt;</span></span>
@@ -640,7 +811,7 @@ a list (not only the imputed data table). Therefore, results must be
 accessed via list elements, e.g. <code>result$data</code> for the
 imputed dataset and <code>result$pred_history</code> for the
 history.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vimpute.html">vimpute</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">data</span>, pred_history <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Access imputed data</span></span>
@@ -655,7 +826,7 @@ history.</p>
 </h2>
 <p>In order to validate the performance of vimpute() the iris dataset is
 used. Firstly, some values are randomly set to <code>NA</code>.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://glin.github.io/reactable/" class="external-link">reactable</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">iris</span><span class="op">)</span></span>
@@ -670,8 +841,8 @@ used. Firstly, some values are randomly set to <code>NA</code>.</p>
 <span><span class="va">df</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span><span class="op">]</span><span class="op">&lt;-</span><span class="cn">NA</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vimpute_files/figure-html/unnamed-chunk-20-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<p><img src="vimpute_files/figure-html/unnamed-chunk-26-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">df</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; S.Length  S.Width P.Length  P.Width  Species </span></span>
 <span><span class="co">#&gt;       12       10       13       12        0</span></span></code></pre></div>
