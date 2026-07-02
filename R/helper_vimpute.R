@@ -2801,12 +2801,18 @@ register_gam_learners <- function() {
         features <- task$feature_names
         n <- nrow(data)
 
-        for (col in names(data)) {
-          if (is.factor(data[[col]])) data[[col]] <- droplevels(data[[col]])
-        }
+        sanitized <- sanitize_model_features(data, target, features)
+        data <- sanitized$data
+        features <- sanitized$features
+        self$state$feature_names <- features
+        self$state$factor_levels <- sanitized$factor_levels
 
-        factor_cols <- sapply(data[, features, drop = FALSE], is.factor)
-        self$state$factor_levels <- lapply(data[, names(which(factor_cols)), drop = FALSE], levels)
+        if (length(sanitized$dropped) > 0L) {
+          warning(sprintf(
+            "Dropping constant or single-level predictors for '%s': %s",
+            target, paste(sanitized$dropped, collapse = ", ")
+          ))
+        }
 
         form <- build_gam_formula(target, features, data, min_unique = pv$min_unique)
 
@@ -2819,7 +2825,7 @@ register_gam_learners <- function() {
             }
           )
           if (is.null(mod_init)) {
-            mod <- lm(reformulate(features, response = target), data = data)
+            mod <- lm(build_feature_formula(target, features), data = data)
             return(list(mod = mod, subset_good = seq_len(n), subset_bad = integer(0),
                         scale = sd(residuals(mod))))
           }
@@ -2850,7 +2856,7 @@ register_gam_learners <- function() {
             }
           )
           if (is.null(mod)) {
-            mod <- lm(reformulate(features, response = target), data = data)
+            mod <- lm(build_feature_formula(target, features), data = data)
             return(list(mod = mod, subset_good = seq_len(n), subset_bad = integer(0),
                         scale = sd(residuals(mod))))
           }
@@ -2886,6 +2892,7 @@ register_gam_learners <- function() {
       .predict = function(task) {
         model_info <- self$model
         newdata <- as.data.frame(task$data())
+        feature_names <- if (is.null(self$state$feature_names)) character(0) else self$state$feature_names
 
         if (!is.null(self$state$factor_levels)) {
           for (var in names(self$state$factor_levels)) {
@@ -2894,6 +2901,7 @@ register_gam_learners <- function() {
             }
           }
         }
+        newdata <- newdata[, feature_names, drop = FALSE]
 
         response <- tryCatch(
           as.numeric(predict(model_info$mod, newdata = newdata, type = "response")),
