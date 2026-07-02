@@ -26,9 +26,13 @@ suppressPackageStartupMessages({
   library(ranger)
 })
 
-source("R/helper_vimpute.R")
-source("R/vimmi.R")
-source("R/vimpute.R")
+if (file.exists(file.path("R", "vimpute.R"))) {
+  source("R/helper_vimpute.R")
+  source("R/vimmi.R")
+  source("R/vimpute.R")
+} else {
+  suppressPackageStartupMessages(library(VIM))
+}
 
 check <- function(condition, message) {
   if (!isTRUE(condition)) {
