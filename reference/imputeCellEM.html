@@ -288,10 +288,10 @@ Computational Statistics and Data Analysis</em>, Vol. 55, pp. 2793–2806.</p>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">imputeCellEM</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">data_imputed</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    BodyWgt BrainWgt     NonD    Dream Sleep      Span Gest Pred Exp Danger</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 6654.000   5712.0 261.8745 34.84566   3.3  38.60000  645    3   5      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 6654.000   5712.0 261.5162 34.24212   3.3  38.60000  645    3   5      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2    1.000      6.6   6.3000  2.00000   8.3   4.50000   42    3   1      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3    3.385     44.5 261.8535 34.81467  12.5  14.00000   60    1   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4    0.920      5.7 261.8656 34.85528  16.5 -73.89321   25    5   2      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3    3.385     44.5 261.5160 34.24170  12.5  14.00000   60    1   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4    0.920      5.7 261.5161 34.24225  16.5 -63.57845   25    5   2      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 2547.000   4603.0   2.1000  1.80000   3.9  69.00000  624    3   5      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6   10.550    179.5   9.1000  0.70000   9.8  27.00000  180    4   4      4</span>
 <span class="r-in"><span></span></span>
@@ -320,7 +320,7 @@ Computational Statistics and Data Analysis</em>, Vol. 55, pp. 2793–2806.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 1.703 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 2</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3517.4195</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3517.4204</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 2.5461 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.749186</span>
@@ -332,13 +332,13 @@ Computational Statistics and Data Analysis</em>, Vol. 55, pp. 2793–2806.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.756899</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3408.1963</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3408.1962</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.4668 , 0.49 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 3.7806 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 13.0363</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3218.7028</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3218.6519</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 6.0229 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 1.14561</span>
@@ -346,572 +346,572 @@ Computational Statistics and Data Analysis</em>, Vol. 55, pp. 2793–2806.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 6</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3368.491</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.4836 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 68.1601 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 68.1605 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 1.11707</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3131.5369</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3131.3632</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 99.419 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 99.4345 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.836874</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3121.1885</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3121.1872</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 82.6055 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.752227</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 82.6056 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.752232</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 9</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3127.1262</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -3127.0606</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 85.9857 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.686363</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 85.9861 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.686364</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2988.7808</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2988.812</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 110.5356 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.476708</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 110.533 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.476713</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 11</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2903.1083</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2901.928</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 242.6968 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.801673</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 242.6742 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.801609</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 12</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2757.9859</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2723.5636</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 433.5935 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.894755</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 433.3493 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.893698</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 13</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2724.0095</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2715.4305</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 192.1987 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 166.324</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 187.0453 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 89.1203</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 14</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2918.209</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2794.0654</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 54.5728 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.6382</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 139.3917 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 24.9498</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 15</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2773.9217</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.1067 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 231.4283 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2804.1381</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 150.5891 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999959</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2690.4713</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2730.7248</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 69.7086 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 32.2778</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 563.4647 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 21.5889</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 17</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2858.3532</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2840.0198</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 1120.6473 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999991</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 1209.8366 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.99999</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 18</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2907.1972</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2706.526</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 1454.5691 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.386327</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 28.8037 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 3619.85</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 19</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2728.9455</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2686.6952</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 686.6067 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 156.53</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 20</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2745.2134</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.4286 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 98.7788 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 21.5952</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 21</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2659.0391</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 514.5154 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999981</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 22</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2708.2547</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 839.0422 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 23</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2648.058</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 239.6012 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 24</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2667.6858</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 93.3227 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 34.8857</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 25</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2797.4435</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.0597 , 3598.6581 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999994</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 26</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2826.9588</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 2340.2175 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 1.88923</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 27</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2799.1625</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.3146 , 3415.9645 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 578.323</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 28</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2779.9441</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 7.198 , 1284.1732 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.222082</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 29</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2604.3102</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 791.4792 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 7.26826</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 30</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2666.5853</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 307.4613 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 31</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2636.9267</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 71.8731 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0903883</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 32</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2590.31</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 269.233 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999994</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 33</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2667.8932</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 58.5479 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 38.8171</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 34</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2674.1015</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 177.5312 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.566885</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 35</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2655.2327</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 441.1279 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0642047</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 36</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2643.9382</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.4895 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 113.5626 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.623342</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 37</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2663.6808</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.6811 , 559.8461 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 1.13742</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 38</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.3998</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 47.2739 , 8927.331 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999954</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 39</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2597.394</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 886.0323 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 9084.32</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 40</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2666.4963</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 1439.4014 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 41</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2636.6205</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 61.0818 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0903883</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 42</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2588.3664</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.9636 , 609.0845 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 43</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2667.9852</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 58.2282 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 38.8175</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 44</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2680.9681</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 177.3789 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.566887</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 45</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2652.944</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 1007.7338 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0664827</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 46</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2638.2771</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 113.6722 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.607088</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 47</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2672.328</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.6811 , 367.0403 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 1.13667</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 48</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.3919</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 41.004 , 35453.0169 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 443.2427 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999989</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 49</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2597.3902</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 20</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2793.5125</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 886.0308 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 41155</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 3044.1807 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999952</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 50</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2666.5881</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 21</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2679.0941</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 802.2319 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 732.261 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 26393.2</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 51</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2641.4527</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 22</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2798.6135</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 68.9801 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0903883</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 2.2221 , 3941.6867 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999995</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 52</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2588.3857</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 23</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2618.8729</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.9636 , 655.7607 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999999</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.0955 , 461.6639 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 1308.38</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 53</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2660.6451</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 24</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2654.1438</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 51.8567 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 38.8175</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 787.6043 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 21.5953</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 54</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2687.9369</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 25</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2560.7619</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 174.5609 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.566886</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 55</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2663.9339</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 328.8602 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0803908</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 56</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2638.7858</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 112.4485 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.588798</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 57</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2672.2002</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.6811 , 191.1965 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 1.13576</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 58</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.3906</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 42.0529 , 37661.8364 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999988</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 59</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2597.3948</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 886.0312 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 36142.5</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 60</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2615.3505</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 1959.0268 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 61</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2637.0339</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 57.6698 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0903883</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 62</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2588.3699</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.9636 , 629.0398 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 63</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2660.0989</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 53.024 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 38.8175</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 64</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2687.8579</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 177.4896 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.566887</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 65</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2651.621</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 428.1167 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0654529</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 66</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2645.6219</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 113.1416 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.611216</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 67</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2632.9295</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.6811 , 417.152 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 1.13686</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 68</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.3925</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 43.3468 , 20990.1766 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999987</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 69</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2597.3864</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 886.0229 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 33865.7</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 70</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2666.5887</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 865.8154 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 71</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2640.158</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 68.2567 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0903883</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 72</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2588.3837</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.9636 , 650.8113 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999999</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 73</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2660.8096</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 51.8825 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 38.8175</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 74</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2687.9357</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 174.8924 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.566886</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 75</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2662.523</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 334.0239 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0798021</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 76</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2639.5487</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 112.4023 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.587297</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 77</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2658.2363</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.6811 , 181.4007 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 1.13565</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 78</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.3907</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 44.5369 , 20515.8861 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999987</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 79</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2597.3861</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 886.024 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 32927.3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 80</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2664.9194</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 1577.888 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 81</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2636.6357</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 59.1527 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0903883</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 82</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2588.366</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.9636 , 582.119 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 83</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2667.7242</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 56.1105 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 38.8176</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 84</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2687.8247</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 177.7483 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.566888</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 85</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2646.8074</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 557.0319 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0607768</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 86</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2648.437</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 111.9492 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.574949</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 87</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2613.3402</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.6811 , 119.1792 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 1.13455</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 88</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.4175</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 63.0233 , 10966.3829 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 392.9904 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999971</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 89</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2597.3868</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 26</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2666.0825</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 886.0261 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 12787.4</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 90</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2660.9166</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 1750.9916 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 317.4227 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 91</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2636.6085</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 27</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2648.6721</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 58.4235 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 71.9031 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0903883</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 92</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2588.3663</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 28</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2604.5402</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.9636 , 573.3499 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 236.3047 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999992</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 29</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2669.0446</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 58.3517 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 38.8166</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 30</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2686.6838</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 177.6893 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.566885</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 31</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2687.3772</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 460.5568 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0609497</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 32</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2647.7021</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 109.9781 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.526468</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 33</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2655.1597</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 143.6564 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.783629</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 34</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2604.4498</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 2.7567 , 402.3008 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.905435</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 35</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2662.2221</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.367 , 66.7333 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 2.83169</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 36</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2802.2818</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 28.0276 , 30439.8972 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 1.04262</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 37</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2772.7966</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 214.1785 , 7811.8365 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0494632</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 38</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2673.1201</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 13277.9293 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 4308.48</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 39</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2640.2015</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 33.4239 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 40</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2657.597</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 105.8003 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.101301</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 41</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2581.1636</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 63.4833 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.968997</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 42</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2637.1747</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 110.2806 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 3.05662</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 43</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2810.0767</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 14.7137 , 9303.2774 ]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 93</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2666.4849</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 44</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2809.1228</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 55.4474 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 38.8176</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 218.1305 , 42830.4413 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.884343</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 45</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.1648</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 239.967 , 7581.194 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 14.0472</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 46</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2673.2159</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 13267.4064 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 5338.81</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 47</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2640.2014</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 33.423 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 48</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2655.9748</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 105.734 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.101301</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 49</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2564.7695</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 63.473 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.969024</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 50</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2648.6084</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 110.2331 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 3.05502</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 51</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2810.0771</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 14.7679 , 9250.3369 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 52</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2809.1226</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 219.1667 , 35098.265 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.885344</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 53</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.1648</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 239.967 , 7457.7999 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 14.0471</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 54</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2673.2669</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 13262.577 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 5338.81</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 55</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2640.2014</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 33.423 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 56</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2650.8499</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 105.7235 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.101301</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 57</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2558.1975</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 63.4716 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.969028</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 58</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2649.0562</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 110.227 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 3.05478</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 59</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2810.0772</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 14.7759 , 9242.535 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 60</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2809.1225</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 219.3194 , 34678.5007 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.885492</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 61</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.1648</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 239.967 , 7440.3836 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 14.0471</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 62</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2673.2737</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 13261.9606 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 5338.81</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 63</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2640.2014</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 33.423 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 64</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2650.0311</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 105.7219 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.101301</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 65</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2560.5102</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 63.4714 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.969028</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 66</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2649.1273</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 110.2261 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 3.05475</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 67</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2810.0772</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 14.7771 , 9241.3887 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 68</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2809.1225</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 219.3418 , 34597.1322 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.885513</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 69</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.1648</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 239.967 , 7437.8418 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 14.0471</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 70</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2673.2747</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 13261.8734 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 5338.81</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 71</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2640.2014</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 33.423 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 72</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2649.9102</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 105.7217 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.101301</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 73</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2560.7924</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 63.4713 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.969028</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 74</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2649.138</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 110.226 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 3.05474</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 75</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2810.0772</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 14.7773 , 9241.2203 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 76</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2809.1225</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 219.3451 , 34584.6426 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.885517</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 77</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.1648</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 239.967 , 7437.4687 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 14.0471</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 78</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2673.2748</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 13261.86 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 5338.81</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 79</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2640.2014</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 33.423 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 80</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2649.8924</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 105.7216 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.101301</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 81</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2560.8312</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 63.4713 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.969028</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 82</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2649.1397</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 110.226 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 3.05474</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 83</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2810.0772</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 14.7773 , 9241.1956 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 84</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2809.1225</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 219.3456 , 34582.7976 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.885517</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 85</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.1648</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 239.967 , 7437.4138 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 14.0471</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 86</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2673.2749</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 13261.8572 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 5338.81</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 87</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2640.2014</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 33.423 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 88</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2649.8896</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 105.7216 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.101301</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 89</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2560.8369</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 63.4713 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.969028</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 90</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2649.14</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 110.226 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 3.05474</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 91</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2810.0772</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 14.7773 , 9241.1919 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 92</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2809.1225</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 219.3457 , 34582.5264 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.885517</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 93</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.1648</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 239.967 , 7437.4056 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 14.0471</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 94</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2658.4589</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2673.2749</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 177.7578 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.566888</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 13261.8563 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 5338.81</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 95</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2646.7618</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2640.2014</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 517.7165 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.0606169</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 33.423 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 96</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2648.0012</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2649.8891</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 111.9664 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.577274</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 105.7216 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.101301</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 97</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2579.2768</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2560.8377</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.6811 , 129.0103 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 1.13473</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 63.4713 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.969028</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 98</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2778.4156</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2649.1401</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 60.1492 , 10452.1443 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999968</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 110.226 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 3.05474</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 99</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2597.3862</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2810.0772</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.1376 , 886.0261 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 11823.6</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 14.7773 , 9241.1914 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.999998</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM: start of iteration 100</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2666.5901</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   log-likelihood: -2809.1225</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   epsilon range: [ 0.49 , 0.49 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 1.01 , 924.9356 ]</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 20.4909</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   gamma range: [ 219.3457 , 34582.4873 ]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   parameter change: 0.885517</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellEM did not converge after 100 iterations.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Mixed data example</span></span></span>

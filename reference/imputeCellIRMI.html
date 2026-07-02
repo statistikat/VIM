@@ -263,7 +263,6 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">imputeCellIRMI</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
@@ -278,17 +277,56 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
@@ -309,127 +347,11 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
@@ -440,40 +362,114 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">data_imputed</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   BodyWgt BrainWgt NonD Dream Sleep Span Gest Pred Exp Danger</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1   2.500    157.0 15.2   0.5  19.4 41.0  645    5   5      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1   0.023    406.0 12.8   0.9   6.2 50.0  645    1   5      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2   1.000      6.6  6.3   2.0   8.3  4.5   42    3   1      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3   3.385     44.5  8.4   3.9  10.9 14.0   60    1   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4   0.920     12.3  9.5   1.2  10.6  7.0  112    4   2      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5   0.005    115.0  9.5   1.0  13.8 16.3   31    5   5      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   3.385     44.5 12.0   2.4  13.7 14.0   60    1   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   0.920      5.5 13.8   5.6  14.4 19.0   46    4   2      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  27.660    325.0 10.4   3.9  10.9 40.0  252    3   5      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6  10.550    179.5  9.1   0.7   9.8 27.0  180    4   4      4</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/image.html" class="external-link">image</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">cellweights</span>, main <span class="op">=</span> <span class="st">"Cell weights"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="imputeCellIRMI-1.png" alt="" width="700" height="433"></span>
@@ -493,16 +489,14 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 4</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 12.443471</span>
@@ -526,12 +520,15 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 13</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.689975</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.694692</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 3</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
@@ -547,39 +544,35 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 37</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.077107</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 39</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.084367</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 4</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 44</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.075041</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 50</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.075971</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 5</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
@@ -589,6 +582,7 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
@@ -596,11 +590,14 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 53</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.069221</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 54</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.103992</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 6</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
@@ -617,12 +614,10 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 40</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.059665</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 59</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.045517</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 7</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
@@ -630,10 +625,234 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 34</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.026946</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 8</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 30</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.015232</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 9</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 31</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.013398</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 10</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 28</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.013798</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 11</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 30</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.010333</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 12</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 37</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.009459</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 13</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 35</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.008289</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 14</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 34</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.006104</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 15</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 40</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.005782</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 16</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 45</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.005238</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 17</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
@@ -645,268 +864,96 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 51</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.021739</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 47</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.016861</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 9</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 27</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.01232</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 10</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 28</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.013772</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 11</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 29</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.009238</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 12</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 29</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.010209</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 13</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 32</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.010982</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 14</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 31</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.011305</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 15</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 25</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.005139</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 16</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 25</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.007543</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 17</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 25</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.005592</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.007089</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 18</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 31</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.002748</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI converged.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 40</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.011392</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 19</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 44</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.006841</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 20</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 42</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.025436</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 21</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 2 ( BrainWgt ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 3 ( NonD ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 4 ( Dream ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 5 ( Sleep ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 8 ( Pred ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 10 ( Danger ) - continuous</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 42</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.003849</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI converged.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
@@ -914,18 +961,12 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-in"><span><span class="co"># Mixed data example</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">testdata</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">result3</span> <span class="op">&lt;-</span> <span class="fu">imputeCellIRMI</span><span class="op">(</span><span class="va">testdata</span><span class="op">$</span><span class="va">wna</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 3 coefficients 'c1b', 'c2b', 'm2'.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 3 coefficients 'c1b', 'c2b', 'm1'.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 3 coefficients 'c1b', 'c2b', 'm2'.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 3 coefficients 'c1b', 'c2b', 'm1'.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
@@ -934,7 +975,10 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 3 coefficients 'c1b', 'c2b', 'm1'.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 3 coefficients 'c1b', 'c2b', 'm2'.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 3 coefficients 'c1b', 'c2b', 'm1'.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
