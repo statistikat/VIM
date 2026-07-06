@@ -113,6 +113,29 @@ gowerD <- function(data.x, data.y = data.x,
       data.y[,numerical[i]] <- data.y[,numerical[i]]/r[i]
     }
   }
+  # Semi-continuous (mixed) columns need the same range/IQR scaling as numeric
+  # columns; otherwise their raw magnitude dominates the Gower distance (the C++
+  # kernel uses raw |x-y| for two non-spike values, exactly like the numeric
+  # branch that IS scaled). The point mass (mixed.constant) is excluded from the
+  # scale estimate and scaled along, so the kernel's spike comparison is kept.
+  if(length(mixed)>0){
+    pooled_mixed <- rbind(data.x[,mixed,drop=FALSE], data.y[,mixed,drop=FALSE])
+    for(i in seq_along(mixed)){
+      col <- pooled_mixed[,i]
+      nonspike <- col[!is.na(col) & col != mixed.constant[i]]
+      if(length(nonspike) > 0){
+        if(methodStand == "range"){
+          rr <- max(nonspike) - min(nonspike)
+        }else{
+          rr <- as.numeric(diff(quantile(nonspike, probs = c(.25, .75), na.rm = TRUE)))
+        }
+        if(is.na(rr) || rr == 0) rr <- 1
+        data.x[,mixed[i]] <- data.x[,mixed[i]]/rr
+        data.y[,mixed[i]] <- data.y[,mixed[i]]/rr
+        mixed.constant[i] <- mixed.constant[i]/rr
+      }
+    }
+  }
   justone <- FALSE
   if(nrow(data.y)==1){
     data.y <- rbind(data.y,data.y)
