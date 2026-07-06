@@ -421,9 +421,21 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
         if(length(factors)>0&&!"weights"%in%names(as.list(args(catFun)))){
           warning("There is no explicit 'weights' argument in your categorical aggregation function.")
         }
-        #1-dist because dist is between 0 and 1
-        mindi[[2]] <- apply(1-mindi[[2]], 2, function(x)
-          pmax(min(x[x>0])/10,x))
+        #1-dist because dist is (usually) between 0 and 1. Guard the case where
+        #all k distances are >= 1 (methodStand="iqr", NA sentinels, or mixed
+        #distance variables): then every 1-dist <= 0, min(x[x>0]) is an empty
+        #min = Inf, and the weights become Inf -> NaN imputations.
+        mindi[[2]] <- apply(1-mindi[[2]], 2, function(x){
+          pos <- x[x>0]
+          if(length(pos)>0){
+            pmax(min(pos)/10,x)
+          }else{
+            #all weights <= 0: rank-preserving finite positive weights so the
+            #nearer donors still dominate (larger 1-dist = nearer)
+            rng <- max(x)-min(x)
+            if(rng==0) rep(1,length(x)) else (x-min(x))/rng+1e-6
+          }
+        })
         ### warning if there is no argument named weights
         if(variable[j]%in%factors){
           data[indexNA2s[,variable[j]],variable[j]] <- sapply(1:ncol(kNNs),function(x)do.call("catFun",list(unlist(kNNs[,x,with=FALSE]),mindi[[2]][,x])))
