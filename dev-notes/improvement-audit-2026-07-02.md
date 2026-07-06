@@ -156,8 +156,14 @@ non-linear and methods need tuning**.
 ## P1 — correctness cluster (all CONFIRMED unless noted)
 
 **vimpute core**
-- [ ] `tune = TRUE` silent no-op when `sequential = FALSE` or early convergence (`i == round(nseq/2)`
-  never fires); tune at a guaranteed iteration and warn if tuning was requested but never ran.
+- [x] `tune = TRUE` silent no-op when `sequential = FALSE` or early convergence. **Done (Wave 1):**
+  the trigger `i == round(nseq/2)` (which is 0 at nseq = 1, so never reached) is replaced by
+  `i >= min(2L, nseq)`, a guaranteed-reachable point (tunes at i = 1 for nseq = 1, else i = 2), still
+  once per variable via `tuning_status`. Added an observable `tuned` flag to each `tuning_log` entry
+  (was only `tuned_better`, which is FALSE whether tuning ran-and-lost or never ran — the
+  framework-design "indistinguishable" complaint). `R/vimpute.R`; regression test
+  `inst/tinytest/test_vimpute_tune.R`. (A warn-if-requested-but-never-ran for the rare
+  break-at-i=1 case is now observable via `tuned` and left as a small refinement.)
 - [ ] Internal `<var>_zero_prob` working column leaks into the returned data *and* into predictors
   of subsequent variables (semicontinuous path).
 - [ ] `considered_variables` silently drops all other columns from the output (data loss; return

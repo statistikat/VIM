@@ -1228,8 +1228,12 @@ vimpute <- function(
       #               (!tuning_status[[var]]), var, isTRUE(tune[[var]]), i, round(nseq/2)))
       # }
       
-      # Per Variable tune once in the middle of the seq
-      if (!tuning_status[[var]] && isTRUE(tune[[var]]) && i == round(nseq / 2)) {
+      # Tune each variable once, at a guaranteed-reachable iteration. The old
+      # trigger i == round(nseq / 2) never fired when sequential = FALSE (nseq is
+      # forced to 1 and round(1/2) == 0, but i starts at 1), so tune = TRUE was a
+      # silent no-op. min(2, nseq) tunes on once-updated predictors when possible
+      # and always fires for nseq <= 2; tuning_status keeps it to a single run.
+      if (!tuning_status[[var]] && isTRUE(tune[[var]]) && i >= min(2L, nseq)) {
         
         best_learner_id <- best_learner$id
         ss <- build_vimpute_search_space(best_learner_id, task)
@@ -1454,7 +1458,8 @@ vimpute <- function(
       }
       tuning_log[[length(tuning_log) + 1]] <- list(
         variable     = var,
-        tuned_better = tuned_flag
+        tuned        = !isFALSE(tuning_status[[var]]),   # tuning actually executed
+        tuned_better = tuned_flag                        # tuned params beat defaults
       )
 
       # if (!tuning_status[[var]] && nseq >= 2 && isTRUE(tune[[var]])) {
