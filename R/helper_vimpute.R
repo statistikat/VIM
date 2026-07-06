@@ -1079,8 +1079,14 @@ precheck <- function(
       stop("One or more unsupported methods found in 'method'.")
     }
 
-    # mapping
-    method <- setNames(as.list(all_methods[seq_along(variables_NA)]), variables_NA)
+    # mapping: a list with one method per COLUMN aligns to the column positions
+    # of the NA-variables; a list with one entry per NA-variable aligns in order.
+    idx <- if (length(method) == length(variables)) {
+      match(variables_NA, variables)
+    } else {
+      seq_along(variables_NA)
+    }
+    method <- setNames(as.list(all_methods[idx]), variables_NA)
 
   } else {
     stop("Invalid 'method' specification: must be a single method or a (named) list.")
