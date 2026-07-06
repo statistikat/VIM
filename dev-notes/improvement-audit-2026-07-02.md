@@ -166,18 +166,29 @@ non-linear and methods need tuning**.
   break-at-i=1 case is now observable via `tuned` and left as a small refinement.)
 - [ ] Internal `<var>_zero_prob` working column leaks into the returned data *and* into predictors
   of subsequent variables (semicontinuous path).
-- [ ] `considered_variables` silently drops all other columns from the output (data loss; return
-  the full dataset with non-considered columns untouched).
+- [x] `considered_variables` silently drops all other columns from the output (data loss; return
+  the full dataset with non-considered columns untouched). **Done (tail, 6c73932→8cfdcbe):** new
+  `keep_all_columns = TRUE` default re-attaches excluded columns unchanged (original order, `*_imp`
+  appended) via `merge_passthrough_columns`; the vimmi `data` slot now stores the full input so
+  `complete()` keeps all columns; `keep_all_columns = FALSE` restores the old lean shape.
+  (Matthias's call: full-by-default + opt-out.) `R/vimpute.R`, `R/helper_vimpute.R`; test
+  `inst/tinytest/test_vimpute_considered_columns.R`; existing `test_vimpute.R` assertion flipped.
 - [x] Length-1 named method list reinterpreted as global method — `list(Dream = "gam")` applies gam
   to *all* variables; typo'd names pass silently. **Done (Wave 1):** the "single global method"
   branch in `precheck` now requires an *unnamed* length-1 list; a named length-1 list falls through
   to the per-variable branch, which validates the name (a typo now errors "Unknown variable
   name(s)"). `R/helper_vimpute.R`; regression test `inst/tinytest/test_vimpute_method_list.R`.
-- [ ] Unnamed method lists aligned with all columns are positionally misassigned to NA-variables.
-  *(Still open — the fix is small (align by column when `length(method) == length(variables)`) but a
-  clean behavioural test is awkward due to inter-variable dependence; left for the fresh-context pass.)*
-- [ ] Ordered factors: vimpute strips `ordered` from ALL considered columns (silent, also a methods
-  regression vs mice `polr`); logical → numeric coercion equally silent.
+- [x] Unnamed method lists aligned with all columns are positionally misassigned to NA-variables.
+  **Done (tail, 6c73932):** the unnamed-list branch now maps a per-column list by the NA-variables'
+  column positions (`match(variables_NA, variables)`) and keeps `seq_along` for the per-NA-variable
+  shape. Tested white-box on `precheck()` (the m=1 result records no method) with a reversed-order
+  case proving position matching. `R/helper_vimpute.R`; test `inst/tinytest/test_vimpute_method_unnamed.R`.
+- [x] Ordered factors: vimpute strips `ordered` from ALL considered columns (silent, also a methods
+  regression vs mice `polr`); logical → numeric coercion equally silent. **Done (tail, 6f7016b)**
+  for ordered factors: `ordered_info` captured before `precheck` flattens them; restored at both
+  output boundaries (`build_vimpute_result` for m=1, the vimmi `data` slot for m>1) — the m>1 path
+  also lost level ORDER (alphabetical) and is fixed. `R/vimpute.R`, `R/helper_vimpute.R`; test
+  `inst/tinytest/test_vimpute_ordered_factor.R`. *(logical→numeric coercion still open.)*
 - [ ] The commit-8cc3020 "identical imputations" warning is factually wrong for ranger (forest RNG
   differs) while the genuinely-identical case (deterministic PMM) escapes it — invert the logic:
   warn on *measured* zero between-variance, not on flag heuristics.
@@ -203,9 +214,18 @@ non-linear and methods need tuning**.
 - [ ] Register the (repaired) cellwise family in vimpute (detection pre-pass + learner wrapper).
 
 **Classic methods**
-- [ ] `imputeRobust()`: `method="gamRob"` and `uncert="wresid"` always crash; PMM donor pool is
-  contaminated by kNN-initialised values.
-- [ ] `irmi(mi > 1)` with default `imp_var=TRUE` returns one mangled data.frame instead of a list.
+- [x] `imputeRobust()`: `method="gamRob"` and `uncert="wresid"` always crash; PMM donor pool is
+  contaminated by kNN-initialised values. **Done (tail, b756f29):** added a self-contained
+  regression `robGAM()` (residual-trimmed mgcv GAM returning `$mod/$subset_good/$subset_bad`);
+  unwrapped the dead `wresid` closure into a direct guarded pdist call; `match.arg` validation for
+  `uncert` (clear error, not "object 'ymiss' not found"); PMM donor pool now the originally-observed
+  rows only. Dropped `robGAM` from `zzz.R` globalVariables. All 5 methods × 4 uncert options run.
+  `R/imputeRobust.R`, `R/zzz.R`; test `inst/tinytest/test_imputeRobust.R`.
+- [x] `irmi(mi > 1)` with default `imp_var=TRUE` returns one mangled data.frame instead of a list.
+  **Done (tail, 3831fe6):** the imp_var block now appends indicator columns per list element when
+  `mi > 1` (`lapply(x, cbind, imp_vardf)`) instead of `cbind`-flattening the list. `R/irmi.R`; test
+  `inst/tinytest/test_irmi_mi.R`. *(Secondary: MI-loop re-derives model type from class not the
+  `types` vector — ordered→multinom vs polr; no clean structural observable, deferred.)*
 - [x] `regressionImp()` silently fits glmnet (fixed lambda 0.01) instead of documented lm/glm
   whenever ≥ 2 predictors. **Done (Wave 1; user chose "lm/glm + glmnet fallback"):** numeric
   responses now use `lm` and binary responses `glm` for any number of predictors, matching the
