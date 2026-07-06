@@ -124,9 +124,23 @@ library(VIM)
   )
 
   expect_true(all(vars %in% names(out)))
-  expect_false(any(c("BodyWgt", "BrainWgt") %in% names(out)))
+  # non-considered columns are preserved by default (keep_all_columns = TRUE)
+  expect_true(all(c("BodyWgt", "BrainWgt") %in% names(out)))
   expect_equal(sum(is.na(out[, vars, with = FALSE])), 0)
-# 
+
+  # opt out: keep_all_columns = FALSE returns only the considered subset
+  set.seed(1)
+  out_lean <- vimpute(
+    sleep,
+    considered_variables = vars,
+    method = "ranger",
+    sequential = FALSE,
+    imp_var = TRUE,
+    keep_all_columns = FALSE
+  )
+  expect_false(any(c("BodyWgt", "BrainWgt") %in% names(out_lean)))
+  expect_true(all(vars %in% names(out_lean)))
+#
 
 # vimpute accepts pmm list named for NA variables only", {
   pmm_na_vars <- setNames(

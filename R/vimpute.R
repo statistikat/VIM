@@ -6,7 +6,7 @@
 #' @param data
 #'  Dataset with missing values. Provide as a data.table.
 #' @param considered_variables
-#'  A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process.
+#'  A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process. Excluded columns are still returned unchanged by default (see \code{keep_all_columns}).
 #' @param method
 #'  Specifies the imputation method for each variable.
 #'  Can be provided either:
@@ -77,7 +77,13 @@
 #'  Convergence threshold: the imputation process stops early if predictions change less than this amount across iterations.
 #' @param imp_var
 #'  If TRUE, additional columns indicating imputed values (VAR_imp) are added.
-#' @param pred_history 
+#' @param keep_all_columns
+#'  If TRUE (default), the full input is returned: columns excluded via
+#'  \code{considered_variables} are passed through unchanged (original column
+#'  order, with any \code{VAR_imp} indicators appended), matching \code{kNN()},
+#'  \code{hotdeck()} and \code{irmi()}. Set FALSE to return only the considered
+#'  columns (plus their indicators), dropping the rest.
+#' @param pred_history
 #'  If TRUE, all predicted values across all iterations are stored.
 #' @param tune
 #'  Hyperparameter tuning flag. Can be:
@@ -164,8 +170,9 @@ vimpute <- function(
     donorcond = NULL,
     sequential = TRUE,
     nseq = 10,
-    eps = 0.005, 
+    eps = 0.005,
     imp_var = TRUE,
+    keep_all_columns = TRUE,
     pred_history = FALSE,
     tune = FALSE,
     verbose = FALSE,
@@ -474,6 +481,7 @@ vimpute <- function(
         nseq = nseq,
         eps = eps,
         imp_var = FALSE,
+        keep_all_columns = FALSE,
         pred_history = FALSE,
         tune = tune,
         boot = boot,
@@ -509,12 +517,21 @@ vimpute <- function(
       variables_NA
     )
 
-    # Return a compact MI object (original data + imputed values only)
+    # Return a compact MI object (original data + imputed values only). By
+    # default store the full input so complete() returns all columns; when the
+    # user opts out, store only the considered subset (ordered class restored,
+    # since precheck flattened it -- data_all_variables is pristine and needs
+    # no restore).
+    vimmi_data <- if (keep_all_columns) {
+      as.data.frame(data_all_variables)
+    } else {
+      restore_ordered_factors(as.data.frame(original_data), ordered_info)
+    }
     if (verbose) {
       message("***** Constructing compact 'vimmi' result object")
     }
     return(new_vimmi(
-      data   = restore_ordered_factors(as.data.frame(original_data), ordered_info),
+      data   = vimmi_data,
       imp    = imp_list,
       where  = where_matrix,
       m      = m,
@@ -2237,6 +2254,9 @@ vimpute <- function(
     history = history,
     tune = tune,
     tuning_log = tuning_log,
-    ordered_info = ordered_info
+    ordered_info = ordered_info,
+    data_all_variables = data_all_variables,
+    considered_variables = considered_variables,
+    keep_all_columns = keep_all_columns
   ))
 }

@@ -20,6 +20,7 @@ vimpute(
   nseq = 10,
   eps = 0.005,
   imp_var = TRUE,
+  keep_all_columns = TRUE,
   pred_history = FALSE,
   tune = FALSE,
   verbose = FALSE,
@@ -32,7 +33,7 @@ vimpute(
 \arguments{
 \item{data}{Dataset with missing values. Provide as a data.table.}
 
-\item{considered_variables}{A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process.}
+\item{considered_variables}{A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process. Excluded columns are still returned unchanged by default (see \code{keep_all_columns}).}
 
 \item{method}{Specifies the imputation method for each variable.
 Can be provided either:
@@ -117,6 +118,12 @@ donor pool for model fitting for that variable.}
 \item{eps}{Convergence threshold: the imputation process stops early if predictions change less than this amount across iterations.}
 
 \item{imp_var}{If TRUE, additional columns indicating imputed values (VAR_imp) are added.}
+
+\item{keep_all_columns}{If TRUE (default), the full input is returned: columns excluded via
+\code{considered_variables} are passed through unchanged (original column
+order, with any \code{VAR_imp} indicators appended), matching \code{kNN()},
+\code{hotdeck()} and \code{irmi()}. Set FALSE to return only the considered
+columns (plus their indicators), dropping the rest.}
 
 \item{pred_history}{If TRUE, all predicted values across all iterations are stored.}
 

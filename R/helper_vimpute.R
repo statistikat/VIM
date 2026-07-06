@@ -1311,6 +1311,27 @@ restore_ordered_factors <- function(df, ordered_info) {
   df
 }
 
+# When considered_variables is a strict subset of the input, re-attach the
+# untouched (non-considered) columns so vimpute() returns the full dataset,
+# matching kNN/hotdeck/irmi and mice. `result` holds the imputed considered
+# columns (plus any *_imp indicators); `data_all_variables` is the pristine
+# full input. Considered columns take their imputed values from `result`;
+# non-considered columns pass through unchanged (NAs included); *_imp columns
+# stay at the end. Original input column order is preserved for data columns.
+merge_passthrough_columns <- function(result, data_all_variables, considered_variables) {
+  if (is.null(data_all_variables)) return(result)
+  passthrough <- setdiff(names(data_all_variables), considered_variables)
+  if (length(passthrough) == 0L) return(result)  # nothing was excluded
+  result <- as.data.table(result)
+  full <- copy(as.data.table(data_all_variables))
+  for (v in considered_variables) {
+    if (v %in% names(result)) data.table::set(full, j = v, value = result[[v]])
+  }
+  extra <- setdiff(names(result), names(full))  # e.g. *_imp indicator columns
+  if (length(extra)) full <- cbind(full, result[, extra, with = FALSE])
+  full
+}
+
 # Stops on factor-level mismatches between data and reference levels.
 check_all_factor_levels <- function(df, factor_levels) {
   for (var in names(factor_levels)) {
@@ -1848,12 +1869,20 @@ inject_uncertainty <- function(
 build_vimpute_result <- function(data, data_new, imp_var, factor_levels,
                                  pred_history = FALSE, history = NULL,
                                  tune = FALSE, tuning_log = list(),
-                                 ordered_info = list()) {
+                                 ordered_info = list(),
+                                 data_all_variables = NULL,
+                                 considered_variables = NULL,
+                                 keep_all_columns = TRUE) {
   result <- as.data.table(if (imp_var) data_new else data)
   result <- enforce_factor_levels(result, factor_levels)
   # enforce_factor_levels rebuilds columns as plain factors; put back the
   # `ordered` class on columns the user supplied as ordered factors.
   result <- restore_ordered_factors(result, ordered_info)
+  # By default return the full dataset: re-attach columns excluded via
+  # considered_variables (opt out with keep_all_columns = FALSE).
+  if (keep_all_columns) {
+    result <- merge_passthrough_columns(result, data_all_variables, considered_variables)
+  }
 
   any_tuned <- any(unlist(tune))
 
