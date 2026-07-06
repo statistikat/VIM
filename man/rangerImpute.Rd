@@ -24,8 +24,8 @@ variable should be created show the imputation status}
 
 \item{imp_suffix}{suffix used for TF imputation variables}
 
-\item{...}{Additional arguments. Currently ignored because
-\code{rangerImpute()} delegates to \code{\link[=vimpute]{vimpute()}}.}
+\item{...}{Additional ranger hyperparameters (e.g. \code{num.trees}, \code{mtry},
+\code{min.node.size}), forwarded to the ranger learner via \code{\link[=vimpute]{vimpute()}}.}
 
 \item{verbose}{Show the number of observations used for training
 and evaluating the RF-Model.}

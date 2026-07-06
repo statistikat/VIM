@@ -197,8 +197,13 @@ non-linear and methods need tuning**.
 - [ ] `irmi(mi > 1)` with default `imp_var=TRUE` returns one mangled data.frame instead of a list.
 - [ ] `regressionImp()` silently fits glmnet (fixed lambda 0.01) instead of documented lm/glm
   whenever ≥ 2 predictors.
-- [ ] `rangerImpute`/`xgboostImpute` wrappers ignore their documented hyperparameters
-  (`num.trees`, `nrounds`, … silently dropped since delegation to vimpute).
+- [x] `rangerImpute`/`xgboostImpute` wrappers ignore their documented hyperparameters
+  (`num.trees`, `nrounds`, … silently dropped since delegation to vimpute). **Done (Wave 1):** both
+  now forward their hyperparameters (and `...`) to the ranger/xgboost learner via `vimpute()`'s
+  `learner_params` instead of warning that they are ignored; `xgboostImpute` maps per-target
+  `objective`. `R/rangerImpute.R`, `R/xgboostImpute.R`; regression test
+  `inst/tinytest/test_wrapper_hyperparams.R` (verifies `num.trees`/`nrounds` actually change the
+  imputations).
 
 **Evaluation & distances**
 - [x] `evaluation()` default `vartypes="guess"` returned error 0 for any input — **done (Wave 1):**
