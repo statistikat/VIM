@@ -336,10 +336,40 @@ vimpute <- function(
     uncert <- "none"
   }
 
-  # Warn if m > 1 but no source of between-imputation variability
-  if (m > 1L && !boot && uncert == "none" && !has_any_pmm) {
-    warning("m > 1 without 'boot', 'uncert', or 'pmm': all imputations will be identical. ",
-            "Set boot = TRUE and/or uncert to a method like 'normalerror' for proper MI variability.")
+  # PMM only injects between-imputation variability when it draws at random from
+  # >= 2 donors (or via a user aggregator); pmm_k = 1 or pmm_k_method =
+  # "mean"/"median" is deterministic and gives identical draws every imputation.
+  pmm_vars <- names(pmm)[vapply(pmm, isTRUE, logical(1))]
+  is_stochastic_pmm <- function(v) {
+    km <- pmm_k_method[[v]]
+    if (is.function(km)) return(TRUE)
+    k <- pmm_k[[v]]
+    is.numeric(k) && length(k) == 1L && k >= 2L && identical(km, "random")
+  }
+  has_stochastic_pmm <- any(vapply(pmm_vars, is_stochastic_pmm, logical(1)))
+
+  # Warn if m > 1 cannot produce proper between-imputation variability, so users
+  # do not apply Rubin's rules to degenerate/variance-underestimating draws.
+  if (m > 1L && !boot && uncert == "none" && !has_stochastic_pmm) {
+    if (has_any_pmm) {
+      warning("m > 1 but PMM is deterministic here (pmm_k = 1, or pmm_k_method = ",
+              "'mean'/'median'): all imputations will be identical and Rubin's rules ",
+              "are invalid. For proper MI set pmm_k >= 2 with pmm_k_method = 'random', ",
+              "or add boot = TRUE and/or uncert (e.g. 'normalerror').", call. = FALSE)
+    } else {
+      warning("m > 1 without 'boot', 'uncert', or 'pmm': all imputations will be ",
+              "identical and Rubin's rules are invalid. Set boot = TRUE and/or ",
+              "uncert to a method like 'normalerror' for proper MI variability.", call. = FALSE)
+    }
+  }
+  # boot alone imputes conditional means (no residual noise) -> between-imputation
+  # variance is underestimated (improper MI); PMM or uncert supplies the noise.
+  if (m > 1L && boot && uncert == "none" && !has_any_pmm) {
+    warning("m > 1 with boot = TRUE but uncert = 'none' and no PMM: imputations use ",
+            "conditional means only, so the between-imputation variance is ",
+            "underestimated and pooled standard errors will be too small. Add a ",
+            "residual-noise mechanism (uncert = 'normalerror' or 'resid') or PMM ",
+            "for proper multiple imputation.", call. = FALSE)
   }
 
 ### ***** Learner START ***** ################################################################################################### 
