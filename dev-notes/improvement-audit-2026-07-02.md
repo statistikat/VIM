@@ -113,10 +113,26 @@ non-linear and methods need tuning**.
   `init_weights` roxygen (documented nonexistent `"marginal"`). **Follow-up (flag):** default changed
   away from the flagship `mcd` — the deeper `cellWeightsMCD` signal-over-flagging is a separate fix;
   `imputeCellMM` still defaults to `mcd` (untested for this, left as-is). *(cellwise, `cellwise_utils.R`)*
-- [ ] **P0.4 imputeRobustChain broken end-to-end.** Default config imputes zeros; other paths crash
-  (ghost `robGAM`, `pivotCoord`, wrong switch labels), masked via `globalVariables()` in zzz.R.
-  Decide: repair against its paper spec, or deprecate and fold the chained-robust use case into
-  vimpute. Either way: remove the zzz.R silencers and add tests. *(classic-integration + deps-arch)*
+- [x] **P0.4 imputeRobustChain broken end-to-end.** **Repaired (Wave 1; user chose repair over
+  deprecate).** Fixes in `R/imputeRobustChain.R`: (1) the `uncert="pmm"` donor loop assigned inside
+  an inner function that was never called, so every donor stayed 0 and imputations collapsed to
+  `pred + (0 - pred) = 0` — replaced with real PMM (match each missing case's prediction to the k
+  nearest observed predictions, donate an observed value); (2) `useRobustNumeric` now takes `alpha`
+  (was undefined in the `method="lm"` bootstrap → error); (3) the `method="gam"` path never assigned
+  `mod` → `predict(mod)` failed — now assigns it; (4) `imp()` dispatched on `"bin"`/`"count"` but the
+  loop passes the actual type names `"binary"`/`"integer"`/`"count"`, and called undefined helpers
+  with out-of-scope args — dispatch realigned to the real type names; (5) implemented the missing
+  `useLogistic` (binary) and `useGLMpoisson` (count) as robust `glmrob` GLMs with a `glm` fallback and
+  outlier-aware bootstrap; (6) the nominal path's boot block fit `lm()` on a factor response (crash) —
+  replaced with a `multinom` bootstrap refit, handling the single-missing-case shape; (7) the coda
+  outlier step called `pivotCoord()` (robCompositions, not a dependency) — now `coda = FALSE`, guarded,
+  degrades to no outlier flags. Regression test `inst/tinytest/test_imputeRobustChain.R` (numeric×3
+  methods recover the signal / never impute zeros; binary → valid levels; count → non-negative
+  integers): 10/10. **Follow-up (flag):** `zzz.R` `globalVariables()` left as-is (removing entries
+  risks new NOTEs from the remaining dead `pivotCoord` branch; the masking is now moot since the bugs
+  are fixed); the `familiy=` typo arg and placeholder roxygen (`PARAM_DESCRIPTION`) are P2 doc items;
+  `useGLMpoisson` is only reached for explicit `class "count"` columns (plain integers take the numeric
+  path), so it is implemented but not directly covered by the test. *(classic-integration + deps-arch)*
 
 ### Strategic gaps (the "beats mice" blockers, all fact-checked)
 
