@@ -253,8 +253,11 @@ imputeCellReg <- function(data, engine = "crm",
     ))
   }
 
-  # Cell flags: 1 = outlying, 0 = clean
-  cell_flags <- abs(crm_res$cellwiseoutliers)
+  # Cell flags: 1 = outlying, 0 = clean. crm's $cellwiseoutliers holds the
+  # (continuous) deviation of each flagged cell and 0 for clean cells, so
+  # binarise it -- taking abs() directly and feeding it to 1 - flag downstream
+  # produced negative cell weights for large deviations.
+  cell_flags <- (crm_res$cellwiseoutliers != 0) * 1
   # Response weights from casewise diagnostics
   resp_w <- rep(1, nrow(data))
   if (!is.null(crm_res$weights)) resp_w <- crm_res$weights

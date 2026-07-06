@@ -177,9 +177,16 @@ non-linear and methods need tuning**.
   both `mice::complete` and an attached `library(mice)`). (Unambiguous alias still a P2 doc nicety.)
 
 **Cellwise family**
-- [ ] `imputeCellReg` treats crmReg's continuous deviations as binary flags → negative cell weights.
+- [x] `imputeCellReg` treats crmReg's continuous deviations as binary flags → negative cell weights.
+  **Done (Wave 1):** `.engine_crm` now binarises `crm_res$cellwiseoutliers` (`(x != 0) * 1`) so the
+  downstream `1 - flag` stays in [0, 1] (was as low as ~-10). `R/imputeCellReg.R`; regression test
+  `inst/tinytest/test_imputeCellReg_weights.R`.
 - [ ] `imputeCellMCD(boot = TRUE)` fits the bootstrap model and discards it (no uncertainty
-  propagation despite docs).
+  propagation despite docs). **Deferred (Wave 1):** the correct fix (fit MCD/S params on the
+  bootstrap sample, then impute the *original* rows with those params) needs a fit/predict split of
+  `imputeCellMCD` — more than a P1 quick fix. `res_boot` is currently computed then thrown away and
+  `res_orig` re-fits on the original data (`imputeCellEM.R:998-1013`); at minimum this should not
+  waste the bootstrap fit. Left for a focused pass.
 - [ ] Numerical guards: absolute 1e-10 ridge crashes on n<p/collinear data; `.robust_scale`
   fallback of 1 injects N(0,1) noise into constant columns.
 - [ ] Register the (repaired) cellwise family in vimpute (detection pre-pass + learner wrapper).
