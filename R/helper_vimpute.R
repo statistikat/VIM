@@ -1293,6 +1293,24 @@ enforce_factor_levels <- function(df, original_levels) {
   return(df)
 }
 
+# Restore the `ordered` class (and original level order) on columns that were
+# ordered factors in the user's input but got coerced to plain factors during
+# internal processing (precheck() flattens ordered -> factor(as.character(.))).
+# `ordered_info` maps column name -> the input's ordered levels. Values are
+# matched by label, so this only corrects the class/level-order metadata; the
+# imputed values themselves are unchanged. Works on data.frame and data.table.
+restore_ordered_factors <- function(df, ordered_info) {
+  if (length(ordered_info) == 0L) return(df)
+  is_dt <- data.table::is.data.table(df)
+  for (colname in names(ordered_info)) {
+    if (colname %in% names(df)) {
+      newcol <- factor(df[[colname]], levels = ordered_info[[colname]], ordered = TRUE)
+      if (is_dt) data.table::set(df, j = colname, value = newcol) else df[[colname]] <- newcol
+    }
+  }
+  df
+}
+
 # Stops on factor-level mismatches between data and reference levels.
 check_all_factor_levels <- function(df, factor_levels) {
   for (var in names(factor_levels)) {
@@ -1829,9 +1847,13 @@ inject_uncertainty <- function(
 # Builds the final return value, including optional prediction history and tuning logs.
 build_vimpute_result <- function(data, data_new, imp_var, factor_levels,
                                  pred_history = FALSE, history = NULL,
-                                 tune = FALSE, tuning_log = list()) {
+                                 tune = FALSE, tuning_log = list(),
+                                 ordered_info = list()) {
   result <- as.data.table(if (imp_var) data_new else data)
   result <- enforce_factor_levels(result, factor_levels)
+  # enforce_factor_levels rebuilds columns as plain factors; put back the
+  # `ordered` class on columns the user supplied as ordered factors.
+  result <- restore_ordered_factors(result, ordered_info)
 
   any_tuned <- any(unlist(tune))
 

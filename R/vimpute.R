@@ -277,7 +277,16 @@ vimpute <- function(
       factor_levels[[col]] <- levels(as.factor(data[[col]])) # Nnew
     }
   }
-  
+
+  # Remember ordered-factor columns (with their level order) BEFORE precheck()
+  # coerces them to plain factors, so the output can be restored to `ordered`.
+  ordered_info <- list()
+  for (col in names(data)) {
+    if (is.ordered(data[[col]])) {
+      ordered_info[[col]] <- levels(data[[col]])
+    }
+  }
+
 ### ***** Check Data Start ***** ###################################################################################################
   if(verbose){
     message(paste("***** Check Data"))  
@@ -505,7 +514,7 @@ vimpute <- function(
       message("***** Constructing compact 'vimmi' result object")
     }
     return(new_vimmi(
-      data   = as.data.frame(original_data),
+      data   = restore_ordered_factors(as.data.frame(original_data), ordered_info),
       imp    = imp_list,
       where  = where_matrix,
       m      = m,
@@ -2227,6 +2236,7 @@ vimpute <- function(
     pred_history = pred_history,
     history = history,
     tune = tune,
-    tuning_log = tuning_log
+    tuning_log = tuning_log,
+    ordered_info = ordered_info
   ))
 }
