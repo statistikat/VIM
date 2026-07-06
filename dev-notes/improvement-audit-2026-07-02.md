@@ -168,9 +168,14 @@ non-linear and methods need tuning**.
   of subsequent variables (semicontinuous path).
 - [ ] `considered_variables` silently drops all other columns from the output (data loss; return
   the full dataset with non-considered columns untouched).
-- [ ] Length-1 named method list reinterpreted as global method — `list(Dream = "gam")` applies gam
-  to *all* variables; typo'd names pass silently. Validate names against `names(data)`.
+- [x] Length-1 named method list reinterpreted as global method — `list(Dream = "gam")` applies gam
+  to *all* variables; typo'd names pass silently. **Done (Wave 1):** the "single global method"
+  branch in `precheck` now requires an *unnamed* length-1 list; a named length-1 list falls through
+  to the per-variable branch, which validates the name (a typo now errors "Unknown variable
+  name(s)"). `R/helper_vimpute.R`; regression test `inst/tinytest/test_vimpute_method_list.R`.
 - [ ] Unnamed method lists aligned with all columns are positionally misassigned to NA-variables.
+  *(Still open — the fix is small (align by column when `length(method) == length(variables)`) but a
+  clean behavioural test is awkward due to inter-variable dependence; left for the fresh-context pass.)*
 - [ ] Ordered factors: vimpute strips `ordered` from ALL considered columns (silent, also a methods
   regression vs mice `polr`); logical → numeric coercion equally silent.
 - [ ] The commit-8cc3020 "identical imputations" warning is factually wrong for ranger (forest RNG

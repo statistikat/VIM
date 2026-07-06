@@ -1022,8 +1022,13 @@ precheck <- function(
 
     method <- setNames(as.list(rep(method, length(variables_NA))), variables_NA)
 
-  } else if (is.list(method) && length(method) == 1L && is.character(method[[1]])) {
+  } else if (is.list(method) && length(method) == 1L && is.character(method[[1]]) &&
+             is.null(names(method))) {
 
+    # only an UNNAMED length-1 list is a global method; a named length-1 list
+    # (e.g. list(Dream = "gam")) must fall through to the per-variable branch
+    # below so its name is honoured and validated (was silently applied to all
+    # variables, discarding -- and never validating -- the name).
     single_method <- method[[1]]
     if (!(single_method %in% supported_methods)) {
       stop(sprintf("Unsupported method '%s'.", single_method))
