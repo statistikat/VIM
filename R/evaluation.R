@@ -8,7 +8,10 @@
 #' @param x matrix or data frame
 #' @param y matrix or data frame of the same size as x 
 #' @param m the indicator matrix for missing cells
-#' @param vartypes a vector of length ncol(x) specifying the variables types, like factor or numeric
+#' @param vartypes a vector of length ncol(x) specifying the variable types
+#'   (\code{"numeric"} or \code{"factor"}). The default \code{"guess"} infers the
+#'   types from the columns of \code{x} (numeric columns become \code{"numeric"},
+#'   everything else \code{"factor"}).
 #' @return the error measures value
 #' @author Matthias Templ
 #' @references M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
@@ -34,6 +37,16 @@
 #   return(sqrt( (sum((x[m] - y[m])^2) / sum(m)) / var(x[m])) )
 # }
 evaluation <- function(x, y, m, vartypes = "guess"){
+  if (length(vartypes) == 1L && identical(as.character(vartypes), "guess")) {
+    # infer per-column types: numeric columns -> "numeric", everything else
+    # (factor / character / logical) -> "factor".
+    if (is.data.frame(x)) {
+      vartypes <- vapply(x, function(col)
+        if (is.numeric(col)) "numeric" else "factor", character(1))
+    } else {
+      vartypes <- rep(if (is.numeric(x)) "numeric" else "factor", ncol(x))
+    }
+  }
   err_num <- err_cat <- err_mixed <- 0
   if(any(vartypes == "numeric")){
     err_num <- sum((x[, vartypes == "numeric"] - y[, vartypes == "numeric"])^2) / sum(m[, vartypes == "numeric"])

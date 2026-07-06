@@ -191,8 +191,10 @@ non-linear and methods need tuning**.
   (`num.trees`, `nrounds`, … silently dropped since delegation to vimpute).
 
 **Evaluation & distances**
-- [ ] `evaluation()` default `vartypes="guess"` returns error 0 for any input — implement guessing
-  or make vartypes required.
+- [x] `evaluation()` default `vartypes="guess"` returned error 0 for any input — **done (Wave 1):**
+  `"guess"` now infers per-column types from `x` (numeric → `"numeric"`, else `"factor"`).
+  `R/evaluation.R`; regression test `inst/tinytest/test_evaluation.R` (known-truth recovery,
+  guess-vs-explicit agreement, perfect-imputation = 0).
 - [ ] kNN/Gower: semi-continuous variables never range-scaled (unbounded contribution dominates
   distances); `weightDist=TRUE` produces Inf weights → NaN imputations with `methodStand="iqr"`;
   NA-sentinel convention makes kNN prefer donors sharing the recipient's missingness pattern

@@ -25,7 +25,10 @@ msecor(x, y)
 
 \item{m}{the indicator matrix for missing cells}
 
-\item{vartypes}{a vector of length ncol(x) specifying the variables types, like factor or numeric}
+\item{vartypes}{a vector of length ncol(x) specifying the variable types
+(\code{"numeric"} or \code{"factor"}). The default \code{"guess"} infers the
+types from the columns of \code{x} (numeric columns become \code{"numeric"},
+everything else \code{"factor"}).}
 }
 \value{
 the error measures value
