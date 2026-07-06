@@ -35,8 +35,8 @@ Imports:
     mlr3,
     mlr3pipelines,
     R6,
-    paradox,
-    mlr3tuning,
+    paradox (>= 1.0.0),
+    mlr3tuning (>= 1.0.0),
     mlr3learners,
     future
 Suggests: 

@@ -22,10 +22,13 @@ loadable <- vapply(required_pkgs, function(pkg) {
 unloadable_pkgs <- required_pkgs[!loadable]
 
 if (length(missing_pkgs) > 0L || length(unloadable_pkgs) > 0L) {
-  stop(
-    "Cannot run tests. Missing or unloadable packages: ",
+  # These are Suggests-only packages; skip gracefully rather than erroring the
+  # R CMD check under the CRAN noSuggests / _R_CHECK_DEPENDS_ONLY_ flavor.
+  message(
+    "Skipping vimpute new-features tests. Missing or unloadable packages: ",
     paste(unique(c(missing_pkgs, unloadable_pkgs)), collapse = ", ")
   )
+  quit(save = "no", status = 0L)
 }
 
 suppressPackageStartupMessages({

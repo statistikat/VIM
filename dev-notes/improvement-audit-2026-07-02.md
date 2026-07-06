@@ -170,8 +170,11 @@ non-linear and methods need tuning**.
 - [ ] The commit-8cc3020 "identical imputations" warning is factually wrong for ranger (forest RNG
   differs) while the genuinely-identical case (deterministic PMM) escapes it — invert the logic:
   warn on *measured* zero between-variance, not on flag heuristics.
-- [ ] `complete(vimmi)` breaks once mice/tidyr is loaded (generic masking): register the method on
-  tidyr's generic via `.onLoad` hook + keep own generic + use an unambiguous alias in docs.
+- [x] `complete(vimmi)` breaks once mice/tidyr is loaded (generic masking): **done (Wave 1).**
+  `.onLoad` now registers `complete.vimmi` on the `mice` and `tidyr` generics (immediately if loaded,
+  else via `setHook(packageEvent(..., "onLoad"))`), so `complete(vimmi)` dispatches regardless of load
+  order. `R/zzz.R`; regression test `inst/tinytest/test_vimmi_complete_masking.R` (verified against
+  both `mice::complete` and an attached `library(mice)`). (Unambiguous alias still a P2 doc nicety.)
 
 **Cellwise family**
 - [ ] `imputeCellReg` treats crmReg's continuous deviations as binary flags → negative cell weights.
@@ -201,12 +204,15 @@ non-linear and methods need tuning**.
   (opposite of Gower 1971 omit-and-renormalize; undocumented).
 
 **Infrastructure**
-- [ ] `tests/test_vimpute_new_features.R` hard-`stop()`s when Suggests missing → CRAN noSuggests
-  ERROR. Fold into tinytest with proper guards.
-- [ ] No minimum version pins on the mlr3 stack (`TuningInstanceBatchSingleCrit` importFrom breaks
-  `library(VIM)` against pre-1.0 mlr3tuning).
+- [x] `tests/test_vimpute_new_features.R` hard-`stop()`s when Suggests missing → CRAN noSuggests
+  ERROR. **Done (Wave 1):** `stop()` → `message()` + `quit(status = 0L)` so it skips gracefully under
+  the noSuggests flavor. (Folding it into tinytest / de-duplication is the P3 cleanup, not done here.)
+- [x] No minimum version pins on the mlr3 stack. **Done (Wave 1):** pinned `mlr3tuning (>= 1.0.0)`
+  (for `TuningInstanceBatchSingleCrit`) and `paradox (>= 1.0.0)` (for the `ps()` search-space API) in
+  DESCRIPTION.
 - [ ] `car` accounts for 55 of 105 recursive hard deps for one optional Box-Cox call — demote.
-- [ ] CI runs only on master/main — add `devel` to the R-CMD-check branch filters.
+- [x] CI runs only on master/main — **done (Wave 1):** added `devel` to the push/PR branch filters in
+  `.github/workflows/R-CMD-check.yaml`.
 
 **mice-parity P1 gaps (fact-checked):** amputation generator for simulation studies
 (`ampute()`-equivalent, natural extension of `makeNA`), parallel MI over m (future is already
