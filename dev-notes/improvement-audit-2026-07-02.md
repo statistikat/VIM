@@ -195,8 +195,14 @@ non-linear and methods need tuning**.
 - [ ] `imputeRobust()`: `method="gamRob"` and `uncert="wresid"` always crash; PMM donor pool is
   contaminated by kNN-initialised values.
 - [ ] `irmi(mi > 1)` with default `imp_var=TRUE` returns one mangled data.frame instead of a list.
-- [ ] `regressionImp()` silently fits glmnet (fixed lambda 0.01) instead of documented lm/glm
-  whenever ≥ 2 predictors.
+- [x] `regressionImp()` silently fits glmnet (fixed lambda 0.01) instead of documented lm/glm
+  whenever ≥ 2 predictors. **Done (Wave 1; user chose "lm/glm + glmnet fallback"):** numeric
+  responses now use `lm` and binary responses `glm` for any number of predictors, matching the
+  docs; it falls back to the regularized (glmnet) `vimpute` path only when the design is
+  rank-deficient (collinear / p ≥ n) or the response is a multi-level factor. Docs corrected (they
+  had contradicted themselves). `R/regressionImp.R`; regression test
+  `inst/tinytest/test_regressionImp_lm.R` (multi-predictor numeric matches `lm` exactly;
+  rank-deficient falls back cleanly; binary → valid glm classes).
 - [x] `rangerImpute`/`xgboostImpute` wrappers ignore their documented hyperparameters
   (`num.trees`, `nrounds`, … silently dropped since delegation to vimpute). **Done (Wave 1):** both
   now forward their hyperparameters (and `...`) to the ranger/xgboost learner via `vimpute()`'s

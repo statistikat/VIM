@@ -34,8 +34,15 @@ the imputed data set (same class as \code{data})
 }
 \description{
 Impute missing values based on a regression / classification model.
-Internally delegates to \code{vimpute()} with method = "regularized" (glmnet)
-or "robust" (lmrob/glmrob).
+}
+\details{
+By default (\code{\link[=lm]{lm()}} for numeric responses and \code{\link[=glm]{glm()}} for binary responses,
+with any number of predictors) the imputation is deterministic and matches a
+plain regression fit. When the design is rank-deficient (collinear predictors
+or \eqn{p \ge n}) or the response is a multi-level factor, it falls back to
+the regularized (glmnet) path via \code{\link[=vimpute]{vimpute()}} with \code{method = "regularized"}.
+If \code{robust = TRUE}, \code{\link[=vimpute]{vimpute()}} with \code{method = "robust"}
+(\link[robustbase:lmrob]{lmrob()} / \link[robustbase:glmrob]{glmrob()}) is used.
 }
 \seealso{
 Other imputation methods: 
