@@ -14,7 +14,7 @@ imputeCellIRMI(
   eps_irwls = 1e-06,
   uncert = "pmm",
   weight_update = "multivariate",
-  init_weights = "mcd",
+  init_weights = "ddc",
   hard_threshold = 0.5,
   trace = FALSE
 )
@@ -51,10 +51,14 @@ multivariate update for weight coherence across variables, or
 \code{"univariate"} updates each variable independently from its
 residuals.}
 
-\item{init_weights}{method for initialising cell weights:
-\code{"mcd"} (default) uses the minimum covariance determinant on
-the continuous block, or \code{"marginal"} uses univariate
-median/MAD standardisation.}
+\item{init_weights}{method for initialising cell weights, one of
+\code{"ddc"} (default; DetectDeviatingCells, requires the \pkg{cellWise}
+package and falls back to univariate weights when it is unavailable),
+\code{"univariate"} (per-column median/MAD standardisation), or
+\code{"mcd"} (minimum covariance determinant on the continuous block).
+The default is \code{"ddc"} because \code{"mcd"} downweights
+high-leverage points that carry the regression signal, which can make
+imputation worse than unconditional median imputation.}
 
 \item{hard_threshold}{numeric in \eqn{[0, 1]}.  After convergence,
 cells with weight below this value are flagged as contaminated

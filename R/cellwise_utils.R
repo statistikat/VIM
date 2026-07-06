@@ -467,13 +467,15 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
 }
 
 
-#' QR-based weighted least squares with cell-level weights
+#' QR-based weighted least squares with cell-derived row weights
 #'
-#' Solves the weighted least squares problem where each cell
-#' \eqn{(i, k)} in the design matrix has its own weight. The
-#' effective weight for cell \eqn{(i, k)} is
-#' \eqn{w^{cell}_{ik} \cdot w^{\psi}_i \cdot w^{resp}_i}.
-#' Uses QR decomposition for numerical stability.
+#' Solves \eqn{\min_\beta \sum_i w_i (y_i - X_i \beta)^2} on the unweighted
+#' design, where the row weight \eqn{w_i = w^{cellrow}_i \cdot w^{\psi}_i \cdot
+#' w^{resp}_i} and \eqn{w^{cellrow}_i} is the geometric mean of the predictor
+#' cell weights of row \eqn{i}. Cell weights thus downweight the influence of
+#' rows with contaminated cells without distorting the design values, so the
+#' returned \eqn{\beta} is a valid coefficient for \eqn{X \beta}. Uses QR
+#' decomposition for numerical stability.
 #'
 #' @param X_int \eqn{n \times (p+1)} design matrix with intercept
 #' @param y numeric n-vector
@@ -487,15 +489,30 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
   n <- nrow(X_int)
   p_int <- ncol(X_int)
 
-  # Row weights from psi and response weights
-  w_row <- w_psi * w_response  # n-vector
-  sqrt_w_row <- sqrt(pmax(w_row, 0))
+  # Cell weights enter the LOSS as per-row reliability, never the design values.
+  # A row is downweighted by the average contamination of its predictor cells:
+  # the arithmetic mean of the non-intercept cell weights. (A geometric mean lets
+  # a single near-zero false-positive flag collapse an otherwise-clean row, which
+  # destroys the fit on clean data; the residual psi-weights below still catch
+  # gross per-row corruption.) Folding cell weights into the design instead
+  # (X_tilde = sqrt(w_row) * w_cell * X) biases beta, because prediction uses the
+  # UNWEIGHTED design cbind(1, X) %*% beta.
+  if (p_int > 1L) {
+    w_cell_row <- rowMeans(w_cell_int[, -1L, drop = FALSE])
+  } else {
+    w_cell_row <- rep(1, n)
+  }
 
-  # Cell weights enter LINEARLY in the design matrix:
-  #   X_tilde[i, k] = sqrt(w_row[i]) * w_cell[i, k] * X[i, k]
-  #   y_tilde[i]    = sqrt(w_row[i]) * y[i]
-  # This solves: min sum_i w_row_i * (y_i - sum_k w_cell_{ik} X_{ik} beta_k)^2
-  X_tilde <- sqrt_w_row * w_cell_int * X_int
+  # Genuine weighted least squares on the unweighted design:
+  #   min sum_i w_row_i * (y_i - X_i beta)^2 ,
+  #   w_row_i = w_psi_i * w_response_i * w_cell_row_i
+  w_row <- w_psi * w_response * w_cell_row
+  # Guard total-weight collapse (e.g. a near-exact fit drives the robust scale,
+  # and thus all psi-weights, to ~0): fall back to unweighted least squares
+  # rather than solving a singular system.
+  if (sum(w_row) < 1e-8) w_row <- rep(1, n)
+  sqrt_w_row <- sqrt(pmax(w_row, 0))
+  X_tilde <- sqrt_w_row * X_int
   y_tilde <- sqrt_w_row * y
 
   # solve via QR decomposition
@@ -503,10 +520,15 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
 
   # check for rank deficiency
   if (qr_obj$rank < p_int) {
-    # fall back to ridge-regularised normal equations
-    XtX <- crossprod(X_tilde) + diag(1e-10, p_int)
+    # rank-deficient: ridge-regularised normal equations with a scale-aware
+    # ridge, backstopped by a pseudo-inverse for numerically singular XtX.
+    XtX <- crossprod(X_tilde)
+    ridge <- 1e-8 * mean(diag(XtX)) + 1e-12
     Xty <- crossprod(X_tilde, y_tilde)
-    beta <- as.numeric(solve(XtX, Xty))
+    beta <- tryCatch(
+      as.numeric(solve(XtX + diag(ridge, p_int), Xty)),
+      error = function(e) as.numeric(MASS::ginv(XtX + diag(ridge, p_int)) %*% Xty)
+    )
   } else {
     beta <- as.numeric(qr.coef(qr_obj, y_tilde))
   }

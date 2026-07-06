@@ -100,10 +100,19 @@ non-linear and methods need tuning**.
   underestimated and points to `uncert`/PMM. The combination is not silently "upgraded"; behaviour
   unchanged. `R/vimpute.R`; same regression test. Doc note in `?vimpute` still TODO.
   *(vimmi-mi)*
-- [ ] **P0.3 cellIRWLS weights-times-data defect.** Rewrite the engine so cell weights enter the
-  IRWLS *weighting* (per-cell contribution to the loss), never multiply the design matrix values;
-  re-run the audit's benchmark (clean data: must beat median; contaminated: must beat plain irmi).
-  Affects imputeCellIRMI / imputeCellM / imputeCellMCD-imputation. *(cellwise, `cellwise_utils.R`)*
+- [x] **P0.3 cellIRWLS weights-times-data defect.** **Done (Wave 1).** Two coupled fixes:
+  (1) `.weighted_qr_solve` now solves genuine WLS on the *unweighted* design, with cell weights
+  entering the loss as a per-row reliability (arithmetic mean of predictor cell weights), so β is a
+  valid coefficient for the `cbind(1, X) %*% β` used at prediction (was `X_tilde = √w_row·w_cell·X`).
+  (2) Default `init_weights` changed `"mcd" → "ddc"`: `mcd` downweights the high-leverage points that
+  carry the regression signal, so it imputed *at or worse than median* on both clean and contaminated
+  data; `ddc` (DetectDeviatingCells, the detect-then-impute method the audit recommended) is best on
+  both. Benchmark (4 seeds, RMSE vs median≈2.2): clean 0.83, contaminated 0.75 — both now **beat plain
+  irmi** (was ~2× worse). `R/cellwise_utils.R`, `R/imputeCellwise.R`; regression test
+  `inst/tinytest/test_cellwise_irmi_quality.R` (clean + contaminated). Also fixed the stale
+  `init_weights` roxygen (documented nonexistent `"marginal"`). **Follow-up (flag):** default changed
+  away from the flagship `mcd` — the deeper `cellWeightsMCD` signal-over-flagging is a separate fix;
+  `imputeCellMM` still defaults to `mcd` (untested for this, left as-is). *(cellwise, `cellwise_utils.R`)*
 - [ ] **P0.4 imputeRobustChain broken end-to-end.** Default config imputes zeros; other paths crash
   (ghost `robGAM`, `pivotCoord`, wrong switch labels), masked via `globalVariables()` in zzz.R.
   Decide: repair against its paper spec, or deprecate and fold the chained-robust use case into
