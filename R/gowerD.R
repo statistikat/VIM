@@ -16,7 +16,20 @@
 #' @param nMin integer number of values with smallest distance to be returned
 #' @param returnMin logical if the computed distances for the indices should be returned
 #' @param methodStand character either "range" or "iqr", iqr is more robust for outliers
-#' @details returnIndex=FALSE: a numerical matrix n x m with the computed distances
+#' @details Numerical and semi-continuous (mixed) variables are standardised by
+#' their range (or IQR, see `methodStand`) before the distance is computed; for
+#' mixed variables the point mass (`mixed.constant`) is excluded from the range
+#' estimate and scaled along with the data.
+#'
+#' Missing values in a distance variable are replaced by a sentinel (the pooled
+#' column maximum plus one) after standardisation. Two records both missing the
+#' same variable therefore have distance 0 on it, and a missing-vs-observed pair
+#' contributes up to about 2 (rather than a variable's nominal maximum of 1).
+#' This sentinel convention departs from Gower's (1971) omit-and-renormalise
+#' rule and biases nearest-neighbour selection towards records that share the
+#' same missingness pattern.
+#'
+#' returnIndex=FALSE: a numerical matrix n x m with the computed distances
 #' returnIndex=TRUE: a named list with "ind" containing the requested indices and "mins" the computed distances
 #' @examples
 #' data(sleep)
