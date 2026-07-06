@@ -15,7 +15,6 @@ Authors@R: c(
 Depends:
     R (>= 4.1.0),colorspace,grid
 Imports:
-    car,
     grDevices,
     robustbase,
     stats,
@@ -56,6 +55,7 @@ Suggests:
     cellWise,
     crmReg,
     mice,
+    car,
     lgr
 Description: Provides methods for imputation and visualization of
     missing values. It includes graphical tools to explore the amount, structure 

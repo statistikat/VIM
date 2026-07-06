@@ -217,7 +217,13 @@ non-linear and methods need tuning**.
 - [x] No minimum version pins on the mlr3 stack. **Done (Wave 1):** pinned `mlr3tuning (>= 1.0.0)`
   (for `TuningInstanceBatchSingleCrit`) and `paradox (>= 1.0.0)` (for the `ps()` search-space API) in
   DESCRIPTION.
-- [ ] `car` accounts for 55 of 105 recursive hard deps for one optional Box-Cox call — demote.
+- [x] `car` accounts for 55 of 105 recursive hard deps for one optional Box-Cox call — **done
+  (Wave 1):** demoted `car` Imports → Suggests. `prepare()`'s Box-Cox now uses a native power
+  transform (`.bcPower`, replaces `car::bcPower`); `car::powerTransform` is used only to *estimate*
+  lambda, behind a `requireNamespace` guard with a clear message. Also fixed a latent bug in the
+  matrix branch (it passed a non-matching `p=` arg to `mapply`, so multi-column Box-Cox never
+  worked) by applying per-column lambdas. Recursive hard deps **105 → 58**. `R/prepare.R`,
+  `DESCRIPTION`, `R/VIM-package.R`; regression test `inst/tinytest/test_prepare_boxcox.R`.
 - [x] CI runs only on master/main — **done (Wave 1):** added `devel` to the push/PR branch filters in
   `.github/workflows/R-CMD-check.yaml`.
 

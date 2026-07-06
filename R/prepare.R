@@ -118,6 +118,23 @@ onestepMean <- function(x, na.rm = FALSE) {
     mean(x, na.rm=na.rm)
 }
 
+# Native Box-Cox power transform (replaces car::bcPower): shift by 'start' then
+# (z^lambda - 1)/lambda, or log(z) for lambda == 0. Matches car::bcPower() for
+# the default start = 0.
+.bcPower <- function(x, lambda, start = 0) {
+    z <- x + start
+    if (isTRUE(abs(lambda) < 1e-8)) log(z) else (z^lambda - 1) / lambda
+}
+
+# Estimating the power(s) still uses car (Suggests); guard so a missing car
+# gives a clear message instead of an unhelpful "could not find function".
+.bcLambda <- function(xi) {
+    if (!requireNamespace("car", quietly = TRUE))
+        stop("transformation = \"boxcox\" needs the 'car' package to estimate ",
+             "the power(s); install 'car' or supply 'powers'.", call. = FALSE)
+    car::powerTransform(xi)$lambda
+}
+
 boxcoxVIM <- function(x, powers = NULL, start = 0) {
     if(is.null(dim(x))) {
         if(length(x) == 0) stop("'x' must have positive length")
@@ -125,9 +142,9 @@ boxcoxVIM <- function(x, powers = NULL, start = 0) {
             i <- !is.na(x)
             xi <- x[i]
             if(length(xi) == 0) stop("all values in 'x' are NA")
-            powers <- powerTransform(xi)$lambda
+            powers <- .bcLambda(xi)
         }
-        bcPower(x, powers, start)
+        .bcPower(x, powers, start)
     } else {
         if(nrow(x) == 0) stop("'x' has no rows")
         else if(ncol(x) == 0) stop("'x' has no columns")
@@ -135,11 +152,15 @@ boxcoxVIM <- function(x, powers = NULL, start = 0) {
             i <- apply(x, 1, function(x) !any(is.na(x)))
             xi <- x[i,, drop=FALSE]
             if(nrow(xi) == 0) stop("all rows in 'x' contain NAs")
-            powers <- powerTransform(xi)$lambda
+            powers <- .bcLambda(xi)
         }
-        # box.cox only works with vectors
-        # if x has only one column, the result of mapply is a vector
-        as.matrix(mapply(bcPower, x=x, p=powers, start=start))
+        # apply each column's power to that column (a single power is recycled)
+        if(length(powers) == 1L) powers <- rep(powers, ncol(x))
+        res <- vapply(seq_len(ncol(x)),
+                      function(j) .bcPower(x[, j], powers[j], start),
+                      numeric(nrow(x)))
+        dimnames(res) <- dimnames(x)
+        res
     }
 }
 

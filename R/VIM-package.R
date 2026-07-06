@@ -9,8 +9,6 @@
 #' @import grid
 #' @import robustbase
 #' @import colorspace
-#' @importFrom car bcPower
-#' @importFrom car powerTransform
 #' @importFrom vcd mosaic
 #' @importFrom vcd labeling_border
 #' @importFrom laeken weightedMedian
