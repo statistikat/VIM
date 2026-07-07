@@ -31,7 +31,7 @@ out1 <- vimpute(df, considered_variables = c("a", "b"),
 expect_true(all(c("a", "b", "keep_num", "keep_chr") %in% names(out1)),
             info = "default output dropped non-considered columns")
 ## considered columns imputed
-expect_equal(sum(is.na(out1[, c("a", "b"), with = FALSE])), 0L)
+expect_equal(sum(is.na(as.data.frame(out1)[, c("a", "b")])), 0L)
 ## passthrough columns untouched (values and their NA left as-is)
 expect_equal(out1$keep_chr, df$keep_chr)
 expect_true(is.na(out1$keep_num[5]))

@@ -8,8 +8,10 @@ library(VIM)
 set.seed(1)
 res <- vimpute(sleep, method = "ranger", tune = TRUE, sequential = FALSE)
 
-expect_true(is.list(res$tuning_log) && length(res$tuning_log) > 0)
+## type-stable contract: the tuning report is an attribute on the data
+tl <- attr(res, "tuning_log")
+expect_true(is.list(tl) && length(tl) > 0)
 expect_true(
-  any(vapply(res$tuning_log, function(e) isTRUE(e$tuned), logical(1))),
+  any(vapply(tl, function(e) isTRUE(e$tuned), logical(1))),
   info = "tune = TRUE with sequential = FALSE tuned no variable"
 )

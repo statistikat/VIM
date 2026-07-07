@@ -148,10 +148,13 @@
 #'  missings first), \code{"decreasing.na"}, or a character vector giving an
 #'  explicit permutation of the NA-variables.
 #' @return
-#'  Either:
-#'    - the imputed dataset (default, when \code{m = 1}), or
-#'    - a list containing the imputed dataset and prediction history (when \code{pred_history = TRUE} or \code{tune = TRUE}), or
-#'    - a \code{\link{vimmi}} object (when \code{m > 1}).
+#'  For \code{m = 1}: the imputed dataset, classed like the input
+#'  (data.frame in, data.frame out; data.table in, data.table out). When
+#'  \code{tune = TRUE} the tuning report is attached as
+#'  \code{attr(result, "tuning_log")}; when \code{pred_history = TRUE} the
+#'  prediction history is attached as \code{attr(result, "pred_history")} --
+#'  the return is always the data itself, never a wrapper list.
+#'  For \code{m > 1}: a \code{\link{vimmi}} object.
 #' @export
 #'
 #' @family imputation methods
@@ -305,6 +308,11 @@ vimpute <- function(
   }
 
   # dots <- list(...)
+
+  # Type-stable return: remember the input's class so the result is returned
+  # as a data.frame for data.frame input and a data.table for data.table input
+  # (matching kNN/hotdeck). Internally everything runs on data.table.
+  input_is_dt <- data.table::is.data.table(data)
 
   # only defined variables
   data_all_variables <- as.data.table(data)
@@ -631,16 +639,14 @@ vimpute <- function(
         verbose = verbose
       )
 
-      imputed_dt <- if (is.list(single_result) && !is.data.frame(single_result) && "data" %in% names(single_result)) {
-        single_result$data
-      } else {
-        as.data.table(single_result)
-      }
+      # Type-stable contract: the recursion returns the imputed data itself,
+      # with any tuning report attached as an attribute.
+      imputed_dt <- as.data.table(single_result)
 
       # Harvest run 1's tuning results for runs 2..m (and for the vimmi report).
       if (mi == 1L && any_tune_requested &&
-          is.list(single_result) && !is.null(single_result$tuning_log)) {
-        mi_tuning_log <- single_result$tuning_log
+          !is.null(attr(single_result, "tuning_log"))) {
+        mi_tuning_log <- attr(single_result, "tuning_log")
         harvested <- list()
         for (entry in mi_tuning_log) {   # last entry per variable wins
           if (!is.null(entry$params)) harvested[[entry$variable]] <- entry$params
@@ -2448,6 +2454,7 @@ vimpute <- function(
     ordered_info = ordered_info,
     data_all_variables = data_all_variables,
     considered_variables = considered_variables,
-    keep_all_columns = keep_all_columns
+    keep_all_columns = keep_all_columns,
+    input_is_dt = input_is_dt
   ))
 }

@@ -1913,7 +1913,8 @@ build_vimpute_result <- function(data, data_new, imp_var, factor_levels,
                                  ordered_info = list(),
                                  data_all_variables = NULL,
                                  considered_variables = NULL,
-                                 keep_all_columns = TRUE) {
+                                 keep_all_columns = TRUE,
+                                 input_is_dt = TRUE) {
   result <- as.data.table(if (imp_var) data_new else data)
   result <- enforce_factor_levels(result, factor_levels)
   # enforce_factor_levels rebuilds columns as plain factors; put back the
@@ -1925,22 +1926,22 @@ build_vimpute_result <- function(data, data_new, imp_var, factor_levels,
     result <- merge_passthrough_columns(result, data_all_variables, considered_variables)
   }
 
-  any_tuned <- any(unlist(tune))
-
-  if (!pred_history && !any_tuned) {
-    return(result)
+  # Type-stable return: the result is ALWAYS the imputed data, classed like the
+  # input; diagnostics ride along as attributes instead of a bare-list wrapper
+  # (which used to switch the return type under tune/pred_history).
+  if (!input_is_dt) {
+    result <- as.data.frame(result)
   }
-
-  output <- list(data = result)
-
   if (pred_history) {
-    output$pred_history <- rbindlist(history, fill = TRUE)
+    ph <- rbindlist(history, fill = TRUE)
+    if (!input_is_dt) ph <- as.data.frame(ph)
+    attr(result, "pred_history") <- ph
   }
-  if (any_tuned) {
-    output$tuning_log <- tuning_log
+  if (any(unlist(tune))) {
+    attr(result, "tuning_log") <- tuning_log
   }
 
-  output
+  result
 }
 
 # Runs model prediction, back-transformation, uncertainty handling, and PMM for one variable.

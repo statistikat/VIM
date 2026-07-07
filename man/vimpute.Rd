@@ -196,12 +196,13 @@ missings first), \code{"decreasing.na"}, or a character vector giving an
 explicit permutation of the NA-variables.}
 }
 \value{
-Either:
-\itemize{
-\item the imputed dataset (default, when \code{m = 1}), or
-\item a list containing the imputed dataset and prediction history (when \code{pred_history = TRUE} or \code{tune = TRUE}), or
-\item a \code{\link{vimmi}} object (when \code{m > 1}).
-}
+For \code{m = 1}: the imputed dataset, classed like the input
+(data.frame in, data.frame out; data.table in, data.table out). When
+\code{tune = TRUE} the tuning report is attached as
+\code{attr(result, "tuning_log")}; when \code{pred_history = TRUE} the
+prediction history is attached as \code{attr(result, "pred_history")} --
+the return is always the data itself, never a wrapper list.
+For \code{m > 1}: a \code{\link{vimmi}} object.
 }
 \description{
 Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)

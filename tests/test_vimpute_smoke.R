@@ -139,11 +139,12 @@ run_case("numeric ranger with imp_var and pred_history", {
     verbose = FALSE
   )
 
-  check(is.list(result), "pred_history should return a list result.")
-  check(is.data.table(result$data), "result$data should be a data.table.")
-  check("pred_history" %in% names(result), "prediction history is missing.")
-  check(!anyNA(result$data$y_num), "numeric target still contains missing values.")
-  check("y_num_imp" %in% names(result$data), "imputation flag column is missing.")
+  # type-stable contract: the result IS the data (input was a data.table);
+  # the prediction history rides along as an attribute
+  check(is.data.table(result), "result should be a data.table (data.table input).")
+  check(!is.null(attr(result, "pred_history")), "prediction history is missing.")
+  check(!anyNA(result$y_num), "numeric target still contains missing values.")
+  check("y_num_imp" %in% names(result), "imputation flag column is missing.")
 })
 
 # Checks score-based PMM in sequential mode and verifies that the numeric target
@@ -231,11 +232,12 @@ run_case("sequential convergence with prediction history", {
     verbose = FALSE
   )
 
-  check(is.list(result), "sequential pred_history should return a list result.")
-  check(is.data.table(result$data), "sequential result$data should be a data.table.")
-  check("pred_history" %in% names(result), "sequential prediction history is missing.")
-  check(!anyNA(result$data$y_num), "sequential numeric target still contains missing values.")
-  check(all(c("iteration", "variable", "index", "predicted_values") %in% names(result$pred_history)),
+  # type-stable contract: data returned, history as an attribute
+  check(is.data.table(result), "sequential result should be a data.table (data.table input).")
+  ph <- attr(result, "pred_history")
+  check(!is.null(ph), "sequential prediction history is missing.")
+  check(!anyNA(result$y_num), "sequential numeric target still contains missing values.")
+  check(all(c("iteration", "variable", "index", "predicted_values") %in% names(ph)),
         "prediction history has unexpected columns.")
 })
 

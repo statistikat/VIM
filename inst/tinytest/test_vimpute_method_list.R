@@ -16,4 +16,4 @@ expect_error(
 ## a correct length-1 named list must be accepted (per-variable) and impute
 set.seed(1)
 out <- vimpute(sleep, method = list(Dream = "ranger"), sequential = FALSE)
-expect_equal(sum(is.na(out[, colnames(sleep), with = FALSE])), 0L)
+expect_equal(sum(is.na(as.data.frame(out)[, colnames(sleep)])), 0L)

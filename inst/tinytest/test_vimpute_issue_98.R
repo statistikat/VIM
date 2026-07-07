@@ -39,9 +39,10 @@ issue98_out <- collect_warnings(vimpute(
   imp_var = FALSE
 ))
 
-expect_true(is.list(issue98_out$value))
+# type-stable contract: the result IS the data (history as an attribute)
+expect_true(is.data.frame(issue98_out$value))
 expect_false(any(grepl("Target column '.*'( contains| must not contain) missing values", issue98_out$warnings)))
-expect_equal(sum(is.na(issue98_out$value$data)), 0)
+expect_equal(sum(is.na(issue98_out$value)), 0)
 
 # The formula/model-matrix preprocessing path had the same target-NA problem.
 formula_data <- as.data.table(iris[, c("Sepal.Length", "Sepal.Width", "Species")])
