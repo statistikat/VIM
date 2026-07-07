@@ -319,7 +319,9 @@ contracts — sketches in the appendix, headlines here:
 - [ ] **Harden the vimmi bridge:** keep vimmi (don't return mids natively — would hard-couple to
   mice and drop metadata); make `as.mids.vimmi` a real generic method or rename `vim_as_mids()`;
   wrap `with.vimmi` returns as mira-compatible; store per-iteration chain stats + seed in vimmi.
-- [~] **Safe defaults:** default `uncert = "pmm"` (random-draw, k=5) for numeric single imputation
+- [~] **Safe defaults** *(DECIDED 2026-07-07: Matthias — change default to `uncert = "pmm"` at
+  7.3.0, NEWS-documented; implementation cares: k=5 draw for the uncert-pmm path, explicit-uncert
+  check for the pmm+uncert warning, m>1 warning + smoke-test reconciliation)*: default `uncert = "pmm"` (random-draw, k=5) for numeric single imputation
   — today's conditional-mean default loses any density-overlay comparison against mice; add a
   per-variable tryCatch fallback chain so one pathological column can't abort the whole run
   (mice's behavior is the bar). **Fallback half done (Wave 2, 7b5000a):** `train_with_fallback()`
@@ -330,7 +332,9 @@ contracts — sketches in the appendix, headlines here:
 - [ ] **Convergence criterion:** per-variable scale-normalized `d_v = MSE-change/var(obs)` with max
   (not sum) aggregation — today's unscaled sum means eps=0.005 is meaningless across data scales;
   return the convergence matrix for diagnostics.
-- [ ] **Type-stable returns:** class `c("vimpute","data.table")` with diagnostics as attributes
+- [ ] **Type-stable returns** *(DECIDED 2026-07-07: Matthias — attributes + input class: return
+  data classed like the input, diagnostics as attributes; breaking → NEWS + test reconciliation)*:
+  class `c("vimpute","data.table")` with diagnostics as attributes
   (`tune=TRUE` currently changes the return type to a bare list, breaking downstream code);
   restore logical/ordered types on exit; message once per coerced column.
 
