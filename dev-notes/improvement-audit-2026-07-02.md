@@ -319,9 +319,13 @@ contracts — sketches in the appendix, headlines here:
 - [ ] **Harden the vimmi bridge:** keep vimmi (don't return mids natively — would hard-couple to
   mice and drop metadata); make `as.mids.vimmi` a real generic method or rename `vim_as_mids()`;
   wrap `with.vimmi` returns as mira-compatible; store per-iteration chain stats + seed in vimmi.
-- [~] **Safe defaults** *(DECIDED 2026-07-07: Matthias — change default to `uncert = "pmm"` at
-  7.3.0, NEWS-documented; implementation cares: k=5 draw for the uncert-pmm path, explicit-uncert
-  check for the pmm+uncert warning, m>1 warning + smoke-test reconciliation)*: default `uncert = "pmm"` (random-draw, k=5) for numeric single imputation
+- [x] **Safe defaults** **Done (Wave 2, 6b78a28 + 7b5000a):** default `uncert = "pmm"` at 7.3.0
+  (the uncert-pmm path already hard-codes k=5 random draw, so no k trap); pmm-vs-uncert warning
+  gated on explicit `uncert` (missing() check); wrappers pin `uncert="none"` to stay deterministic;
+  default m>1 now stochastic (improper-MI warning correctly silent on defaults);
+  `test_vimpute_mi_properness.R` P0.2 sets `uncert="none"` explicitly (it relied on the old
+  default); contract locked by `test_vimpute_uncert_default.R`. Fallback chain landed earlier
+  (7b5000a). Original ask: default `uncert = "pmm"` (random-draw, k=5) for numeric single imputation
   — today's conditional-mean default loses any density-overlay comparison against mice; add a
   per-variable tryCatch fallback chain so one pathological column can't abort the whole run
   (mice's behavior is the bar). **Fallback half done (Wave 2, 7b5000a):** `train_with_fallback()`
@@ -332,8 +336,11 @@ contracts — sketches in the appendix, headlines here:
 - [ ] **Convergence criterion:** per-variable scale-normalized `d_v = MSE-change/var(obs)` with max
   (not sum) aggregation — today's unscaled sum means eps=0.005 is meaningless across data scales;
   return the convergence matrix for diagnostics.
-- [ ] **Type-stable returns** *(DECIDED 2026-07-07: Matthias — attributes + input class: return
-  data classed like the input, diagnostics as attributes; breaking → NEWS + test reconciliation)*:
+- [x] **Type-stable returns** **Done (Wave 2, df917ab):** result is always the imputed data,
+  classed like the input (df in → df out, dt in → dt out); `tuning_log`/`pred_history` are
+  attributes, killing the tune/pred_history bare-list switch. Consumers reconciled (tune test,
+  smoke pred_history ×2, issue-98 `$value$data`, df indexing in three test files); contract locked
+  by `inst/tinytest/test_vimpute_return_type.R`. NEWS 7.3.0 breaking-changes entry. Original ask:
   class `c("vimpute","data.table")` with diagnostics as attributes
   (`tune=TRUE` currently changes the return type to a bare list, breaking downstream code);
   restore logical/ordered types on exit; message once per coerced column.

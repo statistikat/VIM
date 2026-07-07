@@ -1,3 +1,21 @@
+# VIM 7.3.0 (development)
+
+## Breaking changes
+- **`vimpute()` returns are type-stable**: the result is always the imputed data, classed like the input (data.frame in, data.frame out; data.table in, data.table out). With `tune = TRUE` or `pred_history = TRUE` the diagnostics are attached as `attr(result, "tuning_log")` / `attr(result, "pred_history")` instead of switching the return to a bare list.
+- **`vimpute()`'s default `uncert` is now `"pmm"`** (random draw among the 5 nearest donors): default numeric imputations are observed donor values with an honest distribution, instead of deterministic conditional means. Set `uncert = "none"` for the previous behaviour. Default `m > 1` runs are now stochastic between imputations. `rangerImpute()`, `xgboostImpute()` and `regressionImp()` keep their deterministic behaviour (`uncert = "none"` pinned internally).
+
+## New features
+- `vimpute()` gains `seed` for whole-run reproducibility (applied once at entry, as in mice; the `m` imputations still differ from each other).
+- `vimpute()` gains `predictors`: per-variable predictor control -- the equivalent of mice's `predictorMatrix` (named list or 0/1 matrix), working for every method including `ranger` and `xgboost` (where `formula` is rejected). A variable's `formula` takes precedence over its `predictors` entry.
+- `vimpute()` gains `visit_sequence`: `"asis"`, `"increasing.na"`, `"decreasing.na"`, or an explicit permutation of the NA-variables.
+- `vimpute()` gains `tuned_params` to apply (and reuse) tuned hyperparameters without running the tuner; each `tuning_log` entry now carries its chosen parameters in `$params`.
+- With `m > 1` and `tune = TRUE`, tuning now runs **once** (in the first imputation) and the chosen parameters are shared by all `m` imputations, as in mice -- previously every imputation re-tuned independently, conflating tuner noise with missing-data uncertainty. The `vimmi` object carries the tuning report in `$tuning_log`.
+- A learner failure on one variable no longer aborts the whole imputation: `vimpute()` warns (naming the variable) and falls back to a featureless learner for that variable.
+
+## Minor improvements
+- Hyperparameter tuning is reproducible across machines (`batch_size = 1` for the random search).
+- After tuning, the `future` plan active at entry is restored instead of being forced to `"sequential"`.
+
 # VIM 7.2.0
 - `vimpute()` gains `keep_all_columns` (default `TRUE`): the full dataset is returned, with columns excluded via `considered_variables` passed through unchanged (matching `kNN()`/`hotdeck()`/`irmi()`); set `FALSE` for the previous considered-only shape.
 - `vimpute()` warns when `m > 1` cannot produce between-imputation variability (no `boot`, `uncert`, or stochastic `pmm`), so improper multiple imputation is no longer silent.
