@@ -203,12 +203,20 @@ non-linear and methods need tuning**.
   **Done (Wave 1):** `.engine_crm` now binarises `crm_res$cellwiseoutliers` (`(x != 0) * 1`) so the
   downstream `1 - flag` stays in [0, 1] (was as low as ~-10). `R/imputeCellReg.R`; regression test
   `inst/tinytest/test_imputeCellReg_weights.R`.
-- [ ] `imputeCellMCD(boot = TRUE)` fits the bootstrap model and discards it (no uncertainty
-  propagation despite docs). **Deferred (Wave 1):** the correct fix (fit MCD/S params on the
-  bootstrap sample, then impute the *original* rows with those params) needs a fit/predict split of
-  `imputeCellMCD` — more than a P1 quick fix. `res_boot` is currently computed then thrown away and
-  `res_orig` re-fits on the original data (`imputeCellEM.R:998-1013`); at minimum this should not
-  waste the bootstrap fit. Left for a focused pass.
+- [~] `imputeCellMCD(boot = TRUE)` fits the bootstrap model and discards it (no uncertainty
+  propagation despite docs). **Documented, refactor deferred (tail, 2026-07-07):** the audit's
+  proposed fix (fit MCD/S params on the bootstrap sample, impute the *original* rows conditional on
+  those params) was implemented and **empirically measured to be cosmetic** — between-imputation
+  variance ratio 0.99×, and shifting `mu` by 15 moved the imputation by 0.01. Root cause: the
+  imputation step is a per-variable robust **regression** (`cellIRWLS`), not a conditional-Gaussian
+  draw from `mu`/`Sigma`, so freezing the location/covariance leaves imputations essentially
+  unchanged (the audit assumed a conditional-normal imputation that isn't the primary path). The
+  cosmetic change was reverted. A **correct** fix must bootstrap the per-variable regression
+  coefficients (or add proper coefficient-draw noise) — a research-grade refactor of the flagship
+  method's core loop, out of tail scope (Matthias's call: document now, refactor in a dedicated
+  pass). Done now: `@param boot` and a new `@note` state the limitation honestly (mirroring
+  `imputeCellEM`'s note), and the misleading inline comment at the boot branch is corrected. The
+  deferred refactor should also drop the wasteful discarded `res_boot` fit.
 - [ ] Numerical guards: absolute 1e-10 ridge crashes on n<p/collinear data; `.robust_scale`
   fallback of 1 injects N(0,1) noise into constant columns.
 - [ ] Register the (repaired) cellwise family in vimpute (detection pre-pass + learner wrapper).

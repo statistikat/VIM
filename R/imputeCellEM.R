@@ -939,8 +939,14 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
 #'   \code{"median"} (default), \code{"knn"}, or \code{"irmi"}.
 #' @param m number of multiple imputations (default: 1). If \code{m > 1},
 #'   a list of imputed datasets is returned.
-#' @param boot logical; if \code{TRUE}, bootstrap resampling propagates
-#'   parameter uncertainty across the \code{m} imputations.
+#' @param boot logical; intended to add bootstrap parameter uncertainty across
+#'   the \code{m} imputations. \strong{Currently ineffective}: the imputation
+#'   step is a per-variable robust regression (\code{cellIRWLS}), so resampling
+#'   the location/covariance estimate leaves the imputations essentially
+#'   unchanged (measured between-imputation variance is not inflated relative to
+#'   \code{boot = FALSE}). Proper parameter-uncertainty propagation requires
+#'   bootstrapping the per-variable regression coefficients and is not yet
+#'   implemented; see the note below. Default \code{FALSE}.
 #' @param trace logical; if \code{TRUE}, print progress information.
 #'
 #' @return A list with components:
@@ -953,6 +959,13 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
 #'   \item{Sigma}{robust covariance estimate (continuous variables).}
 #'   \item{converged}{logical indicating convergence.}
 #'   \item{iterations}{number of iterations performed.}
+#'
+#' @note Multiple imputation with proper parameter-uncertainty propagation is
+#'   not yet implemented for this method (see \code{boot}). \code{m > 1} returns
+#'   repeated imputations whose between-imputation variability comes only from
+#'   the stochastic uncertainty step (\code{uncert}) and estimator randomness,
+#'   so downstream Rubin pooling understates total variance. Treat the current
+#'   \code{m > 1} output as approximate.
 #'
 #' @author Matthias Templ
 #' @references
@@ -996,7 +1009,13 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
     for (mi in seq_len(m)) {
       if (trace) message(sprintf("=== Multiple imputation: run %d / %d ===", mi, m))
       if (boot) {
-        # Bootstrap: resample rows, fit on bootstrap, predict on original
+        # NOTE: boot = TRUE is currently ineffective (see ?imputeCellMCD). It
+        # fits on a bootstrap sample but the imputation is a per-variable robust
+        # regression that does not depend on the resampled location/covariance,
+        # so res_boot below does not actually change res_orig's imputations.
+        # Proper propagation needs bootstrapping the cellIRWLS regression
+        # coefficients (deferred). res_boot is kept as a placeholder for that
+        # refactor; res_orig is the imputation returned.
         boot_idx <- sample(nrow(data), replace = TRUE)
         data_boot <- data[boot_idx, , drop = FALSE]
         res_boot <- imputeCellMCD(data_boot, maxit = maxit, eps = eps,
@@ -1004,7 +1023,6 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
           hard_threshold = hard_threshold, mcd_observed = mcd_observed,
           init_method = init_method, uncert = uncert,
           m = 1L, boot = FALSE, trace = trace)
-        # Use bootstrapped parameters to impute original data
         res_orig <- imputeCellMCD(data, maxit = maxit, eps = eps,
           method = method, alpha = alpha, mcd_alpha = mcd_alpha,
           hard_threshold = hard_threshold, mcd_observed = mcd_observed,

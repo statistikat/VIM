@@ -57,8 +57,14 @@ adds noise from the conditional normal distribution.}
 \item{m}{number of multiple imputations (default: 1). If \code{m > 1},
 a list of imputed datasets is returned.}
 
-\item{boot}{logical; if \code{TRUE}, bootstrap resampling propagates
-parameter uncertainty across the \code{m} imputations.}
+\item{boot}{logical; intended to add bootstrap parameter uncertainty across
+the \code{m} imputations. \strong{Currently ineffective}: the imputation
+step is a per-variable robust regression (\code{cellIRWLS}), so resampling
+the location/covariance estimate leaves the imputations essentially
+unchanged (measured between-imputation variance is not inflated relative to
+\code{boot = FALSE}). Proper parameter-uncertainty propagation requires
+bootstrapping the per-variable regression coefficients and is not yet
+implemented; see the note below. Default \code{FALSE}.}
 
 \item{trace}{logical; if \code{TRUE}, print progress information.}
 }
@@ -81,6 +87,14 @@ estimation of the continuous block, computes cellwise weights from
 conditional residuals, then imputes missing values via conditional
 expectations (continuous) and weighted multinomial regression
 (categorical).  Iterates until convergence.
+}
+\note{
+Multiple imputation with proper parameter-uncertainty propagation is
+not yet implemented for this method (see \code{boot}). \code{m > 1} returns
+repeated imputations whose between-imputation variability comes only from
+the stochastic uncertainty step (\code{uncert}) and estimator randomness,
+so downstream Rubin pooling understates total variance. Treat the current
+\code{m > 1} output as approximate.
 }
 \examples{
 \dontrun{
