@@ -144,9 +144,15 @@ non-linear and methods need tuning**.
   frictionless: fix the `complete()` masking (P1.1), return a proper `mira`-compatible object from
   `with.vimmi()`, and add `pool()` re-export or a thin `vim_pool()` so an MI analysis never *feels*
   like leaving VIM.
-- [ ] **P0.7 predictorMatrix equivalent.** `predictors =` named list (or mice predictorMatrix
+- [x] **P0.7 predictorMatrix equivalent.** `predictors =` named list (or mice predictorMatrix
   accepted verbatim) implemented via `task$select()` — works uniformly for every learner including
   ranger/xgboost, where formula is currently hard-rejected. Plus `visit_sequence =`.
+  **Done (Wave 2, f4c830b):** `predictors` (named list or mice-style 0/1 matrix) applied at the
+  single feature-selection choke point (`data_temp` derivation), so it restricts every learner;
+  formula wins per variable, self-prediction removed, clear validation errors. `visit_sequence =`
+  asis/increasing.na/decreasing.na/explicit permutation. Both forwarded through the m>1 recursion.
+  Test `inst/tinytest/test_vimpute_predictors.R` (incl. quantitative effectiveness + matrix/list
+  equivalence).
 - [ ] **P0.8 Open the learner space.** Accept any mlr3 learner (mlr3extralearners: lightgbm, svm,
   nnet, …) per variable instead of the hard-coded 6-method whitelist (`helper_vimpute.R:997`) —
   the cheapest headline feature given the backend is already mlr3.
@@ -301,22 +307,26 @@ contracts — sketches in the appendix, headlines here:
 - [ ] **Formula grammar as sugar** (the IDEA item worth doing): `vimpute(dat, Sleep ~ Dream + Span |
   ranger(tune=TRUE), NonD ~ . | robust(donorcond=">= 0"), .default = ranger(), m = 20, seed = 1)` —
   compiles to specs; RHS lowers to `task$select()` so ML methods get predictor control for free.
-- [ ] **Tuning architecture:** tune once on observed cells *before* the m-loop and reuse tuned
-  params across imputations (currently re-tunes m times and each imputation may pick different
-  hyperparameters — conflating tuner noise with missing-data uncertainty, statistically wrong for
-  Rubin); fixed `batch_size = 1` (today's `detectCores()-1` makes results machine-dependent); stop
-  clobbering the user's `future::plan` (unconditional `plan("sequential")` after first tuned var);
-  expose `vimpute_tune_control()` + surface a tuning report.
+- [x] **Tuning architecture** (core done, Wave 2, d21c9d3 + 92155c1): tune once — run 1 tunes and
+  runs 2..m reuse its params via the new public `tuned_params` argument (tuning_log entries carry
+  `$params`; vimmi gains a `tuning_log` element = the surfaced tuning report); `batch_size = 1`
+  (machine-independent given `seed`); `future::plan` restored after tuning instead of forced
+  sequential; new `seed =` argument (applied once at entry, mice-compatible; m runs still differ).
+  *Still open:* `vimpute_tune_control()` (budget/terminator exposure).
 - [ ] **`register_vimpute_method()` plugin registry:** adding a method today takes ~12 coordinated
   edits across two files (three copy-pasted modifyList dispatch chains included). A package-env
   registry collapses them and lets third parties extend VIM without patching it.
 - [ ] **Harden the vimmi bridge:** keep vimmi (don't return mids natively — would hard-couple to
   mice and drop metadata); make `as.mids.vimmi` a real generic method or rename `vim_as_mids()`;
   wrap `with.vimmi` returns as mira-compatible; store per-iteration chain stats + seed in vimmi.
-- [ ] **Safe defaults:** default `uncert = "pmm"` (random-draw, k=5) for numeric single imputation
+- [~] **Safe defaults:** default `uncert = "pmm"` (random-draw, k=5) for numeric single imputation
   — today's conditional-mean default loses any density-overlay comparison against mice; add a
   per-variable tryCatch fallback chain so one pathological column can't abort the whole run
-  (mice's behavior is the bar).
+  (mice's behavior is the bar). **Fallback half done (Wave 2, 7b5000a):** `train_with_fallback()`
+  guards all three bare `learner$train()` sites — on failure a warning names the variable and a
+  featureless learner imputes it; fallback flagged so boot/model-info extraction skip it; stored
+  tuned-params application also guarded. Test `test_vimpute_fallback.R` (deterministic mtry=999
+  injection). *uncert-default change: design fork for Matthias (warn-only precedent from Wave 1).*
 - [ ] **Convergence criterion:** per-variable scale-normalized `d_v = MSE-change/var(obs)` with max
   (not sum) aggregation — today's unscaled sum means eps=0.005 is meaningless across data scales;
   return the convergence matrix for diagnostics.
