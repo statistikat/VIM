@@ -1872,6 +1872,19 @@ inject_uncertainty <- function(
 # =============================================================================
 
 # Builds the final return value, including optional prediction history and tuning logs.
+# Resolve the predictor set for one target variable: the user's `predictors`
+# entry if given (order preserved, restricted to the available columns),
+# otherwise all other variables. `exclude` removes helper columns (e.g. the
+# semicontinuous zero-flag) from the default set.
+select_feature_cols <- function(var, all_vars, predictors, exclude = character(0)) {
+  base <- setdiff(all_vars, c(var, exclude))
+  if (!is.null(predictors) && !is.null(predictors[[var]])) {
+    intersect(predictors[[var]], base)
+  } else {
+    base
+  }
+}
+
 # Train a learner, falling back to a featureless learner (mean / class-
 # frequency prediction) when training fails, so one pathological variable
 # cannot abort the whole imputation run (mice never dies wholesale). Returns

@@ -132,6 +132,21 @@
 #'  \code{tuning_log} carries its chosen parameters in \code{$params}).
 #'  Used internally by \code{m > 1} to share the first imputation's tuned
 #'  parameters across all imputations.
+#' @param predictors
+#'  Optional per-variable predictor control, the equivalent of \pkg{mice}'s
+#'  \code{predictorMatrix} -- and unlike \code{formula} it works for EVERY
+#'  method, including \code{ranger} and \code{xgboost}. Either a named list
+#'  mapping a target variable to the character vector of its predictors
+#'  (e.g. \code{list(Sleep = c("Dream", "Span"))}), or a 0/1 (or logical)
+#'  matrix with targets in rows and predictors in columns (compatible with
+#'  \code{mice::make.predictorMatrix}). Variables without an entry use all
+#'  other considered variables. A \code{formula} supplied for a variable takes
+#'  precedence over its \code{predictors} entry (as in \pkg{mice}).
+#' @param visit_sequence
+#'  Order in which the variables with missings are imputed:
+#'  \code{"asis"} (default; column order), \code{"increasing.na"} (fewest
+#'  missings first), \code{"decreasing.na"}, or a character vector giving an
+#'  explicit permutation of the NA-variables.
 #' @return
 #'  Either:
 #'    - the imputed dataset (default, when \code{m = 1}), or
@@ -199,7 +214,9 @@ vimpute <- function(
     uncert = "none",
     m = 1L,
     seed = NULL,
-    tuned_params = NULL
+    tuned_params = NULL,
+    predictors = NULL,
+    visit_sequence = "asis"
 ) {
 
   # Reproducibility: apply the seed once at entry (mice-compatible). The m > 1
@@ -226,6 +243,53 @@ vimpute <- function(
       stop(sprintf("Unknown variable name(s) in 'tuned_params': %s",
                    paste(unknown_tp, collapse = ", ")))
     }
+  }
+
+  # Per-variable predictor control (predictorMatrix equivalent, applied to
+  # EVERY learner including ranger/xgboost via feature selection). Accepts a
+  # named list (target -> character vector of predictors) or a mice-style 0/1
+  # (or logical) matrix with targets in rows and predictors in columns.
+  if (!is.null(predictors)) {
+    if (is.matrix(predictors)) {
+      if (is.null(rownames(predictors)) || is.null(colnames(predictors))) {
+        stop("'predictors' matrix must have row names (targets) and column names (predictors).")
+      }
+      pm <- predictors
+      predictors <- setNames(
+        lapply(rownames(pm), function(v) colnames(pm)[which(pm[v, ] != 0)]),
+        rownames(pm)
+      )
+    }
+    if (!is.list(predictors) || is.null(names(predictors)) ||
+        any(!nzchar(names(predictors)))) {
+      stop("'predictors' must be a fully named list (target -> character vector) or a named 0/1 matrix.")
+    }
+    unknown_pt <- setdiff(names(predictors), considered_variables)
+    if (length(unknown_pt) > 0L) {
+      stop(sprintf("Unknown target variable name(s) in 'predictors': %s",
+                   paste(unknown_pt, collapse = ", ")))
+    }
+    for (v in names(predictors)) {
+      pv <- predictors[[v]]
+      if (!is.character(pv)) {
+        stop(sprintf("'predictors[[\"%s\"]]' must be a character vector of variable names.", v))
+      }
+      unknown_pv <- setdiff(pv, considered_variables)
+      if (length(unknown_pv) > 0L) {
+        stop(sprintf("Unknown predictor name(s) in 'predictors' for target '%s': %s",
+                     v, paste(unknown_pv, collapse = ", ")))
+      }
+      pv <- setdiff(pv, v)  # a variable never predicts itself (mice diagonal-0)
+      if (length(pv) == 0L) {
+        stop(sprintf("'predictors' for target '%s' must contain at least one predictor other than the target itself.", v))
+      }
+      predictors[[v]] <- pv
+    }
+  }
+
+  # Visit sequence: validated against the NA-variables after precheck.
+  if (!is.character(visit_sequence) || length(visit_sequence) < 1L) {
+    stop("'visit_sequence' must be \"asis\", \"increasing.na\", \"decreasing.na\", or a character vector of variable names.")
   }
 
   # save plan
@@ -487,7 +551,25 @@ vimpute <- function(
   }), variables)
   missing_indices <- missing_indices[!sapply(missing_indices, is.null)]
   ### Def missing indices End ###
-  
+
+  # Visit sequence: order in which the NA-variables are imputed.
+  if (length(visit_sequence) == 1L &&
+      visit_sequence %in% c("asis", "increasing.na", "decreasing.na")) {
+    if (visit_sequence != "asis" && length(variables_NA) > 1L) {
+      nmis_v <- vapply(variables_NA, function(v) length(missing_indices[[v]]), integer(1))
+      ord <- order(nmis_v, decreasing = (visit_sequence == "decreasing.na"))
+      variables_NA <- variables_NA[ord]
+    }
+  } else {
+    if (length(visit_sequence) != length(variables_NA) ||
+        !setequal(visit_sequence, variables_NA)) {
+      stop(sprintf(
+        "'visit_sequence' must be \"asis\", \"increasing.na\", \"decreasing.na\", or a permutation of the NA-variables (%s).",
+        paste(variables_NA, collapse = ", ")))
+    }
+    variables_NA <- visit_sequence
+  }
+
   po_ohe <- NULL # set ohe to zero, becomes true if ohe is needed
   data_new <- copy(data)
   original_data <- copy(data)  # Saves original structure of data
@@ -544,6 +626,8 @@ vimpute <- function(
         uncert = uncert,
         m = 1L,
         tuned_params = tuned_params_runs,
+        predictors = predictors,
+        visit_sequence = visit_sequence,
         verbose = verbose
       )
 
@@ -802,7 +886,13 @@ vimpute <- function(
       } else {
         lhs_transformation <- NULL
         selected_formula <- FALSE
-        feature_cols <- setdiff(names(data), var)
+        # Per-variable predictor restriction (predictorMatrix equivalent).
+        # data_temp is built from these columns, and every downstream feature
+        # set (incl. the semicontinuous class/reg learners and the prediction
+        # backends) is derived from data_temp, so this single site restricts
+        # the model for every learner. A formula for the variable wins over
+        # `predictors` (handled in the branch above, as in mice).
+        feature_cols <- select_feature_cols(var, names(data), predictors)
         target_col <- var
         selected_cols <- c(target_col, feature_cols)
         data_temp <- as.data.table(data[, selected_cols, with = FALSE])

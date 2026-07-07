@@ -29,7 +29,9 @@ vimpute(
   uncert = "none",
   m = 1L,
   seed = NULL,
-  tuned_params = NULL
+  tuned_params = NULL,
+  predictors = NULL,
+  visit_sequence = "asis"
 )
 }
 \arguments{
@@ -177,6 +179,21 @@ reuse tuning results across calls (each entry of a previous run's
 \code{tuning_log} carries its chosen parameters in \code{$params}).
 Used internally by \code{m > 1} to share the first imputation's tuned
 parameters across all imputations.}
+
+\item{predictors}{Optional per-variable predictor control, the equivalent of \pkg{mice}'s
+\code{predictorMatrix} -- and unlike \code{formula} it works for EVERY
+method, including \code{ranger} and \code{xgboost}. Either a named list
+mapping a target variable to the character vector of its predictors
+(e.g. \code{list(Sleep = c("Dream", "Span"))}), or a 0/1 (or logical)
+matrix with targets in rows and predictors in columns (compatible with
+\code{mice::make.predictorMatrix}). Variables without an entry use all
+other considered variables. A \code{formula} supplied for a variable takes
+precedence over its \code{predictors} entry (as in \pkg{mice}).}
+
+\item{visit_sequence}{Order in which the variables with missings are imputed:
+\code{"asis"} (default; column order), \code{"increasing.na"} (fewest
+missings first), \code{"decreasing.na"}, or a character vector giving an
+explicit permutation of the NA-variables.}
 }
 \value{
 Either:
