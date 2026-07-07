@@ -1,3 +1,24 @@
+# VIM 7.2.0
+- `vimpute()` gains `keep_all_columns` (default `TRUE`): the full dataset is returned, with columns excluded via `considered_variables` passed through unchanged (matching `kNN()`/`hotdeck()`/`irmi()`); set `FALSE` for the previous considered-only shape.
+- `vimpute()` warns when `m > 1` cannot produce between-imputation variability (no `boot`, `uncert`, or stochastic `pmm`), so improper multiple imputation is no longer silent.
+- `vimpute()` returns ordered-factor columns as ordered factors (previously flattened to plain factors; the `m > 1` path also lost the level order).
+- `vimpute(tune = TRUE)` now runs with `sequential = FALSE` (was a silent no-op).
+- `vimpute()` handles per-variable method lists correctly: a named length-1 list validates the variable name, and an unnamed per-column list maps by column position.
+- `rangerImpute()` and `xgboostImpute()` forward their hyperparameters to the backend learner.
+- `regressionImp()` uses `lm`/`glm` as documented, falling back to regularized regression only when needed.
+- `complete()` on a `vimmi` object works even when `mice` or `tidyr` is attached.
+- `evaluation()` supports `vartypes = "guess"`.
+- `irmi(mi > 1)` returns a list of imputations again (was a single mangled data.frame under the default `imp_var = TRUE`).
+- `imputeRobust()`: `method = "gamRob"` and `uncert = "wresid"` now work (previously crashed); `uncert` is validated with a clear error; the PMM donor pool no longer includes initialised values.
+- `imputeRobustChain()` repaired (previously imputed zeros or crashed on most paths).
+- cellwise methods (`imputeCellIRMI()`, `imputeCellM()`, `imputeCellMCD()`) no longer scale the design matrix by cell weights, which had made them impute worse than the median on clean data; the default `init_weights` is now `"ddc"`.
+- `imputeCellReg()` cell-weight computation fixed (could produce negative weights).
+- `imputeCellMCD()`: documented that `boot = TRUE` does not yet propagate parameter uncertainty.
+- `kNN()`/`gowerD()`: semi-continuous (`mixed`) distance variables are now range-scaled like numeric ones, so a large-scale mixed variable no longer dominates the neighbour search.
+- `kNN(weightDist = TRUE)` no longer produces `NaN` imputations when distances exceed 1 (e.g. with `methodStand = "iqr"`).
+- `?kNN` and `?gowerD` document the distance standardisation and the NA-sentinel convention.
+- `car` moved from Imports to Suggests (Box-Cox implemented natively).
+
 # VIM 7.1.0
 - improve `vimpute()` compatibility and validation
 - make `rangerImpute()`, `xgboostImpute()`, and `regressionImp()` delegate to `vimpute()`
