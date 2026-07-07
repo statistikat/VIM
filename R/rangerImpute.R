@@ -77,6 +77,7 @@ rangerImpute <- function(formula, data, imp_var = TRUE,
       imp_var = imp_var,
       pred_history = FALSE,
       tune = FALSE,
+      uncert = "none",
       verbose = verbose
     )
 

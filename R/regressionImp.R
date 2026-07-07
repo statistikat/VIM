@@ -139,6 +139,7 @@ regressionImp <- function(formula, data,
       imp_var             = TRUE,         # internaly: _imp-columns
       pred_history        = FALSE,
       tune                = FALSE,
+      uncert              = "none",
       verbose             = FALSE
     )
     

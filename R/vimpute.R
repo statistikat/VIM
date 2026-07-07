@@ -106,11 +106,13 @@
 #'  \code{"stratified"} (good/bad residual split, default),
 #'  \code{"residual"} (inverse residual weighting).
 #' @param uncert
-#'  Imputation uncertainty method applied to predictions:
-#'  \code{"none"} (point prediction, default),
+#'  Imputation uncertainty method applied to numeric predictions:
+#'  \code{"pmm"} (default since 7.3.0: predictive mean matching -- a random
+#'  draw among the 5 nearest donors, so imputed values are observed values and
+#'  the imputed distribution is honest),
+#'  \code{"none"} (deterministic point prediction; the pre-7.3.0 default),
 #'  \code{"normalerror"} (add N(0, sigma_hat)),
 #'  \code{"resid"} (add sampled residual),
-#'  \code{"pmm"} (predictive mean matching),
 #'  \code{"midastouch"} (covariate-distance-weighted PMM, Siddique & Belin 2008).
 #'  If \code{pmm = TRUE} is set, it takes precedence over \code{uncert}.
 #' @param m
@@ -214,13 +216,17 @@ vimpute <- function(
     verbose = FALSE,
     boot = FALSE,
     robustboot = "stratified",
-    uncert = "none",
+    uncert = "pmm",
     m = 1L,
     seed = NULL,
     tuned_params = NULL,
     predictors = NULL,
     visit_sequence = "asis"
 ) {
+
+  # Distinguish the user explicitly choosing an uncertainty method from the
+  # default, so pmm = TRUE with the default uncert does not warn spuriously.
+  uncert_explicit <- !missing(uncert)
 
   # Reproducibility: apply the seed once at entry (mice-compatible). The m > 1
   # wrapper recurses with seed = NULL, so the m runs share one seeded stream
@@ -463,10 +469,14 @@ vimpute <- function(
   }
 ### Check Data End ###
 
-  # Reconcile pmm parameter with uncert parameter (PMM has priority)
+  # Reconcile pmm parameter with uncert parameter (PMM has priority). Only warn
+  # when the user set uncert explicitly -- with the default (uncert = "pmm"),
+  # pmm = TRUE silently takes precedence.
   has_any_pmm <- any(unlist(pmm))
   if (has_any_pmm && uncert != "none") {
-    warning("Both 'pmm' and 'uncert' specified. 'pmm' takes precedence; 'uncert' ignored.")
+    if (uncert_explicit) {
+      warning("Both 'pmm' and 'uncert' specified. 'pmm' takes precedence; 'uncert' ignored.")
+    }
     uncert <- "none"
   }
 

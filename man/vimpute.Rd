@@ -26,7 +26,7 @@ vimpute(
   verbose = FALSE,
   boot = FALSE,
   robustboot = "stratified",
-  uncert = "none",
+  uncert = "pmm",
   m = 1L,
   seed = NULL,
   tuned_params = NULL,
@@ -153,11 +153,13 @@ Most effective with method = "robust". Default: FALSE}
 \code{"stratified"} (good/bad residual split, default),
 \code{"residual"} (inverse residual weighting).}
 
-\item{uncert}{Imputation uncertainty method applied to predictions:
-\code{"none"} (point prediction, default),
+\item{uncert}{Imputation uncertainty method applied to numeric predictions:
+\code{"pmm"} (default since 7.3.0: predictive mean matching -- a random
+draw among the 5 nearest donors, so imputed values are observed values and
+the imputed distribution is honest),
+\code{"none"} (deterministic point prediction; the pre-7.3.0 default),
 \code{"normalerror"} (add N(0, sigma_hat)),
 \code{"resid"} (add sampled residual),
-\code{"pmm"} (predictive mean matching),
 \code{"midastouch"} (covariate-distance-weighted PMM, Siddique & Belin 2008).
 If \code{pmm = TRUE} is set, it takes precedence over \code{uncert}.}
 

@@ -31,9 +31,12 @@ expect_true(any(grepl("identical", w_pmm)))
 ## --- P0.2: bootstrap-only MI (boot = TRUE, uncert = "none", no PMM) ----------
 ## imputes conditional means, so between-imputation variance is underestimated.
 ## Previously silent because the guard required !boot; must now warn.
+## (uncert = "none" is set explicitly since 7.3.0, when the default became
+## "pmm" -- the default configuration is no longer improper.)
 set.seed(1)
 w_boot <- .mi_warns(
-  vimpute(sleep, method = "ranger", boot = TRUE, m = 2, sequential = FALSE)
+  vimpute(sleep, method = "ranger", boot = TRUE, uncert = "none",
+          m = 2, sequential = FALSE)
 )
 expect_true(any(grepl("underestimate", w_boot)))
 
