@@ -114,6 +114,12 @@
 #'  When \code{m > 1}, returns a \code{\link{vimmi}} object storing the original
 #'  data and imputed values efficiently. Use \code{\link{complete.vimmi}} to
 #'  extract completed datasets.
+#' @param seed
+#'  Optional single number for reproducibility. Applied once via
+#'  \code{\link{set.seed}} at the start of the call (as in \pkg{mice}), so the
+#'  whole run -- including all \code{m} imputations -- is reproducible while the
+#'  \code{m} imputations still differ from each other. Default \code{NULL}
+#'  leaves the random-number stream untouched.
 #' @return
 #'  Either:
 #'    - the imputed dataset (default, when \code{m = 1}), or
@@ -179,9 +185,20 @@ vimpute <- function(
     boot = FALSE,
     robustboot = "stratified",
     uncert = "none",
-    m = 1L
+    m = 1L,
+    seed = NULL
 ) {
-  
+
+  # Reproducibility: apply the seed once at entry (mice-compatible). The m > 1
+  # wrapper recurses with seed = NULL, so the m runs share one seeded stream
+  # and still differ from each other (re-seeding per run would collapse them).
+  if (!is.null(seed)) {
+    if (!is.numeric(seed) || length(seed) != 1L || !is.finite(seed)) {
+      stop("'seed' must be a single finite number (or NULL).")
+    }
+    set.seed(seed)
+  }
+
   # save plan
   old_plan <- future::plan()  # Save current plan
   on.exit(future::plan(old_plan), add = TRUE)  # Restore on exit, even if error

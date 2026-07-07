@@ -27,7 +27,8 @@ vimpute(
   boot = FALSE,
   robustboot = "stratified",
   uncert = "none",
-  m = 1L
+  m = 1L,
+  seed = NULL
 )
 }
 \arguments{
@@ -157,6 +158,12 @@ If \code{pmm = TRUE} is set, it takes precedence over \code{uncert}.}
 When \code{m > 1}, returns a \code{\link{vimmi}} object storing the original
 data and imputed values efficiently. Use \code{\link{complete.vimmi}} to
 extract completed datasets.}
+
+\item{seed}{Optional single number for reproducibility. Applied once via
+\code{\link{set.seed}} at the start of the call (as in \pkg{mice}), so the
+whole run -- including all \code{m} imputations -- is reproducible while the
+\code{m} imputations still differ from each other. Default \code{NULL}
+leaves the random-number stream untouched.}
 }
 \value{
 Either:
