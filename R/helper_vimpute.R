@@ -1872,6 +1872,28 @@ inject_uncertainty <- function(
 # =============================================================================
 
 # Builds the final return value, including optional prediction history and tuning logs.
+# Train a learner, falling back to a featureless learner (mean / class-
+# frequency prediction) when training fails, so one pathological variable
+# cannot abort the whole imputation run (mice never dies wholesale). Returns
+# the trained learner -- the original on success, the trained fallback
+# otherwise -- and warns naming the variable, learner and error. The fallback
+# is marked with attr(., "vimpute_fallback") so callers can skip model-info
+# extraction and bootstrap refits that assume the original learner's internals.
+train_with_fallback <- function(learner, task, var) {
+  err <- tryCatch({ learner$train(task); NULL }, error = function(e) e)
+  if (is.null(err)) return(learner)
+  warning(sprintf(
+    paste0("Learner '%s' failed for variable '%s' (%s). Falling back to a ",
+           "featureless learner (mean/mode prediction) for this variable."),
+    learner$id, var, conditionMessage(err)), call. = FALSE)
+  fb <- if (task$task_type == "regr") lrn("regr.featureless") else lrn("classif.featureless")
+  # keep the predict type the caller configured (e.g. "prob" for factor targets)
+  try(fb$predict_type <- learner$predict_type, silent = TRUE)
+  fb$train(task)
+  attr(fb, "vimpute_fallback") <- TRUE
+  fb
+}
+
 build_vimpute_result <- function(data, data_new, imp_var, factor_levels,
                                  pred_history = FALSE, history = NULL,
                                  tune = FALSE, tuning_log = list(),

@@ -1561,9 +1561,16 @@ vimpute <- function(
         future::plan(old_plan)
 
       } else if (tuning_status[[var]]) {
-        # Already tuned
+        # Already tuned (or parameters supplied via tuned_params): apply them.
+        # Guarded so out-of-bounds values warn and keep defaults instead of
+        # aborting the whole run at the paradox validation.
         if (!is.null(hyperparameter_cache[[var]]$params)) {
-          current_learner$param_set$values <- hyperparameter_cache[[var]]$params
+          tryCatch(
+            current_learner$param_set$values <- hyperparameter_cache[[var]]$params,
+            error = function(e) warning(sprintf(
+              "Stored parameters are invalid for variable '%s' (%s). Keeping defaults.",
+              var, conditionMessage(e)), call. = FALSE)
+          )
         }
       }
       
@@ -1901,7 +1908,7 @@ vimpute <- function(
         class_learner$predict_type <- "prob"
         
         # Train
-        class_learner$train(class_task)
+        class_learner <- train_with_fallback(class_learner, class_task, var)
         
         # Regression-Learner 
         regr_learner_id <- best_learner$id
@@ -1998,7 +2005,7 @@ vimpute <- function(
           reg_learner <- GraphLearner$new(reg_pipeline)
           
           # Train
-          reg_learner$train(reg_task)
+          reg_learner <- train_with_fallback(reg_learner, reg_task, var)
           
           # save models
           learner <- list(classifier = class_learner, regressor = if (!exists("reg_learner") || is.null(reg_learner)) NULL else reg_learner)
@@ -2086,11 +2093,12 @@ vimpute <- function(
           learner$predict_type <- "prob"
         }
         
-        learner$train(task)
+        learner <- train_with_fallback(learner, task, var)
 
       # Bootstrap: refit on resampled training data for model uncertainty
+      # (skipped for a featureless fallback -- no model internals to resample)
         stored_model_info <- NULL
-        if (boot && !is_sc) {
+        if (boot && !is_sc && !isTRUE(attr(learner, "vimpute_fallback"))) {
           model_info <- extract_model_info(learner, method = method_var)
           model_info <- complete_model_info(model_info, learner = learner, task = task)
           stored_model_info <- model_info
@@ -2125,7 +2133,8 @@ vimpute <- function(
         }
 
         # Store model info for uncertainty methods (even without bootstrap)
-        if (is.null(stored_model_info) && uncert %in% c("normalerror", "resid") && !is_sc) {
+        if (is.null(stored_model_info) && uncert %in% c("normalerror", "resid") && !is_sc &&
+            !isTRUE(attr(learner, "vimpute_fallback"))) {
           stored_model_info <- extract_model_info(learner, method = method_var)
           stored_model_info <- complete_model_info(stored_model_info, learner = learner, task = task)
         }
