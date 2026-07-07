@@ -69,9 +69,12 @@ complete <- function(data, ...) {
 #' @param boot Logical: was bootstrap used?
 #' @param uncert Character: uncertainty method used
 #' @param call The original function call
+#' @param tuning_log Optional tuning report from the (single) tuning run,
+#'   shared by all m imputations; NULL when tuning was not requested
 #' @return A \code{vimmi} object
 #' @keywords internal
-new_vimmi <- function(data, imp, where, m, nmis, method, boot, uncert, call) {
+new_vimmi <- function(data, imp, where, m, nmis, method, boot, uncert, call,
+                      tuning_log = NULL) {
   structure(
     list(
       data   = data,
@@ -82,7 +85,8 @@ new_vimmi <- function(data, imp, where, m, nmis, method, boot, uncert, call) {
       method = method,
       boot   = boot,
       uncert = uncert,
-      call   = call
+      call   = call,
+      tuning_log = tuning_log
     ),
     class = "vimmi"
   )

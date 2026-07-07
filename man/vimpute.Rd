@@ -28,7 +28,8 @@ vimpute(
   robustboot = "stratified",
   uncert = "none",
   m = 1L,
-  seed = NULL
+  seed = NULL,
+  tuned_params = NULL
 )
 }
 \arguments{
@@ -132,7 +133,11 @@ columns (plus their indicators), dropping the rest.}
 \itemize{
 \item TRUE/FALSE globally
 \item or a list specifying tuning per variable, e.g. list(var1 = TRUE)
-Tuning is performed halfway through nseq iterations.
+Tuning runs once per variable, early in the iteration sequence. With
+\code{m > 1}, tuning runs once in the first imputation and the chosen
+parameters are shared by all \code{m} imputations (as in \pkg{mice});
+the resulting \code{vimmi} object carries the tuning report in its
+\code{tuning_log} element.
 }}
 
 \item{verbose}{If TRUE additional debugging output is provided}
@@ -164,6 +169,14 @@ extract completed datasets.}
 whole run -- including all \code{m} imputations -- is reproducible while the
 \code{m} imputations still differ from each other. Default \code{NULL}
 leaves the random-number stream untouched.}
+
+\item{tuned_params}{Optional named list mapping variable names to learner parameter lists
+(e.g. \code{list(Sleep = list(num.trees = 300L))}). The parameters are
+applied to the variable's learner without running the tuner -- use this to
+reuse tuning results across calls (each entry of a previous run's
+\code{tuning_log} carries its chosen parameters in \code{$params}).
+Used internally by \code{m > 1} to share the first imputation's tuned
+parameters across all imputations.}
 }
 \value{
 Either:

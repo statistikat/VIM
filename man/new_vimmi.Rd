@@ -4,7 +4,18 @@
 \alias{new_vimmi}
 \title{Constructor for vimmi objects}
 \usage{
-new_vimmi(data, imp, where, m, nmis, method, boot, uncert, call)
+new_vimmi(
+  data,
+  imp,
+  where,
+  m,
+  nmis,
+  method,
+  boot,
+  uncert,
+  call,
+  tuning_log = NULL
+)
 }
 \arguments{
 \item{data}{Original data.frame/data.table with NAs intact}
@@ -25,6 +36,9 @@ nmis rows and m columns of imputed values}
 \item{uncert}{Character: uncertainty method used}
 
 \item{call}{The original function call}
+
+\item{tuning_log}{Optional tuning report from the (single) tuning run,
+shared by all m imputations; NULL when tuning was not requested}
 }
 \value{
 A \code{vimmi} object

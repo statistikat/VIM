@@ -87,9 +87,13 @@
 #'  If TRUE, all predicted values across all iterations are stored.
 #' @param tune
 #'  Hyperparameter tuning flag. Can be:
-#'    - TRUE/FALSE globally  
+#'    - TRUE/FALSE globally
 #'    - or a list specifying tuning per variable, e.g. list(var1 = TRUE)
-#'  Tuning is performed halfway through nseq iterations.
+#'  Tuning runs once per variable, early in the iteration sequence. With
+#'  \code{m > 1}, tuning runs once in the first imputation and the chosen
+#'  parameters are shared by all \code{m} imputations (as in \pkg{mice});
+#'  the resulting \code{vimmi} object carries the tuning report in its
+#'  \code{tuning_log} element.
 #' @param verbose
 #'  If TRUE additional debugging output is provided
 #' @param boot
@@ -120,6 +124,14 @@
 #'  whole run -- including all \code{m} imputations -- is reproducible while the
 #'  \code{m} imputations still differ from each other. Default \code{NULL}
 #'  leaves the random-number stream untouched.
+#' @param tuned_params
+#'  Optional named list mapping variable names to learner parameter lists
+#'  (e.g. \code{list(Sleep = list(num.trees = 300L))}). The parameters are
+#'  applied to the variable's learner without running the tuner -- use this to
+#'  reuse tuning results across calls (each entry of a previous run's
+#'  \code{tuning_log} carries its chosen parameters in \code{$params}).
+#'  Used internally by \code{m > 1} to share the first imputation's tuned
+#'  parameters across all imputations.
 #' @return
 #'  Either:
 #'    - the imputed dataset (default, when \code{m = 1}), or
@@ -186,7 +198,8 @@ vimpute <- function(
     robustboot = "stratified",
     uncert = "none",
     m = 1L,
-    seed = NULL
+    seed = NULL,
+    tuned_params = NULL
 ) {
 
   # Reproducibility: apply the seed once at entry (mice-compatible). The m > 1
@@ -197,6 +210,22 @@ vimpute <- function(
       stop("'seed' must be a single finite number (or NULL).")
     }
     set.seed(seed)
+  }
+
+  # Pre-tuned hyperparameters: named list (variable -> learner parameter list).
+  # Pre-seeds the tuning cache so the parameters are applied without tuning.
+  # Used by the m > 1 wrapper to share run 1's tuned parameters across all m
+  # imputations; can also be supplied directly to reuse tuning across calls.
+  if (!is.null(tuned_params)) {
+    if (!is.list(tuned_params) || is.null(names(tuned_params)) ||
+        any(!nzchar(names(tuned_params)))) {
+      stop("'tuned_params' must be a fully named list (variable -> parameter list).")
+    }
+    unknown_tp <- setdiff(names(tuned_params), names(data))
+    if (length(unknown_tp) > 0L) {
+      stop(sprintf("Unknown variable name(s) in 'tuned_params': %s",
+                   paste(unknown_tp, collapse = ", ")))
+    }
   }
 
   # save plan
@@ -479,6 +508,15 @@ vimpute <- function(
       variables_NA
     )
 
+    # Tune ONCE: run 1 tunes (if requested) and its chosen hyperparameters are
+    # shared by runs 2..m via tuned_params. Re-tuning per imputation would
+    # multiply the tuning cost by m and let each imputation pick different
+    # hyperparameters, conflating tuner noise with missing-data uncertainty
+    # (invalid for Rubin pooling; mice tunes once).
+    any_tune_requested <- any(unlist(tune))
+    tuned_params_runs <- tuned_params
+    mi_tuning_log <- NULL
+
     for (mi in seq_len(m)) {
       if (verbose) message(sprintf("=== Multiple imputation run %d of %d ===", mi, m))
 
@@ -500,11 +538,12 @@ vimpute <- function(
         imp_var = FALSE,
         keep_all_columns = FALSE,
         pred_history = FALSE,
-        tune = tune,
+        tune = if (mi == 1L) tune else FALSE,
         boot = boot,
         robustboot = robustboot,
         uncert = uncert,
         m = 1L,
+        tuned_params = tuned_params_runs,
         verbose = verbose
       )
 
@@ -512,6 +551,22 @@ vimpute <- function(
         single_result$data
       } else {
         as.data.table(single_result)
+      }
+
+      # Harvest run 1's tuning results for runs 2..m (and for the vimmi report).
+      if (mi == 1L && any_tune_requested &&
+          is.list(single_result) && !is.null(single_result$tuning_log)) {
+        mi_tuning_log <- single_result$tuning_log
+        harvested <- list()
+        for (entry in mi_tuning_log) {   # last entry per variable wins
+          if (!is.null(entry$params)) harvested[[entry$variable]] <- entry$params
+        }
+        if (length(harvested) > 0L) {
+          tuned_params_runs <- utils::modifyList(
+            if (is.null(tuned_params_runs)) list() else tuned_params_runs,
+            harvested
+          )
+        }
       }
 
       for (v in variables_NA) {
@@ -556,7 +611,8 @@ vimpute <- function(
       method = method,
       boot   = boot,
       uncert = uncert,
-      call   = match.call()
+      call   = match.call(),
+      tuning_log = mi_tuning_log
     ))
   }
 
@@ -571,6 +627,18 @@ vimpute <- function(
   
   hyperparameter_cache <- setNames(vector("list", length(variables_NA)), variables_NA)
   tuning_status <- setNames(rep(FALSE, length(variables_NA)), variables_NA)
+
+  # Apply externally supplied tuned parameters: pre-seeding the cache marks the
+  # variable as tuned, so the "already tuned" branch applies the parameters and
+  # the tuning gate never fires for it.
+  if (!is.null(tuned_params)) {
+    for (v in intersect(names(tuned_params), variables_NA)) {
+      if (!is.null(tuned_params[[v]])) {
+        hyperparameter_cache[[v]] <- list(params = tuned_params[[v]], is_tuned = TRUE)
+        tuning_status[[v]] <- TRUE
+      }
+    }
+  }
   
   tuning_log <- list()
   
@@ -1337,8 +1405,10 @@ vimpute <- function(
                 )
                 
                 # Tuner
-                batch <- max(1, parallel::detectCores() - 1)
-                tuner <- tnr("random_search", batch_size = batch)
+                # batch_size = 1 keeps random-search RNG consumption identical
+                # across machines, so seed = ... reproduces tuning everywhere
+                # (detectCores() - 1 made tuned parameters machine-dependent).
+                tuner <- tnr("random_search", batch_size = 1L)
                 tuner$optimize(instance)
                 
                 # Best Parameters
@@ -1428,8 +1498,8 @@ vimpute <- function(
                 terminator   = trm("evals", n_evals = n_evals)
               )
               
-              batch <- max(1, parallel::detectCores() - 1)
-              tuner <- tnr("random_search", batch_size = batch)
+              # batch_size = 1: machine-independent tuning (see comment above)
+              tuner <- tnr("random_search", batch_size = 1L)
               tuner$optimize(instance)
               
               best_params <- as.list(instance$result[, get("learner_param_vals")][[1]])
@@ -1485,8 +1555,11 @@ vimpute <- function(
           }
         }
         
-        future::plan("sequential")
-        
+        # Restore the plan that was active at entry instead of forcing
+        # "sequential" -- forcing it clobbered the user's future::plan for the
+        # rest of the call (entry/exit save-restore only covers after return).
+        future::plan(old_plan)
+
       } else if (tuning_status[[var]]) {
         # Already tuned
         if (!is.null(hyperparameter_cache[[var]]$params)) {
@@ -1502,7 +1575,9 @@ vimpute <- function(
       tuning_log[[length(tuning_log) + 1]] <- list(
         variable     = var,
         tuned        = !isFALSE(tuning_status[[var]]),   # tuning actually executed
-        tuned_better = tuned_flag                        # tuned params beat defaults
+        tuned_better = tuned_flag,                       # tuned params beat defaults
+        params       = hyperparameter_cache[[var]]$params # chosen parameters (reusable
+                                                          # via the tuned_params argument)
       )
 
       # if (!tuning_status[[var]] && nseq >= 2 && isTRUE(tune[[var]])) {
