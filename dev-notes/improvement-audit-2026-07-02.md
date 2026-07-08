@@ -331,9 +331,16 @@ contracts — sketches in the appendix, headlines here:
   incl. end-to-end rpart/'cart' + PMM). Original ask: adding a method today takes ~12 coordinated
   edits across two files (three copy-pasted modifyList dispatch chains included). A package-env
   registry collapses them and lets third parties extend VIM without patching it.
-- [ ] **Harden the vimmi bridge:** keep vimmi (don't return mids natively — would hard-couple to
-  mice and drop metadata); make `as.mids.vimmi` a real generic method or rename `vim_as_mids()`;
-  wrap `with.vimmi` returns as mira-compatible; store per-iteration chain stats + seed in vimmi.
+- [x] **Harden the vimmi bridge** **Done (Wave 2, 799c391):** `with.vimmi` returns a
+  mice-compatible `mira` (pool()/summary()/getfit() run unchanged; BREAKING for bare-list
+  indexing, NEWS + consumers reconciled); `vim_as_mids()` is the documented conversion name
+  (as.mids.vimmi kept as alias — was never a real S3 method); vimmi stores per-iteration chain
+  stats (`chain$mean`/`$var` `[variable, iteration, imputation]`, NA-padded across early-stopping
+  runs) + `seed`, and `plot(vimmi)` draws mice-style trace plots; single runs expose the same data
+  as `attr(result, "chain")`. Contract locked by `test_vimmi_bridge.R`. Original ask: keep vimmi
+  (don't return mids natively — would hard-couple to mice and drop metadata); make `as.mids.vimmi`
+  a real generic method or rename `vim_as_mids()`; wrap `with.vimmi` returns as mira-compatible;
+  store per-iteration chain stats + seed in vimmi.
 - [x] **Safe defaults** **Done (Wave 2, 6b78a28 + 7b5000a):** default `uncert = "pmm"` at 7.3.0
   (the uncert-pmm path already hard-codes k=5 random draw, so no k trap); pmm-vs-uncert warning
   gated on explicit `uncert` (missing() check); wrappers pin `uncert="none"` to stay deterministic;
