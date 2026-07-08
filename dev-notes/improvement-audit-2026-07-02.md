@@ -313,7 +313,17 @@ contracts — sketches in the appendix, headlines here:
   (machine-independent given `seed`); `future::plan` restored after tuning instead of forced
   sequential; new `seed =` argument (applied once at entry, mice-compatible; m runs still differ).
   *Still open:* `vimpute_tune_control()` (budget/terminator exposure).
-- [ ] **`register_vimpute_method()` plugin registry:** adding a method today takes ~12 coordinated
+- [x] **`register_vimpute_method()` plugin registry** **Done (Wave 2, 5974660):** package-env
+  registry (`.vimpute_methods`) seeded with the six built-ins through the same contract; exported
+  `register_vimpute_method()` / `vimpute_methods()` / `unregister_vimpute_method()` (built-ins
+  protected). precheck resolves supported/reserved methods + both formula allow-list copies from
+  the registry; glmnet/GAM suitability checks became per-entry `validate()` hooks run by one
+  generic fallback loop; the six param-validation copies collapsed into
+  `resolve_method_params()`; all three grepl/modifyList dispatch chains collapsed to one params
+  application; `search_space` hook feeds the tuner. Registered names work in global `method`,
+  per-variable lists, and method-keyed `learner_params`; regression-only registrations degrade to
+  their fallback on factor targets. Contract locked by `test_vimpute_registry.R` (29 assertions,
+  incl. end-to-end rpart/'cart' + PMM). Original ask: adding a method today takes ~12 coordinated
   edits across two files (three copy-pasted modifyList dispatch chains included). A package-env
   registry collapses them and lets third parties extend VIM without patching it.
 - [ ] **Harden the vimmi bridge:** keep vimmi (don't return mids natively — would hard-couple to
