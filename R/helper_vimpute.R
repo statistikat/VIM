@@ -1870,7 +1870,8 @@ build_vimpute_result <- function(data, data_new, imp_var, factor_levels,
                                  data_all_variables = NULL,
                                  considered_variables = NULL,
                                  keep_all_columns = TRUE,
-                                 input_is_dt = TRUE) {
+                                 input_is_dt = TRUE,
+                                 convergence = NULL) {
   result <- as.data.table(if (imp_var) data_new else data)
   result <- enforce_factor_levels(result, factor_levels)
   # enforce_factor_levels rebuilds columns as plain factors; put back the
@@ -1895,6 +1896,9 @@ build_vimpute_result <- function(data, data_new, imp_var, factor_levels,
   }
   if (any(unlist(tune))) {
     attr(result, "tuning_log") <- tuning_log
+  }
+  if (!is.null(convergence)) {
+    attr(result, "convergence") <- convergence
   }
 
   result
@@ -2239,17 +2243,23 @@ apply_imputations <- function(data, data_new, convergence_data, var, missing_idx
   list(data = data, data_new = data_new, convergence_data = convergence_data)
 }
 
-# Evaluates sequential convergence and signals whether the iteration loop should stop.
+# Evaluates sequential convergence and signals whether the iteration loop
+# should stop. Per-variable, scale-free change measure (audit P2.67):
+#   numeric v:  d_v = mean((new - old)^2) / var(observed_v)
+#   factor v:   d_v = share of imputed cells whose category changed
+# The run counts as quiet when max_v d_v < eps (max, not sum, so a large
+# change in one variable cannot be masked by others, and a wide-scale
+# variable cannot block convergence forever), and stops after two
+# consecutive quiet iterations. Returns the per-variable d_v vector so the
+# caller can accumulate the iterations x variables convergence matrix.
 check_convergence <- function(sequential, i, variables_NA, missing_indices,
                               convergence_prev, convergence_data, original_data,
-                              eps, no_change_counter, verbose,
-                              data_temp, target_col, learner, pred_task) {
+                              eps, no_change_counter, verbose) {
   if (!sequential || i == 1) {
-    return(list(no_change_counter = 0, should_break = FALSE))
+    return(list(no_change_counter = 0, should_break = FALSE, d = NULL))
   }
 
-  num_diff <- 0
-  cat_diff <- 0
+  d <- setNames(rep(NA_real_, length(variables_NA)), variables_NA)
 
   for (v in variables_NA) {
     idx <- missing_indices[[v]]
@@ -2259,69 +2269,41 @@ check_convergence <- function(sequential, i, variables_NA, missing_indices,
     new_vals <- convergence_data[[v]][idx]
 
     if (is.numeric(original_data[[v]])) {
-      d_var <- mean((new_vals - old_vals)^2, na.rm = TRUE)
-      if (is.finite(d_var)) {
-        num_diff <- num_diff + d_var
-      }
+      denom <- stats::var(original_data[[v]], na.rm = TRUE)
+      if (!is.finite(denom) || denom <= 0) denom <- 1
+      d_var <- mean((new_vals - old_vals)^2, na.rm = TRUE) / denom
     } else if (is.factor(original_data[[v]])) {
-      old_chr <- as.character(old_vals)
-      new_chr <- as.character(new_vals)
-      d_var <- mean(old_chr != new_chr, na.rm = TRUE)
-      if (is.finite(d_var)) {
-        cat_diff <- cat_diff + d_var
-      }
+      d_var <- mean(as.character(old_vals) != as.character(new_vals), na.rm = TRUE)
+    } else {
+      next
     }
+    if (is.finite(d_var)) d[v] <- d_var
   }
 
-  total_diff <- num_diff + cat_diff
+  max_d <- suppressWarnings(max(d, na.rm = TRUE))  # -Inf when nothing measurable
 
   if (verbose) {
     message(sprintf(
-      "Iteration %d: num_diff = %.6f, cat_diff = %.6f, total_diff = %.6f",
-      i, num_diff, cat_diff, total_diff
+      "Iteration %d: max relative change = %s (eps = %g)",
+      i, if (is.finite(max_d)) sprintf("%.6f", max_d) else "none", eps
     ))
   }
 
-  if (total_diff >= eps) {
-    return(list(no_change_counter = 0, should_break = FALSE))
+  if (is.finite(max_d) && max_d >= eps) {
+    return(list(no_change_counter = 0, should_break = FALSE, d = d))
   }
 
   no_change_counter <- no_change_counter + 1
   if (no_change_counter < 2) {
-    return(list(no_change_counter = no_change_counter, should_break = FALSE))
+    return(list(no_change_counter = no_change_counter, should_break = FALSE, d = d))
   }
 
   if (verbose) {
-    message("Convergence achieved after two consecutive iterations without changes in imputations")
-    print(paste("stop after", i, "iterations"))
+    message(sprintf(
+      "Convergence achieved after two consecutive quiet iterations (stop after %d iterations)", i))
   }
 
-  if (is.factor(data_temp[[target_col]]) && !is.null(pred_task)) {
-    learner$predict_type <- "prob"
-    pred_probs <- learner$predict(pred_task)$prob
-
-    if (is.null(pred_probs)) {
-      stop("Error in the calculation of prediction probabilities.")
-    }
-    pred_probs <- as.matrix(pred_probs)
-    bad_probs <- !is.finite(pred_probs)
-    if (any(bad_probs)) {
-      pred_probs[bad_probs] <- 0
-    }
-    row_sums <- rowSums(pred_probs)
-    bad_rows <- !is.finite(row_sums) | row_sums <= 0
-    if (any(bad_rows)) {
-      pred_probs[bad_rows, ] <- 1 / ncol(pred_probs)
-      row_sums[bad_rows] <- 1
-    }
-    pred_probs <- pred_probs / row_sums
-
-    apply(pred_probs, 1, function(probs) {
-      sample(levels(data_temp[[target_col]]), size = 1, prob = probs)
-    })
-  }
-
-  list(no_change_counter = no_change_counter, should_break = TRUE)
+  list(no_change_counter = no_change_counter, should_break = TRUE, d = d)
 }
 
 # Determines safe cross-validation folds for sample size and class counts.

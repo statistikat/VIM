@@ -14,6 +14,7 @@
 - A learner failure on one variable no longer aborts the whole imputation: `vimpute()` warns (naming the variable) and falls back to a featureless learner for that variable.
 
 ## Minor improvements
+- **Scale-free convergence criterion** for sequential imputation: `eps` now bounds the per-variable *relative* change (numeric: mean squared change of the imputed values divided by the variance of the observed values; factors: share of changed categories), and the run stops when the *largest* per-variable change stays below `eps` -- previously the raw changes were summed, so `eps` was meaningless across data scales (a variable measured in thousands could block convergence forever, and one variable could mask another). The full iterations-by-variables change matrix is returned as `attr(result, "convergence")`.
 - Hyperparameter tuning is reproducible across machines (`batch_size = 1` for the random search).
 - After tuning, the `future` plan active at entry is restored instead of being forced to `"sequential"`.
 

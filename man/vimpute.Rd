@@ -123,7 +123,13 @@ donor pool for model fitting for that variable.}
 
 \item{nseq}{Maximum number of iterations (if sequential is TRUE).}
 
-\item{eps}{Convergence threshold: the imputation process stops early if predictions change less than this amount across iterations.}
+\item{eps}{Convergence threshold on the per-variable \emph{relative} change between
+iterations: for numeric variables the mean squared change of the imputed
+values divided by the variance of the observed values, for factors the
+share of imputed cells whose category changed. The sequential process
+stops early once the largest per-variable change stays below \code{eps}
+for two consecutive iterations. The full iterations-by-variables change
+matrix is returned as \code{attr(result, "convergence")}.}
 
 \item{imp_var}{If TRUE, additional columns indicating imputed values (VAR_imp) are added.}
 

@@ -78,7 +78,13 @@
 #' @param nseq
 #'  Maximum number of iterations (if sequential is TRUE).
 #' @param eps
-#'  Convergence threshold: the imputation process stops early if predictions change less than this amount across iterations.
+#'  Convergence threshold on the per-variable *relative* change between
+#'  iterations: for numeric variables the mean squared change of the imputed
+#'  values divided by the variance of the observed values, for factors the
+#'  share of imputed cells whose category changed. The sequential process
+#'  stops early once the largest per-variable change stays below \code{eps}
+#'  for two consecutive iterations. The full iterations-by-variables change
+#'  matrix is returned as \code{attr(result, "convergence")}.
 #' @param imp_var
 #'  If TRUE, additional columns indicating imputed values (VAR_imp) are added.
 #' @param keep_all_columns
@@ -731,7 +737,8 @@ vimpute <- function(
   }
   
   tuning_log <- list()
-  
+  convergence_track <- list()
+
   # Iterative Imputation for nseq iterations
   for (i in seq_len(nseq)) {
     if(verbose){
@@ -2190,18 +2197,27 @@ vimpute <- function(
       original_data = original_data,
       eps = eps,
       no_change_counter = no_change_counter,
-      verbose = verbose,
-      data_temp = data_temp,
-      target_col = target_col,
-      learner = learner,
-      pred_task = pred_task
+      verbose = verbose
     )
+    if (!is.null(convergence_result$d)) {
+      convergence_track[[length(convergence_track) + 1L]] <- convergence_result$d
+    }
     no_change_counter <- convergence_result$no_change_counter
     if (isTRUE(convergence_result$should_break)) {
       break
     }
   }
 ### Stop criteria END ###
+
+  # iterations x variables matrix of per-variable relative changes (d_v),
+  # measured from iteration 2 on; NULL for non-sequential runs
+  convergence_matrix <- if (length(convergence_track) > 0L) {
+    m_conv <- do.call(rbind, convergence_track)
+    rownames(m_conv) <- seq(2L, length.out = nrow(m_conv))
+    m_conv
+  } else {
+    NULL
+  }
   
   return(build_vimpute_result(
     data = data,
@@ -2216,6 +2232,7 @@ vimpute <- function(
     data_all_variables = data_all_variables,
     considered_variables = considered_variables,
     keep_all_columns = keep_all_columns,
-    input_is_dt = input_is_dt
+    input_is_dt = input_is_dt,
+    convergence = convergence_matrix
   ))
 }
