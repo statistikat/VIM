@@ -153,9 +153,14 @@ non-linear and methods need tuning**.
   asis/increasing.na/decreasing.na/explicit permutation. Both forwarded through the m>1 recursion.
   Test `inst/tinytest/test_vimpute_predictors.R` (incl. quantitative effectiveness + matrix/list
   equivalence).
-- [ ] **P0.8 Open the learner space.** Accept any mlr3 learner (mlr3extralearners: lightgbm, svm,
-  nnet, …) per variable instead of the hard-coded 6-method whitelist (`helper_vimpute.R:997`) —
-  the cheapest headline feature given the backend is already mlr3.
+- [x] **P0.8 Open the learner space.** **Done (Wave 2, 5974660, via the P2.64 registry):** the
+  hard-coded whitelist is gone (`supported_methods <- vimpute_methods()`); any mlr3 learner pair
+  (mlr3extralearners: lightgbm, svm, nnet, …) becomes a per-variable method with one
+  `register_vimpute_method()` call (deliberate contract: registration carries packages/setup/
+  defaults/fallback/validation instead of accepting raw learner ids inline in `method =` —
+  inline-id sugar can still be added later as a thin auto-registration wrapper). Original ask:
+  accept any mlr3 learner per variable instead of the hard-coded 6-method whitelist
+  (`helper_vimpute.R:997`) — the cheapest headline feature given the backend is already mlr3.
 
 ---
 
