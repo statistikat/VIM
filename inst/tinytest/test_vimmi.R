@@ -62,11 +62,14 @@ expect_error(complete(obj, action = "invalid"))
 # --- with.vimmi ---
 
 fits <- with(obj, lm(y ~ x))
-expect_true(is.list(fits))
-expect_equal(length(fits), 2)
-expect_true(all(sapply(fits, inherits, "lm")))
+# 7.3.0 contract: with() returns a mice-compatible mira; the raw fit list
+# lives in $analyses (mice::getfit(fits) is the same thing)
+expect_true(inherits(fits, "mira"))
+fit_list <- fits$analyses
+expect_equal(length(fit_list), 2)
+expect_true(all(sapply(fit_list, inherits, "lm")))
 # Coefficients should differ between imputations
-expect_true(!identical(coef(fits[[1]]), coef(fits[[2]])))
+expect_true(!identical(coef(fit_list[[1]]), coef(fit_list[[2]])))
 
 # --- print.vimmi ---
 

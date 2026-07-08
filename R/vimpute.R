@@ -612,6 +612,7 @@ vimpute <- function(
     any_tune_requested <- any(unlist(tune))
     tuned_params_runs <- tuned_params
     mi_tuning_log <- NULL
+    run_chains <- vector("list", m)
 
     for (mi in seq_len(m)) {
       if (verbose) message(sprintf("=== Multiple imputation run %d of %d ===", mi, m))
@@ -669,6 +670,36 @@ vimpute <- function(
         miss_idx <- missing_indices[[v]]
         imp_collector[[v]][[mi]] <- imputed_dt[[v]][miss_idx]
       }
+
+      run_chains[[mi]] <- attr(single_result, "chain")
+    }
+
+    # Assemble the per-run chain statistics into [variable, iteration,
+    # imputation] arrays (mice-style trace-plot data). Runs may stop at
+    # different iterations (early convergence): shorter chains are padded
+    # with NA up to the longest run.
+    chain_arrays <- NULL
+    if (any(!vapply(run_chains, is.null, logical(1)))) {
+      n_iter_max <- max(vapply(run_chains, function(ch) {
+        if (is.null(ch)) 0L else nrow(ch$mean)
+      }, integer(1)))
+      if (n_iter_max > 0L) {
+        make_array <- function(what) {
+          arr <- array(
+            NA_real_,
+            dim = c(length(variables_NA), n_iter_max, m),
+            dimnames = list(variables_NA, seq_len(n_iter_max), paste0("m", seq_len(m)))
+          )
+          for (mi in seq_len(m)) {
+            ch <- run_chains[[mi]]
+            if (is.null(ch)) next
+            mat <- ch[[what]]
+            arr[colnames(mat), seq_len(nrow(mat)), mi] <- t(mat)
+          }
+          arr
+        }
+        chain_arrays <- list(mean = make_array("mean"), var = make_array("var"))
+      }
     }
 
     imp_list <- setNames(
@@ -708,7 +739,9 @@ vimpute <- function(
       boot   = boot,
       uncert = uncert,
       call   = match.call(),
-      tuning_log = mi_tuning_log
+      tuning_log = mi_tuning_log,
+      chain  = chain_arrays,
+      seed   = seed
     ))
   }
 
@@ -738,6 +771,7 @@ vimpute <- function(
   
   tuning_log <- list()
   convergence_track <- list()
+  chain_track <- list()
 
   # Iterative Imputation for nseq iterations
   for (i in seq_len(nseq)) {
@@ -2202,6 +2236,25 @@ vimpute <- function(
     if (!is.null(convergence_result$d)) {
       convergence_track[[length(convergence_track) + 1L]] <- convergence_result$d
     }
+
+    # Chain statistics: mean/var of the imputed values of each numeric
+    # NA-variable after this iteration (mice-style trace-plot data; the m > 1
+    # wrapper assembles them into the vimmi chain arrays).
+    chain_track[[length(chain_track) + 1L]] <- list(
+      mean = vapply(variables_NA, function(v) {
+        idx <- missing_indices[[v]]
+        if (length(idx) > 0L && is.numeric(original_data[[v]])) {
+          mean(convergence_data[[v]][idx], na.rm = TRUE)
+        } else NA_real_
+      }, numeric(1)),
+      var = vapply(variables_NA, function(v) {
+        idx <- missing_indices[[v]]
+        if (length(idx) > 1L && is.numeric(original_data[[v]])) {
+          stats::var(convergence_data[[v]][idx], na.rm = TRUE)
+        } else NA_real_
+      }, numeric(1))
+    )
+
     no_change_counter <- convergence_result$no_change_counter
     if (isTRUE(convergence_result$should_break)) {
       break
@@ -2215,6 +2268,17 @@ vimpute <- function(
     m_conv <- do.call(rbind, convergence_track)
     rownames(m_conv) <- seq(2L, length.out = nrow(m_conv))
     m_conv
+  } else {
+    NULL
+  }
+
+  # iterations x variables matrices of the imputed values' mean/var per
+  # iteration (numeric variables; the m > 1 wrapper stacks them per run)
+  chain_matrices <- if (length(chain_track) > 0L) {
+    list(
+      mean = do.call(rbind, lapply(chain_track, `[[`, "mean")),
+      var  = do.call(rbind, lapply(chain_track, `[[`, "var"))
+    )
   } else {
     NULL
   }
@@ -2233,6 +2297,7 @@ vimpute <- function(
     considered_variables = considered_variables,
     keep_all_columns = keep_all_columns,
     input_is_dt = input_is_dt,
-    convergence = convergence_matrix
+    convergence = convergence_matrix,
+    chain = chain_matrices
   ))
 }

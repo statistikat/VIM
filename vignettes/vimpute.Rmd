@@ -443,7 +443,7 @@ completed_all <- complete(mi, "all")
 completed_long <- complete(mi, "long")
 ```
 
-The `vimmi` object stores the original data and the imputed values efficiently. It can be inspected with `print()` and `summary()`, and completed datasets can be extracted with `complete()`. If the `mice` package is installed, `as.mids.vimmi()` can be used to convert a `vimmi` object to a `mice::mids` object for downstream pooling workflows.
+The `vimmi` object stores the original data and the imputed values efficiently. It can be inspected with `print()` and `summary()`, completed datasets can be extracted with `complete()`, and `plot()` draws mice-style convergence trace plots of the imputation chains. `with()` fits a model on each completed dataset and returns a mice-compatible `mira` object, ready for `mice::pool()`. If the `mice` package is installed, `vim_as_mids()` (alias `as.mids.vimmi()`) converts a `vimmi` object to a `mice::mids` object for downstream pooling workflows.
 
 
 #### Parameter `tune` 

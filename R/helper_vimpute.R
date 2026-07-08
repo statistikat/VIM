@@ -1871,7 +1871,8 @@ build_vimpute_result <- function(data, data_new, imp_var, factor_levels,
                                  considered_variables = NULL,
                                  keep_all_columns = TRUE,
                                  input_is_dt = TRUE,
-                                 convergence = NULL) {
+                                 convergence = NULL,
+                                 chain = NULL) {
   result <- as.data.table(if (imp_var) data_new else data)
   result <- enforce_factor_levels(result, factor_levels)
   # enforce_factor_levels rebuilds columns as plain factors; put back the
@@ -1899,6 +1900,9 @@ build_vimpute_result <- function(data, data_new, imp_var, factor_levels,
   }
   if (!is.null(convergence)) {
     attr(result, "convergence") <- convergence
+  }
+  if (!is.null(chain)) {
+    attr(result, "chain") <- chain
   }
 
   result

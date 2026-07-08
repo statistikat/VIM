@@ -14,7 +14,9 @@ new_vimmi(
   boot,
   uncert,
   call,
-  tuning_log = NULL
+  tuning_log = NULL,
+  chain = NULL,
+  seed = NULL
 )
 }
 \arguments{
@@ -39,6 +41,15 @@ nmis rows and m columns of imputed values}
 
 \item{tuning_log}{Optional tuning report from the (single) tuning run,
 shared by all m imputations; NULL when tuning was not requested}
+
+\item{chain}{Optional per-iteration chain statistics:
+\code{list(mean = , var = )} of arrays with dimensions
+\code{[variable, iteration, imputation]} holding the mean and variance of
+the imputed values of each numeric variable after each sequential
+iteration (the basis of \code{\link{plot.vimmi}} trace plots)}
+
+\item{seed}{The seed applied at entry of the \code{vimpute()} call
+(NULL when none was set)}
 }
 \value{
 A \code{vimmi} object

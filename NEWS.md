@@ -1,6 +1,7 @@
 # VIM 7.3.0 (development)
 
 ## Breaking changes
+- **`with()` on a `vimmi` object returns a mice-compatible `mira`** (elements `call`, `call1`, `nmis`, `analyses`) instead of an anonymous list, so `mice::pool()`, `summary(pool(fits))` and `mice::getfit()` run unchanged. Code that indexed the old list directly (`fits[[i]]`, `lapply(fits, ...)`) should use `mice::getfit(fits)` or `fits$analyses`.
 - **`vimpute()` returns are type-stable**: the result is always the imputed data, classed like the input (data.frame in, data.frame out; data.table in, data.table out). With `tune = TRUE` or `pred_history = TRUE` the diagnostics are attached as `attr(result, "tuning_log")` / `attr(result, "pred_history")` instead of switching the return to a bare list.
 - **`vimpute()`'s default `uncert` is now `"pmm"`** (random draw among the 5 nearest donors): default numeric imputations are observed donor values with an honest distribution, instead of deterministic conditional means. Set `uncert = "none"` for the previous behaviour. Default `m > 1` runs are now stochastic between imputations. `rangerImpute()`, `xgboostImpute()` and `regressionImp()` keep their deterministic behaviour (`uncert = "none"` pinned internally).
 
@@ -12,6 +13,8 @@
 - `vimpute()` gains `tuned_params` to apply (and reuse) tuned hyperparameters without running the tuner; each `tuning_log` entry now carries its chosen parameters in `$params`.
 - With `m > 1` and `tune = TRUE`, tuning now runs **once** (in the first imputation) and the chosen parameters are shared by all `m` imputations, as in mice -- previously every imputation re-tuned independently, conflating tuner noise with missing-data uncertainty. The `vimmi` object carries the tuning report in `$tuning_log`.
 - A learner failure on one variable no longer aborts the whole imputation: `vimpute()` warns (naming the variable) and falls back to a featureless learner for that variable.
+- **Convergence diagnostics for multiple imputation**: `vimmi` objects store per-iteration chain statistics (mean/variance of the imputed values per variable, iteration and imputation) plus the `seed`, and `plot(vimmi)` draws mice-style convergence trace plots. Single runs expose the same trace data as `attr(result, "chain")`.
+- `vim_as_mids()`: the documented name for the vimmi-to-mids conversion (`as.mids.vimmi()` is kept as the historical alias; despite the dotted name it was never an S3 method -- `mice::as.mids()` is not a generic).
 
 ## Minor improvements
 - **Scale-free convergence criterion** for sequential imputation: `eps` now bounds the per-variable *relative* change (numeric: mean squared change of the imputed values divided by the variance of the observed values; factors: share of changed categories), and the run stops when the *largest* per-variable change stays below `eps` -- previously the raw changes were summed, so `eps` was meaningless across data scales (a variable measured in thousands could block convergence forever, and one variable could mask another). The full iterations-by-variables change matrix is returned as `attr(result, "convergence")`.
