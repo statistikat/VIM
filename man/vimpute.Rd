@@ -30,6 +30,7 @@ vimpute(
   m = 1L,
   seed = NULL,
   tuned_params = NULL,
+  tune_control = NULL,
   predictors = NULL,
   visit_sequence = "asis"
 )
@@ -191,6 +192,13 @@ reuse tuning results across calls (each entry of a previous run's
 \code{tuning_log} carries its chosen parameters in \code{$params}).
 Used internally by \code{m > 1} to share the first imputation's tuned
 parameters across all imputations.}
+
+\item{tune_control}{\code{NULL} (default) or a \code{\link{vimpute_tune_control}} object
+controlling the tuning of \code{tune = TRUE}: evaluation budget, CV folds
+of the tuning resampling, tuner and batch size. \code{NULL} keeps the
+built-in data-size heuristics. With \code{m > 1} it applies to the single
+tuning run whose parameters all imputations share. The \code{tuning_log}
+records the budget and folds used per variable.}
 
 \item{predictors}{Optional per-variable predictor control, the equivalent of \pkg{mice}'s
 \code{predictorMatrix} -- and unlike \code{formula} it works for EVERY

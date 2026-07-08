@@ -144,6 +144,13 @@
 #'  \code{tuning_log} carries its chosen parameters in \code{$params}).
 #'  Used internally by \code{m > 1} to share the first imputation's tuned
 #'  parameters across all imputations.
+#' @param tune_control
+#'  \code{NULL} (default) or a \code{\link{vimpute_tune_control}} object
+#'  controlling the tuning of \code{tune = TRUE}: evaluation budget, CV folds
+#'  of the tuning resampling, tuner and batch size. \code{NULL} keeps the
+#'  built-in data-size heuristics. With \code{m > 1} it applies to the single
+#'  tuning run whose parameters all imputations share. The \code{tuning_log}
+#'  records the budget and folds used per variable.
 #' @param predictors
 #'  Optional per-variable predictor control, the equivalent of \pkg{mice}'s
 #'  \code{predictorMatrix} -- and unlike \code{formula} it works for EVERY
@@ -230,6 +237,7 @@ vimpute <- function(
     m = 1L,
     seed = NULL,
     tuned_params = NULL,
+    tune_control = NULL,
     predictors = NULL,
     visit_sequence = "asis"
 ) {
@@ -262,6 +270,14 @@ vimpute <- function(
       stop(sprintf("Unknown variable name(s) in 'tuned_params': %s",
                    paste(unknown_tp, collapse = ", ")))
     }
+  }
+
+  # Tuning controls (evaluation budget, CV folds, tuner, batch size);
+  # NULL keeps the built-in data-size heuristics.
+  if (is.null(tune_control)) {
+    tune_control <- vimpute_tune_control()
+  } else if (!inherits(tune_control, "vimpute_tune_control")) {
+    stop("'tune_control' must be created by vimpute_tune_control().")
   }
 
   # Per-variable predictor control (predictorMatrix equivalent, applied to
@@ -641,6 +657,7 @@ vimpute <- function(
         uncert = uncert,
         m = 1L,
         tuned_params = tuned_params_runs,
+        tune_control = tune_control,
         predictors = predictors,
         visit_sequence = visit_sequence,
         verbose = verbose
@@ -756,6 +773,7 @@ vimpute <- function(
   
   hyperparameter_cache <- setNames(vector("list", length(variables_NA)), variables_NA)
   tuning_status <- setNames(rep(FALSE, length(variables_NA)), variables_NA)
+  tuning_meta <- setNames(vector("list", length(variables_NA)), variables_NA)
 
   # Apply externally supplied tuned parameters: pre-seeding the cache marks the
   # variable as tuned, so the "already tuned" branch applies the parameters and
@@ -1263,6 +1281,10 @@ vimpute <- function(
         ss <- build_vimpute_search_space(best_learner_id, task, method = method_var)
         search_space <- ss$space
         n_evals      <- ss$n_evals
+        # user-supplied evaluation budget wins over the per-learner heuristic
+        if (!is.null(tune_control$budget)) {
+          n_evals <- tune_control$budget
+        }
         
         if (verbose) {
           cat("is.null(search_space) = ", is.null(search_space), "\n", sep = "")
@@ -1297,10 +1319,13 @@ vimpute <- function(
                 }
                 
                 # Resample
-                folds <- safe_cv_folds(task, if (task$nrow <= 3000) 5L else 3L)
+                folds <- safe_cv_folds(task, if (!is.null(tune_control$folds)) {
+                  tune_control$folds
+                } else if (task$nrow <= 3000) 5L else 3L)
                 if (is.na(folds)) {
                   stop("Too few usable observations per fold for cross-validation.")
                 }
+                tuning_meta[[var]] <- list(n_evals = n_evals, folds = folds)
                 resampling <- rsmp("cv", folds = folds)
                 resampling$instantiate(task)
                 
@@ -1318,10 +1343,10 @@ vimpute <- function(
                 )
                 
                 # Tuner
-                # batch_size = 1 keeps random-search RNG consumption identical
-                # across machines, so seed = ... reproduces tuning everywhere
-                # (detectCores() - 1 made tuned parameters machine-dependent).
-                tuner <- tnr("random_search", batch_size = 1L)
+                # default batch_size = 1 keeps random-search RNG consumption
+                # identical across machines, so seed = ... reproduces tuning
+                # everywhere (detectCores() - 1 made tuning machine-dependent).
+                tuner <- tnr(tune_control$tuner, batch_size = tune_control$batch_size)
                 tuner$optimize(instance)
                 
                 # Best Parameters
@@ -1395,10 +1420,13 @@ vimpute <- function(
                   default_learner$param_set$values$nrounds <- 100L
                 }
               }
-              folds <- safe_cv_folds(task, if (task$nrow <= 3000) 5L else 3L)
+              folds <- safe_cv_folds(task, if (!is.null(tune_control$folds)) {
+                tune_control$folds
+              } else if (task$nrow <= 3000) 5L else 3L)
               if (is.na(folds)) {
                 stop("Too few usable observations for cross-validation.")
               }
+              tuning_meta[[var]] <- list(n_evals = n_evals, folds = folds)
               resampling <- rsmp("cv", folds = folds); resampling$instantiate(task)
               msr_obj <- msr("regr.rmse")
               
@@ -1411,8 +1439,8 @@ vimpute <- function(
                 terminator   = trm("evals", n_evals = n_evals)
               )
               
-              # batch_size = 1: machine-independent tuning (see comment above)
-              tuner <- tnr("random_search", batch_size = 1L)
+              # default batch_size = 1: machine-independent (see comment above)
+              tuner <- tnr(tune_control$tuner, batch_size = tune_control$batch_size)
               tuner$optimize(instance)
               
               best_params <- as.list(instance$result[, get("learner_param_vals")][[1]])
@@ -1496,8 +1524,10 @@ vimpute <- function(
         variable     = var,
         tuned        = !isFALSE(tuning_status[[var]]),   # tuning actually executed
         tuned_better = tuned_flag,                       # tuned params beat defaults
-        params       = hyperparameter_cache[[var]]$params # chosen parameters (reusable
-                                                          # via the tuned_params argument)
+        params       = hyperparameter_cache[[var]]$params, # chosen parameters (reusable
+                                                           # via the tuned_params argument)
+        n_evals      = tuning_meta[[var]]$n_evals,       # evaluation budget used
+        folds        = tuning_meta[[var]]$folds          # tuning CV folds used
       )
 
       # if (!tuning_status[[var]] && nseq >= 2 && isTRUE(tune[[var]])) {
