@@ -923,7 +923,7 @@ precheck <- function(
   #    (this would cause ambiguity in learner_params)
   # -------------------------------------------------------------------------
   # Reserved method names used in learner_params mapping
-  reserved_methods <- c("ranger", "xgboost", "regularized", "robust", "gam", "robgam")
+  reserved_methods <- vimpute_methods()
   conflicting_vars <- intersect(variables, reserved_methods)
   if (length(conflicting_vars) > 0) {
     warning(sprintf(
@@ -993,8 +993,9 @@ precheck <- function(
   # -------------------------------------------------------------------------
   # 5) Normalize 'method' argument so every NA-variable gets a valid method
   # -------------------------------------------------------------------------
-  # Methods supported by vimpute()
-  supported_methods <- c("ranger", "regularized", "xgboost", "robust", "gam", "robgam")
+  # Methods supported by vimpute(): everything in the method registry
+  # (built-ins plus register_vimpute_method() additions)
+  supported_methods <- vimpute_methods()
 
   if (length(method) == 0) {
     stop("No method specified. Please provide at least one method.")
@@ -1017,7 +1018,8 @@ precheck <- function(
   if (is.character(method) && length(method) == 1L) {
 
     if (!(method %in% supported_methods)) {
-      stop(sprintf("Unsupported method '%s'.", method))
+      stop(sprintf("Unsupported method '%s'. Registered methods: %s.",
+                   method, paste(supported_methods, collapse = ", ")))
     }
 
     method <- setNames(as.list(rep(method, length(variables_NA))), variables_NA)
@@ -1031,7 +1033,8 @@ precheck <- function(
     # variables, discarding -- and never validating -- the name).
     single_method <- method[[1]]
     if (!(single_method %in% supported_methods)) {
-      stop(sprintf("Unsupported method '%s'.", single_method))
+      stop(sprintf("Unsupported method '%s'. Registered methods: %s.",
+                   single_method, paste(supported_methods, collapse = ", ")))
     }
 
     method <- setNames(as.list(rep(single_method, length(variables_NA))), variables_NA)
@@ -1049,7 +1052,10 @@ precheck <- function(
 
     all_methods <- unlist(method, use.names = FALSE)
     if (!all(all_methods %in% supported_methods)) {
-      stop("One or more unsupported methods found in 'method'.")
+      bad_methods <- unique(setdiff(all_methods, supported_methods))
+      stop(sprintf("Unsupported method(s) in 'method': %s. Registered methods: %s.",
+                   paste(bad_methods, collapse = ", "),
+                   paste(supported_methods, collapse = ", ")))
     }
 
     # Final mapping
@@ -1076,7 +1082,10 @@ precheck <- function(
 
     all_methods <- unlist(method, use.names = FALSE)
     if (!all(all_methods %in% supported_methods)) {
-      stop("One or more unsupported methods found in 'method'.")
+      bad_methods <- unique(setdiff(all_methods, supported_methods))
+      stop(sprintf("Unsupported method(s) in 'method': %s. Registered methods: %s.",
+                   paste(bad_methods, collapse = ", "),
+                   paste(supported_methods, collapse = ", ")))
     }
 
     # mapping: a list with one method per COLUMN aligns to the column positions
@@ -1097,105 +1106,52 @@ precheck <- function(
       gsub("^I\\(1/|^log\\(|^sqrt\\(|^boxcox\\(|^exp\\(|\\)$| ", "", deparse(f[[2]]))
     }, character(1)))
 
+    formula_methods <- vimpute_formula_methods()
     for (target in formula_targets) {
       target_method <- if (target %in% names(method)) method[[target]] else default_method
-      if (!is.null(target_method) && !target_method %in% c("regularized", "robust", "gam", "robgam")) {
-        stop("A formula can only be used with the 'robust', 'regularized', 'gam', or 'robgam' methods.")
+      if (!is.null(target_method) && !target_method %in% formula_methods) {
+        stop(sprintf(
+          "A formula can only be used with methods that support formulas (%s).",
+          paste(formula_methods, collapse = ", ")))
       }
     }
   }
 
   # -------------------------------------------------------------------------
-  # 6) Validate 'regularized' method compatibility (glmnet)
+  # 6) Per-method validate hooks from the registry
   # -------------------------------------------------------------------------
+  # Each registered method may carry a validate(y_obs, data, variable) hook
+  # (the glmnet and GAM-family suitability checks of the built-ins live in
+  # their registry entries). A rejection warns with the hook's reason and
+  # moves the variable to the fallback method, which is validated in turn
+  # until a method accepts. A method without a learner for the variable's
+  # target type is rejected the same way.
   for (var in variables_NA) {
     y_obs <- data[[var]][!is.na(data[[var]])]
+    target_regr <- is.numeric(y_obs) || is.logical(y_obs)
+    tried <- character(0)
 
-    if (method[[var]] %in% c("regularized", "glmnet")) {
+    repeat {
+      current <- method[[var]]
+      entry <- get_vimpute_method(current)
+      if (is.null(entry) || current %in% tried) break
+      tried <- c(tried, current)
 
-      if (is.factor(y_obs) && any(table(y_obs) <= 1)) {
-        warning(sprintf("Target '%s' has too few observations per class for 'regularized'. Falling back to 'robust'.", var))
-        method[[var]] <- "robust"
-        next
+      verdict <- NULL
+      wanted <- if (target_regr) "regr" else "classif"
+      if (is.null(entry$learner[[wanted]])) {
+        verdict <- list(reason = sprintf(
+          "Method '%s' has no %s learner for target '%s'. Falling back to '%s'.",
+          current, if (target_regr) "regression" else "classification",
+          var, entry$fallback))
+      } else if (is.function(entry$validate)) {
+        verdict <- entry$validate(y_obs, data, var)
       }
 
-      if (is.numeric(y_obs) && length(unique(y_obs)) < 3) {
-        warning(sprintf("Target '%s' has too few unique values for 'regularized'. Falling back to 'robust'.", var))
-        method[[var]] <- "robust"
-        next
-      }
-
-      predictors <- setdiff(names(data), var)
-      for (col in predictors) {
-        x_obs <- data[[col]][!is.na(data[[col]])]
-
-        if (is.factor(x_obs) && any(table(x_obs) <= 1)) {
-          warning(sprintf("Predictor '%s' unsuitable for glmnet. Falling back to 'robust' for '%s'.", col, var))
-          method[[var]] <- "robust"
-          break
-        }
-
-        if (is.numeric(x_obs) && length(unique(x_obs)) < 2) {
-          warning(sprintf("Predictor '%s' unsuitable for glmnet. Falling back to 'robust' for '%s'.", col, var))
-          method[[var]] <- "robust"
-          break
-        }
-      }
-    }
-  }
-
-# -------------------------------------------------------------------------
-# 6.5) Validation for GAM and RobGAM methods
-# -------------------------------------------------------------------------
-  for (var in variables_NA) {
-
-    y_obs <- data[[var]][!is.na(data[[var]])]
-
-    # ---- A) robgam only supports numeric targets ----
-    if (method[[var]] == "robgam" && !is.numeric(y_obs)) {
-      warning(sprintf(
-        "Target '%s' is non-numeric. Method 'robgam' is regression-only. Falling back to 'gam'.",
-        var
-      ))
-      method[[var]] <- "gam"
-    }
-
-    # ---- B) Further checks for GAM / RobGAM ----
-    if (method[[var]] %in% c("gam", "robgam")) {
-
-      predictors <- setdiff(names(data), var)
-
-      # B1) Check for single-level factor predictors
-      has_single_level <- FALSE
-      for (col in predictors) {
-        col_data <- data[[col]]
-        if (is.factor(col_data)) {
-          col_data <- droplevels(col_data)
-          if (nlevels(col_data) < 2L) {
-            has_single_level <- TRUE
-            break
-          }
-        }
-      }
-
-      if (has_single_level) {
-        warning(sprintf(
-          "Method '%s' for variable '%s' has single-level factor predictors. Falling back to 'robust'.",
-          method[[var]], var
-        ))
-        method[[var]] <- "robust"
-        next
-      }
-
-      # B2) Numeric target but too few unique values
-      if (is.numeric(y_obs) && length(unique(y_obs)) < 2L) {
-        warning(sprintf(
-          "Target '%s' has too few unique values for method '%s'. Falling back to 'robust'.",
-          var, method[[var]]
-        ))
-        method[[var]] <- "robust"
-        next
-      }
+      if (is.null(verdict)) break
+      if (is.character(verdict)) verdict <- list(reason = verdict)
+      warning(verdict$reason)
+      method[[var]] <- if (!is.null(verdict$fallback)) verdict$fallback else entry$fallback
     }
   }
 
@@ -2441,7 +2397,20 @@ set_out_of_range_factor_levels_to_na <- function(data, ref_data) {
 }
 
 # Builds the hyperparameter search space for the selected learner.
-build_vimpute_search_space <- function(best_learner_id, task) {
+build_vimpute_search_space <- function(best_learner_id, task, method = NULL) {
+  # A search_space hook in the method's registry entry wins over the built-in
+  # per-learner spaces below (register_vimpute_method(search_space = )).
+  if (!is.null(method)) {
+    entry <- get_vimpute_method(method)
+    if (!is.null(entry) && is.function(entry$search_space)) {
+      ss <- entry$search_space(best_learner_id, task)
+      if (is.list(ss) && !is.null(ss$space)) {
+        if (is.null(ss$n_evals)) ss$n_evals <- 10
+        return(ss)
+      }
+    }
+  }
+
   n <- task$nrow
   size <- if (n <= 5000) "small" else if (n <= 100000) "medium" else "large"
 

@@ -43,14 +43,17 @@ vimpute(
 Can be provided either:
 \itemize{
 \item as a \strong{single global method} (e.g. "ranger"), applied to all variables, or
-\item as a \strong{named list} (e.g. as.list(var1 = "xgboost", var2="robust")), assigning a method to each variable individually.
-Supported methods:
+\item as a \strong{named list} (e.g. list(var1 = "xgboost", var2 = "robust")), assigning a method to each variable individually.
+Built-in methods:
 \item ranger (Random Forest)
 \item xgboost (Gradient Boosting)
 \item regularized (glmnet regression/classification)
 \item robust (robustbase::lmrob / glmrob)
 \item gam (Generalized Additive Model via mgcv::gam)
 \item robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
+Additional methods backed by any mlr3 learner pair can be added with
+\code{\link{register_vimpute_method}()}; \code{\link{vimpute_methods}()}
+lists everything currently registered.
 }}
 
 \item{pmm}{Predictive Mean Matching (PMM) settings.
@@ -96,8 +99,9 @@ Can be provided in \strong{three ways}:
 }}
 
 \item{formula}{Optional modeling formula to restrict or transform predictor variables.
-Only supported for \strong{regularized} (glmnet), \strong{robust} (lmrob/glmrob),
-\strong{gam} (mgcv::gam), and \strong{robgam} (robust GAM) methods
+Only supported for methods whose registry entry declares formula support:
+among the built-ins \strong{regularized} (glmnet), \strong{robust} (lmrob/glmrob),
+\strong{gam} (mgcv::gam), and \strong{robgam} (robust GAM)
 Provide as a named list, e.g.:
 \itemize{
 \item list(mpg = mpg ~ hp + drat)

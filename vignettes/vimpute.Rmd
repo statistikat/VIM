@@ -131,6 +131,20 @@ Specifies the method used for imputation of each variable. If `method` is not pr
 
 You can provide `method` globally as a single method name (applies to all variables), or as a named list per variable.
 
+Beyond the built-ins, any pair of mlr3 learners can be registered as an additional method with a
+single call — no changes to VIM required. The registered name then works everywhere the built-in
+names do (global `method`, per-variable lists, method-keyed `learner_params`):
+
+```{r, eval=FALSE}
+# CART trees via mlr3's rpart learners
+register_vimpute_method("cart",
+  learner  = list(regr = "regr.rpart", classif = "classif.rpart"),
+  packages = "rpart")
+imp_cart <- vimpute(sleep_data, method = "cart")
+
+vimpute_methods()  # lists built-ins plus registered methods
+```
+
 ```{r, include=TRUE, results='hide', message=FALSE, warning=FALSE}
 result_mixed <- vimpute(
   data = data,
