@@ -317,7 +317,11 @@ contracts — sketches in the appendix, headlines here:
   `$params`; vimmi gains a `tuning_log` element = the surfaced tuning report); `batch_size = 1`
   (machine-independent given `seed`); `future::plan` restored after tuning instead of forced
   sequential; new `seed =` argument (applied once at entry, mice-compatible; m runs still differ).
-  *Still open:* `vimpute_tune_control()` (budget/terminator exposure).
+  **Tail done (Wave 2, 8689b66):** `vimpute_tune_control(budget, folds, tuner, batch_size)`
+  exposed (NULL = built-in heuristics, defaults byte-identical); `tuning_log` records
+  n_evals/folds used; `vimpute_search_space()` exports the built-in per-learner spaces (feeds
+  `register_vimpute_method()` hooks); nested resampling documented as intentionally not offered.
+  Contract locked by `test_vimpute_tune_control.R`. Item fully closed.
 - [x] **`register_vimpute_method()` plugin registry** **Done (Wave 2, 5974660):** package-env
   registry (`.vimpute_methods`) seeded with the six built-ins through the same contract; exported
   `register_vimpute_method()` / `vimpute_methods()` / `unregister_vimpute_method()` (built-ins
