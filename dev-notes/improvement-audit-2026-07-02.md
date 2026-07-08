@@ -348,9 +348,14 @@ contracts — sketches in the appendix, headlines here:
   featureless learner imputes it; fallback flagged so boot/model-info extraction skip it; stored
   tuned-params application also guarded. Test `test_vimpute_fallback.R` (deterministic mtry=999
   injection). *uncert-default change: design fork for Matthias (warn-only precedent from Wave 1).*
-- [ ] **Convergence criterion:** per-variable scale-normalized `d_v = MSE-change/var(obs)` with max
-  (not sum) aggregation — today's unscaled sum means eps=0.005 is meaningless across data scales;
-  return the convergence matrix for diagnostics.
+- [x] **Convergence criterion** **Done (Wave 2, f150dc2):** per-variable scale-free `d_v`
+  (numeric: MSE-change / var(observed); factor: category-disagreement rate), converged when
+  `max_v d_v < eps` two iterations in a row; the iterations × variables matrix is returned as
+  `attr(result, "convergence")`; `?vimpute` documents `eps`; dead sampled-predictions code on the
+  break branch removed. Contract locked by `test_vimpute_convergence.R` (incl. ×1000
+  scale-invariance of iteration counts). Original ask: per-variable scale-normalized
+  `d_v = MSE-change/var(obs)` with max (not sum) aggregation — today's unscaled sum means
+  eps=0.005 is meaningless across data scales; return the convergence matrix for diagnostics.
 - [x] **Type-stable returns** **Done (Wave 2, df917ab):** result is always the imputed data,
   classed like the input (df in → df out, dt in → dt out); `tuning_log`/`pred_history` are
   attributes, killing the tune/pred_history bare-list switch. Consumers reconciled (tune test,
