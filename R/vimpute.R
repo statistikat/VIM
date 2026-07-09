@@ -193,9 +193,27 @@
 #'  (data.frame in, data.frame out; data.table in, data.table out). When
 #'  \code{tune = TRUE} the tuning report is attached as
 #'  \code{attr(result, "tuning_log")}; when \code{pred_history = TRUE} the
-#'  prediction history is attached as \code{attr(result, "pred_history")} --
-#'  the return is always the data itself, never a wrapper list.
+#'  prediction history is attached as \code{attr(result, "pred_history")};
+#'  sequential runs attach the per-variable convergence matrix as
+#'  \code{attr(result, "convergence")} and the chain statistics as
+#'  \code{attr(result, "chain")}; the per-variable model quality (NRMSE/PFC,
+#'  out-of-bag for ranger, in-sample otherwise) is attached as
+#'  \code{attr(result, "model_error")} -- the return is always the data
+#'  itself, never a wrapper list.
 #'  For \code{m > 1}: a \code{\link{vimmi}} object.
+#' @details
+#'  \strong{Missingness assumptions.} Like all conditional (fully
+#'  conditional specification) imputation, \code{vimpute()} assumes the data
+#'  are \strong{MAR} (missing at random: the probability of missingness may
+#'  depend on \emph{observed} values) -- which includes \strong{MCAR}
+#'  (missing completely at random) as a special case. Under \strong{MNAR}
+#'  (missingness depending on the unobserved values themselves) imputations
+#'  and downstream estimates can be biased, and no imputation method can fix
+#'  this from the observed data alone; sensitivity analyses are advisable.
+#'  \code{\link{makeMissing}} generates MCAR/MAR/MNAR missingness in complete
+#'  data for exactly such simulation-based checks, and
+#'  \code{\link{overimpute}} diagnoses the calibration of the imputation
+#'  model on the observed cells.
 #' @export
 #'
 #' @family imputation methods
@@ -692,6 +710,7 @@ vimpute <- function(
     any_tune_requested <- any(unlist(tune))
     tuned_params_runs <- tuned_params
     mi_tuning_log <- NULL
+    mi_model_error <- NULL
     run_chains <- vector("list", m)
 
     for (mi in seq_len(m)) {
@@ -753,6 +772,9 @@ vimpute <- function(
       }
 
       run_chains[[mi]] <- attr(single_result, "chain")
+      if (mi == 1L) {
+        mi_model_error <- attr(single_result, "model_error")
+      }
     }
 
     # Assemble the per-run chain statistics into [variable, iteration,
@@ -822,7 +844,8 @@ vimpute <- function(
       call   = match.call(),
       tuning_log = mi_tuning_log,
       chain  = chain_arrays,
-      seed   = seed
+      seed   = seed,
+      model_error = mi_model_error
     ))
   }
 
@@ -854,6 +877,7 @@ vimpute <- function(
   tuning_log <- list()
   convergence_track <- list()
   chain_track <- list()
+  model_error_track <- setNames(vector("list", length(variables_NA)), variables_NA)
 
   # Iterative Imputation for nseq iterations
   for (i in seq_len(nseq)) {
@@ -2087,6 +2111,13 @@ vimpute <- function(
         
         learner <- train_with_fallback(learner, task, var)
 
+        # Per-variable quality feedback (each iteration overwrites, so the
+        # final model's metric survives); skipped for featureless fallbacks
+        if (!isTRUE(attr(learner, "vimpute_fallback"))) {
+          me <- compute_model_error(learner, task)
+          if (!is.null(me)) model_error_track[[var]] <- me
+        }
+
       # Bootstrap: refit on resampled training data for model uncertainty
       # (skipped for a featureless fallback -- no model internals to resample)
         stored_model_info <- NULL
@@ -2392,6 +2423,7 @@ vimpute <- function(
     keep_all_columns = keep_all_columns,
     input_is_dt = input_is_dt,
     convergence = convergence_matrix,
-    chain = chain_matrices
+    chain = chain_matrices,
+    model_error = Filter(Negate(is.null), model_error_track)
   ))
 }

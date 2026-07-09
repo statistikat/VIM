@@ -244,12 +244,31 @@ For \code{m = 1}: the imputed dataset, classed like the input
 (data.frame in, data.frame out; data.table in, data.table out). When
 \code{tune = TRUE} the tuning report is attached as
 \code{attr(result, "tuning_log")}; when \code{pred_history = TRUE} the
-prediction history is attached as \code{attr(result, "pred_history")} --
-the return is always the data itself, never a wrapper list.
+prediction history is attached as \code{attr(result, "pred_history")};
+sequential runs attach the per-variable convergence matrix as
+\code{attr(result, "convergence")} and the chain statistics as
+\code{attr(result, "chain")}; the per-variable model quality (NRMSE/PFC,
+out-of-bag for ranger, in-sample otherwise) is attached as
+\code{attr(result, "model_error")} -- the return is always the data
+itself, never a wrapper list.
 For \code{m > 1}: a \code{\link{vimmi}} object.
 }
 \description{
 Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)
+}
+\details{
+\strong{Missingness assumptions.} Like all conditional (fully
+conditional specification) imputation, \code{vimpute()} assumes the data
+are \strong{MAR} (missing at random: the probability of missingness may
+depend on \emph{observed} values) -- which includes \strong{MCAR}
+(missing completely at random) as a special case. Under \strong{MNAR}
+(missingness depending on the unobserved values themselves) imputations
+and downstream estimates can be biased, and no imputation method can fix
+this from the observed data alone; sensitivity analyses are advisable.
+\code{\link{makeMissing}} generates MCAR/MAR/MNAR missingness in complete
+data for exactly such simulation-based checks, and
+\code{\link{overimpute}} diagnoses the calibration of the imputation
+model on the observed cells.
 }
 \examples{
 \dontrun{

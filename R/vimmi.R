@@ -85,10 +85,14 @@ complete <- function(data, ...) {
 #'   iteration (the basis of \code{\link{plot.vimmi}} trace plots)
 #' @param seed The seed applied at entry of the \code{vimpute()} call
 #'   (NULL when none was set)
+#' @param model_error Optional per-variable model-quality list (NRMSE/PFC,
+#'   from the first imputation run), as in \code{attr(result, "model_error")}
+#'   of single runs
 #' @return A \code{vimmi} object
 #' @keywords internal
 new_vimmi <- function(data, imp, where, m, nmis, method, boot, uncert, call,
-                      tuning_log = NULL, chain = NULL, seed = NULL) {
+                      tuning_log = NULL, chain = NULL, seed = NULL,
+                      model_error = NULL) {
   structure(
     list(
       data   = data,
@@ -102,7 +106,8 @@ new_vimmi <- function(data, imp, where, m, nmis, method, boot, uncert, call,
       call   = call,
       tuning_log = tuning_log,
       chain  = chain,
-      seed   = seed
+      seed   = seed,
+      model_error = model_error
     ),
     class = "vimmi"
   )
@@ -233,8 +238,12 @@ print.vimmi <- function(x, ...) {
   if (sum(x$nmis > 0) > 0) {
     vars_with_na <- x$nmis[x$nmis > 0]
     for (nm in names(vars_with_na)) {
-      cat(sprintf("    %s: %d NAs (%s)\n", nm, vars_with_na[[nm]],
-                  if (!is.null(x$method[[nm]])) x$method[[nm]] else "?"))
+      qual <- x$model_error[[nm]]
+      cat(sprintf("    %s: %d NAs (%s%s)\n", nm, vars_with_na[[nm]],
+                  if (!is.null(x$method[[nm]])) x$method[[nm]] else "?",
+                  if (!is.null(qual)) {
+                    sprintf("; %s = %.3f [%s]", qual$measure, qual$value, qual$type)
+                  } else ""))
     }
   }
   invisible(x)
@@ -325,51 +334,122 @@ vim_as_mids <- function(x, ...) {
 #' @rdname vim_as_mids
 as.mids.vimmi <- vim_as_mids
 
-#' Convergence trace plots for a vimmi object
+#' Diagnostic plots for a vimmi object
 #'
-#' Draws mice-style convergence diagnostics for the sequential (FCS)
-#' imputation behind a \code{vimmi} object: for every numeric variable with
-#' imputed cells, the mean and the standard deviation of its imputed values
-#' are plotted against the iteration number, one line per imputation. Chains
-#' that mix well fluctuate around a common level without trends; systematic
-#' drift suggests increasing \code{nseq}.
+#' Draws mice-style multiple-imputation diagnostics for a \code{vimmi}
+#' object, for every numeric variable with imputed cells:
+#' \describe{
+#'   \item{\code{"chains"}}{convergence trace plots of the sequential (FCS)
+#'     imputation: the mean and the standard deviation of the imputed values
+#'     against the iteration number, one line per imputation. Chains that
+#'     mix well fluctuate around a common level without trends; systematic
+#'     drift suggests increasing \code{nseq}. Requires chain statistics
+#'     (stored by \code{vimpute()} since VIM 7.3.0).}
+#'   \item{\code{"density"}}{the density of the observed values (blue, bold)
+#'     overlaid with the density of each imputation's imputed values (red,
+#'     thin) -- the analogue of \code{mice::densityplot()}. Imputed
+#'     densities that deviate wildly from the observed one can flag model
+#'     misfit (or genuine MAR shifts).}
+#'   \item{\code{"strip"}}{every value as a point: column 0 holds the
+#'     observed values (blue), columns 1..m the imputed values of each
+#'     imputation (red) -- the analogue of \code{mice::stripplot()}.}
+#' }
 #'
-#' @param x A \code{vimmi} object created by \code{vimpute(m > 1)} in
-#'   VIM >= 7.3.0 (older objects carry no chain statistics)
-#' @param y Type of diagnostic; currently only \code{"chains"}
-#' @param ... Passed on to \code{\link[graphics]{matplot}}
+#' @param x A \code{vimmi} object created by \code{vimpute()} with
+#'   \code{m > 1}
+#' @param y Type of diagnostic: \code{"chains"} (default), \code{"density"},
+#'   or \code{"strip"}
+#' @param ... Passed on to the underlying base-graphics calls
 #' @return \code{x}, invisibly
 #' @export
 #' @method plot vimmi
-#' @importFrom graphics matplot
+#' @importFrom graphics matplot lines points
+#' @importFrom stats density
 #' @seealso \code{\link{vimmi}}, \code{\link{vimpute}}
 #' @examples
 #' \dontrun{
 #' result <- vimpute(sleep, method = "ranger", m = 5, seed = 1)
-#' plot(result)
+#' plot(result)             # convergence chains
+#' plot(result, "density")  # observed vs imputed densities
+#' plot(result, "strip")    # observed vs imputed values
 #' }
-plot.vimmi <- function(x, y = c("chains"), ...) {
+plot.vimmi <- function(x, y = c("chains", "density", "strip"), ...) {
   y <- match.arg(y)
-  if (is.null(x$chain) || is.null(x$chain$mean) ||
-      length(dim(x$chain$mean)) != 3L) {
-    stop("This vimmi object stores no chain statistics ",
-         "(created with VIM < 7.3.0?). Re-run vimpute() to obtain them.")
-  }
-  vars <- dimnames(x$chain$mean)[[1]]
-  traced <- vars[apply(x$chain$mean, 1, function(r) any(is.finite(r)))]
-  if (length(traced) == 0L) {
-    stop("No numeric imputed variables to trace.")
-  }
-  iters <- seq_len(dim(x$chain$mean)[2])
-  plot_type <- if (length(iters) > 1L) "l" else "p"
 
-  op <- par(mfrow = c(length(traced), 2), mar = c(4, 4, 2, 1))
+  if (y == "chains") {
+    if (is.null(x$chain) || is.null(x$chain$mean) ||
+        length(dim(x$chain$mean)) != 3L) {
+      stop("This vimmi object stores no chain statistics ",
+           "(created with VIM < 7.3.0?). Re-run vimpute() to obtain them.")
+    }
+    vars <- dimnames(x$chain$mean)[[1]]
+    traced <- vars[apply(x$chain$mean, 1, function(r) any(is.finite(r)))]
+    if (length(traced) == 0L) {
+      stop("No numeric imputed variables to trace.")
+    }
+    iters <- seq_len(dim(x$chain$mean)[2])
+    plot_type <- if (length(iters) > 1L) "l" else "p"
+
+    op <- par(mfrow = c(length(traced), 2), mar = c(4, 4, 2, 1))
+    on.exit(par(op))
+    for (v in traced) {
+      matplot(iters, x$chain$mean[v, , ], type = plot_type, lty = 1, pch = 1,
+              xlab = "iteration", ylab = "mean of imputed", main = v, ...)
+      matplot(iters, sqrt(x$chain$var[v, , ]), type = plot_type, lty = 1, pch = 1,
+              xlab = "iteration", ylab = "sd of imputed", main = v, ...)
+    }
+    return(invisible(x))
+  }
+
+  # density / strip work from the stored imputations (x$imp + x$data), so
+  # they are available for any vimmi object
+  num_vars <- names(x$imp)[vapply(names(x$imp), function(v) {
+    is.numeric(x$data[[v]]) && isTRUE(x$nmis[[v]] > 0)
+  }, logical(1))]
+  if (y == "density") {
+    # a density needs at least two imputed values
+    num_vars <- num_vars[vapply(num_vars, function(v) x$nmis[[v]] >= 2, logical(1))]
+  }
+  if (length(num_vars) == 0L) {
+    stop("No numeric imputed variables to plot.")
+  }
+
+  op <- par(mfrow = grDevices::n2mfrow(length(num_vars)), mar = c(4, 4, 2, 1))
   on.exit(par(op))
-  for (v in traced) {
-    matplot(iters, x$chain$mean[v, , ], type = plot_type, lty = 1, pch = 1,
-            xlab = "iteration", ylab = "mean of imputed", main = v, ...)
-    matplot(iters, sqrt(x$chain$var[v, , ]), type = plot_type, lty = 1, pch = 1,
-            xlab = "iteration", ylab = "sd of imputed", main = v, ...)
+
+  col_obs <- "#0072B2"  # observed: blue (mice convention)
+  col_imp <- "#D55E00"  # imputed: red/vermillion
+
+  for (v in num_vars) {
+    obs <- x$data[[v]][!x$where[, v]]
+    obs <- obs[!is.na(obs)]
+    imp_df <- x$imp[[v]]
+
+    if (y == "density") {
+      d_obs <- stats::density(obs)
+      d_imp <- lapply(seq_len(x$m), function(mi) {
+        vals <- imp_df[[mi]]
+        vals <- vals[!is.na(vals)]
+        if (length(vals) >= 2L) stats::density(vals) else NULL
+      })
+      d_all <- c(list(d_obs), Filter(Negate(is.null), d_imp))
+      xlim <- range(unlist(lapply(d_all, `[[`, "x")))
+      ylim <- c(0, max(unlist(lapply(d_all, `[[`, "y"))))
+      plot(d_obs, xlim = xlim, ylim = ylim, col = col_obs, lwd = 2,
+           main = v, xlab = v, ...)
+      for (d in d_imp) {
+        if (!is.null(d)) lines(d, col = col_imp, lwd = 1)
+      }
+    } else {
+      vals <- c(obs, unlist(imp_df, use.names = FALSE))
+      pos <- c(rep(0L, length(obs)), rep(seq_len(x$m), each = nrow(imp_df)))
+      cols <- c(rep(col_obs, length(obs)),
+                rep(col_imp, nrow(imp_df) * x$m))
+      plot(jitter(pos, amount = 0.1), vals, col = cols, pch = 1,
+           xlab = "imputation (0 = observed)", ylab = v, main = v,
+           xaxt = "n", ...)
+      graphics::axis(1, at = 0:x$m)
+    }
   }
   invisible(x)
 }

@@ -1495,6 +1495,100 @@ bootstrap_resample <- function(
   # }
 }
 
+# Per-variable imputation-quality metric from the final trained learner
+# (audit P1.27, missForest OOBerror analogue): NRMSE for numeric targets,
+# PFC for factors. ranger delivers a free out-of-bag version (type "oob",
+# from its stored OOB predictions); every other learner is scored in-sample
+# and honestly labelled (type "insample").
+compute_model_error <- function(learner, task) {
+  # Unwrap the GraphLearner to the raw fitted model. Depending on the graph
+  # shape (bare learner vs preprocessing pipeops) the learner state nests one
+  # level deeper, so descend through "model" elements until a non-state
+  # object is reached (only ranger is special-cased below, so stopping early
+  # on any other object is harmless -- it falls through to the in-sample
+  # path).
+  raw_model <- learner$model
+  guard <- 0L
+  while (is.list(raw_model) && !inherits(raw_model, "ranger") &&
+         !is.data.frame(raw_model) && guard < 5L) {
+    nxt <- if ("model" %in% names(raw_model)) {
+      raw_model[["model"]]
+    } else {
+      found <- NULL
+      for (nm in names(raw_model)) {
+        inner <- raw_model[[nm]]
+        if (is.list(inner) && "model" %in% names(inner)) {
+          found <- inner[["model"]]
+          break
+        }
+      }
+      found
+    }
+    if (is.null(nxt)) break
+    raw_model <- nxt
+    guard <- guard + 1L
+  }
+
+  truth <- task$truth()
+  is_regr <- identical(task$task_type, "regr")
+  nrmse_of <- function(rmse) {
+    s <- stats::sd(as.numeric(truth))
+    rmse / (if (is.finite(s) && s > 0) s else 1)
+  }
+
+  # ranger: out-of-bag predictions come free with the fitted forest
+  if (inherits(raw_model, "ranger") && !is.null(raw_model$predictions)) {
+    oob <- raw_model$predictions
+    if (is_regr && is.numeric(oob)) {
+      ok <- is.finite(oob)
+      if (any(ok)) {
+        rmse <- sqrt(mean((as.numeric(truth)[ok] - oob[ok])^2))
+        return(list(measure = "NRMSE", value = nrmse_of(rmse), type = "oob"))
+      }
+    } else if (!is_regr) {
+      # probability forest: OOB class = column with the largest probability
+      if (is.matrix(oob)) {
+        ok <- stats::complete.cases(oob)
+        if (any(ok)) {
+          pred_class <- colnames(oob)[max.col(oob[ok, , drop = FALSE])]
+          return(list(
+            measure = "PFC",
+            value = mean(pred_class != as.character(truth)[ok]),
+            type = "oob"
+          ))
+        }
+      } else if (is.factor(oob) || is.character(oob)) {
+        ok <- !is.na(oob)
+        if (any(ok)) {
+          return(list(
+            measure = "PFC",
+            value = mean(as.character(oob)[ok] != as.character(truth)[ok]),
+            type = "oob"
+          ))
+        }
+      }
+    }
+  }
+
+  # everything else: in-sample error, labelled as such
+  pred <- tryCatch(learner$predict(task), error = function(e) NULL)
+  if (is.null(pred)) return(NULL)
+  if (is_regr) {
+    resp <- as.numeric(pred$response)
+    ok <- is.finite(resp)
+    if (!any(ok)) return(NULL)
+    rmse <- sqrt(mean((as.numeric(pred$truth)[ok] - resp[ok])^2))
+    list(measure = "NRMSE", value = nrmse_of(rmse), type = "insample")
+  } else {
+    resp <- as.character(pred$response)
+    ok <- !is.na(resp)
+    if (!any(ok)) return(NULL)
+    list(measure = "PFC",
+         value = mean(resp[ok] != as.character(pred$truth)[ok]),
+         type = "insample")
+  }
+}
+
 #' Extract model diagnostics for bootstrap strategies
 #'
 #' Drills into an mlr3 learner or raw model to retrieve residuals,
@@ -1872,7 +1966,8 @@ build_vimpute_result <- function(data, data_new, imp_var, factor_levels,
                                  keep_all_columns = TRUE,
                                  input_is_dt = TRUE,
                                  convergence = NULL,
-                                 chain = NULL) {
+                                 chain = NULL,
+                                 model_error = NULL) {
   result <- as.data.table(if (imp_var) data_new else data)
   result <- enforce_factor_levels(result, factor_levels)
   # enforce_factor_levels rebuilds columns as plain factors; put back the
@@ -1903,6 +1998,9 @@ build_vimpute_result <- function(data, data_new, imp_var, factor_levels,
   }
   if (!is.null(chain)) {
     attr(result, "chain") <- chain
+  }
+  if (!is.null(model_error) && length(model_error) > 0L) {
+    attr(result, "model_error") <- model_error
   }
 
   result

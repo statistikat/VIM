@@ -16,7 +16,8 @@ new_vimmi(
   call,
   tuning_log = NULL,
   chain = NULL,
-  seed = NULL
+  seed = NULL,
+  model_error = NULL
 )
 }
 \arguments{
@@ -50,6 +51,10 @@ iteration (the basis of \code{\link{plot.vimmi}} trace plots)}
 
 \item{seed}{The seed applied at entry of the \code{vimpute()} call
 (NULL when none was set)}
+
+\item{model_error}{Optional per-variable model-quality list (NRMSE/PFC,
+from the first imputation run), as in \code{attr(result, "model_error")}
+of single runs}
 }
 \value{
 A \code{vimmi} object

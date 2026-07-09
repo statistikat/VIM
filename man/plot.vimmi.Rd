@@ -2,33 +2,48 @@
 % Please edit documentation in R/vimmi.R
 \name{plot.vimmi}
 \alias{plot.vimmi}
-\title{Convergence trace plots for a vimmi object}
+\title{Diagnostic plots for a vimmi object}
 \usage{
-\method{plot}{vimmi}(x, y = c("chains"), ...)
+\method{plot}{vimmi}(x, y = c("chains", "density", "strip"), ...)
 }
 \arguments{
-\item{x}{A \code{vimmi} object created by \code{vimpute(m > 1)} in
-VIM >= 7.3.0 (older objects carry no chain statistics)}
+\item{x}{A \code{vimmi} object created by \code{vimpute()} with
+\code{m > 1}}
 
-\item{y}{Type of diagnostic; currently only \code{"chains"}}
+\item{y}{Type of diagnostic: \code{"chains"} (default), \code{"density"},
+or \code{"strip"}}
 
-\item{...}{Passed on to \code{\link[graphics]{matplot}}}
+\item{...}{Passed on to the underlying base-graphics calls}
 }
 \value{
 \code{x}, invisibly
 }
 \description{
-Draws mice-style convergence diagnostics for the sequential (FCS)
-imputation behind a \code{vimmi} object: for every numeric variable with
-imputed cells, the mean and the standard deviation of its imputed values
-are plotted against the iteration number, one line per imputation. Chains
-that mix well fluctuate around a common level without trends; systematic
-drift suggests increasing \code{nseq}.
+Draws mice-style multiple-imputation diagnostics for a \code{vimmi}
+object, for every numeric variable with imputed cells:
+\describe{
+\item{\code{"chains"}}{convergence trace plots of the sequential (FCS)
+imputation: the mean and the standard deviation of the imputed values
+against the iteration number, one line per imputation. Chains that
+mix well fluctuate around a common level without trends; systematic
+drift suggests increasing \code{nseq}. Requires chain statistics
+(stored by \code{vimpute()} since VIM 7.3.0).}
+\item{\code{"density"}}{the density of the observed values (blue, bold)
+overlaid with the density of each imputation's imputed values (red,
+thin) -- the analogue of \code{mice::densityplot()}. Imputed
+densities that deviate wildly from the observed one can flag model
+misfit (or genuine MAR shifts).}
+\item{\code{"strip"}}{every value as a point: column 0 holds the
+observed values (blue), columns 1..m the imputed values of each
+imputation (red) -- the analogue of \code{mice::stripplot()}.}
+}
 }
 \examples{
 \dontrun{
 result <- vimpute(sleep, method = "ranger", m = 5, seed = 1)
-plot(result)
+plot(result)             # convergence chains
+plot(result, "density")  # observed vs imputed densities
+plot(result, "strip")    # observed vs imputed values
 }
 }
 \seealso{

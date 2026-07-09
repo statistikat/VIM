@@ -68,3 +68,14 @@ old_style <- structure(list(data = dd, imp = mi$imp, where = mi$where, m = 3L,
                             uncert = "normalerror", call = NULL),
                        class = "vimmi")
 expect_error(plot(old_style), pattern = "chain")
+
+## --- Wave 3: density and strip panels (mice densityplot/stripplot analogues) ----
+## Both work from the stored imputations (x$imp + x$data), so they also work
+## for objects without chain statistics.
+pdf(NULL)
+expect_silent(plot(mi, "density"))
+expect_silent(plot(mi, "strip"))
+expect_silent(plot(old_style, "density"))
+expect_silent(plot(old_style, "strip"))
+dev.off()
+expect_error(plot(mi, "nope"))

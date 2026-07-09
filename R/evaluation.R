@@ -15,8 +15,8 @@
 #' @return the error measures value
 #' @author Matthias Templ
 #' @references M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
-#' regression imputation using standard and robust methods.  *Journal of
-#' Computational Statistics and Data Analysis*, Vol. 55, pp. 2793-2806.
+#' regression imputation using standard and robust methods.  *Computational
+#' Statistics & Data Analysis*, Vol. 55, pp. 2793-2806.
 #' 
 #' @details This function has been mainly written for procudures 
 #' that evaluate imputation or replacement of rounded zeros. The ni parameter can thus, e.g. be
@@ -48,12 +48,14 @@ evaluation <- function(x, y, m, vartypes = "guess"){
     }
   }
   err_num <- err_cat <- err_mixed <- 0
-  if(any(vartypes == "numeric")){
+  # guard the divisions: no missing cells of a type -> no error contribution
+  # (previously 0/0 = NaN when e.g. only numeric columns were amputed)
+  if(any(vartypes == "numeric") && sum(m[, vartypes == "numeric"]) > 0){
     err_num <- sum((x[, vartypes == "numeric"] - y[, vartypes == "numeric"])^2) / sum(m[, vartypes == "numeric"])
   }
-  if(any(vartypes == "factor")){
+  if(any(vartypes == "factor") && sum(m[, vartypes == "factor"]) > 0){
     err_cat <- sum(x[, vartypes == "factor"] != y[, vartypes == "factor"]) / sum(m[, vartypes == "factor"])
-  } 
+  }
   results <- list("err_num" = err_num,
                   "err_cat" = err_cat,
                   "error" = err_num + err_cat + err_mixed)
