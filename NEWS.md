@@ -24,6 +24,8 @@
 - **Per-variable model quality by default** (missForest `OOBerror` analogue): every `vimpute()` run reports NRMSE (numeric) / PFC (factor) per variable as `attr(result, "model_error")` -- out-of-bag for ranger, honestly labelled in-sample for the other learners -- and `print(vimmi)` shows it.
 - **`plot(vimmi, "density")` and `plot(vimmi, "strip")`**: observed-vs-imputed distribution diagnostics (the `mice::densityplot()`/`stripplot()` analogues), complementing the `"chains"` convergence traces.
 - **New vignette** *Multiple imputation with vimpute: pooling, tuning and diagnostics*: an executed end-to-end workflow -- `makeMissing()` -> `vimpute(m = 5)` -> chain/density diagnostics -> Rubin pooling via `with()`/`mice::pool()` and `vim_as_mids()` -> tuning with `tune_control` -> `overimpute()` calibration -> `evaluation()` against the simulated truth.
+- **New vignette** *Benchmarking imputation methods*: an executed, extensible benchmark harness (`makeMissing()` scenarios, NRMSE on the amputed cells, runtime) comparing vimpute ranger/robust and `kNN()` with mice and missRanger (both guarded Suggests); demo-scale replications at build time, paper-scale via one constant.
+- **New vignette** *Validating multiple-imputation properness*: a known-truth coverage simulation of the pooled inference under the default (`uncert = "pmm"`), the textbook-proper (`boot + normalerror`), and a deliberately improper (bootstrap without residual noise) configuration -- demonstrating the anti-conservative pooled SEs the improper setting produces and the warning that guards against it.
 - `?vimpute` states the missingness assumptions (MAR incl. MCAR; MNAR caveat with pointers to `makeMissing()` sensitivity simulation).
 
 ## Minor improvements
