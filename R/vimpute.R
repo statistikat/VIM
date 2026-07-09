@@ -5,6 +5,18 @@
 ## PARAMETERS ##
 #' @param data
 #'  Dataset with missing values. Provide as a data.table.
+#' @param ...
+#'  Optional bare **grammar formulas**, one per variable:
+#'  \code{target ~ predictors | method(...)} -- e.g.
+#'  \code{Sleep ~ Dream + Span | ranger(tune = TRUE)} or
+#'  \code{NonD ~ . | robust(donorcond = ">= 0")} -- plus an optional
+#'  \code{.default = } spec for unlisted variables. A plain-column
+#'  right-hand side restricts the \code{predictors} (works for every
+#'  method); a right-hand side with transformations (\code{s(x)},
+#'  \code{log(x)}, \code{I(x^2)}, interactions) becomes a model
+#'  \code{formula} (formula-capable methods only); \code{.} means all other
+#'  variables. Grammar formulas compile to \code{spec} objects and cannot be
+#'  combined with \code{spec = } or the flat per-variable arguments.
 #' @param considered_variables
 #'  A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process. Excluded columns are still returned unchanged by default (see \code{keep_all_columns}).
 #' @param method
@@ -161,6 +173,16 @@
 #'  \code{mice::make.predictorMatrix}). Variables without an entry use all
 #'  other considered variables. A \code{formula} supplied for a variable takes
 #'  precedence over its \code{predictors} entry (as in \pkg{mice}).
+#' @param spec
+#'  \code{NULL} or a named list of \code{\link{vimpute_spec}} objects -- one
+#'  per variable, e.g. \code{spec = list(Sleep = vs_ranger(num.trees = 300,
+#'  tune = TRUE), NonD = vs_robust(donorcond = ">= 0"), .default =
+#'  vs_ranger())}. Each spec bundles the variable's method, learner
+#'  parameters (validated eagerly), \code{formula}/\code{predictors},
+#'  \code{tune}, PMM settings, \code{makeNA} and \code{donorcond}; the
+#'  reserved name \code{".default"} covers unlisted variables. Compiles to
+#'  the flat per-variable arguments, which therefore cannot be given in the
+#'  same call.
 #' @param visit_sequence
 #'  Order in which the variables with missings are imputed:
 #'  \code{"asis"} (default; column order), \code{"increasing.na"} (fewest
@@ -214,7 +236,8 @@
 
 vimpute <- function(
     data,
-    considered_variables = names(data), 
+    ...,
+    considered_variables = names(data),
     method = setNames(as.list(rep("ranger", length(considered_variables))), considered_variables),
     pmm = FALSE,
     pmm_k = NULL,
@@ -239,7 +262,8 @@ vimpute <- function(
     tuned_params = NULL,
     tune_control = NULL,
     predictors = NULL,
-    visit_sequence = "asis"
+    visit_sequence = "asis",
+    spec = NULL
 ) {
 
   # Distinguish the user explicitly choosing an uncertainty method from the
@@ -278,6 +302,46 @@ vimpute <- function(
     tune_control <- vimpute_tune_control()
   } else if (!inherits(tune_control, "vimpute_tune_control")) {
     stop("'tune_control' must be created by vimpute_tune_control().")
+  }
+
+  # ---- Per-variable specs and the formula grammar ---------------------------
+  # Bare formulas (y ~ x1 + x2 | ranger(tune = TRUE), plus '.default = ')
+  # arrive unevaluated in `...` and compile to a spec list; `spec = ` takes a
+  # named list of vimpute_spec objects directly. Both compile to the classic
+  # flat per-variable arguments below, so everything downstream (precheck,
+  # the imputation loop, the m > 1 recursion) is unchanged.
+  grammar_dots <- as.list(match.call(expand.dots = FALSE)$`...`)
+  if (length(grammar_dots) > 0L) {
+    if (!is.null(spec)) {
+      stop("Use either bare grammar formulas or 'spec = ', not both.")
+    }
+    spec <- compile_vimpute_grammar(grammar_dots, env = parent.frame())
+  }
+  if (!is.null(spec)) {
+    flat_given <- c(
+      method = !missing(method), learner_params = !missing(learner_params),
+      formula = !missing(formula), predictors = !missing(predictors),
+      tune = !missing(tune), pmm = !missing(pmm), pmm_k = !missing(pmm_k),
+      pmm_k_method = !missing(pmm_k_method), makeNA = !missing(makeNA),
+      donorcond = !missing(donorcond)
+    )
+    if (any(flat_given)) {
+      stop(sprintf(
+        "'spec'/grammar formulas cannot be combined with the flat per-variable argument(s): %s. Use one interface per call.",
+        paste(names(flat_given)[flat_given], collapse = ", ")))
+    }
+    compiled <- compile_vimpute_spec(spec, data = data,
+                                     considered_variables = considered_variables)
+    method         <- compiled$method
+    learner_params <- compiled$learner_params
+    formula        <- compiled$formula
+    predictors     <- compiled$predictors
+    tune           <- compiled$tune
+    pmm            <- compiled$pmm
+    pmm_k          <- compiled$pmm_k
+    pmm_k_method   <- compiled$pmm_k_method
+    makeNA         <- compiled$makeNA
+    donorcond      <- compiled$donorcond
   }
 
   # Per-variable predictor control (predictorMatrix equivalent, applied to

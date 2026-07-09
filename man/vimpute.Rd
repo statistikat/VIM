@@ -6,6 +6,7 @@
 \usage{
 vimpute(
   data,
+  ...,
   considered_variables = names(data),
   method = setNames(as.list(rep("ranger", length(considered_variables))),
     considered_variables),
@@ -32,11 +33,24 @@ vimpute(
   tuned_params = NULL,
   tune_control = NULL,
   predictors = NULL,
-  visit_sequence = "asis"
+  visit_sequence = "asis",
+  spec = NULL
 )
 }
 \arguments{
 \item{data}{Dataset with missing values. Provide as a data.table.}
+
+\item{...}{Optional bare \strong{grammar formulas}, one per variable:
+\code{target ~ predictors | method(...)} -- e.g.
+\code{Sleep ~ Dream + Span | ranger(tune = TRUE)} or
+\code{NonD ~ . | robust(donorcond = ">= 0")} -- plus an optional
+\code{.default = } spec for unlisted variables. A plain-column
+right-hand side restricts the \code{predictors} (works for every
+method); a right-hand side with transformations (\code{s(x)},
+\code{log(x)}, \code{I(x^2)}, interactions) becomes a model
+\code{formula} (formula-capable methods only); \code{.} means all other
+variables. Grammar formulas compile to \code{spec} objects and cannot be
+combined with \code{spec = } or the flat per-variable arguments.}
 
 \item{considered_variables}{A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process. Excluded columns are still returned unchanged by default (see \code{keep_all_columns}).}
 
@@ -214,6 +228,16 @@ precedence over its \code{predictors} entry (as in \pkg{mice}).}
 \code{"asis"} (default; column order), \code{"increasing.na"} (fewest
 missings first), \code{"decreasing.na"}, or a character vector giving an
 explicit permutation of the NA-variables.}
+
+\item{spec}{\code{NULL} or a named list of \code{\link{vimpute_spec}} objects -- one
+per variable, e.g. \code{spec = list(Sleep = vs_ranger(num.trees = 300,
+ tune = TRUE), NonD = vs_robust(donorcond = ">= 0"), .default =
+ vs_ranger())}. Each spec bundles the variable's method, learner
+parameters (validated eagerly), \code{formula}/\code{predictors},
+\code{tune}, PMM settings, \code{makeNA} and \code{donorcond}; the
+reserved name \code{".default"} covers unlisted variables. Compiles to
+the flat per-variable arguments, which therefore cannot be given in the
+same call.}
 }
 \value{
 For \code{m = 1}: the imputed dataset, classed like the input

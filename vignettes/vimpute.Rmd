@@ -131,9 +131,36 @@ Specifies the method used for imputation of each variable. If `method` is not pr
 
 You can provide `method` globally as a single method name (applies to all variables), or as a named list per variable.
 
+Per-variable settings can also be bundled into **spec objects** — one object per variable instead
+of coordinating the parallel `method`/`learner_params`/`formula`/`tune`/... arguments — or written
+as a compact **formula grammar**. Both compile to the classic arguments, so results are identical:
+
+```{r, eval=FALSE}
+# spec objects: everything about a variable in one place,
+# learner parameters validated at the constructor call
+res <- vimpute(sleep_data,
+  spec = list(
+    Sleep    = vs_ranger(num.trees = 300, tune = TRUE),
+    NonD     = vs_robust(donorcond = ">= 0"),
+    .default = vs_ranger()
+  ),
+  seed = 1)
+
+# the same as formula grammar: target ~ predictors | method(...)
+res <- vimpute(sleep_data,
+  Sleep ~ Dream + Span | ranger(num.trees = 300, tune = TRUE),
+  NonD  ~ .           | robust(donorcond = ">= 0"),
+  .default = vs_ranger(),
+  seed = 1)
+```
+
+A plain-column right-hand side restricts the predictors (works for every method, including ranger
+and xgboost); a right-hand side with transformations such as `s(x)` or `log(x)` becomes a model
+formula for the formula-capable methods.
+
 Beyond the built-ins, any pair of mlr3 learners can be registered as an additional method with a
 single call — no changes to VIM required. The registered name then works everywhere the built-in
-names do (global `method`, per-variable lists, method-keyed `learner_params`):
+names do (global `method`, per-variable lists, method-keyed `learner_params`, specs and grammar):
 
 ```{r, eval=FALSE}
 # CART trees via mlr3's rpart learners
