@@ -111,9 +111,9 @@ result2 <- imputeCellMCD(sleep, mcd_observed = "pairwise", trace = TRUE)
 
 }
 \references{
-Raymaekers, C. and Rousseeuw, P.J. (2024).  The cellwise minimum
+Raymaekers, J. and Rousseeuw, P.J. (2024).  The cellwise minimum
 covariance determinant estimator.  \emph{Journal of the American
-Statistical Association}, \strong{119}(545), 576--588.
+Statistical Association}, \strong{119}(548), 2610--2621.
 }
 \seealso{
 \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},

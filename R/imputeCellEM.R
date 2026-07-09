@@ -111,17 +111,17 @@
 #' C.F.J. Wu (1983) On the Convergence Properties of the EM Algorithm.
 #' \emph{The Annals of Statistics}, 11(1), 95--103.
 #'
-#' C. Raymaekers, P.J. Rousseeuw (2024) The cellwise minimum covariance
+#' J. Raymaekers, P.J. Rousseeuw (2024) The cellwise minimum covariance
 #' determinant estimator. \emph{Journal of the American Statistical
-#' Association}, 119(545), 576--588.
+#' Association}, 119(548), 2610--2621.
 #'
-#' G. Zaccaria, L. Insolia, A. Farcomeni (2025) Robust model-based
-#' clustering with cellwise contamination. \emph{Technometrics},
-#' forthcoming.
+#' G. Zaccaria, L.A. Garcia-Escudero, F. Greselin, A. Mayo-Iscar (2025)
+#' Cellwise outlier detection in heterogeneous populations.
+#' \emph{Technometrics}, 67(4), 643--654.
 #'
 #' M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
-#' imputation using standard and robust methods. \emph{Journal of
-#' Computational Statistics and Data Analysis}, Vol. 55, pp. 2793--2806.
+#' imputation using standard and robust methods. \emph{Computational
+#' Statistics & Data Analysis}, Vol. 55, pp. 2793--2806.
 #'
 #' @family imputation methods
 #' @seealso \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},
@@ -969,9 +969,9 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
 #'
 #' @author Matthias Templ
 #' @references
-#' Raymaekers, C. and Rousseeuw, P.J. (2024).  The cellwise minimum
+#' Raymaekers, J. and Rousseeuw, P.J. (2024).  The cellwise minimum
 #' covariance determinant estimator.  \emph{Journal of the American
-#' Statistical Association}, \strong{119}(545), 576--588.
+#' Statistical Association}, \strong{119}(548), 2610--2621.
 #'
 #' @family imputation methods
 #' @seealso \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},

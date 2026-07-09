@@ -211,7 +211,7 @@ marginplot(dataDS_regularized, delimiter = "_imp", main = "Imputation with Regul
 par(mfrow = c(1, 1))
 ```
 
-xgboost handles missing values with data-driven, uneven imputations that capture complex patterns but may be less stable, while regularized methods produce smoother, more conservative estimates that are less prone to overfitting. The key difference lies in flexibility (xgboost) versus robustness (regularization).
+xgboost handles missing values with data-driven, uneven imputations that capture complex patterns but may be less stable, while regularized methods produce smoother, more conservative estimates that are less prone to overfitting. The key difference lies in flexibility (xgboost) versus shrinkage-based stability (regularization). Note that regularization is not robustness in the statistical sense: it stabilises coefficients against multicollinearity and overfitting, but does not protect against outliers -- for outlier-resistant imputation use the `"robust"` or `"robgam"` methods.
 
 #### Parameter `pmm` 
 <small>*(default: FALSE)*</small>

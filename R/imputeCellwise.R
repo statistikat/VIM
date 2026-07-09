@@ -558,8 +558,8 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
 #' @author Matthias Templ
 #' @references
 #' M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
-#' imputation using standard and robust methods. \emph{Journal of
-#' Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
+#' imputation using standard and robust methods. \emph{Computational
+#' Statistics & Data Analysis}, Vol. 55, pp. 2793-2806.
 #'
 #' @family imputation methods
 #' @seealso \code{\link{imputeCellIRMI}}, \code{\link{imputeRobust}}
