@@ -305,13 +305,26 @@ The framework-design review confirmed the architecture is right (named-list per-
 mice's method vector; compact vimmi + as.mids bridge is the correct posture) and proposed concrete
 contracts — sketches in the appendix, headlines here:
 
-- [ ] **Unify per-variable spec** behind spec objects: today 9 parallel per-variable arguments with
-  three-way-ambiguous `learner_params` semantics. Proposal: `vs_ranger(num.trees=500, tune=TRUE,
-  uncert="pmm")`-style constructors validated eagerly against the learner's param_set, with the
-  current flat arguments kept as a compatibility layer.
-- [ ] **Formula grammar as sugar** (the IDEA item worth doing): `vimpute(dat, Sleep ~ Dream + Span |
-  ranger(tune=TRUE), NonD ~ . | robust(donorcond=">= 0"), .default = ranger(), m = 20, seed = 1)` —
-  compiles to specs; RHS lowers to `task$select()` so ML methods get predictor control for free.
+- [x] **Unify per-variable spec** **Done (Wave 2, 076be13):** `vimpute(data, spec = list(Sleep =
+  vs_ranger(num.trees = 300, tune = TRUE), NonD = vs_robust(donorcond = ">= 0"), .default =
+  vs_ranger()))` — six `vs_*()` constructors + `vimpute_spec()` for registry methods; learner
+  params validated EAGERLY (fail at constructor, not iteration 7); a spec'd variable uses its
+  spec exactly, `.default` covers the rest; flat args untouched as compatibility layer (specs
+  compile to exactly them — identity locked by tests). Design cuts: `uncert` stays call-level
+  (per-variable uncert deferred — would need new loop plumbing); no field-level merging with
+  `.default`. Original ask: today 9 parallel per-variable arguments with three-way-ambiguous
+  `learner_params` semantics. Proposal: `vs_ranger(num.trees=500, tune=TRUE, uncert="pmm")`-style
+  constructors validated eagerly against the learner's param_set, with the current flat arguments
+  kept as a compatibility layer.
+- [x] **Formula grammar as sugar** **Done (Wave 2, 076be13, with the spec layer):**
+  `vimpute(dat, Sleep ~ Dream + Span | ranger(tune=TRUE), NonD ~ . | robust(donorcond=">= 0"),
+  .default = vs_ranger(), m = 20, seed = 1)` — bare formulas captured via a new `...` in second
+  position (arguments after `data` must be named; NEWS notes it), compiled to specs; plain-column
+  RHS lowers to `predictors` (predictor control for every method incl. ranger/xgboost), RHS with
+  transformations lowers to a model `formula` (formula-capable methods, checked eagerly); `.` =
+  all other columns; grammar == spec == flat results seed-identical (contract tests). Original
+  ask: compiles to specs; RHS lowers to `task$select()` so ML methods get predictor control for
+  free.
 - [x] **Tuning architecture** (core done, Wave 2, d21c9d3 + 92155c1): tune once — run 1 tunes and
   runs 2..m reuse its params via the new public `tuned_params` argument (tuning_log entries carry
   `$params`; vimmi gains a `tuning_log` element = the surfaced tuning report); `batch_size = 1`
