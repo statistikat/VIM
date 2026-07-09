@@ -565,6 +565,14 @@ deterministic-PMM bug is dangerous: RMSE would rank the degenerate imputer highl
    metrics + amputation generator, coverage simulation validating Rubin-rules properness of the
    (fixed) MI defaults. This is simultaneously the R Journal paper's empirical section
    (→ `~/workspace26/vimpute-paper`).
+   **COMPLETE (2026-07-09), as executed demo-scale vignettes with paper-scale parameterization:**
+   `vimpute-benchmark.Rmd` (extensible harness: makeMissing MCAR/MAR on tao, per-cell NRMSE +
+   runtime; vimpute ranger/robust + kNN vs mice pmm + missRanger — missRanger added to Suggests,
+   mixgb documented as a drop-in but not depended on; NREP=3 at build, =200 for the paper) and
+   `vimpute-coverage.Rmd` (known-truth pooled inference for default-pmm vs boot+normalerror vs
+   deliberately-improper boot-only; the improper config's anti-conservative pooled SE and the
+   guarding warning are demonstrated; NSIM/M/N constants scale to the paper). The paper-scale
+   runs themselves happen in the vimpute-paper repo with this exact code.
 
 ---
 
