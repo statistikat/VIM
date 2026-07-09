@@ -1,0 +1,140 @@
+---
+title: "Multiple imputation with vimpute: pooling, tuning and diagnostics"
+author: "Matthias Templ"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Multiple imputation with vimpute: pooling, tuning and diagnostics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
+                      fig.width = 7, fig.height = 4.5)
+run_mice <- requireNamespace("mice", quietly = TRUE)
+```
+
+This vignette walks through a complete multiple-imputation workflow with
+`vimpute()` — every chunk below is executed: simulate missingness with a known
+mechanism, impute multiply, check convergence and calibration, pool with
+Rubin's rules, and validate against the truth.
+
+```{r, message = FALSE}
+library(VIM)
+set.seed(2026)
+
+data(sleep, package = "VIM")
+truth <- na.omit(sleep[, c("BodyWgt", "BrainWgt", "NonD", "Sleep", "Span", "Gest")])
+truth <- as.data.frame(scale(truth))   # common scale keeps the example compact
+nrow(truth)
+```
+
+## Simulate missingness with a known mechanism
+
+`makeMissing()` generates MCAR/MAR/MNAR missingness in complete data — here
+MAR: the probability that `Sleep` and `Span` go missing grows with the other
+(observed) variables. The returned `"where"` attribute marks the amputed
+cells, so the truth stays available for validation.
+
+```{r}
+amp <- makeMissing(truth, prop = 0.25, mechanism = "MAR",
+                   vars = c("Sleep", "Span"), seed = 1)
+colSums(is.na(amp))
+```
+
+## Multiple imputation
+
+`m = 5` imputations; the default `uncert = "pmm"` draws from observed donor
+values, so the imputations differ between runs (a prerequisite for Rubin's
+rules). Per-variable settings use the spec interface; three sequential
+iterations give the convergence chains something to show.
+
+```{r}
+mi <- vimpute(amp,
+              spec = list(.default = vs_ranger(num.trees = 100)),
+              m = 5, sequential = TRUE, nseq = 3, seed = 7, verbose = FALSE)
+mi
+```
+
+`print()` already answers the practitioner's first question — *can I trust
+this?* — with a per-variable model-quality metric (NRMSE, out-of-bag for
+ranger; PFC for factors).
+
+## Convergence and distribution diagnostics
+
+```{r, fig.height = 5.5}
+plot(mi)             # chains: mean/sd of the imputed values per iteration
+```
+
+```{r}
+plot(mi, "density")  # observed (blue, bold) vs per-imputation imputed (red)
+```
+
+## Pooling with Rubin's rules
+
+`with()` fits a model on each completed dataset and returns a
+mice-compatible `mira`, so the standard pipeline applies unchanged.
+
+```{r, eval = run_mice}
+fits <- with(mi, lm(Sleep ~ BodyWgt + Span))
+pooled <- mice::pool(fits)
+summary(pooled)
+```
+
+Alternatively, convert the whole object: `vim_as_mids(mi)` yields a genuine
+`mice::mids` for any downstream mice infrastructure.
+
+```{r, eval = run_mice}
+mids <- vim_as_mids(mi)
+class(mids)
+```
+
+## Hyperparameter tuning inside the imputation
+
+Tuning is controlled per variable (spec) and per call (`tune_control`); with
+`m > 1` the tuner runs once and all imputations share its parameters. The
+tuning log records what was chosen.
+
+```{r}
+mi_tuned <- vimpute(amp,
+                    spec = list(Sleep    = vs_ranger(num.trees = 100, tune = TRUE),
+                                .default = vs_ranger(num.trees = 100)),
+                    tune_control = vimpute_tune_control(budget = 4, folds = 3),
+                    m = 2, sequential = FALSE, seed = 7, verbose = FALSE)
+tl <- mi_tuned$tuning_log
+tail(tl, 1)[[1]][c("variable", "tuned", "tuned_better", "n_evals", "folds")]
+```
+
+## Calibration: overimputation
+
+`overimpute()` treats the *observed* cells of a variable as missing (fold by
+fold), imputes them multiply, and compares observed values with the imputed
+intervals — a model-agnostic calibration check that needs no ground truth.
+
+```{r}
+ov <- overimpute(amp, "Sleep",
+                 spec = list(.default = vs_ranger(num.trees = 100)),
+                 draws = 5, folds = 5, sequential = FALSE, seed = 3)
+ov
+plot(ov)
+```
+
+## Validation against the truth
+
+Because the missingness was simulated, the imputations can be scored against
+the true values — the loop `makeMissing()` → `vimpute()` → `evaluation()`
+that any benchmark study needs.
+
+```{r}
+completed <- complete(mi, 1)
+evaluation(truth, completed, m = attr(amp, "where"))
+```
+
+## A note on assumptions
+
+Like all conditional imputation, `vimpute()` assumes MAR (which includes
+MCAR). Under MNAR — missingness driven by the unobserved values themselves —
+estimates can be biased and no imputation method can repair this from the
+observed data alone; `makeMissing(mechanism = "MNAR")` supports exactly the
+sensitivity simulations such situations call for.
