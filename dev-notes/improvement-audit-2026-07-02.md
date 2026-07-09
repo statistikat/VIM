@@ -288,13 +288,19 @@ non-linear and methods need tuning**.
 - [x] CI runs only on master/main — **done (Wave 1):** added `devel` to the push/PR branch filters in
   `.github/workflows/R-CMD-check.yaml`.
 
-**mice-parity P1 gaps (fact-checked):** amputation generator for simulation studies
-(`ampute()`-equivalent, natural extension of `makeNA`), parallel MI over m (future is already
-imported; note tuned-params caching must land first so parallel m doesn't multiply tuning),
-MNAR sensitivity (delta adjustment), ordinal imputation (polr or mlr3 ordinal learner),
-post-processing hooks/bounds (`post`/`squeeze` equivalent; competitors: Amelia bounds).
-**Competitor-parity P1 gaps:** per-variable quality feedback by default (missForest OOB-style),
-overimputation calibration diagnostic (Amelia `overimpute`), model persistence + `predict()` on
+**mice-parity P1 gaps (fact-checked):** ~~amputation generator for simulation studies
+(`ampute()`-equivalent, natural extension of `makeNA`)~~ **Done (Wave 3): `makeMissing()` —
+MCAR/MAR/MNAR, exact per-variable proportions, driver `weights`, `attr(., "where")` plugging into
+`evaluation()` (whose 0/0 NaN on type-absent missings is now guarded); P1.22 closed**, parallel
+MI over m (future is already imported; note tuned-params caching landed in Wave 2, so parallel m
+no longer multiplies tuning), MNAR sensitivity (delta adjustment), ordinal imputation (polr or
+mlr3 ordinal learner), post-processing hooks/bounds (`post`/`squeeze` equivalent; competitors:
+Amelia bounds).
+**Competitor-parity P1 gaps:** ~~per-variable quality feedback by default (missForest
+OOB-style)~~ **Done (Wave 3): NRMSE/PFC per variable as `attr(result, "model_error")` — ranger
+out-of-bag, others labelled in-sample; shown by `print.vimmi`; P1.27 closed**, ~~overimputation
+calibration diagnostic (Amelia `overimpute`)~~ **Done (Wave 3): `overimpute()` fold-wise with
+draws, coverage print + calibration plot; P1.28 closed**, model persistence + `predict()` on
 new data (missRanger/mixgb/miceRanger all have it), reproducible parallel seeding.
 
 ---
@@ -548,6 +554,13 @@ deterministic-PMM bug is dangerous: RMSE would rank the degenerate imputer highl
 3. **Wave 3 — diagnostics + docs.** plot.vimmi (chains/density/strip), mira-compatible with(),
    quality feedback by default, ampute-equivalent (extend makeNA), the vignette that actually runs
    MI + pooling + tuning end-to-end, reference fixes, MAR/MNAR statements.
+   **COMPLETE (2026-07-09):** chains landed with P2.65 (Wave 2); density/strip panels,
+   `makeMissing()` (P1.22), `overimpute()` (P1.28), `model_error` quality-by-default (P1.27),
+   the executed `vimpute-mi.Rmd` vignette (makeMissing → m=5 → chains/density → pool/vim_as_mids
+   → tune_control → overimpute → evaluation), reference corrections (cellMCD JASA 119(548)
+   2610–2621 + initial; Zaccaria→Technometrics 67(4) 643–654; CSDA name ×5; ADAC name ×19 +
+   bgmap vol/pages, all CrossRef-verified), MAR/MCAR/MNAR statement in `?vimpute`, and the
+   regularization≠robustness vignette fix.
 4. **Wave 4 — evidence.** Benchmark vignette vs mice/missRanger/mixgb using the (fixed) evaluation
    metrics + amputation generator, coverage simulation validating Rubin-rules properness of the
    (fixed) MI defaults. This is simultaneously the R Journal paper's empirical section
