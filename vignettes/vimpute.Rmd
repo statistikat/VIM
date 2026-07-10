@@ -42,7 +42,8 @@ This vignette demonstrates how to use the `vimpute()` function for flexible miss
 - `pred_history`: If enabled, saves the prediction history.
 - `tune`: Whether to perform hyperparameter tuning.
 - `verbose`: If enabled, prints additional debugging output.
-- `boot`: Whether to refit models on bootstrap samples to add model uncertainty.
+- `boot`: Whether to refit models on bootstrap samples to add model uncertainty
+  (default: `TRUE` when `m > 1`, `FALSE` for single imputation).
 - `robustboot`: Bootstrap sampling strategy used when `boot = TRUE`.
 - `uncert`: Prediction uncertainty method (`"pmm"` -- the default: a random draw among the 5 nearest donors -- `"none"`, `"normalerror"`, `"resid"`, `"midastouch"`).
 - `m`: Number of multiple imputations. If `m > 1`, a `vimmi` object is returned.
@@ -148,8 +149,8 @@ res <- vimpute(sleep_data,
 
 # the same as formula grammar: target ~ predictors | method(...)
 res <- vimpute(sleep_data,
-  Sleep ~ Dream + Span | ranger(num.trees = 300, tune = TRUE),
-  NonD  ~ .           | robust(donorcond = ">= 0"),
+  Sleep ~ . | ranger(num.trees = 300, tune = TRUE),
+  NonD  ~ . | robust(donorcond = ">= 0"),
   .default = vs_ranger(),
   seed = 1)
 ```
