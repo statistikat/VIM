@@ -20,13 +20,25 @@ library(VIM)
 }
 
 ## --- P0.1: deterministic default PMM (pmm_k = 1, pmm_k_method = "mean") ------
-## with m > 1 yields identical imputations. Previously silent because
-## has_any_pmm bypassed the guard; must now warn.
+## with m > 1 and no bootstrap yields identical imputations. Previously silent
+## because has_any_pmm bypassed the guard; must now warn. (boot = FALSE is set
+## explicitly since 7.3.0's adaptive default -- with the m > 1 default
+## boot = TRUE, the bootstrap refits vary the predictions and the deterministic
+## donor mapping no longer collapses the imputations, so no warning is due.)
 set.seed(1)
 w_pmm <- .mi_warns(
-  vimpute(sleep, method = "ranger", pmm = TRUE, m = 2, sequential = FALSE)
+  vimpute(sleep, method = "ranger", pmm = TRUE, m = 2, boot = FALSE,
+          sequential = FALSE)
 )
 expect_true(any(grepl("identical", w_pmm)))
+
+## --- Guard: the same deterministic PMM under the m > 1 default (boot = TRUE)
+## must NOT warn -- bootstrap refits supply the between-imputation variability.
+set.seed(1)
+w_pmm_boot <- .mi_warns(
+  vimpute(sleep, method = "ranger", pmm = TRUE, m = 2, sequential = FALSE)
+)
+expect_false(any(grepl("identical|underestimate", w_pmm_boot)))
 
 ## --- P0.2: bootstrap-only MI (boot = TRUE, uncert = "none", no PMM) ----------
 ## imputes conditional means, so between-imputation variance is underestimated.

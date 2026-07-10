@@ -57,6 +57,7 @@ Statistics & Data Analysis}, Vol. 55, pp. 2793-2806.
 Useful links:
 \itemize{
   \item \url{https://github.com/statistikat/VIM}
+  \item Report bugs at \url{https://github.com/statistikat/VIM/issues}
 }
 
 }

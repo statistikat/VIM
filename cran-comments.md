@@ -26,9 +26,9 @@ references across the documentation.
 
 Documented in NEWS.md; they concern only the `vimpute()`/`vimmi` interface
 introduced in VIM 7.0.0/7.1.0 (type-stable returns, default
-`uncert = "pmm"`, `with()` on a `vimmi` now returns a mice-compatible
-`mira`). The long-standing `kNN()`/`hotdeck()`/`irmi()` and visualization
-APIs are unchanged.
+`uncert = "pmm"`, bootstrap refits by default when `m > 1`, `with()` on a
+`vimmi` now returns a mice-compatible `mira`). The long-standing
+`kNN()`/`hotdeck()`/`irmi()` and visualization APIs are unchanged.
 
 ## Reverse dependencies
 

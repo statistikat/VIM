@@ -50,10 +50,13 @@ sim_data <- function(n) {
 }
 ```
 
-Three configurations of `vimpute(method = "robust", m = M)`:
+Four configurations of `vimpute(method = "robust", m = M)`:
 
-* **default**: `uncert = "pmm"` — stochastic donor draws (VIM's 7.3.0
-  default for numeric variables);
+* **default (boot + pmm)**: bootstrap refits *plus* stochastic donor draws —
+  VIM's default for multiple imputation since 7.3.0 (`boot = TRUE` whenever
+  `m > 1`);
+* **pmm, no boot**: donor draws with a single model fit (`boot = FALSE`) —
+  the pre-7.3.0 default, kept reachable for comparison;
 * **boot + normalerror**: bootstrap parameter uncertainty *plus* residual
   noise — the textbook-proper combination;
 * **boot only, uncert = "none"**: parameter uncertainty without residual
@@ -73,9 +76,10 @@ cat(strwrap(w, 70), sep = "\n")
 
 ```{r, eval = run_mice}
 configs <- list(
-  "default (pmm)"      = list(boot = FALSE, uncert = "pmm"),
-  "boot + normalerror" = list(boot = TRUE,  uncert = "normalerror"),
-  "boot, uncert none"  = list(boot = TRUE,  uncert = "none")
+  "default (boot + pmm)" = list(boot = TRUE,  uncert = "pmm"),
+  "pmm, no boot"         = list(boot = FALSE, uncert = "pmm"),
+  "boot + normalerror"   = list(boot = TRUE,  uncert = "normalerror"),
+  "boot, uncert none"    = list(boot = TRUE,  uncert = "none")
 )
 
 sim_once <- function(cfg, seed) {
@@ -117,8 +121,10 @@ the nominal level. The deliberately improper configuration (bootstrap only,
 no residual noise) shows the audit-documented failure: its pooled SE is
 visibly *smaller* than the other configurations and than its own sampling
 variability — anti-conservative intervals whose coverage collapses at
-paper-scale `NSIM`. The default `uncert = "pmm"` and the textbook
-`boot + normalerror` configurations produce pooled SEs of the right size.
+paper-scale `NSIM`. The stochastic configurations — the `boot` + `pmm`
+default, `pmm` without bootstrap, and the textbook `boot + normalerror`
+combination — produce pooled SEs of the right size, with the bootstrap
+default adding the model-uncertainty component on top of the donor draws.
 
 At `NSIM <- 500`, `M <- 20`, `N <- 300` the same code reproduces the
 paper's coverage table; only the three constants at the top change.

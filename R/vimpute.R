@@ -120,7 +120,11 @@
 #'  If TRUE additional debugging output is provided
 #' @param boot
 #'  If TRUE, bootstrap resampling is applied before model fitting to account
-#'  for model uncertainty. The bootstrap strategy is controlled by \code{robustboot}.
+#'  for model uncertainty. Defaults to \code{TRUE} when \code{m > 1} (each
+#'  imputation then refits on a bootstrap sample, giving approximately proper
+#'  multiple-imputation draws) and to \code{FALSE} for single imputation
+#'  (\code{m = 1}); set explicitly to override. The bootstrap strategy is
+#'  controlled by \code{robustboot}.
 #'  Most effective with method = "robust". Default: FALSE
 #' @param robustboot
 #'  Bootstrap strategy when \code{boot = TRUE}. Options:
@@ -272,7 +276,7 @@ vimpute <- function(
     pred_history = FALSE,
     tune = FALSE,
     verbose = FALSE,
-    boot = FALSE,
+    boot = NULL,
     robustboot = "stratified",
     uncert = "pmm",
     m = 1L,
@@ -287,6 +291,13 @@ vimpute <- function(
   # Distinguish the user explicitly choosing an uncertainty method from the
   # default, so pmm = TRUE with the default uncert does not warn spuriously.
   uncert_explicit <- !missing(uncert)
+
+  # Adaptive boot default: multiple imputation refits each imputation on a
+  # bootstrap sample (approximately proper draws); single imputation keeps
+  # the plain fit. An explicit boot = TRUE/FALSE always wins.
+  if (is.null(boot)) {
+    boot <- is.numeric(m) && length(m) == 1L && !is.na(m) && m > 1L
+  }
 
   # Reproducibility: apply the seed once at entry (mice-compatible). The m > 1
   # wrapper recurses with seed = NULL, so the m runs share one seeded stream

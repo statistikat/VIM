@@ -45,10 +45,12 @@ colSums(is.na(amp))
 
 ## Multiple imputation
 
-`m = 5` imputations; the default `uncert = "pmm"` draws from observed donor
-values, so the imputations differ between runs (a prerequisite for Rubin's
-rules). Per-variable settings use the spec interface; three sequential
-iterations give the convergence chains something to show.
+`m = 5` imputations; with `m > 1`, each imputation refits its models on a
+bootstrap sample (`boot = TRUE` is the default for multiple imputation) and
+the default `uncert = "pmm"` draws from observed donor values, so the
+imputations differ between runs (a prerequisite for Rubin's rules).
+Per-variable settings use the spec interface; three sequential iterations
+give the convergence chains something to show.
 
 ```{r}
 mi <- vimpute(amp,

@@ -25,7 +25,7 @@ vimpute(
   pred_history = FALSE,
   tune = FALSE,
   verbose = FALSE,
-  boot = FALSE,
+  boot = NULL,
   robustboot = "stratified",
   uncert = "pmm",
   m = 1L,
@@ -170,7 +170,11 @@ the resulting \code{vimmi} object carries the tuning report in its
 \item{verbose}{If TRUE additional debugging output is provided}
 
 \item{boot}{If TRUE, bootstrap resampling is applied before model fitting to account
-for model uncertainty. The bootstrap strategy is controlled by \code{robustboot}.
+for model uncertainty. Defaults to \code{TRUE} when \code{m > 1} (each
+imputation then refits on a bootstrap sample, giving approximately proper
+multiple-imputation draws) and to \code{FALSE} for single imputation
+(\code{m = 1}); set explicitly to override. The bootstrap strategy is
+controlled by \code{robustboot}.
 Most effective with method = "robust". Default: FALSE}
 
 \item{robustboot}{Bootstrap strategy when \code{boot = TRUE}. Options:
