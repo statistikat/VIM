@@ -17,3 +17,4 @@ pkgdown
 ^CLAUDE\.md$
 ^\.claude$
 ^dev-notes$
+^cran-comments\.md$
