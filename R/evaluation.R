@@ -7,7 +7,12 @@
 #' @aliases evaluation nrmse pfc msecov msecor
 #' @param x matrix or data frame
 #' @param y matrix or data frame of the same size as x 
-#' @param m the indicator matrix for missing cells
+#' @param m the indicator matrix for missing cells (kept for backward
+#'   compatibility; \code{where} is the documented name)
+#' @param where the indicator matrix for missing cells under its documented
+#'   name -- the amputed-cell mask as returned in \code{makeMissing()}'s
+#'   \code{"where"} attribute. Supply either \code{m} or \code{where}, not
+#'   both.
 #' @param vartypes a vector of length ncol(x) specifying the variable types
 #'   (\code{"numeric"} or \code{"factor"}). The default \code{"guess"} infers the
 #'   types from the columns of \code{x} (numeric columns become \code{"numeric"},
@@ -36,7 +41,15 @@
 # nrmse <- function(x, y, m){
 #   return(sqrt( (sum((x[m] - y[m])^2) / sum(m)) / var(x[m])) )
 # }
-evaluation <- function(x, y, m, vartypes = "guess"){
+evaluation <- function(x, y, m, vartypes = "guess", where = NULL){
+  # 'where' is the documented alias for 'm' (the amputed-cell mask, matching
+  # makeMissing()'s attribute name); 'm' stays for backward compatibility.
+  if (!is.null(where)) {
+    if (!missing(m)) {
+      stop("Supply either 'm' or 'where' (they are the same mask), not both.")
+    }
+    m <- where
+  }
   if (length(vartypes) == 1L && identical(as.character(vartypes), "guess")) {
     # infer per-column types: numeric columns -> "numeric", everything else
     # (factor / character / logical) -> "factor".

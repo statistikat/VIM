@@ -130,7 +130,7 @@ that any benchmark study needs.
 
 ```{r}
 completed <- complete(mi, 1)
-evaluation(truth, completed, m = attr(amp, "where"))
+evaluation(truth, completed, where = attr(amp, "where"))
 ```
 
 ## A note on assumptions
