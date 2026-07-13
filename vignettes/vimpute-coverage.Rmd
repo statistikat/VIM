@@ -56,7 +56,8 @@ Four configurations of `vimpute(method = "robust", m = M)`:
   VIM's default for multiple imputation since 7.3.0 (`boot = TRUE` whenever
   `m > 1`);
 * **pmm, no boot**: donor draws with a single model fit (`boot = FALSE`) —
-  the pre-7.3.0 default, kept reachable for comparison;
+  the single-fit variant, kept for comparison (before 7.3.0 the `m > 1`
+  default produced identical conditional-mean imputations);
 * **boot + normalerror**: bootstrap parameter uncertainty *plus* residual
   noise — the textbook-proper combination;
 * **boot only, uncert = "none"**: parameter uncertainty without residual
