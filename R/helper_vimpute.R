@@ -1501,33 +1501,9 @@ bootstrap_resample <- function(
 # from its stored OOB predictions); every other learner is scored in-sample
 # and honestly labelled (type "insample").
 compute_model_error <- function(learner, task) {
-  # Unwrap the GraphLearner to the raw fitted model. Depending on the graph
-  # shape (bare learner vs preprocessing pipeops) the learner state nests one
-  # level deeper, so descend through "model" elements until a non-state
-  # object is reached (only ranger is special-cased below, so stopping early
-  # on any other object is harmless -- it falls through to the in-sample
-  # path).
-  raw_model <- learner$model
-  guard <- 0L
-  while (is.list(raw_model) && !inherits(raw_model, "ranger") &&
-         !is.data.frame(raw_model) && guard < 5L) {
-    nxt <- if ("model" %in% names(raw_model)) {
-      raw_model[["model"]]
-    } else {
-      found <- NULL
-      for (nm in names(raw_model)) {
-        inner <- raw_model[[nm]]
-        if (is.list(inner) && "model" %in% names(inner)) {
-          found <- inner[["model"]]
-          break
-        }
-      }
-      found
-    }
-    if (is.null(nxt)) break
-    raw_model <- nxt
-    guard <- guard + 1L
-  }
+  # Only ranger is special-cased below, so stopping the unwrap early on any
+  # other object is harmless -- it falls through to the in-sample path.
+  raw_model <- unwrap_raw_model(learner)
 
   truth <- task$truth()
   is_regr <- identical(task$task_type, "regr")
@@ -1716,6 +1692,91 @@ complete_model_info <- function(info, learner = NULL, task = NULL) {
   }
 
   info
+}
+
+#' Unwrap a fitted mlr3 learner to its underlying model object
+#'
+#' Depending on the GraphLearner shape (bare learner vs preprocessing
+#' pipeops) the learner state nests one level deeper, so descend through
+#' "model" elements until a non-state object is reached (bounded; stops on
+#' ranger / data.frame / non-list).
+#'
+#' @keywords internal
+unwrap_raw_model <- function(learner) {
+  raw_model <- learner$model
+  guard <- 0L
+  while (is.list(raw_model) && !inherits(raw_model, "ranger") &&
+         !is.data.frame(raw_model) && guard < 5L) {
+    nxt <- if ("model" %in% names(raw_model)) {
+      raw_model[["model"]]
+    } else {
+      found <- NULL
+      for (nm in names(raw_model)) {
+        inner <- raw_model[[nm]]
+        if (is.list(inner) && "model" %in% names(inner)) {
+          found <- inner[["model"]]
+          break
+        }
+      }
+      found
+    }
+    if (is.null(nxt)) break
+    raw_model <- nxt
+    guard <- guard + 1L
+  }
+  raw_model
+}
+
+#' Predicted donor scores for true PMM
+#'
+#' Scores the observed rows of a target with the trained learner so that
+#' PMM donors are matched on their predicted values (Little 1988), not on
+#' their observed values. For a ranger fit without bootstrap resampling the
+#' honest out-of-bag predictions are used; otherwise the trained learner
+#' predicts the observed rows (aregImpute-style when the fit is a bootstrap
+#' refit). Returns NULL when the rows cannot be scored.
+#'
+#' @keywords internal
+pmm_observed_scores <- function(learner, data_temp, obs_idx, feature_cols,
+                                target_col, factor_levels, method_var,
+                                boot, lhs_transformation = NULL) {
+  finish <- function(scores) {
+    scores <- as.numeric(scores)
+    if (!is.null(lhs_transformation)) {
+      scores <- inverse_transform(scores, lhs_transformation)
+    }
+    scores
+  }
+
+  # ranger without bootstrap: the fitted forest's out-of-bag predictions
+  # align 1:1 with the training rows (= the observed rows, in data order)
+  if (identical(method_var, "ranger") && !isTRUE(boot)) {
+    oob <- tryCatch({
+      raw_model <- unwrap_raw_model(learner)
+      if (inherits(raw_model, "ranger") &&
+          is.numeric(raw_model$predictions) &&
+          length(raw_model$predictions) == length(obs_idx)) {
+        raw_model$predictions
+      } else {
+        NULL
+      }
+    }, error = function(e) NULL)
+    if (!is.null(oob) && all(is.finite(oob))) {
+      return(finish(oob))
+    }
+  }
+
+  tryCatch({
+    cols <- unique(c(feature_cols, target_col))
+    obs_dt <- as.data.table(data_temp)[obs_idx, cols, with = FALSE]
+    if (anyNA(obs_dt)) {
+      obs_dt <- impute_missing_values(obs_dt, data_temp)
+    }
+    obs_dt <- enforce_factor_levels(obs_dt, factor_levels)
+    obs_task <- TaskRegr$new(id = paste0(target_col, "_donors"),
+                             backend = obs_dt, target = target_col)
+    finish(learner$predict(obs_task)$response)
+  }, error = function(e) NULL)
 }
 
 #' Score-based PMM donor selection
@@ -2012,8 +2073,10 @@ predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, featur
                                 method_var, ranger_median, sequential, i, nseq,
                                 lhs_transformation, missing_indices, pmm, pmm_k,
                                 pmm_k_method, uncert, has_any_pmm,
-                                stored_model_info, verbose = FALSE) {
+                                stored_model_info, boot = FALSE,
+                                verbose = FALSE) {
   pred_task <- NULL
+  factor_noise_free <- NULL
   score_current <- NULL
   miss_idx <- missing_indices[[var]]
   obs_idx <- setdiff(seq_len(nrow(data)), miss_idx)
@@ -2136,13 +2199,19 @@ predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, featur
       }
       pred_probs <- pred_probs / row_sums
 
-      if (isFALSE(sequential) || i == nseq) {
+      # noise-free argmax feeds the convergence criterion; the imputed
+      # values are class-probability draws whenever a value-level
+      # uncertainty regime is requested (uncert != "none"), so early
+      # stopping cannot strip factor targets of between-imputation
+      # variability
+      factor_noise_free <- levels(data_temp[[target_col]])[
+        apply(pred_probs, 1, which.max)]
+      if (uncert != "none") {
         preds <- apply(pred_probs, 1, function(probs) {
           sample(levels(data_temp[[target_col]]), size = 1, prob = probs)
         })
       } else {
-        preds <- apply(pred_probs, 1, which.max)
-        preds <- levels(data_temp[[target_col]])[preds]
+        preds <- factor_noise_free
       }
     } else if (is.numeric(data_temp[[target_col]])) {
       backend_dt <- if (inherits(backend_data, "DataBackend")) {
@@ -2198,15 +2267,38 @@ predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, featur
       uncert_args$residuals <- stored_model_info$residuals
     }
 
+    # true PMM (Little 1988): donors are matched on their PREDICTED values,
+    # so score the observed rows with the trained learner (out-of-bag for a
+    # no-bootstrap ranger fit); falls back to observed-value matching with
+    # a warning if the donors cannot be scored
+    donor_scores <- NULL
+    if (uncert %in% c("pmm", "midastouch")) {
+      donor_scores <- pmm_observed_scores(
+        learner = learner, data_temp = data_temp, obs_idx = obs_idx,
+        feature_cols = feature_cols, target_col = target_col,
+        factor_levels = factor_levels, method_var = method_var,
+        boot = boot, lhs_transformation = lhs_transformation)
+      if (is.null(donor_scores) || length(donor_scores) != length(obs_idx) ||
+          !is.numeric(donor_scores)) {
+        warning(sprintf(
+          "Could not score the donors of '%s' by prediction; matching on observed values instead.",
+          var))
+        donor_scores <- score_current[obs_idx]
+      }
+      if (exists("decimal_places")) {
+        donor_scores <- round(donor_scores, decimal_places)
+      }
+    }
+
     if (uncert == "pmm") {
-      valid_obs <- !is.na(data[[var]][obs_idx]) & is.finite(score_current[obs_idx])
+      valid_obs <- !is.na(data[[var]][obs_idx]) & is.finite(donor_scores)
       obs_idx_u <- obs_idx[valid_obs]
       if (length(obs_idx_u) == 0L) {
         warning(sprintf("No valid uncertainty PMM donors available for '%s'. Returning point predictions.", var))
         uncert_args$method <- "none"
       } else {
         uncert_args$y_obs <- data[[var]][obs_idx_u]
-        uncert_args$score_obs <- score_current[obs_idx_u]
+        uncert_args$score_obs <- donor_scores[valid_obs]
         uncert_args$score_miss <- score_current[miss_idx]
         uncert_args$pmm_k <- 5L
         uncert_args$pmm_k_method <- "random"
@@ -2214,14 +2306,14 @@ predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, featur
     }
 
     if (uncert == "midastouch") {
-      valid_obs <- !is.na(data[[var]][obs_idx]) & is.finite(score_current[obs_idx])
+      valid_obs <- !is.na(data[[var]][obs_idx]) & is.finite(donor_scores)
       obs_idx_u <- obs_idx[valid_obs]
       if (length(obs_idx_u) == 0L) {
         warning(sprintf("No valid midastouch donors available for '%s'. Returning point predictions.", var))
         uncert_args$method <- "none"
       } else {
         uncert_args$y_obs <- data[[var]][obs_idx_u]
-        uncert_args$score_obs <- score_current[obs_idx_u]
+        uncert_args$score_obs <- donor_scores[valid_obs]
         uncert_args$score_miss <- score_current[miss_idx]
         uncert_args$pmm_k <- 5L
         feat_names <- setdiff(names(data), var)
@@ -2242,6 +2334,9 @@ predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, featur
 
   convergence_preds <- if (inherits(raw_model_preds, "numeric") && (isTRUE(pmm[[var]]) || uncert %in% c("pmm", "midastouch"))) {
     raw_model_preds
+  } else if (!is.null(factor_noise_free)) {
+    # factor draws are stochastic; track the noise-free argmax instead
+    factor_noise_free
   } else {
     preds
   }

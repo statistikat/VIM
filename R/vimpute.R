@@ -133,14 +133,19 @@
 #'  \code{"residual"} (inverse residual weighting).
 #' @param uncert
 #'  Imputation uncertainty method applied to numeric predictions:
-#'  \code{"pmm"} (default since 7.3.0: predictive mean matching -- a random
-#'  draw among the 5 nearest donors, so imputed values are observed values and
-#'  the imputed distribution is honest),
+#'  \code{"pmm"} (default since 7.3.0: predictive mean matching, Little 1988
+#'  -- a random draw among the 5 donors whose \emph{predicted} values are
+#'  nearest the missing cell's prediction, so imputed values are observed
+#'  values; for a no-bootstrap ranger fit the donors are scored by their
+#'  out-of-bag predictions),
 #'  \code{"none"} (deterministic point prediction; the pre-7.3.0 default),
 #'  \code{"normalerror"} (add N(0, sigma_hat)),
 #'  \code{"resid"} (add sampled residual),
 #'  \code{"midastouch"} (covariate-distance-weighted PMM, Siddique & Belin 2008).
-#'  If \code{pmm = TRUE} is set, it takes precedence over \code{uncert}.
+#'  Factor targets draw from the predicted class probabilities whenever
+#'  \code{uncert != "none"} (and are imputed by the most probable class
+#'  otherwise). If \code{pmm = TRUE} is set, it takes precedence over
+#'  \code{uncert}.
 #' @param m
 #'  Number of multiple imputations. Default: 1 (single imputation).
 #'  When \code{m > 1}, returns a \code{\link{vimmi}} object storing the original
@@ -2303,6 +2308,7 @@ vimpute <- function(
         uncert = uncert,
         has_any_pmm = has_any_pmm,
         stored_model_info = stored_model_info,
+        boot = boot,
         verbose = verbose
       )
       preds <- prediction_result$preds
