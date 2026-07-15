@@ -170,9 +170,11 @@ register_robust_learners <- function() {
         }
 
         if (length(classes) == 2L) {
-          # Binary case: one robust logistic model.
+          # Binary case: one robust logistic model. glmrob(binomial) models
+          # P(second factor level), so the constant fallback stores the same
+          # quantity and .predict assembles the columns accordingly.
           df <- data.frame(y = as.factor(y), X)
-          prob <- mean(as.character(df$y) == classes[1])
+          prob <- mean(as.character(df$y) == classes[2])
           if (prob %in% c(0, 1)) {
             mod <- new_constant_binomial_model(prob)
           } else {
@@ -221,9 +223,10 @@ register_robust_learners <- function() {
 
         if (length(classes) == 2L) {
           mod <- self$state$models[[1]]
-          p1  <- predict_binomial_response(mod, data, fallback = 0.5)
-          p1 <- sanitize_binary_probs(p1, fallback = 0.5)
-          probs <- cbind(p1, 1 - p1)
+          # P(second factor level) -- glmrob/glm binomial convention
+          p2 <- predict_binomial_response(mod, data, fallback = 0.5)
+          p2 <- sanitize_binary_probs(p2, fallback = 0.5)
+          probs <- cbind(1 - p2, p2)
           colnames(probs) <- classes
           if (self$predict_type == "prob") {
             pred <- mlr3::PredictionClassif$new(task = task, prob = probs)
