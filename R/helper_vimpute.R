@@ -1668,7 +1668,18 @@ complete_model_info <- function(info, learner = NULL, task = NULL) {
   }
 
   truth <- tryCatch(as.numeric(task$truth()), error = function(e) NULL)
-  preds <- tryCatch(as.numeric(learner$predict(task)$response), error = function(e) NULL)
+
+  # Prefer out-of-bag predictions where the fitted model exposes them. A
+  # forest's in-sample predictions are near-interpolating, so their spread
+  # understates the predictive spread about twofold -- uncert = "normalerror"
+  # would then draw N(0, sigma_hat) at half the right scale, and "resid" would
+  # sample from a residual pool that is far too tight. Learners exposing a
+  # proper scale of their own (lm, lmrob, gam, ...) never reach this path.
+  preds <- oob_predictions(learner, n = length(truth))
+  if (is.null(preds)) {
+    preds <- tryCatch(as.numeric(learner$predict(task)$response),
+                      error = function(e) NULL)
+  }
 
   if (is.null(truth) || is.null(preds) || length(truth) != length(preds)) {
     return(info)
@@ -1695,6 +1706,33 @@ complete_model_info <- function(info, learner = NULL, task = NULL) {
   }
 
   info
+}
+
+#' Out-of-bag predictions of a fitted learner, when it exposes them
+#'
+#' ranger stores the out-of-bag predictions of the training rows on the fitted
+#' object, in training-row order and at no extra cost. They estimate the true
+#' predictive spread to within ~1% where the in-sample predictions understate
+#' it about twofold. Returns NULL whenever they are unavailable, misaligned, or
+#' too sparse to estimate a scale from, so callers fall back to their own path.
+#'
+#' @param learner A trained mlr3 learner or GraphLearner
+#' @param n Number of training rows the predictions must align with
+#' @return Numeric vector of length `n` (possibly with non-finite entries for
+#'   rows that were in-bag in every tree), or NULL
+#' @keywords internal
+oob_predictions <- function(learner, n) {
+  tryCatch({
+    raw_model <- unwrap_raw_model(learner)
+    if (!inherits(raw_model, "ranger")) return(NULL)
+    oob <- raw_model$predictions
+    # probability forests store a class-probability matrix here, not a vector
+    if (!is.numeric(oob) || is.matrix(oob) || length(oob) != n) return(NULL)
+    # rows in-bag in every tree carry no OOB prediction; with few trees that can
+    # leave too little to estimate a scale from
+    if (sum(is.finite(oob)) < max(10L, 0.5 * n)) return(NULL)
+    oob
+  }, error = function(e) NULL)
 }
 
 #' Unwrap a fitted mlr3 learner to its underlying model object
