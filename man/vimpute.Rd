@@ -66,6 +66,7 @@ Built-in methods:
 \item robust (robustbase::lmrob / glmrob)
 \item gam (Generalized Additive Model via mgcv::gam)
 \item robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
+\item restricted (ECOSolveR least-squares regression with validate rules)
 Additional methods backed by any mlr3 learner pair can be added with
 \code{\link{register_vimpute_method}()}; \code{\link{vimpute_methods}()}
 lists everything currently registered.
@@ -111,12 +112,19 @@ Can be provided in \strong{three ways}:
 \item \strong{Per variable}  (e.g. list(mpg = list(num.trees = 500)))
 \item \strong{Per method}    (e.g. list(ranger = list(num.trees = 600)))
 \item \strong{Global}, applied to all variables using the same method
-}}
+}
+For \code{restricted}, set \code{save_optimization_problem = TRUE} to attach
+the exact ECOS problem arguments to the returned object under the
+\code{restricted_optimization_problems} attribute.
+Set \code{robust = TRUE} to replace least squares with Huber loss;
+\code{huber_k} controls its tuning constant and defaults to \code{1.345}.
+}
 
 \item{formula}{Optional modeling formula to restrict or transform predictor variables.
 Only supported for methods whose registry entry declares formula support:
 among the built-ins \strong{regularized} (glmnet), \strong{robust} (lmrob/glmrob),
-\strong{gam} (mgcv::gam), and \strong{robgam} (robust GAM)
+\strong{gam} (mgcv::gam), \strong{robgam} (robust GAM), and \strong{restricted}
+(ECOSolveR least-squares with validate rules)
 Provide as a named list, e.g.:
 \itemize{
 \item list(mpg = mpg ~ hp + drat)

@@ -31,6 +31,7 @@
 #'   - robust (robustbase::lmrob / glmrob)
 #'   - gam (Generalized Additive Model via mgcv::gam)
 #'   - robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
+#'   - restricted (ECOSolveR least-squares regression with validate rules)
 #'  Additional methods backed by any mlr3 learner pair can be added with
 #'  \code{\link{register_vimpute_method}()}; \code{\link{vimpute_methods}()}
 #'  lists everything currently registered.
@@ -66,11 +67,17 @@
 #'    - **Per variable**  (e.g. list(mpg = list(num.trees = 500)))  
 #'    - **Per method**    (e.g. list(ranger = list(num.trees = 600)))  
 #'    - **Global**, applied to all variables using the same method
+#'  For `restricted`, set `save_optimization_problem = TRUE` to attach the
+#'  exact ECOS problem arguments to the returned object under the
+#'  `restricted_optimization_problems` attribute.
+#'  Set `robust = TRUE` to replace least squares with Huber loss; `huber_k`
+#'  controls its tuning constant and defaults to `1.345`.
 #' @param formula
 #'  Optional modeling formula to restrict or transform predictor variables.
 #'  Only supported for methods whose registry entry declares formula support:
 #'  among the built-ins **regularized** (glmnet), **robust** (lmrob/glmrob),
-#'  **gam** (mgcv::gam), and **robgam** (robust GAM)
+#'  **gam** (mgcv::gam), **robgam** (robust GAM), and **restricted**
+#'  (ECOSolveR least-squares with validate rules)
 #'  Provide as a named list, e.g.:
 #'    - list(mpg = mpg ~ hp + drat)  
 #'    - list(hp  = log(hp) ~ wt + cyl) 
@@ -586,6 +593,41 @@ vimpute <- function(
   robustboot     <- checked_data$robustboot
   uncert         <- checked_data$uncert
   m              <- checked_data$m
+
+  restricted_problem_store <- NULL
+  save_restricted_problem <- vapply(variables_NA, function(var) {
+    identical(method[[var]], "restricted") &&
+      isTRUE(learner_params[[var]]$save_optimization_problem)
+  }, logical(1))
+  if (any(save_restricted_problem)) {
+    existing_stores <- lapply(
+      variables_NA[save_restricted_problem],
+      function(var) learner_params[[var]]$optimization_problem_store
+    )
+    existing_stores <- Filter(is.environment, existing_stores)
+    restricted_problem_store <- if (length(existing_stores) > 0L) {
+      existing_stores[[1L]]
+    } else {
+      new.env(parent = emptyenv())
+    }
+    for (var in variables_NA[save_restricted_problem]) {
+      learner_params[[var]]$optimization_problem_store <- restricted_problem_store
+    }
+  }
+
+  attach_restricted_problems <- function(x) {
+    if (is.null(restricted_problem_store)) {
+      return(x)
+    }
+    problem_names <- ls(restricted_problem_store, all.names = TRUE)
+    problems <- mget(
+      problem_names,
+      envir = restricted_problem_store,
+      inherits = FALSE
+    )
+    attr(x, "restricted_optimization_problems") <- problems
+    x
+  }
   
   if (!sequential && nseq > 1) {
     if (verbose) message ("'nseq' was set to 1 because 'sequential = FALSE'.")
@@ -664,6 +706,13 @@ vimpute <- function(
       register_robust_learners()
       learners[["regr.lm_rob"]] <- lrn("regr.lm_rob")
       learners[["classif.glm_rob"]] <- lrn("classif.glm_rob")
+    }
+    learners
+  }
+  ensure_restricted_learners <- function(learners) {
+    if (is.null(learners[["regr.restricted"]])) {
+      register_restricted_learners()
+      learners[["regr.restricted"]] <- lrn("regr.restricted")
     }
     learners
   }
@@ -848,7 +897,7 @@ vimpute <- function(
     if (verbose) {
       message("***** Constructing compact 'vimmi' result object")
     }
-    return(new_vimmi(
+    return(attach_restricted_problems(new_vimmi(
       data   = vimmi_data,
       imp    = imp_list,
       where  = where_matrix,
@@ -862,7 +911,7 @@ vimpute <- function(
       chain  = chain_arrays,
       seed   = seed,
       model_error = mi_model_error
-    ))
+    )))
   }
 
   if (pred_history == TRUE) {
@@ -932,9 +981,33 @@ vimpute <- function(
       # Extract method-specific-learner
       var_learner_params <- learner_params[[var]]
       if (is.null(var_learner_params)) var_learner_params <- list()
+      method_var <- method[[var]]
       
 ### ***** Formula Extraction Start ***** ###################################################################################################
-      if (!isFALSE(formula) && (!isFALSE(selected_formula))) {
+      if (!isFALSE(formula) && (!isFALSE(selected_formula)) && method_var == "restricted") {
+        if (!is.null(identify_lhs_transformation(selected_formula))) {
+          stop("A formula for method 'restricted' must use an untransformed target variable.")
+        }
+        identified_variables <- identify_variables(selected_formula, data, var)
+        target_col <- var
+        formula_feature_cols <- identified_variables$predictor_variables
+        restricted_rule_cols <- character(0)
+        if (!is.null(var_learner_params$rules) &&
+            inherits(var_learner_params$rules, "validator")) {
+          restricted_rules <- .restricted_filter_rules(var_learner_params$rules, target_col)
+          restricted_rule_matrix <- validate::variables(restricted_rules, as = "matrix")
+          restricted_rule_cols <- colnames(restricted_rule_matrix)[
+            colSums(restricted_rule_matrix) > 0
+          ]
+          restricted_rule_cols <- setdiff(restricted_rule_cols, target_col)
+        }
+        feature_cols <- unique(c(formula_feature_cols, restricted_rule_cols))
+        selected_cols <- unique(c(target_col, feature_cols))
+        data_temp <- as.data.table(data[, selected_cols, with = FALSE])
+        data_temp <- enforce_factor_levels(data_temp, factor_levels)
+        check_all_factor_levels(data_temp, factor_levels)
+        lhs_transformation <- NULL
+      } else if (!isFALSE(formula) && (!isFALSE(selected_formula))) {
         identified_variables <- identify_variables(selected_formula, data, var)
         target_col <- var
         feature_cols <- identified_variables$predictor_variables 
@@ -1070,9 +1143,10 @@ vimpute <- function(
         
       }
 
-      donor_ok_rows <- if (!isFALSE(selected_formula)) rep(TRUE, nrow(data_temp)) else donor_mask[[target_col]]
+      uses_model_matrix_formula <- !isFALSE(selected_formula) && method_var != "restricted"
+      donor_ok_rows <- if (uses_model_matrix_formula) rep(TRUE, nrow(data_temp)) else donor_mask[[target_col]]
       
-      if (!isFALSE(selected_formula) && "Intercept" %in% colnames(data_temp)) {
+      if (uses_model_matrix_formula && "Intercept" %in% colnames(data_temp)) {
         data_temp <- data_temp[, !colnames(data_temp) %in% "Intercept", with = FALSE]
         if (exists("mm_data", inherits = FALSE)) {
           mm_data <- mm_data[, !colnames(mm_data) %in% "Intercept", with = FALSE]
@@ -1088,8 +1162,6 @@ vimpute <- function(
             paste(vimpute_formula_methods(), collapse = ", ")))
         }
       }
-      
-      method_var <- method[[var]]
       
       # Custom ranger median prediction
       use_median <- FALSE
@@ -1298,6 +1370,17 @@ vimpute <- function(
       # counts) overridden by the user's learner_params, validated against the
       # parameter ids all learner candidates of the method understand.
       # Replaces the former six near-identical per-method validation blocks.
+      if (method_var == "restricted") {
+        if (!isFALSE(selected_formula) && is.null(var_learner_params$formula)) {
+          var_learner_params$formula <- selected_formula
+        }
+        if (is.null(var_learner_params$rules)) {
+          stop(sprintf(
+            "Method 'restricted' for variable '%s' requires learner_params with a validate::validator object named 'rules'.",
+            var
+          ))
+        }
+      }
       method_params <- resolve_method_params(
         method      = method_var,
         candidates  = learner_candidates,
@@ -1306,8 +1389,6 @@ vimpute <- function(
         nthread     = optimal_threads,
         verbose     = verbose
       )
-
-
       is_regr_task <- is.numeric(data_y_fill_final[[target_col]])
       measure <- if (is_regr_task) msr("regr.rmse") else msr("classif.acc")
 
@@ -2197,7 +2278,7 @@ vimpute <- function(
         # Not semicontinuous
         feature_cols <- setdiff(variables, var)
         
-        if (!isFALSE(selected_formula)) {
+        if (uses_model_matrix_formula) {
           backend_data <- mm_data[missing_idx, ]
           backend_data <- enforce_factor_levels(backend_data, factor_levels)
           
@@ -2232,7 +2313,7 @@ vimpute <- function(
         # Semicontinuous
         feature_cols <- setdiff(variables, c(var, zero_flag_col))
         
-        if (!isFALSE(selected_formula)) {
+        if (uses_model_matrix_formula) {
           class_pred_data <- mm_data[missing_idx, ]
           class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
           
@@ -2424,8 +2505,8 @@ vimpute <- function(
   } else {
     NULL
   }
-  
-  return(build_vimpute_result(
+
+  return(attach_restricted_problems(build_vimpute_result(
     data = data,
     data_new = data_new,
     imp_var = imp_var,
@@ -2442,5 +2523,5 @@ vimpute <- function(
     convergence = convergence_matrix,
     chain = chain_matrices,
     model_error = Filter(Negate(is.null), model_error_track)
-  ))
+  )))
 }

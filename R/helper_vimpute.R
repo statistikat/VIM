@@ -262,6 +262,209 @@ register_robust_learners <- function() {
 
 }
 
+register_restricted_learners <- function() {
+  LearnerRegrRestricted <- R6::R6Class(
+    classname = "LearnerRegrRestricted",
+    inherit = LearnerRegr,
+    public = list(
+      initialize = function() {
+        param_set <- ps(
+          rules = paradox::p_uty(
+            custom_check = function(x) {
+              if (inherits(x, "validator")) {
+                return(TRUE)
+              }
+              "`rules` must be a validate::validator object."
+            }
+          ),
+          formula = paradox::p_uty(
+            default = NULL,
+            custom_check = function(x) {
+              if (is.null(x) || inherits(x, "formula")) {
+                return(TRUE)
+              }
+              "`formula` must be NULL or a formula object."
+            }
+          ),
+          robust = paradox::p_lgl(default = FALSE),
+          huber_k = paradox::p_dbl(
+            lower = .Machine$double.eps,
+            default = 1.345
+          ),
+          save_optimization_problem = paradox::p_lgl(default = FALSE),
+          optimization_problem_store = paradox::p_uty(
+            default = NULL,
+            custom_check = function(x) {
+              if (is.null(x) || is.environment(x)) {
+                return(TRUE)
+              }
+              "`optimization_problem_store` must be NULL or an environment."
+            }
+          )
+        )
+
+        super$initialize(
+          id = "regr.restricted",
+          feature_types = c("numeric", "integer", "factor", "ordered"),
+          predict_types = c("response"),
+          packages = c("ECOSolveR", "validate", "stats"),
+          man = "VIM::regression_restricted",
+          param_set = param_set
+        )
+      }
+    ),
+    private = list(
+      .train = function(task) {
+        pv <- self$param_set$get_values()
+        rules <- pv$rules
+        if (is.null(rules) || !inherits(rules, "validator")) {
+          stop(
+            "`rules` must be supplied as a validate::validator object ",
+            "via learner_params for method 'restricted'.",
+            call. = FALSE
+          )
+        }
+
+        data <- as.data.frame(task$data(cols = c(task$target_names, task$feature_names)))
+        target <- task$target_names
+        features <- task$feature_names
+        rules <- .restricted_filter_rules(rules, target)
+        formula <- pv$formula
+        if (is.null(formula)) {
+          formula <- stats::reformulate(features, response = target)
+        } else {
+          formula <- .restricted_validate_formula(formula, target, data)
+        }
+
+        factor_cols <- vapply(data, is.factor, logical(1))
+        if (any(factor_cols)) {
+          for (col in names(data)[factor_cols]) {
+            data[[col]] <- droplevels(data[[col]])
+          }
+        }
+
+        train_frame <- stats::model.frame(
+          formula,
+          data,
+          na.action = stats::na.fail
+        )
+        terms_obj <- stats::terms(train_frame)
+        x_terms <- stats::delete.response(terms_obj)
+        xlevels <- .getXlevels(terms_obj, train_frame)
+        X_train <- stats::model.matrix(x_terms, train_frame)
+
+        factor_col_names <- names(data)[factor_cols]
+        self$state$target <- target
+        self$state$features <- features
+        self$state$rules <- rules
+        self$state$x_terms <- x_terms
+        self$state$xlevels <- xlevels
+        self$state$contrasts <- attr(X_train, "contrasts")
+        self$state$factor_levels <- lapply(data[, factor_col_names, drop = FALSE], levels)
+
+        list(
+          X_train = X_train,
+          y_train = stats::model.response(train_frame)
+        )
+      },
+
+      .predict = function(task) {
+        pv <- self$param_set$get_values()
+        model <- self$model
+        newdata <- as.data.frame(task$data(cols = self$state$features))
+
+        if (!is.null(self$state$factor_levels)) {
+          for (var in names(self$state$factor_levels)) {
+            if (var %in% colnames(newdata)) {
+              newdata[[var]] <- factor(newdata[[var]], levels = self$state$factor_levels[[var]])
+            }
+          }
+        }
+
+        pred_frame <- stats::model.frame(
+          self$state$x_terms,
+          newdata,
+          na.action = stats::na.pass,
+          xlev = self$state$xlevels
+        )
+        X_pred <- stats::model.matrix(
+          self$state$x_terms,
+          pred_frame,
+          contrasts.arg = self$state$contrasts
+        )
+
+        constraints <- .restricted_validate_constraints(
+          rules = self$state$rules,
+          lhs = self$state$target,
+          data_pred = newdata,
+          X_pred = X_pred
+        )
+
+        save_problem <- isTRUE(pv$save_optimization_problem)
+        huber_k <- pv$huber_k
+        if (is.null(huber_k)) {
+          huber_k <- 1.345
+        }
+        beta <- .restricted_ecos_lm(
+          X = model$X_train,
+          y = model$y_train,
+          C = constraints$C,
+          d = constraints$d,
+          Aeq = constraints$Aeq,
+          beq = constraints$beq,
+          robust = isTRUE(pv$robust),
+          huber_k = huber_k,
+          save_optimization_problem = save_problem
+        )
+
+        if (save_problem && is.environment(pv$optimization_problem_store)) {
+          target <- self$state$target
+          previous <- pv$optimization_problem_store[[target]]
+          pv$optimization_problem_store[[target]] <- c(
+            previous,
+            list(attr(beta, "optimization_problem", exact = TRUE))
+          )
+        }
+
+        response <- as.vector(X_pred %*% beta)
+        PredictionRegr$new(task = task, response = response)
+      }
+    )
+  )
+
+  mlr3::mlr_learners$add("regr.restricted", LearnerRegrRestricted)
+}
+
+.restricted_validate_formula <- function(formula, target, data) {
+  if (!inherits(formula, "formula")) {
+    stop("Restricted regression `formula` must be a formula object.", call. = FALSE)
+  }
+  if (length(formula) != 3L) {
+    stop("Restricted regression `formula` must have a left-hand side.", call. = FALSE)
+  }
+
+  lhs <- formula[[2L]]
+  if (!is.symbol(lhs) || !identical(as.character(lhs), target)) {
+    stop(
+      "Restricted regression `formula` must use the imputed variable `",
+      target,
+      "` as an untransformed left-hand side.",
+      call. = FALSE
+    )
+  }
+
+  missing_vars <- setdiff(all.vars(formula), colnames(data))
+  if (length(missing_vars) > 0L) {
+    stop(
+      "Restricted regression `formula` references variables not found in `data`: ",
+      paste(missing_vars, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  formula
+}
+
 #
 # task = mlr3::tsk("iris")$filter(1:1000)  # binary classification
 # learner = mlr3::lrn("classif.glm_rob", predict_type = "prob")
@@ -466,8 +669,12 @@ identify_variables <- function(formula, data, target_col) {
 
   # Extract formula as character string
   formchar <- as.character(formula)
-  lhs <- gsub("^I\\(1/|log\\(|sqrt\\(|boxcox\\(|exp\\(|\\)$| ", "", formchar[2])   # Remove transformations and spaces from the left-hand side.
-  rhs <- ifelse(length(formchar) > 2, gsub(" ", "", formchar[3]), "")
+  lhs <- gsub(
+    "^I\\(1/|log\\(|sqrt\\(|boxcox\\(|exp\\(|\\)$|\\s+",
+    "",
+    formchar[2]
+  )
+  rhs <- ifelse(length(formchar) > 2, gsub("\\s+", "", formchar[3]), "")
 
   # Decompose the right-hand side according to all relevant operators
   rhs_vars <- if (rhs != "") unlist(strsplit(rhs, "[-+*:/%()]")) else character(0)
@@ -845,7 +1052,7 @@ map_learner_params <- function(variables, method, learner_params) {
 
   # 3) Mixed (Variable- and Method-Keys at same time)
   if (has_var_keys && has_meth_keys) {
-    warning("Mixed learner_params keys (variables AND methods) are not allowed. All learner_params were ignored. Hint: ensure no variable shares a name with a reserved method (ranger, xgboost, regularized, robust).")
+    warning("Mixed learner_params keys (variables AND methods) are not allowed. All learner_params were ignored. Hint: ensure no variable shares a name with a reserved method (ranger, xgboost, regularized, robust, restricted).")
     return(setNames(vector("list", length(variables)), variables))
   }
 

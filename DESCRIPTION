@@ -29,6 +29,7 @@ Imports:
     laeken,
     ranger,
     MASS,
+    Matrix,
     xgboost,
     data.table(>= 1.9.4),
     mlr3,
@@ -52,6 +53,8 @@ Suggests:
     robmixglm,
     stringr,
     glmnet,
+    validate,
+    ECOSolveR,
     cellWise,
     crmReg,
     mice,
@@ -86,7 +89,8 @@ URL: https://github.com/statistikat/VIM
 BugReports: https://github.com/statistikat/VIM/issues
 Repository: CRAN
 LinkingTo: Rcpp
-RoxygenNote: 7.3.3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.3

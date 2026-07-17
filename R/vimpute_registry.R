@@ -74,7 +74,7 @@ new_vimpute_method_entry <- function(name,
 #'
 #' `vimpute()` resolves its `method` argument through a package-level method
 #' registry. The built-in methods (`"ranger"`, `"xgboost"`, `"regularized"`,
-#' `"robust"`, `"gam"`, `"robgam"`) are pre-registered; this function adds
+#' `"robust"`, `"gam"`, `"robgam"`, `"restricted"`) are pre-registered; this function adds
 #' (or, with `overwrite = TRUE`, replaces) a user-defined method backed by any
 #' pair of mlr3 learners -- e.g. `regr.rpart`/`classif.rpart` from mlr3
 #' itself, or learners from `mlr3extralearners` such as lightgbm -- without
@@ -116,7 +116,7 @@ new_vimpute_method_entry <- function(name,
 #' @param supports_formula Logical: can the method be used with the `formula`
 #'   argument of `vimpute()`? Formula-based imputation requires a learner that
 #'   models from a design matrix; the built-ins with formula support are
-#'   `"robust"`, `"regularized"`, `"gam"`, and `"robgam"`.
+#'   `"robust"`, `"regularized"`, `"gam"`, `"robgam"`, and `"restricted"`.
 #' @param fallback Single method name used when `validate` rejects a variable
 #'   or a target type has no learner. Defaults to `"robust"`.
 #' @param validate `NULL` or a function `function(y_obs, data, variable)`
@@ -378,6 +378,12 @@ register_builtin_vimpute_methods <- function() {
   put("robust",
       learner = list(regr = "regr.lm_rob", classif = "classif.glm_rob"),
       setup = function() register_robust_learners(),
+      supports_formula = TRUE)
+
+  put("restricted",
+      learner = list(regr = "regr.restricted"),
+      packages = c("ECOSolveR", "validate"),
+      setup = function() register_restricted_learners(),
       supports_formula = TRUE)
 
   put("gam",

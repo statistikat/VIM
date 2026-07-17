@@ -12,12 +12,13 @@ if (!requireNamespace("rpart", quietly = TRUE)) {
   exit_file("rpart not available")
 }
 
-builtin <- c("ranger", "xgboost", "regularized", "robust", "gam", "robgam")
+builtin <- c("ranger", "xgboost", "regularized", "robust", "gam", "robgam",
+             "restricted")
 
 ## --- built-ins are registered through the same contract ------------------------
 expect_true(is.character(vimpute_methods()))
 expect_true(setequal(vimpute_methods(), builtin),
-            info = "the six built-in methods must be seeded in the registry")
+            info = "the built-in methods must be seeded in the registry")
 
 ## --- one-call registration of a new method (mlr3's rpart learners) -------------
 register_vimpute_method("cart",
