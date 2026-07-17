@@ -57,8 +57,14 @@ adds noise from the conditional normal distribution.}
 \item{m}{number of multiple imputations (default: 1). If \code{m > 1},
 a list of imputed datasets is returned.}
 
-\item{boot}{logical; if \code{TRUE}, bootstrap resampling propagates
-parameter uncertainty across the \code{m} imputations.}
+\item{boot}{logical; intended to add bootstrap parameter uncertainty across
+the \code{m} imputations. \strong{Currently ineffective}: the imputation
+step is a per-variable robust regression (\code{cellIRWLS}), so resampling
+the location/covariance estimate leaves the imputations essentially
+unchanged (measured between-imputation variance is not inflated relative to
+\code{boot = FALSE}). Proper parameter-uncertainty propagation requires
+bootstrapping the per-variable regression coefficients and is not yet
+implemented; see the note below. Default \code{FALSE}.}
 
 \item{trace}{logical; if \code{TRUE}, print progress information.}
 }
@@ -82,6 +88,14 @@ conditional residuals, then imputes missing values via conditional
 expectations (continuous) and weighted multinomial regression
 (categorical).  Iterates until convergence.
 }
+\note{
+Multiple imputation with proper parameter-uncertainty propagation is
+not yet implemented for this method (see \code{boot}). \code{m > 1} returns
+repeated imputations whose between-imputation variability comes only from
+the stochastic uncertainty step (\code{uncert}) and estimator randomness,
+so downstream Rubin pooling understates total variance. Treat the current
+\code{m > 1} output as approximate.
+}
 \examples{
 \dontrun{
 data(sleep, package = "VIM")
@@ -97,9 +111,9 @@ result2 <- imputeCellMCD(sleep, mcd_observed = "pairwise", trace = TRUE)
 
 }
 \references{
-Raymaekers, C. and Rousseeuw, P.J. (2024).  The cellwise minimum
+Raymaekers, J. and Rousseeuw, P.J. (2024).  The cellwise minimum
 covariance determinant estimator.  \emph{Journal of the American
-Statistical Association}, \strong{119}(545), 576--588.
+Statistical Association}, \strong{119}(548), 2610--2621.
 }
 \seealso{
 \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},

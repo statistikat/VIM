@@ -16,7 +16,20 @@
 #' @param nMin integer number of values with smallest distance to be returned
 #' @param returnMin logical if the computed distances for the indices should be returned
 #' @param methodStand character either "range" or "iqr", iqr is more robust for outliers
-#' @details returnIndex=FALSE: a numerical matrix n x m with the computed distances
+#' @details Numerical and semi-continuous (mixed) variables are standardised by
+#' their range (or IQR, see `methodStand`) before the distance is computed; for
+#' mixed variables the point mass (`mixed.constant`) is excluded from the range
+#' estimate and scaled along with the data.
+#'
+#' Missing values in a distance variable are replaced by a sentinel (the pooled
+#' column maximum plus one) after standardisation. Two records both missing the
+#' same variable therefore have distance 0 on it, and a missing-vs-observed pair
+#' contributes up to about 2 (rather than a variable's nominal maximum of 1).
+#' This sentinel convention departs from Gower's (1971) omit-and-renormalise
+#' rule and biases nearest-neighbour selection towards records that share the
+#' same missingness pattern.
+#'
+#' returnIndex=FALSE: a numerical matrix n x m with the computed distances
 #' returnIndex=TRUE: a named list with "ind" containing the requested indices and "mins" the computed distances
 #' @examples
 #' data(sleep)
@@ -111,6 +124,29 @@ gowerD <- function(data.x, data.y = data.x,
     for(i in seq_along(numerical)){
       data.x[,numerical[i]] <- data.x[,numerical[i]]/r[i]
       data.y[,numerical[i]] <- data.y[,numerical[i]]/r[i]
+    }
+  }
+  # Semi-continuous (mixed) columns need the same range/IQR scaling as numeric
+  # columns; otherwise their raw magnitude dominates the Gower distance (the C++
+  # kernel uses raw |x-y| for two non-spike values, exactly like the numeric
+  # branch that IS scaled). The point mass (mixed.constant) is excluded from the
+  # scale estimate and scaled along, so the kernel's spike comparison is kept.
+  if(length(mixed)>0){
+    pooled_mixed <- rbind(data.x[,mixed,drop=FALSE], data.y[,mixed,drop=FALSE])
+    for(i in seq_along(mixed)){
+      col <- pooled_mixed[,i]
+      nonspike <- col[!is.na(col) & col != mixed.constant[i]]
+      if(length(nonspike) > 0){
+        if(methodStand == "range"){
+          rr <- max(nonspike) - min(nonspike)
+        }else{
+          rr <- as.numeric(diff(quantile(nonspike, probs = c(.25, .75), na.rm = TRUE)))
+        }
+        if(is.na(rr) || rr == 0) rr <- 1
+        data.x[,mixed[i]] <- data.x[,mixed[i]]/rr
+        data.y[,mixed[i]] <- data.y[,mixed[i]]/rr
+        mixed.constant[i] <- mixed.constant[i]/rr
+      }
     }
   }
   justone <- FALSE

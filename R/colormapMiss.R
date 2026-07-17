@@ -108,7 +108,7 @@
 #' @seealso [colSequence()], [growdotMiss()],
 #' [mapMiss()]
 #' @references M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' data using visualization tools.  *Advances in Data Analysis
 #' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @export

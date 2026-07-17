@@ -9,8 +9,6 @@
 #' @import grid
 #' @import robustbase
 #' @import colorspace
-#' @importFrom car bcPower
-#' @importFrom car powerTransform
 #' @importFrom vcd mosaic
 #' @importFrom vcd labeling_border
 #' @importFrom laeken weightedMedian
@@ -661,12 +659,12 @@ NULL
 #' Statistical Software*, 74(7), 1-16.
 #'
 #' M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' data using visualization tools.  *Advances in Data Analysis
 #' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #'
 #' M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
-#' imputation using standard and robust methods.  *Journal of
-#' Computational Statistics and Data Analysis*, Vol. 55, pp. 2793-2806.
+#' imputation using standard and robust methods.  *Computational
+#' Statistics & Data Analysis*, Vol. 55, pp. 2793-2806.
 #' @keywords internal
 "_PACKAGE"
 

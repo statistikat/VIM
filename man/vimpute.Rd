@@ -6,6 +6,7 @@
 \usage{
 vimpute(
   data,
+  ...,
   considered_variables = names(data),
   method = setNames(as.list(rep("ranger", length(considered_variables))),
     considered_variables),
@@ -20,28 +21,55 @@ vimpute(
   nseq = 10,
   eps = 0.005,
   imp_var = TRUE,
+  keep_all_columns = TRUE,
   pred_history = FALSE,
   tune = FALSE,
   verbose = FALSE,
-  boot = FALSE,
+  boot = NULL,
   robustboot = "stratified",
-  uncert = "none",
-  m = 1L
+  uncert = "pmm",
+  m = 1L,
+  seed = NULL,
+  tuned_params = NULL,
+  tune_control = NULL,
+  predictors = NULL,
+  visit_sequence = "asis",
+  spec = NULL
 )
 }
 \arguments{
 \item{data}{Dataset with missing values. Provide as a data.table.}
 
-\item{considered_variables}{A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process.}
+\item{...}{Optional bare \strong{grammar formulas}, one per variable:
+\code{target ~ predictors | method(...)} -- e.g.
+\code{Sleep ~ Dream + Span | ranger(tune = TRUE)} or
+\code{NonD ~ . | robust(donorcond = ">= 0")} -- plus an optional
+\code{.default = } spec for unlisted variables. A plain-column
+right-hand side restricts the \code{predictors} (works for every
+method); a right-hand side with transformations (\code{s(x)},
+\code{log(x)}, \code{I(x^2)}, interactions) becomes a model
+\code{formula} (formula-capable methods only); \code{.} means all other
+variables. Grammar formulas compile to \code{spec} objects and cannot be
+combined with \code{spec = } or the flat per-variable arguments.}
+
+\item{considered_variables}{A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process. Excluded columns are still returned unchanged by default (see \code{keep_all_columns}).}
 
 \item{method}{Specifies the imputation method for each variable.
 Can be provided either:
 \itemize{
 \item as a \strong{single global method} (e.g. "ranger"), applied to all variables, or
-\item as a \strong{named list} (e.g. as.list(var1 = "xgboost", var2="robust")), assigning a method to each variable individually.
-Supported methods:
+\item as a \strong{named list} (e.g. list(var1 = "xgboost", var2 = "robust")), assigning a method to each variable individually.
+Built-in methods:
+\item ranger (Random Forest)
+\item xgboost (Gradient Boosting)
+\item regularized (glmnet regression/classification)
+\item robust (robustbase::lmrob / glmrob)
 \item gam (Generalized Additive Model via mgcv::gam)
 \item robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
+\item restricted (ECOSolveR least-squares regression with validate rules)
+Additional methods backed by any mlr3 learner pair can be added with
+\code{\link{register_vimpute_method}()}; \code{\link{vimpute_methods}()}
+lists everything currently registered.
 }}
 
 \item{pmm}{Predictive Mean Matching (PMM) settings.
@@ -93,9 +121,10 @@ Set \code{robust = TRUE} to replace least squares with Huber loss;
 }
 
 \item{formula}{Optional modeling formula to restrict or transform predictor variables.
-Only supported for \strong{regularized} (glmnet), \strong{robust} (lmrob/glmrob),
+Only supported for methods whose registry entry declares formula support:
+among the built-ins \strong{regularized} (glmnet), \strong{robust} (lmrob/glmrob),
 \strong{gam} (mgcv::gam), \strong{robgam} (robust GAM), and \strong{restricted}
-methods
+(ECOSolveR least-squares with validate rules)
 Provide as a named list, e.g.:
 \itemize{
 \item list(mpg = mpg ~ hp + drat)
@@ -117,9 +146,21 @@ donor pool for model fitting for that variable.}
 
 \item{nseq}{Maximum number of iterations (if sequential is TRUE).}
 
-\item{eps}{Convergence threshold: the imputation process stops early if predictions change less than this amount across iterations.}
+\item{eps}{Convergence threshold on the per-variable \emph{relative} change between
+iterations: for numeric variables the mean squared change of the imputed
+values divided by the variance of the observed values, for factors the
+share of imputed cells whose category changed. The sequential process
+stops early once the largest per-variable change stays below \code{eps}
+for two consecutive iterations. The full iterations-by-variables change
+matrix is returned as \code{attr(result, "convergence")}.}
 
 \item{imp_var}{If TRUE, additional columns indicating imputed values (VAR_imp) are added.}
+
+\item{keep_all_columns}{If TRUE (default), the full input is returned: columns excluded via
+\code{considered_variables} are passed through unchanged (original column
+order, with any \code{VAR_imp} indicators appended), matching \code{kNN()},
+\code{hotdeck()} and \code{irmi()}. Set FALSE to return only the considered
+columns (plus their indicators), dropping the rest.}
 
 \item{pred_history}{If TRUE, all predicted values across all iterations are stored.}
 
@@ -127,13 +168,21 @@ donor pool for model fitting for that variable.}
 \itemize{
 \item TRUE/FALSE globally
 \item or a list specifying tuning per variable, e.g. list(var1 = TRUE)
-Tuning is performed halfway through nseq iterations.
+Tuning runs once per variable, early in the iteration sequence. With
+\code{m > 1}, tuning runs once in the first imputation and the chosen
+parameters are shared by all \code{m} imputations (as in \pkg{mice});
+the resulting \code{vimmi} object carries the tuning report in its
+\code{tuning_log} element.
 }}
 
 \item{verbose}{If TRUE additional debugging output is provided}
 
 \item{boot}{If TRUE, bootstrap resampling is applied before model fitting to account
-for model uncertainty. The bootstrap strategy is controlled by \code{robustboot}.
+for model uncertainty. Defaults to \code{TRUE} when \code{m > 1} (each
+imputation then refits on a bootstrap sample, giving approximately proper
+multiple-imputation draws) and to \code{FALSE} for single imputation
+(\code{m = 1}); set explicitly to override. The bootstrap strategy is
+controlled by \code{robustboot}.
 Most effective with method = "robust". Default: FALSE}
 
 \item{robustboot}{Bootstrap strategy when \code{boot = TRUE}. Options:
@@ -141,29 +190,102 @@ Most effective with method = "robust". Default: FALSE}
 \code{"stratified"} (good/bad residual split, default),
 \code{"residual"} (inverse residual weighting).}
 
-\item{uncert}{Imputation uncertainty method applied to predictions:
-\code{"none"} (point prediction, default),
+\item{uncert}{Imputation uncertainty method applied to numeric predictions:
+\code{"pmm"} (default since 7.3.0: predictive mean matching, Little 1988
+-- a random draw among the 5 donors whose \emph{predicted} values are
+nearest the missing cell's prediction, so imputed values are observed
+values; for a no-bootstrap ranger fit the donors are scored by their
+out-of-bag predictions),
+\code{"none"} (deterministic point prediction; the pre-7.3.0 default),
 \code{"normalerror"} (add N(0, sigma_hat)),
 \code{"resid"} (add sampled residual),
-\code{"pmm"} (predictive mean matching),
 \code{"midastouch"} (covariate-distance-weighted PMM, Siddique & Belin 2008).
-If \code{pmm = TRUE} is set, it takes precedence over \code{uncert}.}
+Factor targets draw from the predicted class probabilities whenever
+\code{uncert != "none"} (and are imputed by the most probable class
+otherwise). If \code{pmm = TRUE} is set, it takes precedence over
+\code{uncert}.}
 
 \item{m}{Number of multiple imputations. Default: 1 (single imputation).
 When \code{m > 1}, returns a \code{\link{vimmi}} object storing the original
 data and imputed values efficiently. Use \code{\link{complete.vimmi}} to
 extract completed datasets.}
+
+\item{seed}{Optional single number for reproducibility. Applied once via
+\code{\link{set.seed}} at the start of the call (as in \pkg{mice}), so the
+whole run -- including all \code{m} imputations -- is reproducible while the
+\code{m} imputations still differ from each other. Default \code{NULL}
+leaves the random-number stream untouched.}
+
+\item{tuned_params}{Optional named list mapping variable names to learner parameter lists
+(e.g. \code{list(Sleep = list(num.trees = 300L))}). The parameters are
+applied to the variable's learner without running the tuner -- use this to
+reuse tuning results across calls (each entry of a previous run's
+\code{tuning_log} carries its chosen parameters in \code{$params}).
+Used internally by \code{m > 1} to share the first imputation's tuned
+parameters across all imputations.}
+
+\item{tune_control}{\code{NULL} (default) or a \code{\link{vimpute_tune_control}} object
+controlling the tuning of \code{tune = TRUE}: evaluation budget, CV folds
+of the tuning resampling, tuner and batch size. \code{NULL} keeps the
+built-in data-size heuristics. With \code{m > 1} it applies to the single
+tuning run whose parameters all imputations share. The \code{tuning_log}
+records the budget and folds used per variable.}
+
+\item{predictors}{Optional per-variable predictor control, the equivalent of \pkg{mice}'s
+\code{predictorMatrix} -- and unlike \code{formula} it works for EVERY
+method, including \code{ranger} and \code{xgboost}. Either a named list
+mapping a target variable to the character vector of its predictors
+(e.g. \code{list(Sleep = c("Dream", "Span"))}), or a 0/1 (or logical)
+matrix with targets in rows and predictors in columns (compatible with
+\code{mice::make.predictorMatrix}). Variables without an entry use all
+other considered variables. A \code{formula} supplied for a variable takes
+precedence over its \code{predictors} entry (as in \pkg{mice}).}
+
+\item{visit_sequence}{Order in which the variables with missings are imputed:
+\code{"asis"} (default; column order), \code{"increasing.na"} (fewest
+missings first), \code{"decreasing.na"}, or a character vector giving an
+explicit permutation of the NA-variables.}
+
+\item{spec}{\code{NULL} or a named list of \code{\link{vimpute_spec}} objects -- one
+per variable, e.g. \code{spec = list(Sleep = vs_ranger(num.trees = 300,
+ tune = TRUE), NonD = vs_robust(donorcond = ">= 0"), .default =
+ vs_ranger())}. Each spec bundles the variable's method, learner
+parameters (validated eagerly), \code{formula}/\code{predictors},
+\code{tune}, PMM settings, \code{makeNA} and \code{donorcond}; the
+reserved name \code{".default"} covers unlisted variables. Compiles to
+the flat per-variable arguments, which therefore cannot be given in the
+same call.}
 }
 \value{
-Either:
-\itemize{
-\item the imputed dataset (default, when \code{m = 1}), or
-\item a list containing the imputed dataset and prediction history (when \code{pred_history = TRUE} or \code{tune = TRUE}), or
-\item a \code{\link{vimmi}} object (when \code{m > 1}).
-}
+For \code{m = 1}: the imputed dataset, classed like the input
+(data.frame in, data.frame out; data.table in, data.table out). When
+\code{tune = TRUE} the tuning report is attached as
+\code{attr(result, "tuning_log")}; when \code{pred_history = TRUE} the
+prediction history is attached as \code{attr(result, "pred_history")};
+sequential runs attach the per-variable convergence matrix as
+\code{attr(result, "convergence")} and the chain statistics as
+\code{attr(result, "chain")}; the per-variable model quality (NRMSE/PFC,
+out-of-bag for ranger, in-sample otherwise) is attached as
+\code{attr(result, "model_error")} -- the return is always the data
+itself, never a wrapper list.
+For \code{m > 1}: a \code{\link{vimmi}} object.
 }
 \description{
 Impute missing values with prefered model, sequentially, with hyperparametertuning and with PMM (if wanted)
+}
+\details{
+\strong{Missingness assumptions.} Like all conditional (fully
+conditional specification) imputation, \code{vimpute()} assumes the data
+are \strong{MAR} (missing at random: the probability of missingness may
+depend on \emph{observed} values) -- which includes \strong{MCAR}
+(missing completely at random) as a special case. Under \strong{MNAR}
+(missingness depending on the unobserved values themselves) imputations
+and downstream estimates can be biased, and no imputation method can fix
+this from the observed data alone; sensitivity analyses are advisable.
+\code{\link{makeMissing}} generates MCAR/MAR/MNAR missingness in complete
+data for exactly such simulation-based checks, and
+\code{\link{overimpute}} diagnoses the calibration of the imputation
+model on the observed cells.
 }
 \examples{
 \dontrun{

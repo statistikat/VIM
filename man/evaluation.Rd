@@ -8,7 +8,7 @@
 \alias{msecor}
 \title{Error performance measures}
 \usage{
-evaluation(x, y, m, vartypes = "guess")
+evaluation(x, y, m, vartypes = "guess", where = NULL)
 
 nrmse(x, y, m)
 
@@ -23,9 +23,18 @@ msecor(x, y)
 
 \item{y}{matrix or data frame of the same size as x}
 
-\item{m}{the indicator matrix for missing cells}
+\item{m}{the indicator matrix for missing cells (kept for backward
+compatibility; \code{where} is the documented name)}
 
-\item{vartypes}{a vector of length ncol(x) specifying the variables types, like factor or numeric}
+\item{vartypes}{a vector of length ncol(x) specifying the variable types
+(\code{"numeric"} or \code{"factor"}). The default \code{"guess"} infers the
+types from the columns of \code{x} (numeric columns become \code{"numeric"},
+everything else \code{"factor"}).}
+
+\item{where}{the indicator matrix for missing cells under its documented
+name -- the amputed-cell mask as returned in \code{makeMissing()}'s
+\code{"where"} attribute. Supply either \code{m} or \code{where}, not
+both.}
 }
 \value{
 the error measures value
@@ -51,8 +60,8 @@ msecov(iris_orig[, 1:4], iris_imp[, 1:4])
 }
 \references{
 M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
-regression imputation using standard and robust methods.  \emph{Journal of
-Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
+regression imputation using standard and robust methods.  \emph{Computational
+Statistics & Data Analysis}, Vol. 55, pp. 2793-2806.
 }
 \author{
 Matthias Templ

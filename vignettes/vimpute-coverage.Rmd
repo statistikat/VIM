@@ -1,0 +1,131 @@
+---
+title: "Validating multiple-imputation properness: a coverage simulation"
+author: "Matthias Templ"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Validating multiple-imputation properness: a coverage simulation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+run_mice <- requireNamespace("mice", quietly = TRUE)
+```
+
+Multiple imputation is *proper* when Rubin's rules give pooled standard
+errors that reflect the real uncertainty — so that nominal 95% confidence
+intervals cover the truth about 95% of the time. This vignette validates
+`vimpute()`'s MI behaviour with a known-truth simulation and, just as
+importantly, shows what goes wrong when a variability source is missing.
+Every chunk is executed at build time with
+
+```{r}
+NSIM <- 12   # simulation replications per configuration -- demo scale!
+N    <- 100  # observations
+M    <- 5    # imputations
+```
+
+Demo scale means large Monte-Carlo error (a single coverage estimate has a
+standard error of about `r round(100*sqrt(0.95*0.05/12))` percentage points
+at these settings); the *pooled standard errors* are stable much earlier and
+carry the qualitative message. `NSIM <- 500`, `M <- 20` (identical code) is
+the paper-scale setting.
+
+## Design
+
+Linear truth, MAR missingness in the response driven by the observed
+covariates:
+
+```{r, message = FALSE}
+library(VIM)
+set.seed(11)
+
+beta_x <- 2   # the estimand
+
+sim_data <- function(n) {
+  x <- rnorm(n); z <- rnorm(n)
+  data.frame(x = x, z = z, y = 1 + beta_x * x - z + rnorm(n))
+}
+```
+
+Four configurations of `vimpute(method = "robust", m = M)`:
+
+* **default (boot + pmm)**: bootstrap refits *plus* stochastic donor draws —
+  VIM's default for multiple imputation since 7.3.0 (`boot = TRUE` whenever
+  `m > 1`);
+* **pmm, no boot**: donor draws with a single model fit (`boot = FALSE`) —
+  the single-fit variant, kept for comparison (before 7.3.0 the `m > 1`
+  default produced identical conditional-mean imputations);
+* **boot + normalerror**: bootstrap parameter uncertainty *plus* residual
+  noise — the textbook-proper combination;
+* **boot only, uncert = "none"**: parameter uncertainty without residual
+  variability — *deliberately improper*. `vimpute()` warns about exactly
+  this configuration:
+
+```{r, warning = TRUE}
+w <- tryCatch(
+  vimpute(sim_data(60) |> transform(y = replace(y, 1:15, NA)),
+          method = "robust", m = 2, boot = TRUE, uncert = "none",
+          sequential = FALSE, verbose = FALSE, seed = 1),
+  warning = function(cond) conditionMessage(cond))
+cat(strwrap(w, 70), sep = "\n")
+```
+
+## The simulation
+
+```{r, eval = run_mice}
+configs <- list(
+  "default (boot + pmm)" = list(boot = TRUE,  uncert = "pmm"),
+  "pmm, no boot"         = list(boot = FALSE, uncert = "pmm"),
+  "boot + normalerror"   = list(boot = TRUE,  uncert = "normalerror"),
+  "boot, uncert none"    = list(boot = TRUE,  uncert = "none")
+)
+
+sim_once <- function(cfg, seed) {
+  dat <- sim_data(N)
+  amp <- makeMissing(dat, prop = 0.3, mechanism = "MAR", vars = "y",
+                     seed = seed)
+  mi <- suppressWarnings(
+    vimpute(amp, method = "robust", m = M, boot = cfg$boot,
+            uncert = cfg$uncert, sequential = FALSE, verbose = FALSE))
+  pooled <- summary(mice::pool(with(mi, lm(y ~ x + z))), conf.int = TRUE)
+  row <- pooled[pooled$term == "x", ]
+  c(est = row$estimate, se = row$std.error,
+    cover = as.numeric(row$`2.5 %` <= beta_x & beta_x <= row$`97.5 %`))
+}
+
+results <- lapply(names(configs), function(cf) {
+  runs <- t(vapply(seq_len(NSIM), function(i) sim_once(configs[[cf]], i),
+                   numeric(3)))
+  data.frame(config = cf,
+             mean_pooled_se = mean(runs[, "se"]),
+             sd_estimates   = sd(runs[, "est"]),
+             coverage       = mean(runs[, "cover"]))
+})
+results <- do.call(rbind, results)
+```
+
+```{r, eval = run_mice}
+knitr::kable(results, digits = 3, row.names = FALSE,
+             caption = sprintf(
+  "Pooled inference for the x-coefficient over %d replications (demo scale). A calibrated method has mean pooled SE close to the empirical SD of the estimates and coverage near 0.95.",
+  NSIM))
+```
+
+## Reading the table
+
+The diagnostic comparison is **mean pooled SE vs the empirical SD of the
+estimates**: for calibrated inference they agree, and coverage lands near
+the nominal level. The deliberately improper configuration (bootstrap only,
+no residual noise) shows the audit-documented failure: its pooled SE is
+visibly *smaller* than the other configurations and than its own sampling
+variability — anti-conservative intervals whose coverage collapses at
+paper-scale `NSIM`. The stochastic configurations — the `boot` + `pmm`
+default, `pmm` without bootstrap, and the textbook `boot + normalerror`
+combination — produce pooled SEs of the right size, with the bootstrap
+default adding the model-uncertainty component on top of the donor draws.
+
+At `NSIM <- 500`, `M <- 20`, `N <- 300` the same code reproduces the
+paper's coverage table; only the three constants at the top change.

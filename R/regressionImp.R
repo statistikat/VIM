@@ -1,14 +1,16 @@
 #' Regression Imputation (via vimpute)
 #'
 #' Impute missing values based on a regression / classification model.
-#' Internally delegates to `vimpute()` with method = "regularized" (glmnet)
-#' or "robust" (lmrob/glmrob).
+#'
+#' By default ([lm()] for numeric responses and [glm()] for binary responses,
+#' with any number of predictors) the imputation is deterministic and matches a
+#' plain regression fit. When the design is rank-deficient (collinear predictors
+#' or \eqn{p \ge n}) or the response is a multi-level factor, it falls back to
+#' the regularized (glmnet) path via [vimpute()] with \code{method = "regularized"}.
+#' If \code{robust = TRUE}, [vimpute()] with \code{method = "robust"}
+#' (\link[robustbase:lmrob]{lmrob()} / \link[robustbase:glmrob]{glmrob()}) is used.
 #'
 #' @param formula model formula to impute one or several variables
-#'
-#' [lm()] is used for family "normal" and [glm()] for all other families.
-#' If \code{robust = TRUE}, \link[robustbase:lmrob]{lmrob()} is used for family "normal" 
-#' and \link[robustbase:glmrob]{glmrob()} for all other families.
 #'
 #' @param formula model formula to impute one variable
 #' @param data A data.frame containing the data
@@ -79,41 +81,53 @@ regressionImp <- function(formula, data,
     
     subdata <- data_out[, considered, drop = FALSE]
 
-    use_simple_regression <- !robust &&
-      identical(family, "AUTO") &&
-      length(rhs2) == 1L &&
-      is.numeric(lhs_vector)
+    # Documented behaviour: lm for numeric responses, glm for binary responses,
+    # any number of predictors. Fall back to the regularized (glmnet) vimpute
+    # path below only when the design is rank-deficient (collinear / p >= n) or
+    # the response is a multi-level factor.
+    use_simple_regression <- !robust && identical(family, "AUTO")
 
+    simple_done <- FALSE
     if (use_simple_regression) {
-      rhs_complete <- !is.na(data_out[[rhs2]])
+      rhs_complete <- if (length(rhs2) >= 1L)
+        stats::complete.cases(data_out[, rhs2, drop = FALSE]) else rep(TRUE, nrow(data_out))
       train_idx <- rhs_complete & !is.na(lhs_vector)
-      pred_idx <- rhs_complete & is.na(lhs_vector)
+      pred_idx  <- rhs_complete & is.na(lhs_vector)
+      form <- as.formula(paste(lhsV, "~", rhs))
 
-      if (sum(train_idx) >= 2L) {
-        form <- as.formula(paste(lhsV, "~", rhs))
-        mod <- stats::lm(form, data = data_out[train_idx, , drop = FALSE])
-
-        if (any(pred_idx)) {
-          data_out[pred_idx, lhsV] <- stats::predict(mod, newdata = data_out[pred_idx, , drop = FALSE])
-        }
-
-        if (imp_var) {
-          target_imp_col <- paste0(lhsV, "_", imp_suffix)
-          if (!(target_imp_col %in% colnames(data_out))) {
-            data_out[[target_imp_col]] <- is.na(lhs_vector)
-          } else {
-            data_out[[target_imp_col]] <- as.logical(data_out[[target_imp_col]])
-            warning(
-              "The following TRUE/FALSE imputation status variables will be updated: ",
-              target_imp_col
-            )
-            data_out[[target_imp_col]] <- is.na(lhs_vector)
+      fitted_vals <- NULL
+      if (sum(train_idx) >= 2L && any(pred_idx)) {
+        if (is.numeric(lhs_vector)) {
+          mod <- tryCatch(stats::lm(form, data = data_out[train_idx, , drop = FALSE]),
+                          error = function(e) NULL)
+          if (!is.null(mod) && !anyNA(stats::coef(mod)))
+            fitted_vals <- stats::predict(mod, newdata = data_out[pred_idx, , drop = FALSE])
+        } else if (is.factor(lhs_vector) && nlevels(droplevels(lhs_vector)) == 2L) {
+          ylev <- levels(droplevels(lhs_vector))
+          dtr <- data_out[train_idx, , drop = FALSE]
+          dtr[[lhsV]] <- factor(dtr[[lhsV]], levels = ylev)
+          mod <- tryCatch(stats::glm(form, data = dtr, family = stats::binomial()),
+                          error = function(e) NULL)
+          if (!is.null(mod) && !anyNA(stats::coef(mod))) {
+            p <- stats::predict(mod, newdata = data_out[pred_idx, , drop = FALSE], type = "response")
+            fitted_vals <- factor(ylev[(p > 0.5) + 1L], levels = ylev)
           }
         }
+      }
 
-        next
+      if (!is.null(fitted_vals)) {
+        data_out[pred_idx, lhsV] <- fitted_vals
+        if (imp_var) {
+          target_imp_col <- paste0(lhsV, "_", imp_suffix)
+          if (target_imp_col %in% colnames(data_out))
+            warning("The following TRUE/FALSE imputation status variables will be updated: ",
+                    target_imp_col)
+          data_out[[target_imp_col]] <- is.na(lhs_vector)
+        }
+        simple_done <- TRUE
       }
     }
+    if (simple_done) next
     
     out <- vimpute(
       data                = subdata,
@@ -125,6 +139,7 @@ regressionImp <- function(formula, data,
       imp_var             = TRUE,         # internaly: _imp-columns
       pred_history        = FALSE,
       tune                = FALSE,
+      uncert              = "none",
       verbose             = FALSE
     )
     

@@ -4,7 +4,21 @@
 \alias{new_vimmi}
 \title{Constructor for vimmi objects}
 \usage{
-new_vimmi(data, imp, where, m, nmis, method, boot, uncert, call)
+new_vimmi(
+  data,
+  imp,
+  where,
+  m,
+  nmis,
+  method,
+  boot,
+  uncert,
+  call,
+  tuning_log = NULL,
+  chain = NULL,
+  seed = NULL,
+  model_error = NULL
+)
 }
 \arguments{
 \item{data}{Original data.frame/data.table with NAs intact}
@@ -25,6 +39,22 @@ nmis rows and m columns of imputed values}
 \item{uncert}{Character: uncertainty method used}
 
 \item{call}{The original function call}
+
+\item{tuning_log}{Optional tuning report from the (single) tuning run,
+shared by all m imputations; NULL when tuning was not requested}
+
+\item{chain}{Optional per-iteration chain statistics:
+\code{list(mean = , var = )} of arrays with dimensions
+\code{[variable, iteration, imputation]} holding the mean and variance of
+the imputed values of each numeric variable after each sequential
+iteration (the basis of \code{\link{plot.vimmi}} trace plots)}
+
+\item{seed}{The seed applied at entry of the \code{vimpute()} call
+(NULL when none was set)}
+
+\item{model_error}{Optional per-variable model-quality list (NRMSE/PFC,
+from the first imputation run), as in \code{attr(result, "model_error")}
+of single runs}
 }
 \value{
 A \code{vimmi} object

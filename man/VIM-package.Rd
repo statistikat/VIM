@@ -46,17 +46,18 @@ R package VIM.  \emph{Journal of
 Statistical Software}, 74(7), 1-16.
 
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-data using visualization tools.  \emph{Journal of Advances in Data Analysis
+data using visualization tools.  \emph{Advances in Data Analysis
 and Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 
 M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
-imputation using standard and robust methods.  \emph{Journal of
-Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
+imputation using standard and robust methods.  \emph{Computational
+Statistics & Data Analysis}, Vol. 55, pp. 2793-2806.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/statistikat/VIM}
+  \item Report bugs at \url{https://github.com/statistikat/VIM/issues}
 }
 
 }

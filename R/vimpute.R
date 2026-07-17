@@ -5,21 +5,36 @@
 ## PARAMETERS ##
 #' @param data
 #'  Dataset with missing values. Provide as a data.table.
+#' @param ...
+#'  Optional bare **grammar formulas**, one per variable:
+#'  \code{target ~ predictors | method(...)} -- e.g.
+#'  \code{Sleep ~ Dream + Span | ranger(tune = TRUE)} or
+#'  \code{NonD ~ . | robust(donorcond = ">= 0")} -- plus an optional
+#'  \code{.default = } spec for unlisted variables. A plain-column
+#'  right-hand side restricts the \code{predictors} (works for every
+#'  method); a right-hand side with transformations (\code{s(x)},
+#'  \code{log(x)}, \code{I(x^2)}, interactions) becomes a model
+#'  \code{formula} (formula-capable methods only); \code{.} means all other
+#'  variables. Grammar formulas compile to \code{spec} objects and cannot be
+#'  combined with \code{spec = } or the flat per-variable arguments.
 #' @param considered_variables
-#'  A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process.
+#'  A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process. Excluded columns are still returned unchanged by default (see \code{keep_all_columns}).
 #' @param method
 #'  Specifies the imputation method for each variable.
 #'  Can be provided either:
 #'    - as a **single global method** (e.g. "ranger"), applied to all variables, or
-#'    - as a **named list** (e.g. as.list(var1 = "xgboost", var2="robust")), assigning a method to each variable individually.
-#'  Supported methods:
-#     - ranger (Random Forest)
-#     - xgboost (Gradient Boosting)
-#     - regularized (glmnet regression/classification)
-#     - robust (robustbase::lmrob / glmrob)
+#'    - as a **named list** (e.g. list(var1 = "xgboost", var2 = "robust")), assigning a method to each variable individually.
+#'  Built-in methods:
+#'   - ranger (Random Forest)
+#'   - xgboost (Gradient Boosting)
+#'   - regularized (glmnet regression/classification)
+#'   - robust (robustbase::lmrob / glmrob)
 #'   - gam (Generalized Additive Model via mgcv::gam)
 #'   - robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
-#     - restricted (ECOSolveR least-squares regression with validate rules)
+#'   - restricted (ECOSolveR least-squares regression with validate rules)
+#'  Additional methods backed by any mlr3 learner pair can be added with
+#'  \code{\link{register_vimpute_method}()}; \code{\link{vimpute_methods}()}
+#'  lists everything currently registered.
 #' @param pmm 
 #'  Predictive Mean Matching (PMM) settings.
 #'  Can be provided:
@@ -59,9 +74,10 @@
 #'  controls its tuning constant and defaults to `1.345`.
 #' @param formula
 #'  Optional modeling formula to restrict or transform predictor variables.
-#'  Only supported for **regularized** (glmnet), **robust** (lmrob/glmrob),
+#'  Only supported for methods whose registry entry declares formula support:
+#'  among the built-ins **regularized** (glmnet), **robust** (lmrob/glmrob),
 #'  **gam** (mgcv::gam), **robgam** (robust GAM), and **restricted**
-#'  methods
+#'  (ECOSolveR least-squares with validate rules)
 #'  Provide as a named list, e.g.:
 #'    - list(mpg = mpg ~ hp + drat)  
 #'    - list(hp  = log(hp) ~ wt + cyl) 
@@ -81,21 +97,41 @@
 #' @param nseq
 #'  Maximum number of iterations (if sequential is TRUE).
 #' @param eps
-#'  Convergence threshold: the imputation process stops early if predictions change less than this amount across iterations.
+#'  Convergence threshold on the per-variable *relative* change between
+#'  iterations: for numeric variables the mean squared change of the imputed
+#'  values divided by the variance of the observed values, for factors the
+#'  share of imputed cells whose category changed. The sequential process
+#'  stops early once the largest per-variable change stays below \code{eps}
+#'  for two consecutive iterations. The full iterations-by-variables change
+#'  matrix is returned as \code{attr(result, "convergence")}.
 #' @param imp_var
 #'  If TRUE, additional columns indicating imputed values (VAR_imp) are added.
-#' @param pred_history 
+#' @param keep_all_columns
+#'  If TRUE (default), the full input is returned: columns excluded via
+#'  \code{considered_variables} are passed through unchanged (original column
+#'  order, with any \code{VAR_imp} indicators appended), matching \code{kNN()},
+#'  \code{hotdeck()} and \code{irmi()}. Set FALSE to return only the considered
+#'  columns (plus their indicators), dropping the rest.
+#' @param pred_history
 #'  If TRUE, all predicted values across all iterations are stored.
 #' @param tune
 #'  Hyperparameter tuning flag. Can be:
-#'    - TRUE/FALSE globally  
+#'    - TRUE/FALSE globally
 #'    - or a list specifying tuning per variable, e.g. list(var1 = TRUE)
-#'  Tuning is performed halfway through nseq iterations.
+#'  Tuning runs once per variable, early in the iteration sequence. With
+#'  \code{m > 1}, tuning runs once in the first imputation and the chosen
+#'  parameters are shared by all \code{m} imputations (as in \pkg{mice});
+#'  the resulting \code{vimmi} object carries the tuning report in its
+#'  \code{tuning_log} element.
 #' @param verbose
 #'  If TRUE additional debugging output is provided
 #' @param boot
 #'  If TRUE, bootstrap resampling is applied before model fitting to account
-#'  for model uncertainty. The bootstrap strategy is controlled by \code{robustboot}.
+#'  for model uncertainty. Defaults to \code{TRUE} when \code{m > 1} (each
+#'  imputation then refits on a bootstrap sample, giving approximately proper
+#'  multiple-imputation draws) and to \code{FALSE} for single imputation
+#'  (\code{m = 1}); set explicitly to override. The bootstrap strategy is
+#'  controlled by \code{robustboot}.
 #'  Most effective with method = "robust". Default: FALSE
 #' @param robustboot
 #'  Bootstrap strategy when \code{boot = TRUE}. Options:
@@ -103,23 +139,97 @@
 #'  \code{"stratified"} (good/bad residual split, default),
 #'  \code{"residual"} (inverse residual weighting).
 #' @param uncert
-#'  Imputation uncertainty method applied to predictions:
-#'  \code{"none"} (point prediction, default),
+#'  Imputation uncertainty method applied to numeric predictions:
+#'  \code{"pmm"} (default since 7.3.0: predictive mean matching, Little 1988
+#'  -- a random draw among the 5 donors whose \emph{predicted} values are
+#'  nearest the missing cell's prediction, so imputed values are observed
+#'  values; for a no-bootstrap ranger fit the donors are scored by their
+#'  out-of-bag predictions),
+#'  \code{"none"} (deterministic point prediction; the pre-7.3.0 default),
 #'  \code{"normalerror"} (add N(0, sigma_hat)),
 #'  \code{"resid"} (add sampled residual),
-#'  \code{"pmm"} (predictive mean matching),
 #'  \code{"midastouch"} (covariate-distance-weighted PMM, Siddique & Belin 2008).
-#'  If \code{pmm = TRUE} is set, it takes precedence over \code{uncert}.
+#'  Factor targets draw from the predicted class probabilities whenever
+#'  \code{uncert != "none"} (and are imputed by the most probable class
+#'  otherwise). If \code{pmm = TRUE} is set, it takes precedence over
+#'  \code{uncert}.
 #' @param m
 #'  Number of multiple imputations. Default: 1 (single imputation).
 #'  When \code{m > 1}, returns a \code{\link{vimmi}} object storing the original
 #'  data and imputed values efficiently. Use \code{\link{complete.vimmi}} to
 #'  extract completed datasets.
+#' @param seed
+#'  Optional single number for reproducibility. Applied once via
+#'  \code{\link{set.seed}} at the start of the call (as in \pkg{mice}), so the
+#'  whole run -- including all \code{m} imputations -- is reproducible while the
+#'  \code{m} imputations still differ from each other. Default \code{NULL}
+#'  leaves the random-number stream untouched.
+#' @param tuned_params
+#'  Optional named list mapping variable names to learner parameter lists
+#'  (e.g. \code{list(Sleep = list(num.trees = 300L))}). The parameters are
+#'  applied to the variable's learner without running the tuner -- use this to
+#'  reuse tuning results across calls (each entry of a previous run's
+#'  \code{tuning_log} carries its chosen parameters in \code{$params}).
+#'  Used internally by \code{m > 1} to share the first imputation's tuned
+#'  parameters across all imputations.
+#' @param tune_control
+#'  \code{NULL} (default) or a \code{\link{vimpute_tune_control}} object
+#'  controlling the tuning of \code{tune = TRUE}: evaluation budget, CV folds
+#'  of the tuning resampling, tuner and batch size. \code{NULL} keeps the
+#'  built-in data-size heuristics. With \code{m > 1} it applies to the single
+#'  tuning run whose parameters all imputations share. The \code{tuning_log}
+#'  records the budget and folds used per variable.
+#' @param predictors
+#'  Optional per-variable predictor control, the equivalent of \pkg{mice}'s
+#'  \code{predictorMatrix} -- and unlike \code{formula} it works for EVERY
+#'  method, including \code{ranger} and \code{xgboost}. Either a named list
+#'  mapping a target variable to the character vector of its predictors
+#'  (e.g. \code{list(Sleep = c("Dream", "Span"))}), or a 0/1 (or logical)
+#'  matrix with targets in rows and predictors in columns (compatible with
+#'  \code{mice::make.predictorMatrix}). Variables without an entry use all
+#'  other considered variables. A \code{formula} supplied for a variable takes
+#'  precedence over its \code{predictors} entry (as in \pkg{mice}).
+#' @param spec
+#'  \code{NULL} or a named list of \code{\link{vimpute_spec}} objects -- one
+#'  per variable, e.g. \code{spec = list(Sleep = vs_ranger(num.trees = 300,
+#'  tune = TRUE), NonD = vs_robust(donorcond = ">= 0"), .default =
+#'  vs_ranger())}. Each spec bundles the variable's method, learner
+#'  parameters (validated eagerly), \code{formula}/\code{predictors},
+#'  \code{tune}, PMM settings, \code{makeNA} and \code{donorcond}; the
+#'  reserved name \code{".default"} covers unlisted variables. Compiles to
+#'  the flat per-variable arguments, which therefore cannot be given in the
+#'  same call.
+#' @param visit_sequence
+#'  Order in which the variables with missings are imputed:
+#'  \code{"asis"} (default; column order), \code{"increasing.na"} (fewest
+#'  missings first), \code{"decreasing.na"}, or a character vector giving an
+#'  explicit permutation of the NA-variables.
 #' @return
-#'  Either:
-#'    - the imputed dataset (default, when \code{m = 1}), or
-#'    - a list containing the imputed dataset and prediction history (when \code{pred_history = TRUE} or \code{tune = TRUE}), or
-#'    - a \code{\link{vimmi}} object (when \code{m > 1}).
+#'  For \code{m = 1}: the imputed dataset, classed like the input
+#'  (data.frame in, data.frame out; data.table in, data.table out). When
+#'  \code{tune = TRUE} the tuning report is attached as
+#'  \code{attr(result, "tuning_log")}; when \code{pred_history = TRUE} the
+#'  prediction history is attached as \code{attr(result, "pred_history")};
+#'  sequential runs attach the per-variable convergence matrix as
+#'  \code{attr(result, "convergence")} and the chain statistics as
+#'  \code{attr(result, "chain")}; the per-variable model quality (NRMSE/PFC,
+#'  out-of-bag for ranger, in-sample otherwise) is attached as
+#'  \code{attr(result, "model_error")} -- the return is always the data
+#'  itself, never a wrapper list.
+#'  For \code{m > 1}: a \code{\link{vimmi}} object.
+#' @details
+#'  \strong{Missingness assumptions.} Like all conditional (fully
+#'  conditional specification) imputation, \code{vimpute()} assumes the data
+#'  are \strong{MAR} (missing at random: the probability of missingness may
+#'  depend on \emph{observed} values) -- which includes \strong{MCAR}
+#'  (missing completely at random) as a special case. Under \strong{MNAR}
+#'  (missingness depending on the unobserved values themselves) imputations
+#'  and downstream estimates can be biased, and no imputation method can fix
+#'  this from the observed data alone; sensitivity analyses are advisable.
+#'  \code{\link{makeMissing}} generates MCAR/MAR/MNAR missingness in complete
+#'  data for exactly such simulation-based checks, and
+#'  \code{\link{overimpute}} diagnoses the calibration of the imputation
+#'  model on the observed cells.
 #' @export
 #'
 #' @family imputation methods
@@ -160,7 +270,8 @@
 
 vimpute <- function(
     data,
-    considered_variables = names(data), 
+    ...,
+    considered_variables = names(data),
     method = setNames(as.list(rep("ranger", length(considered_variables))), considered_variables),
     pmm = FALSE,
     pmm_k = NULL,
@@ -171,17 +282,156 @@ vimpute <- function(
     donorcond = NULL,
     sequential = TRUE,
     nseq = 10,
-    eps = 0.005, 
+    eps = 0.005,
     imp_var = TRUE,
+    keep_all_columns = TRUE,
     pred_history = FALSE,
     tune = FALSE,
     verbose = FALSE,
-    boot = FALSE,
+    boot = NULL,
     robustboot = "stratified",
-    uncert = "none",
-    m = 1L
+    uncert = "pmm",
+    m = 1L,
+    seed = NULL,
+    tuned_params = NULL,
+    tune_control = NULL,
+    predictors = NULL,
+    visit_sequence = "asis",
+    spec = NULL
 ) {
-  
+
+  # Distinguish the user explicitly choosing an uncertainty method from the
+  # default, so pmm = TRUE with the default uncert does not warn spuriously.
+  uncert_explicit <- !missing(uncert)
+
+  # Adaptive boot default: multiple imputation refits each imputation on a
+  # bootstrap sample (approximately proper draws); single imputation keeps
+  # the plain fit. An explicit boot = TRUE/FALSE always wins.
+  if (is.null(boot)) {
+    boot <- is.numeric(m) && length(m) == 1L && !is.na(m) && m > 1L
+  }
+
+  # Reproducibility: apply the seed once at entry (mice-compatible). The m > 1
+  # wrapper recurses with seed = NULL, so the m runs share one seeded stream
+  # and still differ from each other (re-seeding per run would collapse them).
+  if (!is.null(seed)) {
+    if (!is.numeric(seed) || length(seed) != 1L || !is.finite(seed)) {
+      stop("'seed' must be a single finite number (or NULL).")
+    }
+    set.seed(seed)
+  }
+
+  # Pre-tuned hyperparameters: named list (variable -> learner parameter list).
+  # Pre-seeds the tuning cache so the parameters are applied without tuning.
+  # Used by the m > 1 wrapper to share run 1's tuned parameters across all m
+  # imputations; can also be supplied directly to reuse tuning across calls.
+  if (!is.null(tuned_params)) {
+    if (!is.list(tuned_params) || is.null(names(tuned_params)) ||
+        any(!nzchar(names(tuned_params)))) {
+      stop("'tuned_params' must be a fully named list (variable -> parameter list).")
+    }
+    unknown_tp <- setdiff(names(tuned_params), names(data))
+    if (length(unknown_tp) > 0L) {
+      stop(sprintf("Unknown variable name(s) in 'tuned_params': %s",
+                   paste(unknown_tp, collapse = ", ")))
+    }
+  }
+
+  # Tuning controls (evaluation budget, CV folds, tuner, batch size);
+  # NULL keeps the built-in data-size heuristics.
+  if (is.null(tune_control)) {
+    tune_control <- vimpute_tune_control()
+  } else if (!inherits(tune_control, "vimpute_tune_control")) {
+    stop("'tune_control' must be created by vimpute_tune_control().")
+  }
+
+  # ---- Per-variable specs and the formula grammar ---------------------------
+  # Bare formulas (y ~ x1 + x2 | ranger(tune = TRUE), plus '.default = ')
+  # arrive unevaluated in `...` and compile to a spec list; `spec = ` takes a
+  # named list of vimpute_spec objects directly. Both compile to the classic
+  # flat per-variable arguments below, so everything downstream (precheck,
+  # the imputation loop, the m > 1 recursion) is unchanged.
+  grammar_dots <- as.list(match.call(expand.dots = FALSE)$`...`)
+  if (length(grammar_dots) > 0L) {
+    if (!is.null(spec)) {
+      stop("Use either bare grammar formulas or 'spec = ', not both.")
+    }
+    spec <- compile_vimpute_grammar(grammar_dots, env = parent.frame())
+  }
+  if (!is.null(spec)) {
+    flat_given <- c(
+      method = !missing(method), learner_params = !missing(learner_params),
+      formula = !missing(formula), predictors = !missing(predictors),
+      tune = !missing(tune), pmm = !missing(pmm), pmm_k = !missing(pmm_k),
+      pmm_k_method = !missing(pmm_k_method), makeNA = !missing(makeNA),
+      donorcond = !missing(donorcond)
+    )
+    if (any(flat_given)) {
+      stop(sprintf(
+        "'spec'/grammar formulas cannot be combined with the flat per-variable argument(s): %s. Use one interface per call.",
+        paste(names(flat_given)[flat_given], collapse = ", ")))
+    }
+    compiled <- compile_vimpute_spec(spec, data = data,
+                                     considered_variables = considered_variables)
+    method         <- compiled$method
+    learner_params <- compiled$learner_params
+    formula        <- compiled$formula
+    predictors     <- compiled$predictors
+    tune           <- compiled$tune
+    pmm            <- compiled$pmm
+    pmm_k          <- compiled$pmm_k
+    pmm_k_method   <- compiled$pmm_k_method
+    makeNA         <- compiled$makeNA
+    donorcond      <- compiled$donorcond
+  }
+
+  # Per-variable predictor control (predictorMatrix equivalent, applied to
+  # EVERY learner including ranger/xgboost via feature selection). Accepts a
+  # named list (target -> character vector of predictors) or a mice-style 0/1
+  # (or logical) matrix with targets in rows and predictors in columns.
+  if (!is.null(predictors)) {
+    if (is.matrix(predictors)) {
+      if (is.null(rownames(predictors)) || is.null(colnames(predictors))) {
+        stop("'predictors' matrix must have row names (targets) and column names (predictors).")
+      }
+      pm <- predictors
+      predictors <- setNames(
+        lapply(rownames(pm), function(v) colnames(pm)[which(pm[v, ] != 0)]),
+        rownames(pm)
+      )
+    }
+    if (!is.list(predictors) || is.null(names(predictors)) ||
+        any(!nzchar(names(predictors)))) {
+      stop("'predictors' must be a fully named list (target -> character vector) or a named 0/1 matrix.")
+    }
+    unknown_pt <- setdiff(names(predictors), considered_variables)
+    if (length(unknown_pt) > 0L) {
+      stop(sprintf("Unknown target variable name(s) in 'predictors': %s",
+                   paste(unknown_pt, collapse = ", ")))
+    }
+    for (v in names(predictors)) {
+      pv <- predictors[[v]]
+      if (!is.character(pv)) {
+        stop(sprintf("'predictors[[\"%s\"]]' must be a character vector of variable names.", v))
+      }
+      unknown_pv <- setdiff(pv, considered_variables)
+      if (length(unknown_pv) > 0L) {
+        stop(sprintf("Unknown predictor name(s) in 'predictors' for target '%s': %s",
+                     v, paste(unknown_pv, collapse = ", ")))
+      }
+      pv <- setdiff(pv, v)  # a variable never predicts itself (mice diagonal-0)
+      if (length(pv) == 0L) {
+        stop(sprintf("'predictors' for target '%s' must contain at least one predictor other than the target itself.", v))
+      }
+      predictors[[v]] <- pv
+    }
+  }
+
+  # Visit sequence: validated against the NA-variables after precheck.
+  if (!is.character(visit_sequence) || length(visit_sequence) < 1L) {
+    stop("'visit_sequence' must be \"asis\", \"increasing.na\", \"decreasing.na\", or a character vector of variable names.")
+  }
+
   # save plan
   old_plan <- future::plan()  # Save current plan
   on.exit(future::plan(old_plan), add = TRUE)  # Restore on exit, even if error
@@ -195,6 +445,11 @@ vimpute <- function(
   }
 
   # dots <- list(...)
+
+  # Type-stable return: remember the input's class so the result is returned
+  # as a data.frame for data.frame input and a data.table for data.table input
+  # (matching kNN/hotdeck). Internally everything runs on data.table.
+  input_is_dt <- data.table::is.data.table(data)
 
   # only defined variables
   data_all_variables <- as.data.table(data)
@@ -284,7 +539,16 @@ vimpute <- function(
       factor_levels[[col]] <- levels(as.factor(data[[col]])) # Nnew
     }
   }
-  
+
+  # Remember ordered-factor columns (with their level order) BEFORE precheck()
+  # coerces them to plain factors, so the output can be restored to `ordered`.
+  ordered_info <- list()
+  for (col in names(data)) {
+    if (is.ordered(data[[col]])) {
+      ordered_info[[col]] <- levels(data[[col]])
+    }
+  }
+
 ### ***** Check Data Start ***** ###################################################################################################
   if(verbose){
     message(paste("***** Check Data"))  
@@ -371,57 +635,70 @@ vimpute <- function(
   }
 ### Check Data End ###
 
-  # Reconcile pmm parameter with uncert parameter (PMM has priority)
+  # Reconcile pmm parameter with uncert parameter (PMM has priority). Only warn
+  # when the user set uncert explicitly -- with the default (uncert = "pmm"),
+  # pmm = TRUE silently takes precedence.
   has_any_pmm <- any(unlist(pmm))
   if (has_any_pmm && uncert != "none") {
-    warning("Both 'pmm' and 'uncert' specified. 'pmm' takes precedence; 'uncert' ignored.")
+    if (uncert_explicit) {
+      warning("Both 'pmm' and 'uncert' specified. 'pmm' takes precedence; 'uncert' ignored.")
+    }
     uncert <- "none"
   }
 
-  # Warn if m > 1 but no source of between-imputation variability
-  if (m > 1L && !boot && uncert == "none" && !has_any_pmm) {
-    warning("m > 1 without 'boot', 'uncert', or 'pmm': all imputations will be identical. ",
-            "Set boot = TRUE and/or uncert to a method like 'normalerror' for proper MI.")
+  # PMM only injects between-imputation variability when it draws at random from
+  # >= 2 donors (or via a user aggregator); pmm_k = 1 or pmm_k_method =
+  # "mean"/"median" is deterministic and gives identical draws every imputation.
+  pmm_vars <- names(pmm)[vapply(pmm, isTRUE, logical(1))]
+  is_stochastic_pmm <- function(v) {
+    km <- pmm_k_method[[v]]
+    if (is.function(km)) return(TRUE)
+    k <- pmm_k[[v]]
+    is.numeric(k) && length(k) == 1L && k >= 2L && identical(km, "random")
   }
-  
-### ***** Learner START ***** ################################################################################################### 
-  
-  # Possible extension
-  # LightGBM via mlr3extralearners:
-  # classif.lightgbm, regr.lightgbm
-  
+  has_stochastic_pmm <- any(vapply(pmm_vars, is_stochastic_pmm, logical(1)))
+
+  # Warn if m > 1 cannot produce proper between-imputation variability, so users
+  # do not apply Rubin's rules to degenerate/variance-underestimating draws.
+  if (m > 1L && !boot && uncert == "none" && !has_stochastic_pmm) {
+    if (has_any_pmm) {
+      warning("m > 1 but PMM is deterministic here (pmm_k = 1, or pmm_k_method = ",
+              "'mean'/'median'): all imputations will be identical and Rubin's rules ",
+              "are invalid. For proper MI set pmm_k >= 2 with pmm_k_method = 'random', ",
+              "or add boot = TRUE and/or uncert (e.g. 'normalerror').", call. = FALSE)
+    } else {
+      warning("m > 1 without 'boot', 'uncert', or 'pmm': all imputations will be ",
+              "identical and Rubin's rules are invalid. Set boot = TRUE and/or ",
+              "uncert to a method like 'normalerror' for proper MI variability.", call. = FALSE)
+    }
+  }
+  # boot alone imputes conditional means (no residual noise) -> between-imputation
+  # variance is underestimated (improper MI); PMM or uncert supplies the noise.
+  if (m > 1L && boot && uncert == "none" && !has_any_pmm) {
+    warning("m > 1 with boot = TRUE but uncert = 'none' and no PMM: imputations use ",
+            "conditional means only, so the between-imputation variance is ",
+            "underestimated and pooled standard errors will be too small. Add a ",
+            "residual-noise mechanism (uncert = 'normalerror' or 'resid') or PMM ",
+            "for proper multiple imputation.", call. = FALSE)
+  }
+
+### ***** Learner START ***** ###################################################################################################
+
+  # Methods (built-in and user-registered) are resolved through the method
+  # registry: register_vimpute_method() makes e.g. LightGBM via
+  # mlr3extralearners a one-liner for users.
+
   no_change_counter <- 0
-  robust_required <- any(unlist(method) == "robust")
-  restricted_required <- any(unlist(method) == "restricted")
-  gam_required <- any(unlist(method) %in% c("gam", "robgam"))  # enable GAM-based learners when needed
-  
-  if (robust_required) {
-    register_robust_learners()
-  }
-  if (restricted_required) {
-    register_restricted_learners()
-  }
-  if (gam_required) {
-    register_gam_learners()
-  }
-  
-  learner_ids <- c(
-    "regr.cv_glmnet", "regr.glmnet", "classif.glmnet",
-    "regr.ranger", "classif.ranger",
-    "regr.xgboost", "classif.xgboost"
-  )
-  
-  if (robust_required) {
-    learner_ids <- c(learner_ids, "regr.lm_rob", "classif.glm_rob")
-  }
-  if (restricted_required) {
-    learner_ids <- c(learner_ids, "regr.restricted")
-  }
-  if (gam_required) {
-    learner_ids <- c(learner_ids, "regr.gam_imp", "classif.gam_imp",
-                     "regr.robgam_imp", "classif.robgam_imp")
-  }
-  
+
+  # Prepare every method in play (package checks, one-time setup hooks such as
+  # the registration of VIM's custom robust/GAM R6 learners) and construct one
+  # Learner object per learner id the methods declare.
+  methods_used <- unique(unlist(method))
+  method_entries <- lapply(methods_used, prepare_vimpute_method)
+  learner_ids <- unique(unlist(lapply(method_entries, function(entry) {
+    unlist(entry$learner, use.names = FALSE)
+  })))
+
   learners <- lapply(learner_ids, function(id) lrn(id))
   names(learners) <- learner_ids
   ensure_robust_learners <- function(learners) {
@@ -451,7 +728,25 @@ vimpute <- function(
   }), variables)
   missing_indices <- missing_indices[!sapply(missing_indices, is.null)]
   ### Def missing indices End ###
-  
+
+  # Visit sequence: order in which the NA-variables are imputed.
+  if (length(visit_sequence) == 1L &&
+      visit_sequence %in% c("asis", "increasing.na", "decreasing.na")) {
+    if (visit_sequence != "asis" && length(variables_NA) > 1L) {
+      nmis_v <- vapply(variables_NA, function(v) length(missing_indices[[v]]), integer(1))
+      ord <- order(nmis_v, decreasing = (visit_sequence == "decreasing.na"))
+      variables_NA <- variables_NA[ord]
+    }
+  } else {
+    if (length(visit_sequence) != length(variables_NA) ||
+        !setequal(visit_sequence, variables_NA)) {
+      stop(sprintf(
+        "'visit_sequence' must be \"asis\", \"increasing.na\", \"decreasing.na\", or a permutation of the NA-variables (%s).",
+        paste(variables_NA, collapse = ", ")))
+    }
+    variables_NA <- visit_sequence
+  }
+
   po_ohe <- NULL # set ohe to zero, becomes true if ohe is needed
   data_new <- copy(data)
   original_data <- copy(data)  # Saves original structure of data
@@ -472,6 +767,17 @@ vimpute <- function(
       variables_NA
     )
 
+    # Tune ONCE: run 1 tunes (if requested) and its chosen hyperparameters are
+    # shared by runs 2..m via tuned_params. Re-tuning per imputation would
+    # multiply the tuning cost by m and let each imputation pick different
+    # hyperparameters, conflating tuner noise with missing-data uncertainty
+    # (invalid for Rubin pooling; mice tunes once).
+    any_tune_requested <- any(unlist(tune))
+    tuned_params_runs <- tuned_params
+    mi_tuning_log <- NULL
+    mi_model_error <- NULL
+    run_chains <- vector("list", m)
+
     for (mi in seq_len(m)) {
       if (verbose) message(sprintf("=== Multiple imputation run %d of %d ===", mi, m))
 
@@ -491,24 +797,76 @@ vimpute <- function(
         nseq = nseq,
         eps = eps,
         imp_var = FALSE,
+        keep_all_columns = FALSE,
         pred_history = FALSE,
-        tune = tune,
+        tune = if (mi == 1L) tune else FALSE,
         boot = boot,
         robustboot = robustboot,
         uncert = uncert,
         m = 1L,
+        tuned_params = tuned_params_runs,
+        tune_control = tune_control,
+        predictors = predictors,
+        visit_sequence = visit_sequence,
         verbose = verbose
       )
 
-      imputed_dt <- if (is.list(single_result) && !is.data.frame(single_result) && "data" %in% names(single_result)) {
-        single_result$data
-      } else {
-        as.data.table(single_result)
+      # Type-stable contract: the recursion returns the imputed data itself,
+      # with any tuning report attached as an attribute.
+      imputed_dt <- as.data.table(single_result)
+
+      # Harvest run 1's tuning results for runs 2..m (and for the vimmi report).
+      if (mi == 1L && any_tune_requested &&
+          !is.null(attr(single_result, "tuning_log"))) {
+        mi_tuning_log <- attr(single_result, "tuning_log")
+        harvested <- list()
+        for (entry in mi_tuning_log) {   # last entry per variable wins
+          if (!is.null(entry$params)) harvested[[entry$variable]] <- entry$params
+        }
+        if (length(harvested) > 0L) {
+          tuned_params_runs <- utils::modifyList(
+            if (is.null(tuned_params_runs)) list() else tuned_params_runs,
+            harvested
+          )
+        }
       }
 
       for (v in variables_NA) {
         miss_idx <- missing_indices[[v]]
         imp_collector[[v]][[mi]] <- imputed_dt[[v]][miss_idx]
+      }
+
+      run_chains[[mi]] <- attr(single_result, "chain")
+      if (mi == 1L) {
+        mi_model_error <- attr(single_result, "model_error")
+      }
+    }
+
+    # Assemble the per-run chain statistics into [variable, iteration,
+    # imputation] arrays (mice-style trace-plot data). Runs may stop at
+    # different iterations (early convergence): shorter chains are padded
+    # with NA up to the longest run.
+    chain_arrays <- NULL
+    if (any(!vapply(run_chains, is.null, logical(1)))) {
+      n_iter_max <- max(vapply(run_chains, function(ch) {
+        if (is.null(ch)) 0L else nrow(ch$mean)
+      }, integer(1)))
+      if (n_iter_max > 0L) {
+        make_array <- function(what) {
+          arr <- array(
+            NA_real_,
+            dim = c(length(variables_NA), n_iter_max, m),
+            dimnames = list(variables_NA, seq_len(n_iter_max), paste0("m", seq_len(m)))
+          )
+          for (mi in seq_len(m)) {
+            ch <- run_chains[[mi]]
+            if (is.null(ch)) next
+            mat <- ch[[what]]
+            arr[colnames(mat), seq_len(nrow(mat)), mi] <- t(mat)
+          }
+          arr
+        }
+        chain_arrays <- list(mean = make_array("mean"), var = make_array("var"))
       }
     }
 
@@ -526,12 +884,21 @@ vimpute <- function(
       variables_NA
     )
 
-    # Return a compact MI object (original data + imputed values only)
+    # Return a compact MI object (original data + imputed values only). By
+    # default store the full input so complete() returns all columns; when the
+    # user opts out, store only the considered subset (ordered class restored,
+    # since precheck flattened it -- data_all_variables is pristine and needs
+    # no restore).
+    vimmi_data <- if (keep_all_columns) {
+      as.data.frame(data_all_variables)
+    } else {
+      restore_ordered_factors(as.data.frame(original_data), ordered_info)
+    }
     if (verbose) {
       message("***** Constructing compact 'vimmi' result object")
     }
-    result <- new_vimmi(
-      data   = as.data.frame(original_data),
+    return(attach_restricted_problems(new_vimmi(
+      data   = vimmi_data,
       imp    = imp_list,
       where  = where_matrix,
       m      = m,
@@ -539,30 +906,51 @@ vimpute <- function(
       method = method,
       boot   = boot,
       uncert = uncert,
-      call   = match.call()
-    )
-    return(attach_restricted_problems(result))
+      call   = match.call(),
+      tuning_log = mi_tuning_log,
+      chain  = chain_arrays,
+      seed   = seed,
+      model_error = mi_model_error
+    )))
   }
 
   if (pred_history == TRUE) {
     history <- list() # save history of predicted values
   }
+
+  convergence_data <- copy(data)
   
   count_tuned_better <- 0
   count_default_better <- 0
   
   hyperparameter_cache <- setNames(vector("list", length(variables_NA)), variables_NA)
   tuning_status <- setNames(rep(FALSE, length(variables_NA)), variables_NA)
+  tuning_meta <- setNames(vector("list", length(variables_NA)), variables_NA)
+
+  # Apply externally supplied tuned parameters: pre-seeding the cache marks the
+  # variable as tuned, so the "already tuned" branch applies the parameters and
+  # the tuning gate never fires for it.
+  if (!is.null(tuned_params)) {
+    for (v in intersect(names(tuned_params), variables_NA)) {
+      if (!is.null(tuned_params[[v]])) {
+        hyperparameter_cache[[v]] <- list(params = tuned_params[[v]], is_tuned = TRUE)
+        tuning_status[[v]] <- TRUE
+      }
+    }
+  }
   
   tuning_log <- list()
-  
+  convergence_track <- list()
+  chain_track <- list()
+  model_error_track <- setNames(vector("list", length(variables_NA)), variables_NA)
+
   # Iterative Imputation for nseq iterations
   for (i in seq_len(nseq)) {
     if(verbose){
       message(paste("ITERATION", i, "von", nseq))
     }
     iteration_times <- list()
-    data_prev <- copy(data)
+    convergence_prev <- copy(convergence_data)
     
     for (var in variables_NA) {
       if(verbose){
@@ -666,17 +1054,7 @@ vimpute <- function(
         data_temp <- mm_task_na_omit$data()
         data_temp <- as.data.table(data_temp)
         
-        clean_colnames <- function(names) {
-          names <- make.names(names, unique = TRUE)
-          patterns <- c("\\(", "\\)", ":", "\\*", "\\^", "%in%", "/", "-", "\\+", " ")
-          replacements <- c("", "", "_int_", "_cross_", "_pow_", "_nest_", "_sub_", "_minus_", "_plus_", "")
-          for (i in seq_along(patterns)) {
-            names <- gsub(patterns[i], replacements[i], names)
-          }
-          
-          return(names)
-        }
-        setnames(data_temp, clean_colnames(names(data_temp)))
+        setnames(data_temp, clean_model_matrix_colnames(names(data_temp)))
         data_temp <- enforce_factor_levels(data_temp, factor_levels)  
         check_all_factor_levels(data_temp, factor_levels)
         
@@ -714,7 +1092,7 @@ vimpute <- function(
         po_task_mm <- pipeline_impute$predict(task_mm_pred)[[1]]
         mm_data <- po_task_mm$data() # mm_data = transformed data with missings filled in, data_temp = transformed data without missings
         mm_data <- as.data.table(mm_data)
-        setnames(mm_data, clean_colnames(names(mm_data)))
+        setnames(mm_data, clean_model_matrix_colnames(names(mm_data)))
         mm_data <- enforce_factor_levels(mm_data, factor_levels)
         check_all_factor_levels(mm_data, factor_levels)
         
@@ -750,7 +1128,13 @@ vimpute <- function(
       } else {
         lhs_transformation <- NULL
         selected_formula <- FALSE
-        feature_cols <- setdiff(names(data), var)
+        # Per-variable predictor restriction (predictorMatrix equivalent).
+        # data_temp is built from these columns, and every downstream feature
+        # set (incl. the semicontinuous class/reg learners and the prediction
+        # backends) is derived from data_temp, so this single site restricts
+        # the model for every learner. A formula for the variable wins over
+        # `predictors` (handled in the branch above, as in mice).
+        feature_cols <- select_feature_cols(var, names(data), predictors)
         target_col <- var
         selected_cols <- c(target_col, feature_cols)
         data_temp <- as.data.table(data[, selected_cols, with = FALSE])
@@ -770,9 +1154,12 @@ vimpute <- function(
       }
       
       if (!isFALSE(selected_formula)) {
-        # Formulas are only supported by methods that model via formulas
-        if (!method_var %in% c("robust", "regularized", "gam", "robgam", "restricted")) {
-          stop("Error: A formula can only be used with the 'robust', 'regularized', 'gam', 'robgam', or 'restricted' methods.")
+        # Formulas are only supported by methods that declare formula support
+        # in their registry entry (register_vimpute_method(supports_formula = ))
+        if (!method[[var]] %in% vimpute_formula_methods()) {
+          stop(sprintf(
+            "Error: A formula can only be used with methods that support formulas (%s).",
+            paste(vimpute_formula_methods(), collapse = ", ")))
         }
       }
       
@@ -792,30 +1179,11 @@ vimpute <- function(
       if(verbose){
         message(paste("***** Select Learner"))
       }
-      if (is.numeric(data[[target_col]])) {
-        learners_list <- list(
-          regularized = list(learners[["regr.cv_glmnet"]], learners[["regr.glmnet"]]),
-          robust = list(learners[["regr.lm_rob"]]),
-          restricted = list(learners[["regr.restricted"]]),
-          ranger = list(learners[["regr.ranger"]]),
-          xgboost = list(learners[["regr.xgboost"]]),
-          gam = list(learners[["regr.gam_imp"]]),
-          robgam = list(learners[["regr.robgam_imp"]])
-        )
-      } else if (is.factor(data[[target_col]])) {
-        if (identical(method_var, "restricted")) {
-          stop("Method 'restricted' is only available for numeric target variables.")
-        }
-        learners_list <- list(
-          regularized = list(learners[["classif.glmnet"]]),
-          robust = list(learners[["classif.glm_rob"]]),
-          ranger = list(learners[["classif.ranger"]]),
-          xgboost = list(learners[["classif.xgboost"]]),
-          gam = list(learners[["classif.gam_imp"]]),
-          robgam = list(learners[["classif.robgam_imp"]])
-        )
-      } 
-      learner_candidates <- learners_list[[method_var]]
+      learner_candidates <- method_learner_candidates(
+        get_vimpute_method(method_var),
+        target_numeric = is.numeric(data[[target_col]]),
+        learners = learners
+      )
       
 ### Select suitable learner End ***** ####
       
@@ -943,7 +1311,21 @@ vimpute <- function(
         } else {
           fill_val <- names(which.max(table(data[[target_col]], useNA = "no")))
         }
+        if (is.numeric(original_data[[target_col]]) && (!is.finite(fill_val) || is.na(fill_val))) {
+          stop(sprintf("No finite fallback value available for target '%s'.", target_col))
+        }
+        if (!is.numeric(original_data[[target_col]]) && (is.null(fill_val) || length(fill_val) == 0L || is.na(fill_val))) {
+          stop(sprintf("No fallback level available for target '%s'.", target_col))
+        }
         data[missing_indices[[var]], (var) := fill_val]
+        if (imp_var) {
+          imp_col <- paste0(var, "_imp")
+          if (!(imp_col %in% colnames(data_new))) {
+            data_new[, (imp_col) := FALSE]
+          }
+          data_new[, (var) := data[[var]]]
+          set(data_new, i = missing_indices[[var]], j = imp_col, value = TRUE)
+        }
         next
       }
 
@@ -952,7 +1334,13 @@ vimpute <- function(
           "Too few observations (%d) to train GAM for '%s'. Falling back to 'robust'.",
           n_train, target_col
         ))
+        learners <- ensure_robust_learners(learners)
         method_var <- "robust"
+        learner_candidates <- if (is.numeric(data[[target_col]])) {
+          list(learners[["regr.lm_rob"]])
+        } else {
+          list(learners[["classif.glm_rob"]])
+        }
       }
 
       
@@ -969,7 +1357,7 @@ vimpute <- function(
       if(verbose){
         message(paste("***** Create Learner"))
       }
-      max_threads <- future::availableCores() -1
+      max_threads <- max(1L, future::availableCores() - 1L)
       if (nrow(data_y_fill_final) < 10000) {
         optimal_threads <- 1
       } else if (nrow(data_y_fill_final) < 100000) {
@@ -977,242 +1365,41 @@ vimpute <- function(
       } else {
         optimal_threads <- max_threads
       }
-      # XGBoost Parameter Defaults
-      xgboost_params <- list(
-        nrounds = 100,
-        max_depth = 3,
-        eta = 0.1,
-        min_child_weight = 1,
-        subsample = 1,
-        colsample_bytree = 1,
-        verbose = 1,
-        nthread = optimal_threads
-      )
-      
-      ## XGBOOST
-      if (method_var == "xgboost") {
-        
-        # All valid xgboost parameters in mlr3
-        valid_xgb_params <- learners[["regr.xgboost"]]$param_set$ids()
-        
-        # Invalid parameters
-        invalid <- setdiff(names(var_learner_params), valid_xgb_params)
-        
-        if (length(invalid) > 0) {
-          warning(sprintf(
-            "learner_params for variable '%s' contain invalid XGBoost parameters: %s. These parameters were ignored.",
-            var, paste(invalid, collapse = ", ")
-          ))
-          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
-        }
-        
-        # Use valid parameters 
-        xgboost_params <- modifyList(xgboost_params, var_learner_params)
-        
-        if (verbose) {
-          cat("\n--- XGBoost params for variable", var, "---\n")
-          print(xgboost_params)
-        }
-      }
-      
-      # Ranger Parameter Defaults
-      ranger_params <- list(
-        num.trees = 500,
-        num.threads = optimal_threads
-      )
-      restricted_params <- list()
-      
-      ## RANGER
-      if (method_var == "ranger") {
-        
-        # All valid ranger params
-        valid_ranger_params <- learners[["regr.ranger"]]$param_set$ids()
-        
-        # Invalid parameters
-        invalid <- setdiff(names(var_learner_params), valid_ranger_params)
-        
-        if (length(invalid) > 0) {
-          warning(sprintf(
-            "learner_params for variable '%s' contain invalid ranger parameters: %s. These parameters were ignored.",
-            var, paste(invalid, collapse = ", ")
-          ))
-          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
-        }
-        
-        # Use parameter
-        ranger_params <- modifyList(ranger_params, var_learner_params)
-        
-        if (verbose) {
-          cat("\n--- Ranger params for variable", var, "---\n")
-          print(ranger_params)
-        }
-      }
-      
-      ## REGULARIZED (glmnet)
-      if (method_var == "regularized") {
-        
-        if (is.numeric(data[[target_col]])) {
-          # ---- Regression glmnet ----
-          valid_glmnet_params <- learners[["regr.glmnet"]]$param_set$ids()
-          
-          invalid <- setdiff(names(var_learner_params), valid_glmnet_params)
-          if (length(invalid) > 0) {
-            warning(sprintf(
-              "learner_params for variable '%s' contain invalid glmnet regression parameters: %s. They were ignored.",
-              var, paste(invalid, collapse = ", ")
-            ))
-            var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
-          }
-          
-          glmnet_params <- var_learner_params
-          
-          if (verbose) {
-            cat("\n--- glmnet regression params for variable", var, "---\n")
-            print(glmnet_params)
-          }
-          
-        } else {
-          # ---- Classification glmnet ----
-          valid_glmnet_params <- learners[["classif.glmnet"]]$param_set$ids()
-          
-          invalid <- setdiff(names(var_learner_params), valid_glmnet_params)
-          if (length(invalid) > 0) {
-            warning(sprintf(
-              "learner_params for variable '%s' contain invalid glmnet classification parameters: %s. They were ignored.",
-              var, paste(invalid, collapse = ", ")
-            ))
-            var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
-          }
-          
-          glmnet_params <- var_learner_params
-          
-          if (verbose) {
-            cat("\n--- glmnet classification params for variable", var, "---\n")
-            print(glmnet_params)
-          }
-        }
-      }
-      
-      ## ROBUST (lm_rob / glm_rob)
-      if (method_var == "robust") {
-        
-        # Regression vs Classification
-        if (is.numeric(data[[target_col]])) {
-          valid_robust_params <- learners[["regr.lm_rob"]]$param_set$ids()
-        } else {
-          valid_robust_params <- learners[["classif.glm_rob"]]$param_set$ids()
-        }
-        
-        # Invalid parameters
-        invalid <- setdiff(names(var_learner_params), valid_robust_params)
-        
-        if (length(invalid) > 0) {
-          warning(sprintf(
-            "learner_params for variable '%s' contain invalid robust-model parameters: %s. These parameters were ignored.",
-            var, paste(invalid, collapse = ", ")
-          ))
-          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
-        }
-        
-        robust_params <- var_learner_params
-        
-        if (verbose) {
-          cat("\n--- robust params for variable", var, "---\n")
-          print(robust_params)
-        }
-      }
-
-      ## GAM (mgcv-based)
-      gam_params <- list()
-      if (method_var == "gam") {
-        valid_gam_params <- learners[["regr.gam_imp"]]$param_set$ids()
-        invalid <- setdiff(names(var_learner_params), valid_gam_params)
-        if (length(invalid) > 0) {
-          warning(sprintf(
-            "learner_params for variable '%s' contain invalid GAM parameters: %s. These parameters were ignored.",
-            var, paste(invalid, collapse = ", ")
-          ))
-          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
-        }
-        gam_params <- var_learner_params
-        if (verbose) {
-          cat("\n--- GAM params for variable", var, "---\n")
-          print(gam_params)
-        }
-      }
-
-      ## ROBGAM (robust GAM)
-      robgam_params <- list()
-      if (method_var == "robgam") {
-        valid_robgam_params <- learners[["regr.robgam_imp"]]$param_set$ids()
-        invalid <- setdiff(names(var_learner_params), valid_robgam_params)
-        if (length(invalid) > 0) {
-          warning(sprintf(
-            "learner_params for variable '%s' contain invalid robGAM parameters: %s. These parameters were ignored.",
-            var, paste(invalid, collapse = ", ")
-          ))
-          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
-        }
-        robgam_params <- var_learner_params
-        if (verbose) {
-          cat("\n--- robGAM params for variable", var, "---\n")
-          print(robgam_params)
-        }
-      }
-      
-      ## RESTRICTED (ECOSolveR / validate)
+      # Effective learner parameters of the variable's method: registry
+      # defaults (e.g. ranger num.trees = 500, xgboost nrounds = 100, thread
+      # counts) overridden by the user's learner_params, validated against the
+      # parameter ids all learner candidates of the method understand.
+      # Replaces the former six near-identical per-method validation blocks.
       if (method_var == "restricted") {
-        valid_restricted_params <- learners[["regr.restricted"]]$param_set$ids()
         if (!isFALSE(selected_formula) && is.null(var_learner_params$formula)) {
           var_learner_params$formula <- selected_formula
         }
-        invalid <- setdiff(names(var_learner_params), valid_restricted_params)
-        
-        if (length(invalid) > 0) {
-          warning(sprintf(
-            "learner_params for variable '%s' contain invalid restricted-regression parameters: %s. These parameters were ignored.",
-            var, paste(invalid, collapse = ", ")
-          ))
-          var_learner_params <- var_learner_params[setdiff(names(var_learner_params), invalid)]
-        }
-        
         if (is.null(var_learner_params$rules)) {
           stop(sprintf(
             "Method 'restricted' for variable '%s' requires learner_params with a validate::validator object named 'rules'.",
             var
           ))
         }
-        
-        restricted_params <- var_learner_params
-        
-        if (verbose) {
-          cat("\n--- restricted params for variable", var, "---\n")
-          print(restricted_params)
-        }
       }
-      
+      method_params <- resolve_method_params(
+        method      = method_var,
+        candidates  = learner_candidates,
+        user_params = var_learner_params,
+        variable    = var,
+        nthread     = optimal_threads,
+        verbose     = verbose
+      )
       is_regr_task <- is.numeric(data_y_fill_final[[target_col]])
       measure <- if (is_regr_task) msr("regr.rmse") else msr("classif.acc")
 
-      if (length(learner_candidates) > 1) {
+      cv_folds <- safe_cv_folds(task, 5L)
+      if (length(learner_candidates) > 1 && !is.na(cv_folds)) {
         resample_results <- lapply(learner_candidates, function(lrn) {
-          
-          if (grepl("xgboost", lrn$id)) {
-            lrn$param_set$values <- modifyList(lrn$param_set$values, xgboost_params)
-          } else if (grepl("ranger", lrn$id)) {
-            lrn$param_set$values <- modifyList(lrn$param_set$values, ranger_params)
-          } else if (grepl("glmnet", lrn$id)) {
-            lrn$param_set$values <- modifyList(lrn$param_set$values, glmnet_params)
-          } else if (grepl("lm_rob|glm_rob", lrn$id)) {
-            lrn$param_set$values <- modifyList(lrn$param_set$values, robust_params)
-          } else if (grepl("restricted", lrn$id)) {
-            lrn$param_set$values <- modifyList(lrn$param_set$values, restricted_params)
-          } else if (grepl("robgam_imp", lrn$id)) {
-            lrn$param_set$values <- modifyList(lrn$param_set$values, robgam_params)
-          } else if (grepl("gam_imp", lrn$id)) {
-            lrn$param_set$values <- modifyList(lrn$param_set$values, gam_params)
-          }
-          
+
+          # every candidate belongs to method_var, so the resolved method
+          # params apply to all of them (formerly a grepl dispatch chain)
+          lrn$param_set$values <- modifyList(lrn$param_set$values, method_params)
+
           # Classification: probabilistic if available
           if (!is_regr_task) {
             if ("prob" %in% lrn$predict_types) {
@@ -1221,7 +1408,7 @@ vimpute <- function(
               lrn$predict_type <- "response"
             }
           }
-          resample(task, lrn, rsmp("cv", folds = 5))
+          resample(task, lrn, rsmp("cv", folds = cv_folds))
         })
         
         scores <- sapply(resample_results, function(res) res$aggregate(measure))
@@ -1242,44 +1429,12 @@ vimpute <- function(
       best_learner    <- learner_obj$clone(deep = TRUE)
       tuned_learner   <- learner_obj$clone(deep = TRUE)
       
-      # Set parameters for the best learner
-      if (grepl("xgboost", best_learner$id)) {
-        best_learner$param_set$values <- modifyList(best_learner$param_set$values, xgboost_params)
-        default_learner$param_set$values <- modifyList(default_learner$param_set$values, xgboost_params)
-        current_learner$param_set$values <- modifyList(current_learner$param_set$values, xgboost_params)
-        tuned_learner$param_set$values <- modifyList(tuned_learner$param_set$values, xgboost_params)
-      } else if (grepl("ranger", best_learner$id)) {
-        best_learner$param_set$values <- modifyList(best_learner$param_set$values, ranger_params)
-        default_learner$param_set$values <- modifyList(default_learner$param_set$values, ranger_params)
-        current_learner$param_set$values <- modifyList(current_learner$param_set$values, ranger_params)
-        tuned_learner$param_set$values <- modifyList(tuned_learner$param_set$values, ranger_params)
-      } else if (grepl("glmnet", best_learner$id)) {
-        best_learner$param_set$values   <- modifyList(best_learner$param_set$values, glmnet_params)
-        default_learner$param_set$values <- modifyList(default_learner$param_set$values, glmnet_params)
-        current_learner$param_set$values <- modifyList(current_learner$param_set$values, glmnet_params)
-        tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, glmnet_params)
-      } else if (grepl("lm_rob|glm_rob", best_learner$id)) {
-        best_learner$param_set$values   <- modifyList(best_learner$param_set$values, robust_params)
-        default_learner$param_set$values <- modifyList(default_learner$param_set$values, robust_params)
-        current_learner$param_set$values <- modifyList(current_learner$param_set$values, robust_params)
-        tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, robust_params)
-      } else if (grepl("restricted", best_learner$id)) {
-        best_learner$param_set$values   <- modifyList(best_learner$param_set$values, restricted_params)
-        default_learner$param_set$values <- modifyList(default_learner$param_set$values, restricted_params)
-        current_learner$param_set$values <- modifyList(current_learner$param_set$values, restricted_params)
-        tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, restricted_params)
-      } else if (grepl("robgam_imp", best_learner$id)) {
-        best_learner$param_set$values   <- modifyList(best_learner$param_set$values, robgam_params)
-        default_learner$param_set$values <- modifyList(default_learner$param_set$values, robgam_params)
-        current_learner$param_set$values <- modifyList(current_learner$param_set$values, robgam_params)
-        tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, robgam_params)
-      } else if (grepl("gam_imp", best_learner$id)) {
-        best_learner$param_set$values   <- modifyList(best_learner$param_set$values, gam_params)
-        default_learner$param_set$values <- modifyList(default_learner$param_set$values, gam_params)
-        current_learner$param_set$values <- modifyList(current_learner$param_set$values, gam_params)
-        tuned_learner$param_set$values   <- modifyList(tuned_learner$param_set$values, gam_params)
+      # Set the method's resolved parameters on all learner clones
+      # (formerly a grepl dispatch chain over six per-method params lists)
+      for (l in list(best_learner, default_learner, current_learner, tuned_learner)) {
+        l$param_set$values <- modifyList(l$param_set$values, method_params)
       }
-      
+
       if (is.factor(data_temp[[target_col]])) {
         best_learner$predict_type <- "prob"
         default_learner$predict_type <- "prob"
@@ -1300,98 +1455,21 @@ vimpute <- function(
       #               (!tuning_status[[var]]), var, isTRUE(tune[[var]]), i, round(nseq/2)))
       # }
       
-      # Per Variable tune once in the middle of the seq
-      if (!tuning_status[[var]] && isTRUE(tune[[var]]) && i == round(nseq / 2)) {
-        
-        # ------------------------------------------------------------
-        # Adaptive Search Space Builder (small vs large dataset)
-        build_search_space <- function(best_learner_id, task) {
-          n <- task$nrow
-          size <- if (n <= 5000) "small" else if (n <= 100000) "medium" else "large"
-          
-          # GLMNET
-          if (best_learner_id %in% c("regr.cv_glmnet", "regr.glmnet", "classif.glmnet")) {
-            lambda_upper <- if (size == "small") 1 else 0.5
-            
-            if (best_learner_id == "regr.cv_glmnet") {
-              upper_nfolds <- if (size == "small") 5L else 3L
-              space <- ps(
-                alpha  = p_dbl(0, 1),
-                lambda = p_dbl(1e-4, lambda_upper, logscale = TRUE),
-                nfolds = p_int(3L, upper_nfolds)
-              )
-            } else {
-              space <- ps(
-                alpha  = p_dbl(0, 1),
-                lambda = p_dbl(1e-4, lambda_upper, logscale = TRUE)
-              )
-            }
-            return(list(space = space, n_evals = if (size == "small") 10 else if (size == "medium") 12 else 8))
-          }
-          
-          # RANGER
-          if (best_learner_id %in% c("regr.ranger", "classif.ranger")) {
-            space <- ps(
-              num.trees       = p_int(if (size == "large") 200L else 300L, 
-                                      if (size == "small") 900L else 600L),
-              min.node.size   = p_int(if (size == "small") 3L else 10L,   
-                                      if (size == "small") 10L else 50L),
-              sample.fraction = p_dbl(if (size == "large") 0.6  else 0.8, 1.0)
-              # Optional: mtry relative to p
-              # mtry = p_int(max(1L, floor(sqrt(length(task$feature_names))*0.8)),
-              #              max(1L, floor(sqrt(length(task$feature_names))*1.2)))
-            )
-            return(list(space = space, n_evals = if (size == "small") 15 else if (size == "medium") 12 else 10))
-          }
-          
-          # XGBOOST
-          if (best_learner_id %in% c("regr.xgboost", "classif.xgboost")) {
-            space <- ps(
-              nrounds          = p_int(100L, if (size == "small") 500L else 300L),
-              eta              = p_dbl(0.05, 0.3, logscale = TRUE),
-              max_depth        = p_int(2L,   if (size == "small") 8L    else 6L),
-              subsample        = p_dbl(0.5,  1.0),
-              colsample_bytree = p_dbl(0.5,  1.0)
-            )
-            return(list(space = space, n_evals = if (size == "small") 20 else if (size == "medium") 15 else 12))
-          }
-          
-          # ROBUST
-          if (best_learner_id %in% c("regr.lm_rob", "classif.glm_rob")) {
-            space <- ps(
-              tuning.chi = p_dbl(1.2, 1.5),
-              tuning.psi = p_dbl(1.2, 1.5),
-              max.it     = p_int(50L, 200L)
-            )
-            return(list(space = space, n_evals = 8))
-          }
-
-          # GAM
-          if (best_learner_id %in% c("regr.gam_imp", "classif.gam_imp")) {
-            space <- ps(
-              min_unique = p_int(3L, 8L)
-            )
-            return(list(space = space, n_evals = 5))
-          }
-
-          # ROBGAM
-          if (best_learner_id %in% c("regr.robgam_imp", "classif.robgam_imp")) {
-            space <- ps(
-              alpha = p_dbl(0.7, 0.95),
-              min_unique = p_int(3L, 8L)
-            )
-            return(list(space = space, n_evals = 8))
-          }
-          
-          # Fallback
-          list(space = NULL, n_evals = 10)
-        }
-        # ------------------------------------------------------------
+      # Tune each variable once, at a guaranteed-reachable iteration. The old
+      # trigger i == round(nseq / 2) never fired when sequential = FALSE (nseq is
+      # forced to 1 and round(1/2) == 0, but i starts at 1), so tune = TRUE was a
+      # silent no-op. min(2, nseq) tunes on once-updated predictors when possible
+      # and always fires for nseq <= 2; tuning_status keeps it to a single run.
+      if (!tuning_status[[var]] && isTRUE(tune[[var]]) && i >= min(2L, nseq)) {
         
         best_learner_id <- best_learner$id
-        ss <- build_search_space(best_learner_id, task)
+        ss <- build_vimpute_search_space(best_learner_id, task, method = method_var)
         search_space <- ss$space
         n_evals      <- ss$n_evals
+        # user-supplied evaluation budget wins over the per-learner heuristic
+        if (!is.null(tune_control$budget)) {
+          n_evals <- tune_control$budget
+        }
         
         if (verbose) {
           cat("is.null(search_space) = ", is.null(search_space), "\n", sep = "")
@@ -1426,7 +1504,13 @@ vimpute <- function(
                 }
                 
                 # Resample
-                folds <- if (task$nrow <= 3000) 5L else 3L
+                folds <- safe_cv_folds(task, if (!is.null(tune_control$folds)) {
+                  tune_control$folds
+                } else if (task$nrow <= 3000) 5L else 3L)
+                if (is.na(folds)) {
+                  stop("Too few usable observations per fold for cross-validation.")
+                }
+                tuning_meta[[var]] <- list(n_evals = n_evals, folds = folds)
                 resampling <- rsmp("cv", folds = folds)
                 resampling$instantiate(task)
                 
@@ -1444,8 +1528,10 @@ vimpute <- function(
                 )
                 
                 # Tuner
-                batch <- max(1, parallel::detectCores() - 1)
-                tuner <- tnr("random_search", batch_size = batch)
+                # default batch_size = 1 keeps random-search RNG consumption
+                # identical across machines, so seed = ... reproduces tuning
+                # everywhere (detectCores() - 1 made tuning machine-dependent).
+                tuner <- tnr(tune_control$tuner, batch_size = tune_control$batch_size)
                 tuner$optimize(instance)
                 
                 # Best Parameters
@@ -1519,7 +1605,13 @@ vimpute <- function(
                   default_learner$param_set$values$nrounds <- 100L
                 }
               }
-              folds <- if (task$nrow <= 3000) 5L else 3L
+              folds <- safe_cv_folds(task, if (!is.null(tune_control$folds)) {
+                tune_control$folds
+              } else if (task$nrow <= 3000) 5L else 3L)
+              if (is.na(folds)) {
+                stop("Too few usable observations for cross-validation.")
+              }
+              tuning_meta[[var]] <- list(n_evals = n_evals, folds = folds)
               resampling <- rsmp("cv", folds = folds); resampling$instantiate(task)
               msr_obj <- msr("regr.rmse")
               
@@ -1532,8 +1624,8 @@ vimpute <- function(
                 terminator   = trm("evals", n_evals = n_evals)
               )
               
-              batch <- max(1, parallel::detectCores() - 1)
-              tuner <- tnr("random_search", batch_size = batch)
+              # default batch_size = 1: machine-independent (see comment above)
+              tuner <- tnr(tune_control$tuner, batch_size = tune_control$batch_size)
               tuner$optimize(instance)
               
               best_params <- as.list(instance$result[, get("learner_param_vals")][[1]])
@@ -1589,12 +1681,22 @@ vimpute <- function(
           }
         }
         
-        future::plan("sequential")
-        
+        # Restore the plan that was active at entry instead of forcing
+        # "sequential" -- forcing it clobbered the user's future::plan for the
+        # rest of the call (entry/exit save-restore only covers after return).
+        future::plan(old_plan)
+
       } else if (tuning_status[[var]]) {
-        # Already tuned
+        # Already tuned (or parameters supplied via tuned_params): apply them.
+        # Guarded so out-of-bounds values warn and keep defaults instead of
+        # aborting the whole run at the paradox validation.
         if (!is.null(hyperparameter_cache[[var]]$params)) {
-          current_learner$param_set$values <- hyperparameter_cache[[var]]$params
+          tryCatch(
+            current_learner$param_set$values <- hyperparameter_cache[[var]]$params,
+            error = function(e) warning(sprintf(
+              "Stored parameters are invalid for variable '%s' (%s). Keeping defaults.",
+              var, conditionMessage(e)), call. = FALSE)
+          )
         }
       }
       
@@ -1605,7 +1707,12 @@ vimpute <- function(
       }
       tuning_log[[length(tuning_log) + 1]] <- list(
         variable     = var,
-        tuned_better = tuned_flag
+        tuned        = !isFALSE(tuning_status[[var]]),   # tuning actually executed
+        tuned_better = tuned_flag,                       # tuned params beat defaults
+        params       = hyperparameter_cache[[var]]$params, # chosen parameters (reusable
+                                                           # via the tuned_params argument)
+        n_evals      = tuning_meta[[var]]$n_evals,       # evaluation budget used
+        folds        = tuning_meta[[var]]$folds          # tuning CV folds used
       )
 
       # if (!tuning_status[[var]] && nseq >= 2 && isTRUE(tune[[var]])) {
@@ -1819,6 +1926,18 @@ vimpute <- function(
         warning(sprintf("Variable '%s' is semikontinuous; regularized (glmnet) is unstable here. Switching to 'robust'.", var))
         learners <- ensure_robust_learners(learners)
         method_var <- "robust"
+        robust_learner_id <- if (is.numeric(data[[target_col]])) "regr.lm_rob" else "classif.glm_rob"
+        best_learner <- lrn(robust_learner_id)
+        current_learner <- best_learner$clone(deep = TRUE)
+        default_learner <- best_learner$clone(deep = TRUE)
+        tuned_learner <- best_learner$clone(deep = TRUE)
+        user_params <- if (is.null(var_learner_params)) list() else var_learner_params
+        method_params <- user_params[intersect(names(user_params), best_learner$param_set$ids())]
+        if (is.numeric(data[[target_col]])) {
+          for (l in list(best_learner, current_learner, default_learner, tuned_learner)) {
+            l$param_set$values <- modifyList(l$param_set$values, method_params)
+          }
+        }
       }
       
       if (is_sc) {
@@ -1917,19 +2036,14 @@ vimpute <- function(
         class_learner$predict_type <- "prob"
         
         # Train
-        class_learner$train(class_task)
+        class_learner <- train_with_fallback(class_learner, class_task, var)
         
-        # Regression-Learner 
+        # Regression-Learner
         regr_learner_id <- best_learner$id
         regr_learner <- lrn(regr_learner_id)
-        
-        if (grepl("xgboost", best_learner$id)) {
-          regr_learner$param_set$values <- modifyList(regr_learner$param_set$values, xgboost_params)
-        } else if (grepl("ranger", best_learner$id)) {
-          regr_learner$param_set$values <- modifyList(regr_learner$param_set$values, ranger_params)
-        } else if (grepl("restricted", best_learner$id)) {
-          regr_learner$param_set$values <- modifyList(regr_learner$param_set$values, restricted_params)
-        }
+
+        regr_valid <- intersect(names(method_params), regr_learner$param_set$ids())
+        regr_learner$param_set$values <- modifyList(regr_learner$param_set$values, method_params[regr_valid])
         
         # Hyperparameter-Cache for classification
         if (isTRUE(tuning_status[[var]]) && !is.null(tuning_status[[zero_flag_col]]) && isTRUE(tuning_status[[zero_flag_col]])) {
@@ -2016,7 +2130,7 @@ vimpute <- function(
           reg_learner <- GraphLearner$new(reg_pipeline)
           
           # Train
-          reg_learner$train(reg_task)
+          reg_learner <- train_with_fallback(reg_learner, reg_task, var)
           
           # save models
           learner <- list(classifier = class_learner, regressor = if (!exists("reg_learner") || is.null(reg_learner)) NULL else reg_learner)
@@ -2032,22 +2146,8 @@ vimpute <- function(
         
         # Basis-Pipeline with best learner
         full_pipeline <- current_learner
-        if (grepl("xgboost", best_learner$id)) {
-          current_learner$param_set$values <- modifyList(current_learner$param_set$values, xgboost_params)
-        } else if (grepl("ranger", best_learner$id)) {
-          current_learner$param_set$values <- modifyList(current_learner$param_set$values, ranger_params)
-        } else if (grepl("glmnet", best_learner$id)) {
-          current_learner$param_set$values <- modifyList(current_learner$param_set$values, glmnet_params)
-        } else if (grepl("lm_rob|glm_rob", best_learner$id)) {
-          current_learner$param_set$values <- modifyList(current_learner$param_set$values, robust_params)
-        } else if (grepl("restricted", best_learner$id)) {
-          current_learner$param_set$values <- modifyList(current_learner$param_set$values, restricted_params)
-        } else if (grepl("robgam_imp", best_learner$id)) {
-          current_learner$param_set$values <- modifyList(current_learner$param_set$values, robgam_params)
-        } else if (grepl("gam_imp", best_learner$id)) {
-          current_learner$param_set$values <- modifyList(current_learner$param_set$values, gam_params)
-        }
-        
+        current_learner$param_set$values <- modifyList(current_learner$param_set$values, method_params)
+
         # Handling of missing values
         if (method_var != "xgboost" && supports_missing && !is.null(po_x_miss)) { #xgboost can handle NAs directly, support_missings are learners that can handle missings if they are marked as such
           full_pipeline <- po_x_miss %>>% full_pipeline
@@ -2106,11 +2206,19 @@ vimpute <- function(
           learner$predict_type <- "prob"
         }
         
-        learner$train(task)
+        learner <- train_with_fallback(learner, task, var)
+
+        # Per-variable quality feedback (each iteration overwrites, so the
+        # final model's metric survives); skipped for featureless fallbacks
+        if (!isTRUE(attr(learner, "vimpute_fallback"))) {
+          me <- compute_model_error(learner, task)
+          if (!is.null(me)) model_error_track[[var]] <- me
+        }
 
       # Bootstrap: refit on resampled training data for model uncertainty
+      # (skipped for a featureless fallback -- no model internals to resample)
         stored_model_info <- NULL
-        if (boot && !is_sc) {
+        if (boot && !is_sc && !isTRUE(attr(learner, "vimpute_fallback"))) {
           model_info <- extract_model_info(learner, method = method_var)
           model_info <- complete_model_info(model_info, learner = learner, task = task)
           stored_model_info <- model_info
@@ -2145,7 +2253,8 @@ vimpute <- function(
         }
 
         # Store model info for uncertainty methods (even without bootstrap)
-        if (is.null(stored_model_info) && uncert %in% c("normalerror", "resid") && !is_sc) {
+        if (is.null(stored_model_info) && uncert %in% c("normalerror", "resid") && !is_sc &&
+            !isTRUE(attr(learner, "vimpute_fallback"))) {
           stored_model_info <- extract_model_info(learner, method = method_var)
           stored_model_info <- complete_model_info(stored_model_info, learner = learner, task = task)
         }
@@ -2156,36 +2265,6 @@ vimpute <- function(
 ### *****Identify NAs Start***** ###################################################################################################
       if(verbose){
         message("***** Identify missing values *****")
-      }
-      
-      # Impute missing values
-      impute_missing_values <- function(data, ref_data) {
-        for (col in colnames(data)) {
-          if (any(is.na(data[[col]]))) {
-            if (is.numeric(ref_data[[col]])) {
-              data[[col]][is.na(data[[col]])] <- median(ref_data[[col]], na.rm = TRUE)
-            } else if (is.factor(ref_data[[col]])) {
-              mode_value <- names(which.max(table(ref_data[[col]], useNA = "no")))
-              data[[col]][is.na(data[[col]])] <- mode_value
-            }
-          }
-        }
-        return(data)
-      }
-      
-      # Imputeoor for Ranger (Out-of-Range-Level)
-      imputeoor <- function(data, ref_data) {
-        for (col in colnames(data)) {
-          if (is.factor(data[[col]])) {
-            known_levels <- levels(ref_data[[col]])
-            unknown_idx <- !data[[col]] %in% known_levels
-            if (any(unknown_idx, na.rm = TRUE)) {
-              # All unknown levels to NA 
-              data[[col]][unknown_idx] <- NA
-            }
-          }
-        }
-        return(data)
       }
       
       # Missing indices
@@ -2205,7 +2284,7 @@ vimpute <- function(
           
           # Ranger-specific handling for new levels
           if (method_var == "ranger") {
-            backend_data <- imputeoor(backend_data, data_temp)
+            backend_data <- set_out_of_range_factor_levels_to_na(backend_data, data_temp)
           }
           
           # Impute Missing Values
@@ -2221,7 +2300,7 @@ vimpute <- function(
           backend_data <- enforce_factor_levels(backend_data, factor_levels)
           
           if (method_var == "ranger") {
-            backend_data <- imputeoor(backend_data, data_temp)
+            backend_data <- set_out_of_range_factor_levels_to_na(backend_data, data_temp)
           }
           
           if (!supports_missing) {
@@ -2239,7 +2318,7 @@ vimpute <- function(
           class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
           
           if (method_var == "ranger") {
-            class_pred_data <- imputeoor(class_pred_data, data_temp)
+            class_pred_data <- set_out_of_range_factor_levels_to_na(class_pred_data, data_temp)
           }
           
           if (anyNA(class_pred_data)) { # Nnew
@@ -2259,7 +2338,7 @@ vimpute <- function(
         reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
         
         if (method_var == "ranger") { #Nnew
-          reg_pred_data <- imputeoor(reg_pred_data, data_temp) #Nnew
+          reg_pred_data <- set_out_of_range_factor_levels_to_na(reg_pred_data, data_temp) #Nnew
         }
         
         # Replace new levels (Log-Regression) with modus
@@ -2282,345 +2361,42 @@ vimpute <- function(
       }
 ### Identify NAs End ###
       
-### *****Select suitable task type Start***** ###################################################################################################
-      
-      if (!is_sc) {
-        
-        if (is.numeric(data_temp[[target_col]])) {
-          backend_dt <- if (inherits(backend_data, "DataBackend")) {
-            rows <- backend_data$row_ids
-            if (is.null(rows)) rows <- seq_len(backend_data$nrow)
-            as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
-          } else {
-            as.data.table(backend_data)
-          }
-          if (anyNA(backend_dt[[target_col]])) {
-            backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <-
-              median(data_temp[[target_col]], na.rm = TRUE)
-          }
-          pred_task <- TaskRegr$new(
-            id = target_col,
-            backend = backend_dt,
-            target = target_col
-          )
-        } else if (is.factor(data_temp[[target_col]])) {
-          backend_dt <- if (inherits(backend_data, "DataBackend")) {
-            rows <- backend_data$row_ids
-            if (is.null(rows)) rows <- seq_len(backend_data$nrow)
-            as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
-          } else {
-            as.data.table(backend_data)
-          }
-          if (anyNA(backend_dt[[target_col]])) {
-            mode_value <- names(which.max(table(data_temp[[target_col]], useNA = "no")))
-            backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <- mode_value
-          }
-          pred_task <- TaskClassif$new(
-            id = target_col,
-            backend = backend_dt,
-            target = target_col
-          )
-        } else {
-          stop("Error: Target variable is neither numeric nor a factor!")
-        }
-      }
-      
-### Select suitable task type End ####
-      
 ### *****Predict Start***** ###################################################################################################
       if(verbose){
         message("***** Predict")
       }
-      
-      if (is_sc) {
-
-        zero_flag_col <- paste0(var, "_zero_flag")
-        zero_prob_col <- paste0(var, "_zero_prob")     # numeric Prob-column
-        relevant_features <- setdiff(names(data_temp), c(var, zero_flag_col, zero_prob_col))
-        
-        # 1) classification (null vs positive) P(Y > 0 | X)
-        class_learner <- learner$classifier
-        
-        # Safety: classifier -> probabilities 
-        if ("prob" %in% class_learner$predict_types) {
-          class_learner$predict_type <- "prob"
-        } else {
-          class_learner$predict_type <- "response"  # Fallback
-          warning(sprintf("predict_type 'prob' not supported by learner '%s'; fallback to 'response'", class_learner$id))
-        }
-        
-        class_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
-
-        # Factor Level Handling
-        class_pred_data <- enforce_factor_levels(class_pred_data, factor_levels)
-        check_all_factor_levels(class_pred_data, factor_levels)
-        
-        supports_missing_cls <- "missings" %in% class_learner$properties
-        # If no missings accepted -> NAs in Newdata 
-        
-        if (anyNA(class_pred_data)) {
-          class_pred_data <- impute_missing_values(class_pred_data, data_temp)
-        }
-        
-        factor_cols <- names(class_pred_data)[sapply(class_pred_data, is.factor)]
-
-        # ensure reserve level exists in prediction data ###
-        reserve_level <- ".__IMPUTEOOR_NEW__"
-        for (col in factor_cols) {
-          train_levels <- factor_levels[[col]]
-          if (!(reserve_level %in% train_levels)) train_levels <- c(train_levels, reserve_level)
-          # All unknown levels -> reserve_level
-          class_pred_data[[col]][!class_pred_data[[col]] %in% train_levels] <- reserve_level
-          # Set factor levels 
-          class_pred_data[[col]] <- factor(class_pred_data[[col]], levels = train_levels)
-        }
-        
-        # Prediction
-        pred_probs <- class_learner$predict_newdata(class_pred_data)$prob
-        # pred_probs[, "positive"] = P(Y>0 | X)
-        pi_hat <- if (!is.null(pred_probs) && "positive" %in% colnames(pred_probs)) {
-          pred_probs[, "positive"]
-        } else {
-          # Fallback 'response'
-          as.numeric(class_learner$predict_newdata(class_pred_data)$response == "positive")
-        }
-        
-        
-        # Save probability in the main dataset (stable row count)
-        if (!zero_prob_col %in% names(data)) {
-          data[[zero_prob_col]] <- NA_real_
-        }
-        data[[zero_prob_col]][missing_idx] <- pi_hat
-        
-        # 2) regression: for positive predictions E[Y | Y > 0, X]
-        reg_learner <- learner$regressor
-        reg_pred_data <- data_temp[missing_idx, feature_cols, with = FALSE]
-        
-        # Factorlevels
-        reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
-        check_all_factor_levels(reg_pred_data, factor_levels)
-        
-        # Fill NA in feature
-        if (anyNA(reg_pred_data)) {
-          reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[missing_idx])
-        }
-        
-        preds_reg <- NULL
-        if (method_var == "ranger" && isTRUE(ranger_median) && !is.null(reg_learner)) {
-          preds_reg <- predict_ranger_median(reg_learner, reg_pred_data, target_name = NULL)
-        }
-        if (is.null(preds_reg)) {
-          if (is.null(reg_learner) || !is.function(reg_learner$predict_newdata)) {
-            positive_values <- data_temp[[var]][!is.na(data_temp[[var]]) & data_temp[[var]] > 0]
-            fallback_positive <- if (length(positive_values) > 0) {
-              stats::median(positive_values)
-            } else {
-              0
-            }
-            preds_reg <- rep(fallback_positive, nrow(reg_pred_data))
-          } else {
-            preds_reg <- reg_learner$predict_newdata(reg_pred_data)$response  # E[Y | Y>0, X]
-          }
-        }
-        
-        # Combine results, Impuatation = deterministic
-        # Y_imputed = P(Y > 0 | X) * E[Y | Y > 0, X]
-        preds <- pi_hat * preds_reg
-        # data_temp[[var]][missing_idx] <- preds
-        
-      } else {
-        # Not semicontinuous
-        bdt <- as.data.table(backend_data)
-        bdt <- enforce_factor_levels(bdt, factor_levels)
-        check_all_factor_levels(bdt, factor_levels)
-        
-        if (method_var == "ranger") { 
-          bdt <- imputeoor(bdt, data_temp) 
-        }
-        
-        if (anyNA(bdt)) {
-          bdt <- impute_missing_values(bdt, data_temp)
-        }
-        
-        backend_data <- mlr3::as_data_backend(bdt)
-        
-        if (is.factor(data_temp[[target_col]])) {
-          backend_dt <- if (inherits(backend_data, "DataBackend")) {
-            rows <- backend_data$row_ids
-            if (is.null(rows)) rows <- seq_len(backend_data$nrow)
-            as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
-          } else {
-            as.data.table(backend_data)
-          }
-          if (anyNA(backend_dt[[target_col]])) {
-            mode_value <- names(which.max(table(data_temp[[target_col]], useNA = "no")))
-            backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <- mode_value
-          }
-          pred_task <- TaskClassif$new(
-            id = target_col,
-            backend = backend_dt,
-            target = target_col
-          )
-          
-          learner$predict_type <- "prob"
-          pred_probs <- learner$predict(pred_task)$prob
-          pred_probs <- as.matrix(pred_probs)
-          bad_probs <- !is.finite(pred_probs)
-          if (any(bad_probs)) {
-            pred_probs[bad_probs] <- 0
-          }
-          row_sums <- rowSums(pred_probs)
-          bad_rows <- !is.finite(row_sums) | row_sums <= 0
-          if (any(bad_rows)) {
-            pred_probs[bad_rows, ] <- 1 / ncol(pred_probs)
-            row_sums[bad_rows] <- 1
-          }
-          pred_probs <- pred_probs / row_sums
-          
-          if (isFALSE(sequential) || i == nseq) {
-            preds <- apply(pred_probs, 1, function(probs) {
-              sample(levels(data_temp[[target_col]]), size = 1, prob = probs)
-            })
-          } else {
-            preds <- apply(pred_probs, 1, which.max)
-            preds <- levels(data_temp[[target_col]])[preds]
-          }
-          
-        } else {
-          backend_dt <- if (inherits(backend_data, "DataBackend")) {
-            rows <- backend_data$row_ids
-            if (is.null(rows)) rows <- seq_len(backend_data$nrow)
-            as.data.table(backend_data$data(rows = rows, cols = backend_data$colnames))
-          } else {
-            as.data.table(backend_data)
-          }
-          if (anyNA(backend_dt[[target_col]])) {
-            backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <-
-              median(data_temp[[target_col]], na.rm = TRUE)
-          }
-          pred_task <- TaskRegr$new(
-            id = target_col,
-            backend = backend_dt,
-            target = target_col
-          )
-          preds <- NULL
-          if (method_var == "ranger" && isTRUE(ranger_median)) {
-            preds <- predict_ranger_median(learner, bdt, target_name = target_col)
-          }
-          if (is.null(preds)) {
-            preds <- learner$predict(pred_task)$response
-          }
-        }
-      }
-      
-      if (!is.null(lhs_transformation)) {
-        preds <- inverse_transform(preds, lhs_transformation)
-      }
-      
-      if (inherits(preds, "numeric")) {
-        decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
-        preds <- round(preds, decimal_places)
-      }
-      
-      # Store model score used for prediction for pmm (numeric targets only)
-      if (inherits(preds, "numeric")) {
-        miss_idx <- missing_indices[[var]]
-        obs_idx <- setdiff(seq_len(nrow(data)), miss_idx)
-        
-        # Store score for PMM
-        score_current <- numeric(nrow(data))
-        score_current[obs_idx] <- data[[var]][obs_idx]       # observed values
-        score_current[miss_idx] <- preds        # predictions for missing rows
-      }
-
-      # --- Uncertainty injection (normalerror / resid / pmm / midastouch) ---
-      if (uncert != "none" && !has_any_pmm && inherits(preds, "numeric") && !is_sc) {
-        uncert_args <- list(preds = preds, method = uncert)
-
-        if (uncert %in% c("normalerror", "resid") && !is.null(stored_model_info)) {
-          uncert_args$scale <- stored_model_info$scale
-          uncert_args$residuals <- stored_model_info$residuals
-        }
-
-        if (uncert == "pmm") {
-          miss_idx_u <- missing_indices[[var]]
-          obs_idx_u <- setdiff(seq_len(nrow(data)), miss_idx_u)
-          uncert_args$y_obs <- data[[var]][obs_idx_u]
-          uncert_args$score_obs <- score_current[obs_idx_u]
-          uncert_args$score_miss <- score_current[miss_idx_u]
-          uncert_args$pmm_k <- 5L
-          uncert_args$pmm_k_method <- "random"
-        }
-
-        if (uncert == "midastouch") {
-          miss_idx_u <- missing_indices[[var]]
-          obs_idx_u <- setdiff(seq_len(nrow(data)), miss_idx_u)
-          uncert_args$y_obs <- data[[var]][obs_idx_u]
-          uncert_args$score_obs <- score_current[obs_idx_u]
-          uncert_args$score_miss <- score_current[miss_idx_u]
-          uncert_args$pmm_k <- 5L
-          feat_names <- setdiff(names(data), var)
-          num_feats <- feat_names[sapply(feat_names, function(f) is.numeric(data[[f]]))]
-          if (length(num_feats) > 0) {
-            uncert_args$X_obs <- as.matrix(data[obs_idx_u, num_feats, with = FALSE])
-            uncert_args$X_miss <- as.matrix(data[miss_idx_u, num_feats, with = FALSE])
-          }
-        }
-
-        preds <- do.call(inject_uncertainty, uncert_args)
-
-        # Re-round after uncertainty injection
-        if (exists("decimal_places")) {
-          preds <- round(preds, decimal_places)
-        }
-      }
+      prediction_result <- predict_imputations(
+        is_sc = is_sc,
+        var = var,
+        data = data,
+        data_temp = data_temp,
+        missing_idx = missing_idx,
+        feature_cols = feature_cols,
+        learner = learner,
+        factor_levels = factor_levels,
+        backend_data = backend_data,
+        target_col = target_col,
+        method_var = method_var,
+        ranger_median = ranger_median,
+        sequential = sequential,
+        i = i,
+        nseq = nseq,
+        lhs_transformation = lhs_transformation,
+        missing_indices = missing_indices,
+        pmm = pmm,
+        pmm_k = pmm_k,
+        pmm_k_method = pmm_k_method,
+        uncert = uncert,
+        has_any_pmm = has_any_pmm,
+        stored_model_info = stored_model_info,
+        boot = boot,
+        verbose = verbose
+      )
+      preds <- prediction_result$preds
+      convergence_preds <- prediction_result$convergence_preds
+      pred_task <- prediction_result$pred_task
+      data <- prediction_result$data
 ### Predict End ###################################################################################################
-      
-### ***** PMM / Score-kNN Start ***** ###################################################################################################
-      if(verbose){
-        message("***** PMM / Score-kNN for predictions")
-      }
-      
-      if (pmm[[var]] && is.numeric(data_temp[[var]]) && length(miss_idx) > 0) {
-        
-        # Observed values
-        y_obs <- data[[var]][obs_idx]
-        
-        if (pmm_k[[var]] >= 1 && is.numeric(data_temp[[var]])) {
-          # Score-based kNN PMM (1D score, numeric targets only)
-          score_obs  <- score_current[obs_idx]
-          score_miss <- score_current[miss_idx]
-          k <- min(pmm_k[[var]], length(y_obs))
-          pmm_method_var <- pmm_k_method[[var]]
-          
-          preds <- sapply(score_miss, function(s) {
-            idx <- order(abs(score_obs - s))[1:k]  # find k nearest neighbors
-            neighbors <- y_obs[idx]
-            if (is.function(pmm_method_var)) {
-              agg <- pmm_method_var(neighbors)
-              if (length(agg) != 1L || !is.numeric(agg) || is.na(agg)) {
-                stop(sprintf(
-                  "pmm_k_method function for '%s' must return exactly one non-missing numeric value.",
-                  var
-                ))
-              }
-              as.numeric(agg)
-            } else if (pmm_method_var == "mean") {
-              mean(neighbors)
-            } else if (pmm_method_var == "median") {
-              median(neighbors)
-            } else {
-              sample(neighbors, 1)
-            }
-          })
-        }
-        
-        # Round only final imputation
-        decimal_places <- max(sapply(na.omit(data[[var]]), get_decimal_places), na.rm = TRUE)
-        preds <- round(preds, decimal_places)
-        #preds <- preds[miss_idx]
-      }
-### PMM / Score-kNN End ###
       
       
 ### *****Prediction History Start***** ###################################################################################################
@@ -2641,292 +2417,111 @@ vimpute <- function(
       if(verbose){
         message(paste("***** Replace values with new predictions"))
       }
-      # preds <- preds[miss_idx]
-      if (length(missing_idx) > 0) {
-        
-        # orginal numeric
-        is_target_numeric <- is.numeric(original_data[[var]])
-        
-        if (is_target_numeric) {
-          # if factor because of semicontinous -> numeric
-          if (is.factor(data[[var]])) {
-            data[, (var) := as.numeric(as.character(get(var)))]
-          }
-          if (exists("data_new") && is.factor(data_new[[var]])) {
-            data_new[, (var) := as.numeric(as.character(get(var)))]
-          }
-          
-          # numeric imputation
-          data[missing_idx, (var) := as.numeric(preds)]
-          
-        } else if (is.factor(original_data[[var]])) {
-          
-          # factor imputation
-          data[missing_idx, (var) := factor(preds, levels = factor_levels[[var]])]
-          
-        } else {
-          stop(paste("Unknown data type for variable:", var))
-        }
-        
-        data <- copy(data)
-      }
-      
+      imputation_result <- apply_imputations(
+        data = data,
+        data_new = data_new,
+        convergence_data = convergence_data,
+        var = var,
+        missing_idx = missing_idx,
+        preds = preds,
+        convergence_preds = convergence_preds,
+        original_data = original_data,
+        factor_levels = factor_levels,
+        imp_var = imp_var
+      )
+      data <- imputation_result$data
+      data_new <- imputation_result$data_new
+      convergence_data <- imputation_result$convergence_data
 ### Replace missing values with predicted values End ###
-      
-### *****Import Variable Start***** ###################################################################################################
-      if(verbose){
-        message(paste("***** Import Variable (imp_var = TRUE)"))
-      }
-      if (length(missing_idx) > 0) {
-        if (imp_var) {
-          imp_col <- paste0(var, "_imp")    # Name  _imp-Spalte
-          
-          # Check whether the variable contains missing values using `missing_idx`.
-          if (!is.null(missing_idx) && length(missing_idx) > 0) {
-            # If `_imp` column does not exist, create it as a boolean variable
-            if (!(imp_col %in% colnames(data_new))) {
-              data_new[, (imp_col) := FALSE]
-            }
-            
-            data_new[, (var) := data[[var]]]
-            
-            # Ensure that `preds` is not NULL or empty
-            if (length((preds)) == length(missing_idx) && !all(is.na((preds)))) {
-              # Set the imputation as TRUE for missing values
-              set(data_new, i = missing_idx, j = imp_col, value = TRUE)
-            } else {
-              warning(paste("Warning: `preds` is empty or does not have the same length as `missing_idx` for ", var))
-            }
-          }
-        }
-      }
+
       var_end_time <- Sys.time()
       var_time <- difftime(var_end_time, var_start_time, units = "secs")
       iteration_times[[var]] <- round(as.numeric(var_time), 2)
       if(verbose){
-        message(paste("time used for", var, ":", iteration_times[[var]], "Sekunden"))
+        message(paste("time used for", var, ":", iteration_times[[var]], "seconds"))
       }
     }
-### Import Variable END ###
+### Variable loop END ###
     
 ### *****Stop Criteria Start***** ###################################################################################################
-    if (sequential && i != 1) {
-      
-      num_diff <- 0
-      cat_diff <- 0
-      
-      # Variables with missings
-      for (v in variables_NA) {
-        
+    convergence_result <- check_convergence(
+      sequential = sequential,
+      i = i,
+      variables_NA = variables_NA,
+      missing_indices = missing_indices,
+      convergence_prev = convergence_prev,
+      convergence_data = convergence_data,
+      original_data = original_data,
+      eps = eps,
+      no_change_counter = no_change_counter,
+      verbose = verbose
+    )
+    if (!is.null(convergence_result$d)) {
+      convergence_track[[length(convergence_track) + 1L]] <- convergence_result$d
+    }
+
+    # Chain statistics: mean/var of the imputed values of each numeric
+    # NA-variable after this iteration (mice-style trace-plot data; the m > 1
+    # wrapper assembles them into the vimmi chain arrays).
+    chain_track[[length(chain_track) + 1L]] <- list(
+      mean = vapply(variables_NA, function(v) {
         idx <- missing_indices[[v]]
-        if (length(idx) == 0) next  # no NAs
-        
-        old_vals <- data_prev[[v]][idx]  # values of earlier iterations
-        new_vals <- data[[v]][idx]       # actual values
-        
-        # numeric
-        if (is.numeric(original_data[[v]])) {
-          
-          d_var <- mean((new_vals - old_vals)^2, na.rm = TRUE)
-          if (is.finite(d_var)) {
-            num_diff <- num_diff + d_var
-          }
-          
-          # categorical
-        } else if (is.factor(original_data[[v]])) {
-          
-          old_chr <- as.character(old_vals)
-          new_chr <- as.character(new_vals)
-          
-          # Proportion of imputed cells whose class has changed
-          d_var <- mean(old_chr != new_chr, na.rm = TRUE)
-          if (is.finite(d_var)) {
-            cat_diff <- cat_diff + d_var
-          }
-        }
-        
-      } # end for v in variables_NA
-      
-      total_diff <- num_diff + cat_diff
-      
-      if (verbose) {
-        message(sprintf(
-          "Iteration %d: num_diff = %.6f, cat_diff = %.6f, total_diff = %.6f",
-          i, num_diff, cat_diff, total_diff
-        ))
-      }
-      
-      # Convergence
-      if (total_diff < eps) {
-        no_change_counter <- no_change_counter + 1
-        if (no_change_counter >= 2) {
-          if (verbose) {
-            message("Convergence achieved after two consecutive iterations without changes in imputations")
-            print(paste("stop after", i, "iterations"))
-          }
-          
-          # factor targets
-          if (is.factor(data_temp[[target_col]])) {
-            learner$predict_type <- "prob"
-            pred_probs <- learner$predict(pred_task)$prob
-            
-            formatted_output <- capture.output(print(pred_probs))
-            
-            if (is.null(pred_probs)) {
-              stop("Error in the calculation of prediction probabilities.")
-            }
-            pred_probs <- as.matrix(pred_probs)
-            bad_probs <- !is.finite(pred_probs)
-            if (any(bad_probs)) {
-              pred_probs[bad_probs] <- 0
-            }
-            row_sums <- rowSums(pred_probs)
-            bad_rows <- !is.finite(row_sums) | row_sums <= 0
-            if (any(bad_rows)) {
-              pred_probs[bad_rows, ] <- 1 / ncol(pred_probs)
-              row_sums[bad_rows] <- 1
-            }
-            pred_probs <- pred_probs / row_sums
-            
-            preds <- apply(pred_probs, 1, function(probs) {
-              sample(levels(data_temp[[target_col]]), size = 1, prob = probs) # at last iteration: stochastic class assignment
-            })
-          }
-          
-          break
-        }
-      } else {
-        no_change_counter <- 0
-      }
-      
-    } else {
-      no_change_counter <- 0
+        if (length(idx) > 0L && is.numeric(original_data[[v]])) {
+          mean(convergence_data[[v]][idx], na.rm = TRUE)
+        } else NA_real_
+      }, numeric(1)),
+      var = vapply(variables_NA, function(v) {
+        idx <- missing_indices[[v]]
+        if (length(idx) > 1L && is.numeric(original_data[[v]])) {
+          stats::var(convergence_data[[v]][idx], na.rm = TRUE)
+        } else NA_real_
+      }, numeric(1))
+    )
+
+    no_change_counter <- convergence_result$no_change_counter
+    if (isTRUE(convergence_result$should_break)) {
+      break
     }
   }
-    
-  #   if (sequential && i != 1) {
-  #     is_dt <- inherits(data, "data.table")
-  #     
-  #     # Automatic detection of the variable types
-  #     numeric_cols <- names(data)[sapply(data, is.numeric)]
-  #     factor_cols <- names(data)[sapply(data, is.factor)]
-  #     
-  #     # Calculation of numerical differences
-  #     if (length(numeric_cols) > 0) {  
-  #       epsilon <- 1e-8  # Avoid division by zero  
-  #       
-  #       if (is_dt) {  
-  #         # Calculate standard deviation of each column in data_prev  
-  #         std_dev <- sapply(data_prev[, mget(numeric_cols)], sd, na.rm = TRUE)  
-  #         
-  #         # Calculate normalized relative change  
-  #         num_diff <- sum(abs(data[, mget(numeric_cols)] - data_prev[, mget(numeric_cols)]) /  
-  #                           (std_dev + epsilon), na.rm = TRUE)
-  #       } else {  
-  #         std_dev <- sapply(data_prev[, numeric_cols, drop = FALSE], sd, na.rm = TRUE)  
-  #         num_diff <- sum(abs(data[, numeric_cols, drop = FALSE] - data_prev[, numeric_cols, drop = FALSE]) /  
-  #                           (std_dev + epsilon), na.rm = TRUE)
-  #       }  
-  #     } else {  
-  #       num_diff <- 0  
-  #     }
-  #     
-  #     
-  #     if (length(factor_cols) > 0) {
-  #       
-  #       # comparison as character
-  #       data_fac_chr      <- data[,       lapply(.SD, as.character), .SDcols = factor_cols]
-  #       data_prev_fac_chr <- data_prev[,  lapply(.SD, as.character), .SDcols = factor_cols]
-  #       
-  #       # Differences
-  #       cat_changes <- sum(data_fac_chr != data_prev_fac_chr, na.rm = TRUE)
-  #       total_cat_values <- sum(!is.na(data_prev_fac_chr))
-  #       
-  #       cat_diff <- if (total_cat_values > 0) {
-  #         cat_changes / (total_cat_values + 1e-8)
-  #       } else {
-  #         0
-  #       }
-  #       
-  #     } else {
-  #       cat_diff <- 0  # If there are no categorical columns
-  #     }
-  #     
-  #     # Calculate total change
-  #     total_diff <- num_diff + cat_diff
-  #     
-  #     # Prove convergence
-  #     if (total_diff < eps) {
-  #       no_change_counter <- no_change_counter + 1
-  #       if (no_change_counter >= 2) {
-  #         if(verbose){
-  #           message("Convergence achieved after two consecutive iterations without changes")
-  #           print(paste("stop after", i, "iterations"))
-  #         }
-  #         
-  #         if (is.factor(data_temp[[target_col]])) {
-  #           
-  #           if (method_var == "ranger") {
-  #             mod <- "classif.ranger"
-  #           }
-  #           
-  #           if (method_var == "xgboost") {
-  #             mod <- "classif.xgboost"
-  #           }
-  #           
-  #           if (method_var == "regularized") {
-  #             mod <- "classif.glmnet"
-  #           }
-  #           
-  #           if (method_var == "robust") {
-  #             mod <- "classif.glm_rob"
-  #           }
-  #           
-  #           learner$model[[mod]]$param_set$values$predict_type <- "prob"
-  #           pred_probs <- learner$predict(pred_task)$prob
-  #           
-  #           formatted_output <- capture.output(print(pred_probs))
-  #           
-  #           if (is.null(pred_probs)) {
-  #             stop("Error in the calculation of prediction probabilities.")
-  #           }
-  #           
-  #           preds <- apply(pred_probs, 1, function(probs) {
-  #             sample(levels(data_temp[[target_col]]), size = 1, prob = probs) # at last iteration: stochastic class assignment
-  #           })
-  #         }
-  #         
-  #         break
-  #       }
-  #     } else {
-  #       no_change_counter <- 0
-  #     }
-  #   } else {
-  #     no_change_counter <- 0
-  #   }
-  # }
 ### Stop criteria END ###
-  
-  result <- as.data.table(if (imp_var) data_new else data)  # Default: Return `data` only
-  result <- enforce_factor_levels(result, factor_levels)
-  
-  
-  any_tuned <- any(unlist(tune))
-  
-  if (!pred_history && !any_tuned) {
-    return(attach_restricted_problems(result))
+
+  # iterations x variables matrix of per-variable relative changes (d_v),
+  # measured from iteration 2 on; NULL for non-sequential runs
+  convergence_matrix <- if (length(convergence_track) > 0L) {
+    m_conv <- do.call(rbind, convergence_track)
+    rownames(m_conv) <- seq(2L, length.out = nrow(m_conv))
+    m_conv
+  } else {
+    NULL
   }
-  
-  
-  output <- list(data = result)   
-  
-  if (pred_history) {
-    pred_result <- rbindlist(history, fill = TRUE)
-    output$pred_history <- pred_result
+
+  # iterations x variables matrices of the imputed values' mean/var per
+  # iteration (numeric variables; the m > 1 wrapper stacks them per run)
+  chain_matrices <- if (length(chain_track) > 0L) {
+    list(
+      mean = do.call(rbind, lapply(chain_track, `[[`, "mean")),
+      var  = do.call(rbind, lapply(chain_track, `[[`, "var"))
+    )
+  } else {
+    NULL
   }
-  if (any_tuned) {
-    output$tuning_log <- tuning_log
-    
-  } 
-  return(attach_restricted_problems(output))
+
+  return(attach_restricted_problems(build_vimpute_result(
+    data = data,
+    data_new = data_new,
+    imp_var = imp_var,
+    factor_levels = factor_levels,
+    pred_history = pred_history,
+    history = history,
+    tune = tune,
+    tuning_log = tuning_log,
+    ordered_info = ordered_info,
+    data_all_variables = data_all_variables,
+    considered_variables = considered_variables,
+    keep_all_columns = keep_all_columns,
+    input_is_dt = input_is_dt,
+    convergence = convergence_matrix,
+    chain = chain_matrices,
+    model_error = Filter(Negate(is.null), model_error_track)
+  )))
 }

@@ -18,3 +18,5 @@ pkgdown
 ^src/.*\.(gcda|gcno|o|so)$
 ^CLAUDE\.md$
 ^\.claude$
+^dev-notes$
+^cran-comments\.md$

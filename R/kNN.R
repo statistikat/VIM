@@ -59,6 +59,23 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,
 #' k-Nearest Neighbour Imputation based on a variation of the Gower Distance
 #' for numerical, categorical, ordered and semi-continous variables.
 #'
+#' @details
+#' Numerical and semi-continuous (mixed) distance variables are standardised by
+#' their range (or IQR, see `methodStand`) so that each variable contributes on
+#' a comparable scale; for mixed variables the point mass (`mixed.constant`) is
+#' excluded from the range estimate.
+#'
+#' Missing values in the distance variables (`dist_var`) are handled with a
+#' sentinel: after standardisation an `NA` is replaced by the maximum of the
+#' pooled column plus one. As a consequence two records that are both missing
+#' the same distance variable have distance 0 on that variable (they are treated
+#' as identical there), while a record missing the variable and one observing it
+#' contribute up to about twice a normal variable's share. In effect kNN is
+#' drawn towards donors that share the recipient's pattern of missingness in the
+#' distance variables; under a MAR mechanism this can select unrepresentative
+#' donors. This departs from Gower's (1971) convention of omitting
+#' non-comparable variables and renormalising the remaining weights. To limit
+#' the effect, prefer `dist_var` variables with few or no missing values.
 #'
 #' @aliases kNN
 #' @param data data.frame or matrix
@@ -421,9 +438,21 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
         if(length(factors)>0&&!"weights"%in%names(as.list(args(catFun)))){
           warning("There is no explicit 'weights' argument in your categorical aggregation function.")
         }
-        #1-dist because dist is between 0 and 1
-        mindi[[2]] <- apply(1-mindi[[2]], 2, function(x)
-          pmax(min(x[x>0])/10,x))
+        #1-dist because dist is (usually) between 0 and 1. Guard the case where
+        #all k distances are >= 1 (methodStand="iqr", NA sentinels, or mixed
+        #distance variables): then every 1-dist <= 0, min(x[x>0]) is an empty
+        #min = Inf, and the weights become Inf -> NaN imputations.
+        mindi[[2]] <- apply(1-mindi[[2]], 2, function(x){
+          pos <- x[x>0]
+          if(length(pos)>0){
+            pmax(min(pos)/10,x)
+          }else{
+            #all weights <= 0: rank-preserving finite positive weights so the
+            #nearer donors still dominate (larger 1-dist = nearer)
+            rng <- max(x)-min(x)
+            if(rng==0) rep(1,length(x)) else (x-min(x))/rng+1e-6
+          }
+        })
         ### warning if there is no argument named weights
         if(variable[j]%in%factors){
           data[indexNA2s[,variable[j]],variable[j]] <- sapply(1:ncol(kNNs),function(x)do.call("catFun",list(unlist(kNNs[,x,with=FALSE]),mindi[[2]][,x])))

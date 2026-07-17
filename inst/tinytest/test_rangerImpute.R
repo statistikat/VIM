@@ -29,13 +29,12 @@ df$fac[3:5] <- NA
   expect_identical(df.out$x, df$x)
 # 
 
-# rangerImpute should warn that additional ranger args are ignored", {
+# rangerImpute forwards ranger hyperparameters instead of ignoring them", {
   set.seed(1)
-  expect_warning(
-    rangerImpute(y ~ x, df, median = TRUE, num.trees = 10),
-    "Additional ranger arguments are ignored"
-  )
-# 
+  out <- rangerImpute(y ~ x, df, median = TRUE, num.trees = 10)
+  expect_true(inherits(out, "data.frame"))
+  expect_equal(sum(is.na(out$y)), 0L)
+#
 
 # median aggregation can change ranger predictions", {
   set.seed(1)
