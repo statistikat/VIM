@@ -1,0 +1,340 @@
+---
+title: "Restricted regression with vimpute"
+author: "VIM contributors"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Restricted regression with vimpute}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  fig.align = "center"
+)
+
+has_restricted_backend <- requireNamespace("validate", quietly = TRUE) &&
+  requireNamespace("ECOSolveR", quietly = TRUE)
+```
+
+`vimpute(method = "restricted")` imputes numeric variables with a
+least-squares model whose predictions are constrained by edit rules. The rules
+are written with `validate::validator()` and solved with `ECOSolveR`.
+
+This is useful when the completed data must satisfy accounting identities,
+bounded totals, or row-wise consistency rules.
+
+```{r backend-message, echo=FALSE, results='asis'}
+if (!has_restricted_backend) {
+  cat("This vignette requires the packages `validate` and `ECOSolveR`; ",
+      "the runnable examples are skipped because at least one is unavailable.")
+}
+```
+
+## Minimal Example
+
+The smallest useful example is a lower bound. Here the observed data suggest a
+line through `(x, y)`, but the missing value is constrained to be at least 4.
+The imputation indicator `y_imp` marks the cell filled by `vimpute()`.
+
+```{r minimal-example, eval=has_restricted_backend, message=FALSE, warning=FALSE}
+library(VIM)
+
+small_data <- data.frame(
+  y = c(1, 2, NA),
+  x = c(1, 2, 3)
+)
+
+rules <- validate::validator(y >= 4)
+
+small_imp <- vimpute(
+  small_data,
+  method = list(y = "restricted"),
+  pmm = FALSE,
+  sequential = FALSE,
+  learner_params = list(
+    restricted = list(
+      rules = rules,
+      save_optimization_problem = TRUE
+    )
+  )
+)
+
+small_imp
+```
+
+The completed value satisfies the rule, and the saved optimization problem can
+be inspected when `save_optimization_problem = TRUE`.
+
+```{r minimal-check, eval=has_restricted_backend}
+all(validate::values(validate::confront(small_imp, rules)))
+
+names(attr(small_imp, "restricted_optimization_problems"))
+```
+
+## Interval Rules
+
+Restricted regression is most natural when variables have row-wise lower and
+upper bounds. In this example `amount` is imputed while every completed value
+must remain between its corresponding `lower` and `upper` columns.
+
+```{r interval-rules, eval=has_restricted_backend, message=FALSE, warning=FALSE}
+set.seed(42)
+n <- 100L
+
+bounded_data <- data.frame(
+  x1 = stats::runif(n, 0, 10),
+  x2 = stats::runif(n, -2, 2)
+)
+bounded_data$amount <- 20 + 1.5 * bounded_data$x1 - 0.75 * bounded_data$x2
+bounded_data$lower <- bounded_data$amount - 0.5
+bounded_data$upper <- bounded_data$amount + 0.5
+bounded_data <- bounded_data[, c("amount", "x1", "x2", "lower", "upper")]
+
+missing_idx <- sample.int(n, 20L)
+bounded_missing <- bounded_data
+bounded_missing$amount[missing_idx] <- NA_real_
+
+bounded_rules <- validate::validator(
+  amount >= lower,
+  amount <= upper,
+  amount >= 0,
+  lower <= upper
+)
+
+bounded_imp <- vimpute(
+  bounded_missing,
+  method = list(amount = "restricted"),
+  pmm = FALSE,
+  sequential = FALSE,
+  learner_params = list(amount = list(rules = bounded_rules))
+)
+
+head(bounded_imp[bounded_imp$amount_imp, c("amount", "lower", "upper")])
+```
+
+```{r interval-check, eval=has_restricted_backend}
+completed <- as.data.frame(bounded_imp)[, names(bounded_data), drop = FALSE]
+
+sum(bounded_imp$amount_imp)
+all(validate::values(validate::confront(completed, bounded_rules)))
+```
+
+Rules can also involve categorical predictors and conditional logic. The
+restricted learner uses the edit rules only to constrain the imputed target; the
+remaining columns can be numeric or categorical predictors.
+
+```{r conditional-rules, eval=has_restricted_backend, message=FALSE, warning=FALSE}
+categorical_data <- bounded_missing
+categorical_data$c1 <- factor(rep(c("A", "B", "C"), length.out = n))
+categorical_data$c2 <- factor(rep(c("B", "C", "A"), length.out = n))
+categorical_data$c3 <- factor(rep(c("C", "A", "B"), length.out = n))
+
+conditional_rules <- validate::validator(
+  amount >= lower,
+  amount <= upper,
+  amount >= 0,
+  lower <= upper,
+  (c1 == "A") + (c2 == "A") + (c3 == "A") <= 2,
+  if (c1 == "A") amount >= 2
+)
+
+categorical_imp <- vimpute(
+  categorical_data,
+  method = list(amount = "restricted"),
+  pmm = FALSE,
+  sequential = FALSE,
+  learner_params = list(amount = list(rules = conditional_rules))
+)
+
+all(validate::values(validate::confront(categorical_imp, conditional_rules)))
+```
+
+## Formula Control
+
+`formula` can be used with `method = "restricted"` to choose the predictors in
+the regression model while the edit rules still constrain the final
+predictions. The left-hand side must be the untransformed target variable.
+
+```{r formula-control, eval=has_restricted_backend, message=FALSE, warning=FALSE}
+n_formula <- 80L
+formula_data <- data.frame(
+  y = 10 + 2 * seq_len(n_formula),
+  x_signal = seq_len(n_formula),
+  x_noise = 10 + 2 * seq_len(n_formula),
+  lower = 0,
+  upper = 200
+)
+
+formula_missing_idx <- c(12L, 24L, 36L)
+expected_y <- formula_data$y[formula_missing_idx]
+formula_data$y[formula_missing_idx] <- NA_real_
+formula_data$x_noise[formula_missing_idx] <- -1000
+
+formula_rules <- validate::validator(y >= lower, y <= upper, lower <= upper)
+
+formula_imp <- vimpute(
+  formula_data,
+  method = list(y = "restricted"),
+  formula = list(y = y ~ x_signal),
+  pmm = FALSE,
+  sequential = FALSE,
+  learner_params = list(y = list(rules = formula_rules))
+)
+
+formula_imp[formula_missing_idx, c("y", "x_signal", "x_noise", "y_imp")]
+max(abs(formula_imp$y[formula_missing_idx] - expected_y))
+```
+
+## Robust Restricted Regression
+
+Set `robust = TRUE` to use a Huber loss instead of ordinary least squares. This
+is helpful when the observed data contain influential outliers but the final
+imputed values must still obey the edit rules.
+
+```{r robust-restricted, eval=has_restricted_backend, message=FALSE, warning=FALSE}
+robust_rules <- validate::validator(y >= 0)
+
+outlier_data <- data.frame(
+  x = 0:21,
+  y = 1 + 2 * (0:21)
+)
+outlier_data$y[21L] <- 500
+outlier_data$y[22L] <- NA_real_
+
+ordinary_imp <- vimpute(
+  outlier_data,
+  method = list(y = "restricted"),
+  formula = list(y = y ~ x),
+  pmm = FALSE,
+  sequential = FALSE,
+  learner_params = list(y = list(rules = robust_rules))
+)
+
+robust_imp <- vimpute(
+  outlier_data,
+  method = list(y = "restricted"),
+  formula = list(y = y ~ x),
+  pmm = FALSE,
+  sequential = FALSE,
+  learner_params = list(y = list(
+    rules = robust_rules,
+    robust = TRUE,
+    huber_k = 1.345
+  ))
+)
+
+c(
+  ordinary = ordinary_imp$y[22L],
+  robust = robust_imp$y[22L],
+  expected_without_outlier = 43
+)
+```
+
+## Synthetic LSE Data
+
+The package includes `lse_synthetic` and `lse_synthetic_rules`, a compact
+synthetic business-statistics example with many linear edit rules. The test
+suite uses this data at larger scale; the vignette uses a smaller slice so it
+can be knitted quickly.
+
+```{r lse-example, eval=has_restricted_backend, message=FALSE, warning=FALSE}
+data("lse_synthetic", package = "VIM")
+data("lse_synthetic_rules", package = "VIM")
+
+lse_rules <- lse_synthetic_rules$edit
+
+numeric_cols <- c(
+  "persons_employed",
+  "employees_paid",
+  "self_employed",
+  "employees_male",
+  "employees_female",
+  "employees_blue_collar",
+  "employees_white_collar",
+  "apprentices",
+  "marginal_employees",
+  "turnover_total",
+  "turnover_domestic",
+  "turnover_exports",
+  "e_commerce_turnover",
+  "material_costs",
+  "purchased_services",
+  "rents_leasing",
+  "other_operating_expense",
+  "intermediate_consumption",
+  "gross_value_added",
+  "personnel_costs",
+  "wages_salaries",
+  "social_security_costs",
+  "other_personnel_costs",
+  "gross_operating_surplus",
+  "investments_tangible",
+  "investment_machinery",
+  "investment_buildings",
+  "investment_software"
+)
+
+edit_cols <- c(
+  "reporting_year",
+  "onace_section",
+  "onace_group",
+  "nuts2",
+  "data_source",
+  "survey_mode",
+  "employment_size_class",
+  "turnover_size_class",
+  numeric_cols
+)
+
+lse_complete <- lse_synthetic[seq_len(80L), edit_cols]
+
+missing_map <- list(
+  turnover_total = c(2L, 15L),
+  intermediate_consumption = c(13L, 18L),
+  gross_value_added = c(24L, 31L),
+  personnel_costs = c(39L, 45L),
+  investments_tangible = c(52L, 60L)
+)
+
+lse_missing <- lse_complete
+for (var in names(missing_map)) {
+  lse_missing[missing_map[[var]], var] <- NA_real_
+}
+
+restricted_formulas <- setNames(
+  lapply(names(missing_map), function(var) {
+    stats::reformulate(setdiff(numeric_cols, var), response = var)
+  }),
+  names(missing_map)
+)
+
+lse_imp <- vimpute(
+  lse_missing,
+  method = "restricted",
+  formula = restricted_formulas,
+  pmm = FALSE,
+  sequential = FALSE,
+  learner_params = list(
+    restricted = list(
+      rules = lse_rules,
+      save_optimization_problem = TRUE
+    )
+  )
+)
+
+lse_completed <- as.data.frame(lse_imp)[, edit_cols, drop = FALSE]
+
+sum(as.data.frame(lse_imp)[paste0(names(missing_map), "_imp")])
+all(validate::values(validate::confront(lse_completed, lse_rules)))
+sort(names(attr(lse_imp, "restricted_optimization_problems")))
+```
+
+The same pattern scales to many variables: define a `validate::validator`
+object for the edits, provide one formula per imputed target when you need
+predictor control, and pass the rules through `learner_params` for either the
+method name (`restricted`) or the individual variables.
