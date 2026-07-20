@@ -93,6 +93,12 @@ imputeCellReg <- function(data, engine = "crm",
   M <- is.na(data)
   vars_miss <- which(colMeans(M) > 0)
 
+  ## work under safe positional names: pasted model formulas break with
+  ## duplicated or non-syntactic column names (the response can resolve
+  ## to the wrong column); original names are restored on exit
+  cn_int <- .cw_safe_names(p)
+  colnames(data) <- cn_int
+
   ## ---- initialise ----
   data <- initialise(data, mixed = NULL, method = "median")
   W <- matrix(1, n, p, dimnames = list(rn, cn))
@@ -119,9 +125,9 @@ imputeCellReg <- function(data, engine = "crm",
       if (is_continuous[j]) {
         ## ---- continuous response ----
         result <- switch(engine,
-          crm          = .engine_crm(data, j, pred_cols, miss_j, cn),
-          `cellwise-mm` = .engine_cellwise_mm(data, j, pred_cols, miss_j, W, cn),
-          `shooting-s`  = .engine_shooting_s(data, j, pred_cols, miss_j, cn)
+          crm          = .engine_crm(data, j, pred_cols, miss_j, cn_int),
+          `cellwise-mm` = .engine_cellwise_mm(data, j, pred_cols, miss_j, W, cn_int),
+          `shooting-s`  = .engine_shooting_s(data, j, pred_cols, miss_j, cn_int)
         )
 
         # Impute (deterministic during iteration)
@@ -149,8 +155,8 @@ imputeCellReg <- function(data, engine = "crm",
         w_row <- apply(W[, pred_cols[is_continuous[pred_cols]], drop = FALSE],
                        1, function(ww) exp(mean(log(pmax(ww, 1e-10)))))
 
-        form_j <- as.formula(paste0(cn[j], " ~ ",
-                                     paste(cn[pred_cols], collapse = " + ")))
+        form_j <- as.formula(paste0(cn_int[j], " ~ ",
+                                     paste(cn_int[pred_cols], collapse = " + ")))
         multimod <- tryCatch(
           suppressMessages(nnet::multinom(form_j, data = data, weights = w_row,
                                           maxit = 50, trace = FALSE)),
@@ -206,9 +212,9 @@ imputeCellReg <- function(data, engine = "crm",
       obs_j <- !miss_j
       pred_cols <- setdiff(seq_len(p), j)
       result <- switch(engine,
-        crm           = .engine_crm(data, j, pred_cols, miss_j, cn),
-        `cellwise-mm` = .engine_cellwise_mm(data, j, pred_cols, miss_j, W, cn),
-        `shooting-s`  = .engine_shooting_s(data, j, pred_cols, miss_j, cn)
+        crm           = .engine_crm(data, j, pred_cols, miss_j, cn_int),
+        `cellwise-mm` = .engine_cellwise_mm(data, j, pred_cols, miss_j, W, cn_int),
+        `shooting-s`  = .engine_shooting_s(data, j, pred_cols, miss_j, cn_int)
       )
       if (uncert == "pmm") {
         data[miss_j, j] <- .pmm_impute(
@@ -226,6 +232,7 @@ imputeCellReg <- function(data, engine = "crm",
   }
 
   rownames(data) <- rn
+  colnames(data) <- cn
   list(data_imputed = data, cellweights = W,
        converged = converged, iterations = iterations)
 }

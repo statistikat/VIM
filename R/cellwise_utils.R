@@ -83,6 +83,24 @@ tukey_weight <- function(u, k = 4.685) {
 }
 
 
+#' Internal positional column names for cellwise model fits
+#'
+#' Model formulas inside the cellwise family are built by pasting column
+#' names. Duplicated column names (e.g. after truncation with
+#' \code{substr()}) or non-syntactic names then resolve the response or
+#' predictors to the wrong column, which silently corrupts the imputation.
+#' The df-interface cellwise functions therefore rename the data to these
+#' safe positional names on entry and restore the original names on exit.
+#'
+#' @param p number of columns
+#' @return character vector of length \code{p}
+#' @keywords internal
+#' @noRd
+.cw_safe_names <- function(p) {
+  sprintf(".cwV%d", seq_len(p))
+}
+
+
 #' Compute per-cell contamination weights
 #'
 #' For each continuous column, standardize by median and MAD,
@@ -151,6 +169,21 @@ cellWeightsMCD <- function(X, method = "tukey", alpha = NULL) {
   W <- matrix(1, nrow = n, ncol = p)
   colnames(W) <- colnames(X_mat)
 
+  # exact-constant columns make every MCD subsample singular (covMcd()
+  # then warns repeatedly); they carry no outlyingness information, so
+  # they keep weight 1 and the MCD runs on the varying columns only
+  varying <- vapply(seq_len(p), function(j) {
+    v <- X_mat[!is.na(X_mat[, j]), j]
+    length(unique(v)) >= 2L
+  }, logical(1))
+  if (!all(varying)) {
+    if (any(varying)) {
+      W[, varying] <- cellWeightsMCD(X_mat[, varying, drop = FALSE],
+                                     method = method, alpha = alpha)
+    }
+    return(W)
+  }
+
   if (p < 2 || n < 2 * p) {
     # Not enough data for MCD; fall back to univariate
     for (j in seq_len(p)) {
@@ -170,9 +203,12 @@ cellWeightsMCD <- function(X, method = "tukey", alpha = NULL) {
     if (any(na_j)) X_complete[na_j, j] <- stats::median(X_complete[, j], na.rm = TRUE)
   }
 
-  # Robust covariance via MCD
+  # Robust covariance via MCD. Heavily tied (discrete-ish) columns make
+  # covMcd() warn about singular subsamples while still returning a usable
+  # estimate; suppress that noise -- the error path falls back to
+  # univariate weights below.
   mcd <- tryCatch(
-    robustbase::covMcd(X_complete, alpha = 0.75),
+    suppressWarnings(robustbase::covMcd(X_complete, alpha = 0.75)),
     error = function(e) NULL
   )
 
@@ -373,14 +409,22 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
 
   # --- Step 1: initial fit ---
   if (init == "s-estimator" && n > 2 * p_int &&
+      qr(X_int)$rank == p_int &&
       requireNamespace("robustbase", quietly = TRUE)) {
     # Use S-estimator via lmrob.S for high-breakdown initialization
     # Apply to unweighted X to preserve S-estimator's breakdown properties;
     # cell weights are incorporated in the subsequent IRWLS iterations.
+    # Rank-deficient designs (e.g. a constant column aliased with the
+    # intercept) are excluded above: every elemental subsample would be
+    # singular, so lmrob.S warns repeatedly and fails; the cell-weighted
+    # OLS fallback below ridge-regularises those instead. The S-init is
+    # best-effort, so remaining subsample warnings are suppressed.
     s_fit <- tryCatch({
-      robustbase::lmrob.S(X_int, y, control = robustbase::lmrob.control(
-        method = "S", k.max = 200, refine.tol = 1e-7
-      ))
+      suppressWarnings(
+        robustbase::lmrob.S(X_int, y, control = robustbase::lmrob.control(
+          method = "S", k.max = 200, refine.tol = 1e-7
+        ))
+      )
     }, error = function(e) NULL)
 
     if (!is.null(s_fit)) {

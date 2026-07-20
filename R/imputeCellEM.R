@@ -263,6 +263,12 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
                 pseudo_loglik = numeric(0)))
   }
 
+  ## work under safe positional names: pasted model formulas break with
+  ## duplicated or non-syntactic column names (the response can resolve
+  ## to the wrong column); original names are restored on exit
+  cn_int <- .cw_safe_names(p)
+  colnames(data) <- cn_int
+
   ## ---- step 1: initialise missing values ----
   data <- initialise(data, mixed = NULL, method = "median")
 
@@ -459,8 +465,8 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
 
         pred_cols <- setdiff(seq_len(p), j_global)
         form_j <- stats::as.formula(
-          paste0(cn[j_global], " ~ ",
-                 paste(cn[pred_cols], collapse = " + "))
+          paste0(cn_int[j_global], " ~ ",
+                 paste(cn_int[pred_cols], collapse = " + "))
         )
 
         multimod <- tryCatch({
@@ -726,6 +732,7 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
 
   ## ---- prepare output ----
   rownames(data) <- rn
+  colnames(data) <- cn
 
   list(
     data_imputed = data,
@@ -1102,6 +1109,12 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
   M <- is.na(data)
   vars_miss <- which(colMeans(M) > 0)
 
+  ## work under safe positional names: pasted model formulas break with
+  ## duplicated or non-syntactic column names (the response can resolve
+  ## to the wrong column); original names are restored on exit
+  cn_int <- .cw_safe_names(p)
+  colnames(data) <- cn_int
+
   ## ---- initialize missing values ----
   if (init_method == "knn") {
     data <- tryCatch(
@@ -1374,8 +1387,8 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
         miss_j <- which(M[, j_global])
         if (length(miss_j) == 0) next
         pred_cols <- setdiff(seq_len(p), j_global)
-        form_j <- as.formula(paste0(cn[j_global], " ~ ",
-                                     paste(cn[pred_cols], collapse = " + ")))
+        form_j <- as.formula(paste0(cn_int[j_global], " ~ ",
+                                     paste(cn_int[pred_cols], collapse = " + ")))
         multimod <- tryCatch(
           suppressMessages(nnet::multinom(form_j, data = data,
                                           weights = w_row_cat,
@@ -1491,6 +1504,7 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
   }
 
   rownames(data) <- rn
+  colnames(data) <- cn
   list(data_imputed = data, cellweights = W, mu = mu, Sigma = Sigma,
        converged = converged, iterations = iterations)
 }

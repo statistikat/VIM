@@ -12,13 +12,19 @@ imputeCellM(
   maxit_irwls = 50,
   eps_irwls = 1e-06,
   uncert = "pmm",
-  value_back = "all"
+  value_back = "all",
+  maxit = 10,
+  eps = 0.005,
+  trace = FALSE
 )
 }
 \arguments{
-\item{formula}{model formula (e.g., \code{y ~ x1 + x2}).}
+\item{formula}{a model formula (e.g., \code{y ~ x1 + x2}) describing a
+single response to impute, or a \code{data.frame}/matrix with missing
+values; in the latter case all variables with missing values are
+imputed by chained equations and \code{data} must not be supplied.}
 
-\item{data}{data.frame containing the data.}
+\item{data}{data.frame containing the data (formula interface only).}
 
 \item{method}{weight function: \code{"tukey"} (default) or \code{"huber"}.
 Tukey bisquare is recommended because the consistency proof requires
@@ -32,10 +38,23 @@ and 1.345 for Huber.}
 \item{eps_irwls}{convergence tolerance for IRWLS (default: 1e-6).}
 
 \item{uncert}{imputation uncertainty method: \code{"pmm"} (default),
-\code{"normalerror"}, or \code{"resid"}.}
+\code{"normalerror"}, \code{"resid"}, or \code{"none"} (deterministic
+predictions; categorical variables are imputed by the most probable
+category).}
 
 \item{value_back}{\code{"all"} (default) returns the complete dataset,
-or \code{"ymiss"} returns only the imputed values.}
+or \code{"ymiss"} returns only the imputed values (formula interface
+only; ignored with a data.frame first argument).}
+
+\item{maxit}{maximum number of chained-equation sweeps (data.frame
+interface only; default: 10).}
+
+\item{eps}{convergence tolerance for the chained sweeps (data.frame
+interface only; default: 5e-3). Convergence is declared when the
+relative change in imputed values falls below this threshold.}
+
+\item{trace}{logical; if \code{TRUE}, print progress of the chained
+sweeps (data.frame interface only).}
 }
 \value{
 If \code{value_back = "ymiss"}, a named vector of imputed values
@@ -45,24 +64,39 @@ with components:
 \item{data_imputed}{the imputed data.frame (same structure as input)}
 \item{cellweights}{n x p matrix of final cell weights (1 = clean,
 0 = fully downweighted). Categorical columns always have weight 1.}
-\item{converged}{logical, always \code{TRUE} for single-formula
-imputation}
-\item{iterations}{integer, always \code{1L} for single-formula
-imputation}
+\item{converged}{logical; always \code{TRUE} for single-formula
+imputation, convergence of the sweeps for the data.frame interface}
+\item{iterations}{integer; always \code{1L} for single-formula
+imputation, the number of sweeps for the data.frame interface}
 }
 }
 \description{
-Impute missing values in a single response variable using a cell-weighted
-M-estimation approach. Each cell in the predictor matrix receives its own
-weight reflecting potential cellwise contamination, so that contaminated
-predictor cells are downweighted without discarding entire observations.
+Impute missing values using a cell-weighted M-estimation approach. Each
+cell in the predictor matrix receives its own weight reflecting potential
+cellwise contamination, so that contaminated predictor cells are
+downweighted without discarding entire observations.
 }
 \details{
-This is a lightweight single-formula alternative to
+The function has two interfaces: with a model formula, a single response
+variable is imputed from the specified predictors; with a
+\code{data.frame} (or matrix) as first argument, all variables with
+missing values are imputed by chained equations, i.e. each such variable
+is regressed on all remaining variables and the sweeps are iterated
+until the imputed values stabilise.
+
+The formula interface is a lightweight single-response alternative to
 \code{\link{imputeCellIRMI}}. It fits one cell-weighted IRWLS regression
 using \code{cellIRWLS()} and imputes the missing values in the response
 variable. This is appropriate when only one variable needs imputation
 and a specific model formula is desired.
+
+The data.frame interface runs the same per-variable machinery as a
+chained-equations algorithm: missing values are initialised
+(median/mode), then each variable with missing values in turn is used as
+response in a formula containing all remaining variables. Sweeps use
+deterministic predictions and are iterated until the relative change of
+the imputed values falls below \code{eps} (or \code{maxit} is reached);
+the requested \code{uncert} step is applied once after convergence.
 
 For categorical response variables, a weighted multinomial model via
 \code{\link[nnet]{multinom}} is fitted instead. Categorical predictors
@@ -90,6 +124,10 @@ impvals <- imputeCellM(Dream ~ BodyWgt + BrainWgt, data = sleep,
 # Huber weights (less aggressive downweighting)
 result2 <- imputeCellM(Dream ~ BodyWgt + BrainWgt, data = sleep,
                        method = "huber")
+
+# Chained-equations interface: impute all variables with missings
+result3 <- imputeCellM(sleep)
+head(result3$data_imputed)
 }
 
 }

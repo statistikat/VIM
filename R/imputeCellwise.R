@@ -195,12 +195,18 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
                 converged = TRUE, iterations = 0L))
   }
 
+  ## work under safe positional names: pasted model formulas break with
+  ## duplicated or non-syntactic column names (the response can resolve
+  ## to the wrong column); original names are restored on exit
+  cn <- colnames(data)
+  colnames(data) <- .cw_safe_names(p)
+
   ## ---- step 1: initialise missing values ----
   data <- initialise(data, mixed = NULL, method = "median")
 
   ## ---- step 2: compute initial cell weights ----
   W <- matrix(1, nrow = n, ncol = p,
-              dimnames = list(rn, colnames(data)))
+              dimnames = list(rn, cn))
 
   if (any(is_continuous)) {
     X_cont_init <- as.matrix(data[, is_continuous, drop = FALSE])
@@ -211,21 +217,41 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
                requireNamespace("cellWise", quietly = TRUE)) {
       # DDC-based initialization: detect cells, give flagged cells weight 0
       X_ddc <- X_cont_init
+      colnames(X_ddc) <- .cw_safe_names(ncol(X_ddc))
       for (jj in seq_len(ncol(X_ddc))) {
         na_jj <- is.na(X_ddc[, jj])
         if (any(na_jj)) X_ddc[na_jj, jj] <- median(X_ddc[, jj], na.rm = TRUE)
       }
-      ddc_res <- tryCatch(
-        cellWise::DDC(X_ddc, DDCpars = list(fastDDC = TRUE, silent = TRUE)),
-        error = function(e) NULL
-      )
+      ddc_res <- tryCatch({
+        # checkDataSet() inside DDC prints via cat() even when silent = TRUE
+        utils::capture.output(
+          res <- cellWise::DDC(X_ddc,
+                               DDCpars = list(fastDDC = TRUE, silent = TRUE))
+        )
+        res
+      }, error = function(e) NULL)
       if (!is.null(ddc_res)) {
-        # Compute smooth cell weights from DDC standardized residuals
-        W_cont <- matrix(1, nrow = n, ncol = sum(is_continuous))
-        for (jj in seq_len(ncol(W_cont))) {
+        # checkDataSet() inside DDC may refuse rows and columns (constant,
+        # too discrete, too many NAs, ...), so stdResid covers only the
+        # retained submatrix. Map its entries back via colInAnalysis /
+        # rowInAnalysis; refused rows/columns keep univariate weights.
+        W_cont <- cellWeights(X_cont_init, method = method, alpha = alpha)
+        keep_col <- ddc_res$colInAnalysis
+        if (is.null(keep_col)) keep_col <- seq_len(ncol(X_ddc))
+        keep_row <- ddc_res$rowInAnalysis
+        if (is.null(keep_row)) keep_row <- seq_len(nrow(X_ddc))
+        for (jj in seq_along(keep_col)) {
           u <- abs(ddc_res$stdResid[, jj])
-          W_cont[, jj] <- .apply_weight_fun(u, method = method, alpha = alpha)
-          W_cont[is.na(X_cont_init[, jj]), jj] <- 1
+          w_jj <- .apply_weight_fun(u, method = method, alpha = alpha)
+          w_jj[!is.finite(w_jj)] <- 1
+          W_cont[keep_row, keep_col[jj]] <- w_jj
+        }
+        # cells missing in the original data are neutral
+        W_cont[is.na(X_cont_init)] <- 1
+        if (trace && length(keep_col) < ncol(X_ddc)) {
+          message(sprintf(
+            "  DDC init: %d of %d continuous columns analysed; univariate weights for the rest",
+            length(keep_col), ncol(X_ddc)))
         }
         W[, is_continuous] <- W_cont
       } else {
@@ -281,7 +307,7 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
     for (j in vars_miss) {
       if (trace) {
         message(paste("  imputing variable:", j,
-                      "(", colnames(data)[j], ") -",
+                      "(", cn[j], ") -",
                       ifelse(is_continuous[j], "continuous",
                              "categorical")))
       }
@@ -358,7 +384,7 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
           )
         }, error = function(e) {
           warning(paste("Multinomial model failed for variable",
-                        colnames(data)[j], ":", e$message,
+                        cn[j], ":", e$message,
                         "- using unweighted model"))
           suppressMessages(
             nnet::multinom(form_j, data = data,
@@ -494,6 +520,7 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
   }
 
   rownames(data) <- rn
+  colnames(data) <- cn
   list(
     data_imputed = data,
     cellweights  = W,
@@ -505,13 +532,23 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
 
 #' Cellwise M-estimation imputation
 #'
-#' Impute missing values in a single response variable using a cell-weighted
-#' M-estimation approach. Each cell in the predictor matrix receives its own
-#' weight reflecting potential cellwise contamination, so that contaminated
-#' predictor cells are downweighted without discarding entire observations.
+#' Impute missing values using a cell-weighted M-estimation approach. Each
+#' cell in the predictor matrix receives its own weight reflecting potential
+#' cellwise contamination, so that contaminated predictor cells are
+#' downweighted without discarding entire observations.
 #'
-#' @param formula model formula (e.g., \code{y ~ x1 + x2}).
-#' @param data data.frame containing the data.
+#' The function has two interfaces: with a model formula, a single response
+#' variable is imputed from the specified predictors; with a
+#' \code{data.frame} (or matrix) as first argument, all variables with
+#' missing values are imputed by chained equations, i.e. each such variable
+#' is regressed on all remaining variables and the sweeps are iterated
+#' until the imputed values stabilise.
+#'
+#' @param formula a model formula (e.g., \code{y ~ x1 + x2}) describing a
+#'   single response to impute, or a \code{data.frame}/matrix with missing
+#'   values; in the latter case all variables with missing values are
+#'   imputed by chained equations and \code{data} must not be supplied.
+#' @param data data.frame containing the data (formula interface only).
 #' @param method weight function: \code{"tukey"} (default) or \code{"huber"}.
 #'   Tukey bisquare is recommended because the consistency proof requires
 #'   redescending weights.
@@ -520,9 +557,19 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
 #' @param maxit_irwls maximum IRWLS iterations (default: 50).
 #' @param eps_irwls convergence tolerance for IRWLS (default: 1e-6).
 #' @param uncert imputation uncertainty method: \code{"pmm"} (default),
-#'   \code{"normalerror"}, or \code{"resid"}.
+#'   \code{"normalerror"}, \code{"resid"}, or \code{"none"} (deterministic
+#'   predictions; categorical variables are imputed by the most probable
+#'   category).
 #' @param value_back \code{"all"} (default) returns the complete dataset,
-#'   or \code{"ymiss"} returns only the imputed values.
+#'   or \code{"ymiss"} returns only the imputed values (formula interface
+#'   only; ignored with a data.frame first argument).
+#' @param maxit maximum number of chained-equation sweeps (data.frame
+#'   interface only; default: 10).
+#' @param eps convergence tolerance for the chained sweeps (data.frame
+#'   interface only; default: 5e-3). Convergence is declared when the
+#'   relative change in imputed values falls below this threshold.
+#' @param trace logical; if \code{TRUE}, print progress of the chained
+#'   sweeps (data.frame interface only).
 #'
 #' @return If \code{value_back = "ymiss"}, a named vector of imputed values
 #'   (for rows that were originally missing) is returned. Otherwise, a list
@@ -531,18 +578,26 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
 #'     \item{data_imputed}{the imputed data.frame (same structure as input)}
 #'     \item{cellweights}{n x p matrix of final cell weights (1 = clean,
 #'       0 = fully downweighted). Categorical columns always have weight 1.}
-#'     \item{converged}{logical, always \code{TRUE} for single-formula
-#'       imputation}
-#'     \item{iterations}{integer, always \code{1L} for single-formula
-#'       imputation}
+#'     \item{converged}{logical; always \code{TRUE} for single-formula
+#'       imputation, convergence of the sweeps for the data.frame interface}
+#'     \item{iterations}{integer; always \code{1L} for single-formula
+#'       imputation, the number of sweeps for the data.frame interface}
 #'   }
 #'
 #' @details
-#' This is a lightweight single-formula alternative to
+#' The formula interface is a lightweight single-response alternative to
 #' \code{\link{imputeCellIRMI}}. It fits one cell-weighted IRWLS regression
 #' using \code{cellIRWLS()} and imputes the missing values in the response
 #' variable. This is appropriate when only one variable needs imputation
 #' and a specific model formula is desired.
+#'
+#' The data.frame interface runs the same per-variable machinery as a
+#' chained-equations algorithm: missing values are initialised
+#' (median/mode), then each variable with missing values in turn is used as
+#' response in a formula containing all remaining variables. Sweeps use
+#' deterministic predictions and are iterated until the relative change of
+#' the imputed values falls below \code{eps} (or \code{maxit} is reached);
+#' the requested \code{uncert} step is applied once after convergence.
 #'
 #' For categorical response variables, a weighted multinomial model via
 #' \code{\link[nnet]{multinom}} is fitted instead. Categorical predictors
@@ -578,13 +633,32 @@ imputeCellIRMI <- function(data, method = "tukey", alpha = NULL,
 #' # Huber weights (less aggressive downweighting)
 #' result2 <- imputeCellM(Dream ~ BodyWgt + BrainWgt, data = sleep,
 #'                        method = "huber")
+#'
+#' # Chained-equations interface: impute all variables with missings
+#' result3 <- imputeCellM(sleep)
+#' head(result3$data_imputed)
 #' }
 #'
 #' @export
 #' @importFrom stats model.frame model.extract model.matrix as.formula
 imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
                         maxit_irwls = 50, eps_irwls = 1e-6,
-                        uncert = "pmm", value_back = "all") {
+                        uncert = "pmm", value_back = "all",
+                        maxit = 10, eps = 5e-3, trace = FALSE) {
+
+  ## ---- data.frame interface: chained equations over all variables ----
+  if (!missing(formula) && !inherits(formula, "formula")) {
+    if (!missing(data))
+      stop("when the first argument is a data.frame/matrix, ",
+           "'data' must not be supplied")
+    if (!identical(value_back, "all"))
+      warning("'value_back' applies to the formula interface only ",
+              "and is ignored")
+    return(.imputeCellM_chain(formula, method = method, alpha = alpha,
+                              maxit_irwls = maxit_irwls,
+                              eps_irwls = eps_irwls, uncert = uncert,
+                              maxit = maxit, eps = eps, trace = trace))
+  }
 
   ## ---- input validation ----
   check_data(data)
@@ -595,7 +669,7 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
       stop("data must be a data.frame or matrix")
   }
   method <- match.arg(method, c("huber", "tukey"))
-  uncert <- match.arg(uncert, c("pmm", "normalerror", "resid"))
+  uncert <- match.arg(uncert, c("pmm", "normalerror", "resid", "none"))
   value_back <- match.arg(value_back, c("all", "ymiss"))
 
   if (is.null(alpha)) {
@@ -690,13 +764,17 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
     sigma_hat <- fit$sigma
 
     # impute with uncertainty
-    ymiss <- .add_uncertainty(
-      pred = pred_all[missindex],
-      y_obs = y[!missindex],
-      pred_obs = pred_all[!missindex],
-      sigma = sigma_hat,
-      uncert = uncert
-    )
+    if (uncert == "none") {
+      ymiss <- pred_all[missindex]
+    } else {
+      ymiss <- .add_uncertainty(
+        pred = pred_all[missindex],
+        y_obs = y[!missindex],
+        pred_obs = pred_all[!missindex],
+        sigma = sigma_hat,
+        uncert = uncert
+      )
+    }
 
   } else {
     ## ---- categorical response: weighted multinomial ----
@@ -717,10 +795,15 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
       w_row <- rep(1, n)
     }
 
-    # fit weighted multinomial
+    # fit weighted multinomial; the weights must live in `data`, because
+    # model.frame() evaluates the weights argument in `data` and then in
+    # environment(formula) -- the caller's environment, where w_row does
+    # not exist
+    data_fit <- data_work
+    data_fit[[".cw_row_weights"]] <- w_row
     multimod <- tryCatch({
       suppressMessages(
-        nnet::multinom(formula, data = data_work, weights = w_row,
+        nnet::multinom(formula, data = data_fit, weights = .cw_row_weights,
                        maxit = 50, trace = FALSE, MaxNWts = 50000)
       )
     }, error = function(e) {
@@ -753,8 +836,13 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
 
     ymiss <- apply(prob_pred, 1, function(pp) {
       pp <- pmax(pp, 0)
-      pp <- pp / sum(pp)
-      sample(colnames(prob_pred), size = 1, prob = pp)
+      if (uncert == "none") {
+        # deterministic: most probable category
+        colnames(prob_pred)[which.max(pp)]
+      } else {
+        pp <- pp / sum(pp)
+        sample(colnames(prob_pred), size = 1, prob = pp)
+      }
     })
 
     if (is.factor(data[[y_var]])) {
@@ -789,6 +877,155 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
       iterations   = 1L
     ))
   }
+}
+
+
+#' Chained-equations engine behind the imputeCellM data.frame interface
+#'
+#' Runs IRMI-style sweeps: every variable with missing values in turn is
+#' the response of a single-formula \code{imputeCellM()} fit on all
+#' remaining variables. Sweeps are deterministic (\code{uncert = "none"})
+#' and iterated until the imputed values stabilise; the requested
+#' uncertainty step is applied once after convergence.
+#'
+#' @param data data.frame or matrix with missing values
+#' @inheritParams imputeCellM
+#' @return list with data_imputed, cellweights, converged, iterations
+#' @keywords internal
+#' @noRd
+.imputeCellM_chain <- function(data, method = "tukey", alpha = NULL,
+                               maxit_irwls = 50, eps_irwls = 1e-6,
+                               uncert = "pmm", maxit = 10, eps = 5e-3,
+                               trace = FALSE) {
+
+  ## ---- input validation ----
+  check_data(data)
+  if (!is.data.frame(data)) {
+    if (is.matrix(data))
+      data <- as.data.frame(data)
+    else
+      stop("data must be a data.frame or matrix")
+  }
+  method <- match.arg(method, c("huber", "tukey"))
+  uncert <- match.arg(uncert, c("pmm", "normalerror", "resid", "none"))
+  if (is.null(alpha)) {
+    alpha <- if (method == "huber") 1.345 else 4.685
+  }
+  if (ncol(data) < 2) stop("Need at least 2 variables.")
+
+  rn <- rownames(data)
+  cn <- colnames(data)
+  n <- nrow(data)
+  p <- ncol(data)
+
+  if (!any(is.na(data))) {
+    message("No missing values in data. Nothing to impute.")
+    W <- matrix(1, nrow = n, ncol = p, dimnames = list(rn, cn))
+    return(list(data_imputed = data, cellweights = W,
+                converged = TRUE, iterations = 0L))
+  }
+  if (any(rowSums(!is.na(data)) == 0))
+    stop("Unit non-responses (entire row missing) detected. Remove them first.")
+
+  ## ---- variable types (as in imputeCellIRMI) ----
+  chr_ind <- which(vapply(data, is.character, logical(1)))
+  if (length(chr_ind) > 0) {
+    warning("At least one character variable is converted into a factor")
+    for (ind in chr_ind) data[[ind]] <- as.factor(data[[ind]])
+  }
+  for (j in seq_len(p)) {
+    if (is.factor(data[[j]]) && nlevels(data[[j]]) < 2)
+      stop(sprintf("Factor with less than 2 levels detected: '%s'", cn[j]))
+  }
+
+  M <- is.na(data)
+  vars_miss <- which(colMeans(M) > 0)
+
+  ## work under safe positional names: pasted formulas break with
+  ## duplicated or non-syntactic column names
+  cn_int <- .cw_safe_names(p)
+  colnames(data) <- cn_int
+
+  ## ---- initialise and sweep ----
+  data <- initialise(data, mixed = NULL, method = "median")
+
+  impute_var <- function(data, j, uncert_j) {
+    work <- data
+    work[[j]][M[, j]] <- NA
+    form_j <- stats::as.formula(
+      paste0(cn_int[j], " ~ ", paste(cn_int[-j], collapse = " + "))
+    )
+    imputeCellM(form_j, work, method = method, alpha = alpha,
+                maxit_irwls = maxit_irwls, eps_irwls = eps_irwls,
+                uncert = uncert_j, value_back = "ymiss")
+  }
+
+  converged <- FALSE
+  iterations <- 0L
+  d <- Inf
+
+  while (d > eps && iterations < maxit) {
+    iterations <- iterations + 1L
+    data_previous <- data
+
+    for (j in vars_miss) {
+      # deterministic sweeps; uncertainty is added after convergence
+      data[M[, j], j] <- impute_var(data, j, uncert_j = "none")
+    }
+
+    ## convergence on imputed cells (criterion as in imputeCellIRMI)
+    d <- 0
+    n_imputed <- 0L
+    for (j in vars_miss) {
+      miss_j <- M[, j]
+      prev_vals <- data_previous[[j]][miss_j]
+      curr_vals <- data[[j]][miss_j]
+      if (is.numeric(curr_vals)) {
+        d <- d + sum((prev_vals - curr_vals)^2) / (sum(prev_vals^2) + 1e-10)
+      } else {
+        d <- d + sum(prev_vals != curr_vals) / sum(miss_j)
+      }
+      n_imputed <- n_imputed + 1L
+    }
+    if (n_imputed > 0) d <- d / n_imputed
+
+    if (trace) {
+      message(sprintf("cellM chain: iteration %d, criterion %g",
+                      iterations, d))
+    }
+    if (d <= eps) converged <- TRUE
+  }
+
+  if (!converged && trace) {
+    message(sprintf("cellM chain did not converge after %d iterations.",
+                    maxit))
+  }
+
+  ## ---- final pass: add the requested imputation uncertainty ----
+  if (uncert != "none") {
+    for (j in vars_miss) {
+      data[M[, j], j] <- impute_var(data, j, uncert_j = uncert)
+    }
+  }
+
+  ## ---- restore names, compute final cell weights ----
+  colnames(data) <- cn
+  rownames(data) <- rn
+  W <- matrix(1, nrow = n, ncol = p, dimnames = list(rn, cn))
+  num_cols <- which(vapply(data, is.numeric, logical(1)))
+  if (length(num_cols) > 0) {
+    W[, num_cols] <- cellWeights(
+      as.matrix(data[, num_cols, drop = FALSE]),
+      method = method, alpha = alpha
+    )
+  }
+
+  list(
+    data_imputed = data,
+    cellweights  = W,
+    converged    = converged,
+    iterations   = iterations
+  )
 }
 
 
@@ -999,7 +1236,7 @@ imputeCellwise <- function(data, method = c("cellIRMI", "cellM", "cellEM"), ...)
   method <- match.arg(method)
   switch(method,
     cellIRMI = imputeCellIRMI(data, ...),
-    cellM = stop("cellM requires a formula; use imputeCellM() directly"),
+    cellM = imputeCellM(data, ...),
     cellEM = imputeCellEM(data, ...)
   )
 }
