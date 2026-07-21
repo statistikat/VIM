@@ -10,10 +10,12 @@ A named list with three \code{validate::validator} objects:
 }
 \description{
 Accounting, additional edit, and combined validation rules for
-\code{lse_synthetic}.
+\link{lse_synthetic}.
 }
 \examples{
+
 data(lse_synthetic_rules)
 names(lse_synthetic_rules)
+
 }
 \keyword{datasets}

@@ -2329,6 +2329,15 @@ predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, featur
   miss_idx <- missing_indices[[var]]
   obs_idx <- setdiff(seq_len(nrow(data)), miss_idx)
 
+  # A method may pin its variables' uncertainty mechanism (restricted pins
+  # "none": a value-level draw on top of the constrained solution would break
+  # the very rules the solver enforced). The user-facing warning for an
+  # explicitly requested draw fires once, at vimpute() entry.
+  override <- vimpute_method_uncert_override(method_var)
+  if (!is.null(override)) {
+    uncert <- override
+  }
+
   if (is_sc) {
     zero_prob_col <- paste0(var, "_zero_prob")
 

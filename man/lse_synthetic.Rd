@@ -24,7 +24,7 @@ personnel costs, gross operating surplus, and tangible investment.
 
 The monetary variables are expressed in thousand euros. The observations are
 generated synthetically and do not contain real enterprise records.
-Companion validation rules are available as \code{lse_synthetic_rules}.
+Companion validation rules are available as \link{lse_synthetic_rules}.
 }
 \examples{
 

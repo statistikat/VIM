@@ -20,7 +20,9 @@ new_vimpute_method_entry <- function(name,
                                      supports_formula = FALSE,
                                      fallback = "robust",
                                      validate = NULL,
-                                     builtin = FALSE) {
+                                     builtin = FALSE,
+                                     uncert_override = NULL,
+                                     model_error = TRUE) {
   if (!is.character(name) || length(name) != 1L || !nzchar(name) || is.na(name)) {
     stop("'name' must be a single non-empty character string.")
   }
@@ -56,6 +58,15 @@ new_vimpute_method_entry <- function(name,
   if (!is.character(fallback) || length(fallback) != 1L || !nzchar(fallback)) {
     stop("'fallback' must be a single method name.")
   }
+  if (!is.null(uncert_override) &&
+      !(is.character(uncert_override) && length(uncert_override) == 1L &&
+        uncert_override == "none")) {
+    stop("'uncert_override' must be NULL or \"none\".")
+  }
+  if (!is.logical(model_error) || length(model_error) != 1L ||
+      is.na(model_error)) {
+    stop("'model_error' must be TRUE or FALSE.")
+  }
   list(
     name = name,
     learner = learner,
@@ -66,7 +77,9 @@ new_vimpute_method_entry <- function(name,
     supports_formula = supports_formula,
     fallback = fallback,
     validate = validate,
-    builtin = builtin
+    builtin = builtin,
+    uncert_override = uncert_override,
+    model_error = model_error
   )
 }
 
@@ -216,6 +229,22 @@ get_vimpute_method <- function(name) {
   if (!is.character(name) || length(name) != 1L) return(NULL)
   if (!exists(name, envir = .vimpute_methods, inherits = FALSE)) return(NULL)
   get(name, envir = .vimpute_methods, inherits = FALSE)
+}
+
+# The uncertainty mechanism a method's registry entry pins its variables to
+# (NULL when the method accepts the run-level uncert unchanged).
+vimpute_method_uncert_override <- function(method) {
+  entry <- get_vimpute_method(method)
+  if (is.null(entry)) return(NULL)
+  entry$uncert_override
+}
+
+# Whether a method's registry entry opts into the per-variable model-quality
+# report (entries predating the field default to TRUE).
+vimpute_method_reports_error <- function(method) {
+  entry <- get_vimpute_method(method)
+  if (is.null(entry)) return(TRUE)
+  !isFALSE(entry$model_error)
 }
 
 # Names of the registered methods that support the formula interface.
@@ -384,7 +413,15 @@ register_builtin_vimpute_methods <- function() {
       learner = list(regr = "regr.restricted"),
       packages = c("ECOSolveR", "validate"),
       setup = function() register_restricted_learners(),
-      supports_formula = TRUE)
+      supports_formula = TRUE,
+      # The method's contract is that imputations satisfy the validation
+      # rules. A value-level draw (pmm/normalerror/resid) on top of the
+      # constrained solution would break the rules it just enforced, so the
+      # engine pins uncert to "none" for restricted variables. model_error
+      # is skipped: the in-sample quality predict would re-run the conic
+      # solver once more per variable for a metric of marginal value.
+      uncert_override = "none",
+      model_error = FALSE)
 
   put("gam",
       learner = list(regr = "regr.gam_imp", classif = "classif.gam_imp"),

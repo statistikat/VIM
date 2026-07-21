@@ -112,13 +112,12 @@ Can be provided in \strong{three ways}:
 \item \strong{Per variable}  (e.g. list(mpg = list(num.trees = 500)))
 \item \strong{Per method}    (e.g. list(ranger = list(num.trees = 600)))
 \item \strong{Global}, applied to all variables using the same method
-}
-For \code{restricted}, set \code{save_optimization_problem = TRUE} to attach
-the exact ECOS problem arguments to the returned object under the
+For \code{restricted}, set \code{save_optimization_problem = TRUE} to attach the
+exact ECOS problem arguments to the returned object under the
 \code{restricted_optimization_problems} attribute.
-Set \code{robust = TRUE} to replace least squares with Huber loss;
-\code{huber_k} controls its tuning constant and defaults to \code{1.345}.
-}
+Set \code{robust = TRUE} to replace least squares with Huber loss; \code{huber_k}
+controls its tuning constant and defaults to \code{1.345}.
+}}
 
 \item{formula}{Optional modeling formula to restrict or transform predictor variables.
 Only supported for methods whose registry entry declares formula support:
@@ -203,7 +202,12 @@ out-of-bag predictions),
 Factor targets draw from the predicted class probabilities whenever
 \code{uncert != "none"} (and are imputed by the most probable class
 otherwise). If \code{pmm = TRUE} is set, it takes precedence over
-\code{uncert}.}
+\code{uncert}.
+Variables imputed by \code{method = "restricted"} always use
+\code{uncert = "none"}: a value-level draw on top of the constrained
+solution would break the validation rules the solver just enforced. The
+default is overridden silently, an explicitly requested draw mechanism
+warns.}
 
 \item{m}{Number of multiple imputations. Default: 1 (single imputation).
 When \code{m > 1}, returns a \code{\link{vimmi}} object storing the original

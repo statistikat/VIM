@@ -52,7 +52,7 @@ warning (as for unknown learners).}
 \item{supports_formula}{Logical: can the method be used with the \code{formula}
 argument of \code{vimpute()}? Formula-based imputation requires a learner that
 models from a design matrix; the built-ins with formula support are
-\code{"robust"}, \code{"regularized"}, \code{"gam"}, and \code{"robgam"}.}
+\code{"robust"}, \code{"regularized"}, \code{"gam"}, \code{"robgam"}, and \code{"restricted"}.}
 
 \item{fallback}{Single method name used when \code{validate} rejects a variable
 or a target type has no learner. Defaults to \code{"robust"}.}
@@ -74,7 +74,7 @@ Invisibly, the registered method name.
 \description{
 \code{vimpute()} resolves its \code{method} argument through a package-level method
 registry. The built-in methods (\code{"ranger"}, \code{"xgboost"}, \code{"regularized"},
-\code{"robust"}, \code{"gam"}, \code{"robgam"}) are pre-registered; this function adds
+\code{"robust"}, \code{"gam"}, \code{"robgam"}, \code{"restricted"}) are pre-registered; this function adds
 (or, with \code{overwrite = TRUE}, replaces) a user-defined method backed by any
 pair of mlr3 learners -- e.g. \code{regr.rpart}/\code{classif.rpart} from mlr3
 itself, or learners from \code{mlr3extralearners} such as lightgbm -- without

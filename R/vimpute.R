@@ -153,6 +153,11 @@
 #'  \code{uncert != "none"} (and are imputed by the most probable class
 #'  otherwise). If \code{pmm = TRUE} is set, it takes precedence over
 #'  \code{uncert}.
+#'  Variables imputed by \code{method = "restricted"} always use
+#'  \code{uncert = "none"}: a value-level draw on top of the constrained
+#'  solution would break the validation rules the solver just enforced. The
+#'  default is overridden silently, an explicitly requested draw mechanism
+#'  warns.
 #' @param m
 #'  Number of multiple imputations. Default: 1 (single imputation).
 #'  When \code{m > 1}, returns a \code{\link{vimmi}} object storing the original
@@ -644,6 +649,21 @@ vimpute <- function(
       warning("Both 'pmm' and 'uncert' specified. 'pmm' takes precedence; 'uncert' ignored.")
     }
     uncert <- "none"
+  }
+
+  # Methods whose registry entry pins the uncertainty mechanism (restricted
+  # pins "none": a draw on top of the constrained solution would break the
+  # rules) silently ignore the default; an explicitly requested draw warns.
+  if (uncert_explicit && uncert != "none") {
+    pinned <- unique(Filter(
+      function(mth) !is.null(vimpute_method_uncert_override(mth)),
+      unlist(method, use.names = FALSE)
+    ))
+    if (length(pinned) > 0L) {
+      warning(sprintf(
+        "uncert = \"%s\" is ignored for method(s) %s: these methods pin their variables to uncert = \"none\" (values must satisfy the method's constraints).",
+        uncert, paste(sprintf("'%s'", pinned), collapse = ", ")), call. = FALSE)
+    }
   }
 
   # PMM only injects between-imputation variability when it draws at random from
@@ -2210,7 +2230,10 @@ vimpute <- function(
 
         # Per-variable quality feedback (each iteration overwrites, so the
         # final model's metric survives); skipped for featureless fallbacks
-        if (!isTRUE(attr(learner, "vimpute_fallback"))) {
+        # and for methods whose registry entry opts out (restricted: the
+        # in-sample predict would re-run the conic solver per variable)
+        if (!isTRUE(attr(learner, "vimpute_fallback")) &&
+            vimpute_method_reports_error(method_var)) {
           me <- compute_model_error(learner, task)
           if (!is.null(me)) model_error_track[[var]] <- me
         }
