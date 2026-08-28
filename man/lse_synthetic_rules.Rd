@@ -5,17 +5,31 @@
 \alias{lse_synthetic_rules}
 \title{Validation rules for the synthetic LSE data}
 \format{
-A named list with three \code{validate::validator} objects:
-\code{accounting}, \code{extra}, and \code{edit}.
+A named list with three data frames: \code{accounting} (36 rules),
+\code{extra} (56 rules), and \code{edit} (92 rules, the combination of both). Each
+has the columns
+\describe{
+\item{name}{rule name (\code{V01}, \code{V02}, ...)}
+\item{rule}{the rule as R code, as accepted by \code{validate::validator(.data = )}}
+}
 }
 \description{
 Accounting, additional edit, and combined validation rules for
-\link{lse_synthetic}.
+\link{lse_synthetic}. The rules are stored as plain data frames of rule text so
+that the data set does not depend on the \code{validate} package; build the
+corresponding \code{validate::validator} objects with
+\code{validate::validator(.data = lse_synthetic_rules$edit)} before passing them
+to \code{vimpute(method = "restricted")}.
 }
 \examples{
 
 data(lse_synthetic_rules)
 names(lse_synthetic_rules)
+head(lse_synthetic_rules$edit)
+if (requireNamespace("validate", quietly = TRUE)) {
+  edit_rules <- validate::validator(.data = lse_synthetic_rules$edit)
+  length(edit_rules)
+}
 
 }
 \keyword{datasets}

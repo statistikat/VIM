@@ -1,3 +1,7 @@
+## Skipped on CRAN (check-time budget): runs locally and on CI with NOT_CRAN=true
+## (devtools::check()/test(), GitHub Actions) -- see tests/tinytest.R.
+if (!at_home()) exit_file("skipped on CRAN: long-running (run with NOT_CRAN=true)")
+
 # vimpute(): adaptive boot default -- bootstrap refits (boot = TRUE) when
 # m > 1 (approximately proper MI draws), single fit (boot = FALSE) when m = 1;
 # an explicit boot = TRUE/FALSE always wins.

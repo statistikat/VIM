@@ -1,7 +1,7 @@
 ---
 title: "Benchmarking imputation methods with makeMissing() and evaluation()"
 author: "Matthias Templ"
-date: "2026-08-28"
+date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Benchmarking imputation methods with makeMissing() and evaluation()}
@@ -9,7 +9,13 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
+                      fig.width = 7, fig.height = 4,
+                      fig.path = "figures/benchmark-")
+has_mice       <- requireNamespace("mice", quietly = TRUE)
+has_missRanger <- requireNamespace("missRanger", quietly = TRUE)
+```
 
 VIM ships the two pieces a fair imputation benchmark needs: `makeMissing()`
 generates missingness with a **known mechanism** in complete data, and
@@ -18,8 +24,7 @@ vignette wires them into a small but complete benchmark harness. The chunks
 below were run when the vignette was precomputed (`vignettes/precompute.R` in
 the source repository; the code is shown unchanged and runs as is) with
 
-
-``` r
+```{r}
 NREP <- 3     # replications per mechanism -- demo scale!
 N    <- 300   # rows drawn from the complete data
 ```
@@ -33,8 +38,7 @@ for the accompanying paper.
 The `tao` data (Tropical Atmosphere Ocean project) offer strongly correlated
 real measurements — exactly the structure conditional imputation can exploit.
 
-
-``` r
+```{r, message = FALSE}
 library(VIM)
 set.seed(2026)
 
@@ -43,7 +47,6 @@ vars  <- c("Sea.Surface.Temp", "Air.Temp", "Humidity", "UWind", "VWind")
 full  <- na.omit(tao[, vars])
 targets <- c("Sea.Surface.Temp", "Air.Temp", "Humidity")
 nrow(full)
-#> [1] 565
 ```
 
 Each replication draws `N` rows, amputes 20% of the three target variables
@@ -55,8 +58,7 @@ every method impute, and scores the per-variable NRMSE on the amputed cells.
 Each method is one function `data.frame -> data.frame`; adding a competitor
 is one more list entry.
 
-
-``` r
+```{r}
 methods <- list(
   "VIM ranger" = function(d) {
     vimpute(d, spec = list(.default = vs_ranger(num.trees = 100)),
@@ -108,13 +110,11 @@ run_benchmark <- function(mechanism) {
 
 ## Results
 
-
-``` r
+```{r, message = FALSE, warning = FALSE, results = "hide"}
 res <- rbind(run_benchmark("MCAR"), run_benchmark("MAR"))
 ```
 
-
-``` r
+```{r}
 summary_tab <- aggregate(cbind(nrmse, seconds) ~ method + mechanism,
                          data = res, FUN = mean)
 summary_tab <- summary_tab[order(summary_tab$mechanism, summary_tab$nrmse), ]
@@ -122,33 +122,11 @@ knitr::kable(summary_tab, digits = 3, row.names = FALSE,
              caption = sprintf("Mean NRMSE over the amputed cells and mean runtime (seconds), %d replications -- demo scale.", NREP))
 ```
 
-
-
-Table: Mean NRMSE over the amputed cells and mean runtime (seconds), 3 replications -- demo scale.
-
-|method     |mechanism | nrmse| seconds|
-|:----------|:---------|-----:|-------:|
-|missRanger |MAR       | 0.723|   0.078|
-|VIM kNN    |MAR       | 0.730|   0.036|
-|VIM ranger |MAR       | 0.803|   0.295|
-|mice pmm   |MAR       | 0.840|   0.017|
-|VIM robust |MAR       | 0.855|   0.290|
-|VIM kNN    |MCAR      | 0.530|   0.038|
-|missRanger |MCAR      | 0.566|   0.083|
-|mice pmm   |MCAR      | 0.762|   0.023|
-|VIM ranger |MCAR      | 0.773|   0.327|
-|VIM robust |MCAR      | 0.815|   0.312|
-
-
-
-
-``` r
+```{r mar-dotchart, fig.height = 3.5}
 mar <- summary_tab[summary_tab$mechanism == "MAR", ]
 dotchart(rev(mar$nrmse), labels = rev(mar$method), pch = 19,
          xlab = "mean NRMSE (MAR, lower is better)")
 ```
-
-![plot of chunk mar-dotchart](figures/benchmark-mar-dotchart-1.png)
 
 At this demo scale the ordering is indicative only; with `NREP <- 200` the
 Monte-Carlo error of the means becomes negligible and the same code produces

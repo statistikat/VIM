@@ -28,17 +28,20 @@ expect_true(data.table::is.data.table(out_dt))
 ## same values regardless of input class (same seed)
 expect_equal(as.data.frame(out_dt), out_df)
 
-## --- tune = TRUE returns data with the report as an attribute -----------------
-res_tuned <- vimpute(d_df, method = "ranger", tune = TRUE, sequential = FALSE,
-                     seed = 1, imp_var = FALSE, verbose = FALSE)
-expect_true(is.data.frame(res_tuned),
-            info = "tune = TRUE must not switch the return type to a bare list")
-expect_false(data.table::is.data.table(res_tuned))
-expect_equal(sum(is.na(res_tuned$Sleep)), 0L)
-tl <- attr(res_tuned, "tuning_log")
-expect_true(is.list(tl) && length(tl) > 0,
-            info = "tuning_log attribute missing from tuned result")
-expect_true(any(vapply(tl, function(e) isTRUE(e$tuned), logical(1))))
+## (tuning block skipped on CRAN -- check-time budget; runs with NOT_CRAN=true)
+if (at_home()) {
+  ## --- tune = TRUE returns data with the report as an attribute -----------------
+  res_tuned <- vimpute(d_df, method = "ranger", tune = TRUE, sequential = FALSE,
+                       seed = 1, imp_var = FALSE, verbose = FALSE)
+  expect_true(is.data.frame(res_tuned),
+              info = "tune = TRUE must not switch the return type to a bare list")
+  expect_false(data.table::is.data.table(res_tuned))
+  expect_equal(sum(is.na(res_tuned$Sleep)), 0L)
+  tl <- attr(res_tuned, "tuning_log")
+  expect_true(is.list(tl) && length(tl) > 0,
+              info = "tuning_log attribute missing from tuned result")
+  expect_true(any(vapply(tl, function(e) isTRUE(e$tuned), logical(1))))
+}
 
 ## --- pred_history = TRUE returns data with the history as an attribute --------
 res_ph <- vimpute(d_df, method = "ranger", pred_history = TRUE,

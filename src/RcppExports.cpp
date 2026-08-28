@@ -11,8 +11,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // gowerd
-RcppExport SEXP gowerd(SEXP dataX, SEXP dataY, SEXP weights, SEXP ncolNUMFAC, SEXP levOrders, SEXP mixedConstants);
-RcppExport SEXP _VIM_gowerd(SEXP dataXSEXP, SEXP dataYSEXP, SEXP weightsSEXP, SEXP ncolNUMFACSEXP, SEXP levOrdersSEXP, SEXP mixedConstantsSEXP) {
+RcppExport SEXP gowerd(SEXP dataX, SEXP dataY, SEXP weights, SEXP ncolNUMFAC, SEXP levOrders, SEXP mixedConstants, int nthreads);
+RcppExport SEXP _VIM_gowerd(SEXP dataXSEXP, SEXP dataYSEXP, SEXP weightsSEXP, SEXP ncolNUMFACSEXP, SEXP levOrdersSEXP, SEXP mixedConstantsSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -22,7 +22,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type ncolNUMFAC(ncolNUMFACSEXP);
     Rcpp::traits::input_parameter< SEXP >::type levOrders(levOrdersSEXP);
     Rcpp::traits::input_parameter< SEXP >::type mixedConstants(mixedConstantsSEXP);
-    rcpp_result_gen = Rcpp::wrap(gowerd(dataX, dataY, weights, ncolNUMFAC, levOrders, mixedConstants));
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(gowerd(dataX, dataY, weights, ncolNUMFAC, levOrders, mixedConstants, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -40,8 +41,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // gowerDind
-RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY, SEXP weights, SEXP ncolNUMFAC, SEXP levOrders, SEXP mixedConstants, SEXP nR, SEXP returnMinR);
-RcppExport SEXP _VIM_gowerDind(SEXP dataXSEXP, SEXP dataYSEXP, SEXP weightsSEXP, SEXP ncolNUMFACSEXP, SEXP levOrdersSEXP, SEXP mixedConstantsSEXP, SEXP nRSEXP, SEXP returnMinRSEXP) {
+RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY, SEXP weights, SEXP ncolNUMFAC, SEXP levOrders, SEXP mixedConstants, SEXP nR, SEXP returnMinR, int nthreads);
+RcppExport SEXP _VIM_gowerDind(SEXP dataXSEXP, SEXP dataYSEXP, SEXP weightsSEXP, SEXP ncolNUMFACSEXP, SEXP levOrdersSEXP, SEXP mixedConstantsSEXP, SEXP nRSEXP, SEXP returnMinRSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -53,7 +54,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type mixedConstants(mixedConstantsSEXP);
     Rcpp::traits::input_parameter< SEXP >::type nR(nRSEXP);
     Rcpp::traits::input_parameter< SEXP >::type returnMinR(returnMinRSEXP);
-    rcpp_result_gen = Rcpp::wrap(gowerDind(dataX, dataY, weights, ncolNUMFAC, levOrders, mixedConstants, nR, returnMinR));
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(gowerDind(dataX, dataY, weights, ncolNUMFAC, levOrders, mixedConstants, nR, returnMinR, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }

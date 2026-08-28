@@ -78,6 +78,9 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,
 #' the effect, prefer `dist_var` variables with few or no missing values.
 #'
 #' @aliases kNN
+#'
+#' Distances are computed by [gowerD()], whose OpenMP threads are governed by
+#' `options(VIM.ncores = )` (at most 2 during `R CMD check`); see there.
 #' @param data data.frame or matrix
 #' @param variable variables where missing values should be imputed
 #' @param k number of Nearest Neighbours used

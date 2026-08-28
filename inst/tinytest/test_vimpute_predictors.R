@@ -1,3 +1,7 @@
+## Skipped on CRAN (check-time budget): runs locally and on CI with NOT_CRAN=true
+## (devtools::check()/test(), GitHub Actions) -- see tests/tinytest.R.
+if (!at_home()) exit_file("skipped on CRAN: long-running (run with NOT_CRAN=true)")
+
 library(VIM)
 
 ## Wave 2: per-variable predictor control + visit sequence (audit P2.55/P1.28).

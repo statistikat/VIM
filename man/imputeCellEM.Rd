@@ -11,6 +11,8 @@ imputeCellEM(
   gamma_init = 3,
   eps_init = 0.1,
   uncert = "conditional",
+  conditioning = "weighted",
+  trust_min = 0.5,
   trace = FALSE
 )
 }
@@ -32,6 +34,19 @@ distribution. Contaminated cells are modeled as having variance
 \item{uncert}{imputation uncertainty method: \code{"conditional"}
 (default) draws from the conditional normal distribution, or
 \code{"pmm"} uses predictive mean matching.}
+
+\item{conditioning}{how observed cells enter the E-step conditional
+moments. \code{"weighted"} (default) multiplies each conditioning
+deviation \eqn{x_{ik} - \mu_k} by its current cell weight
+\eqn{w_{ik}} -- the posterior-expected clean deviation, so likely
+contaminated cells are shrunk towards the mean before they enter
+the conditional. \code{"trust"} conditions only on trusted cells:
+deviations with \eqn{w_{ik} < } \code{trust_min} are set to zero
+(hard threshold). \code{"unweighted"} uses the raw deviations
+(all observed cells fully trusted, as in early versions).}
+
+\item{trust_min}{trust threshold in \eqn{(0, 1)} used when
+\code{conditioning = "trust"} (default: 0.5). Ignored otherwise.}
 
 \item{trace}{logical; if \code{TRUE}, print progress information.}
 }

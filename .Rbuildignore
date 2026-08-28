@@ -20,3 +20,5 @@ pkgdown
 ^\.claude$
 ^dev-notes$
 ^cran-comments\.md$
+^vignettes/.*\.Rmd\.orig$
+^vignettes/precompute\.R$

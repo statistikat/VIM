@@ -1,3 +1,11 @@
+## Long-running integration script: skipped on CRAN (check-time budget). It
+## runs whenever NOT_CRAN=true -- devtools::check()/test() and the GitHub
+## Actions workflow set it -- see tests/tinytest.R.
+if (!identical(Sys.getenv("NOT_CRAN"), "true")) {
+  message("Skipping the vimpute new-features script on CRAN (set NOT_CRAN=true to run it).")
+  quit(save = "no", status = 0L)
+}
+
 required_pkgs <- c(
   "data.table",
   "future",

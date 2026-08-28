@@ -181,7 +181,8 @@ result_mixed <- vimpute(
                 Sleep = "xgboost", 
                 Span = "ranger", 
                 Gest = "regularized"),
-  pred_history = TRUE
+  pred_history = TRUE,
+  sequential = FALSE
   )
 ```
 ```{r}
@@ -189,16 +190,17 @@ dataDS <- as.data.frame(result_mixed[, c("Dream", "Sleep", "Dream_imp", "Sleep_i
 marginplot(dataDS, delimiter = "_imp", main = "Imputation with different Models for each Variable")
 ```
 ```{r, include=TRUE, results='hide', message=FALSE, warning=FALSE, echo=F,}
+# single sweep (sequential = FALSE) keeps the vignette build short
 result_xgboost <- vimpute(
   data = data,
   method = setNames(as.list(rep("xgboost", ncol(data))), names(data)),
-  pred_history = TRUE, verbose = FALSE
+  pred_history = TRUE, verbose = FALSE, sequential = FALSE
   )
 dataDS_xgboost <- as.data.frame(result_xgboost[, c("Dream", "Sleep", "Dream_imp", "Sleep_imp")])
 result_regularized <- vimpute(
   data = data,
   method = setNames(as.list(rep("regularized", ncol(data))), names(data)),
-  pred_history = TRUE
+  pred_history = TRUE, sequential = FALSE
   )
 dataDS_regularized <- as.data.frame(result_regularized[, c("Dream", "Sleep", "Dream_imp", "Sleep_imp")])
 ```
@@ -601,8 +603,8 @@ y <- data.frame(row = sample(nrow(df), size = nbr_missing, replace = TRUE),
 y <- y[!duplicated(y),]
 df[as.matrix(y)] <- NA
 
-# Perform imputation
-result <- vimpute(data = df, pred_history = TRUE)
+# Perform imputation (single sweep keeps the vignette build short)
+result <- vimpute(data = df, pred_history = TRUE, sequential = FALSE)
 
 # Extracting the imputed columns from result
 imputed_columns <- grep("_imp$", names(result), value = TRUE)
@@ -692,7 +694,8 @@ df[as.matrix(y)] <- NA
 result <- vimpute(
   data = df,
   method = setNames(lapply(names(df), function(x) "xgboost"),names(df)),
-  pred_history = TRUE
+  pred_history = TRUE,
+  sequential = FALSE
 )
 
 # Extracting the imputed columns from result

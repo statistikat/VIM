@@ -84,20 +84,23 @@ s <- capture.output(summary(obj))
 expect_true(length(s) > 0)
 expect_true(any(grepl("m = 2", s)))
 
-# --- vimpute robust MI regression ---
+## skipped on CRAN (check-time budget): robust MI with m = 5 takes ~25 s
+if (at_home()) {
+  # --- vimpute robust MI regression ---
 
-set.seed(1)
-robust_mi <- suppressWarnings(
-  vimpute(
-    data = sleep,
-    method = "robust",
-    m = 5,
-    boot = TRUE,
-    robustboot = "stratified",
-    uncert = "normalerror"
+  set.seed(1)
+  robust_mi <- suppressWarnings(
+    vimpute(
+      data = sleep,
+      method = "robust",
+      m = 5,
+      boot = TRUE,
+      robustboot = "stratified",
+      uncert = "normalerror"
+    )
   )
-)
 
-expect_true(inherits(robust_mi, "vimmi"))
-expect_equal(robust_mi$m, 5L)
-expect_equal(sum(is.na(complete(robust_mi, 1))), 0)
+  expect_true(inherits(robust_mi, "vimmi"))
+  expect_equal(robust_mi$m, 5L)
+  expect_equal(sum(is.na(complete(robust_mi, 1))), 0)
+}

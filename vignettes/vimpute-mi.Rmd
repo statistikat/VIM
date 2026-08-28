@@ -117,7 +117,7 @@ intervals — a model-agnostic calibration check that needs no ground truth.
 ```{r}
 ov <- overimpute(amp, "Sleep",
                  spec = list(.default = vs_ranger(num.trees = 100)),
-                 draws = 5, folds = 5, sequential = FALSE, seed = 3)
+                 draws = 5, folds = 3, sequential = FALSE, seed = 3)
 ov
 plot(ov)
 ```

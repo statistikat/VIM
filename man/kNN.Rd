@@ -2,6 +2,27 @@
 % Please edit documentation in R/kNN.R
 \name{kNN}
 \alias{kNN}
+\alias{Distances}
+\alias{are}
+\alias{computed}
+\alias{by}
+\alias{[gowerD()],}
+\alias{whose}
+\alias{OpenMP}
+\alias{threads}
+\alias{governed}
+\alias{`options(VIM.ncores}
+\alias{=}
+\alias{)`}
+\alias{(at}
+\alias{most}
+\alias{2}
+\alias{during}
+\alias{`R}
+\alias{CMD}
+\alias{check`);}
+\alias{see}
+\alias{there.}
 \title{k-Nearest Neighbour Imputation}
 \usage{
 kNN(

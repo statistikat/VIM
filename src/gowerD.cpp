@@ -8,6 +8,19 @@
 #include <omp.h>
 #endif
 
+// Number of OpenMP threads for the parallel regions below. The R side passes
+// vim_ncores(): getOption("VIM.ncores"), else 2 under R CMD check (CRAN allows
+// at most two cores), else 0 = OpenMP's own default. Always 1 without OpenMP.
+static int vim_omp_threads(int n) {
+#ifdef _OPENMP
+  if (n == NA_INTEGER || n < 1) n = omp_get_max_threads();
+  return n < 1 ? 1 : n;
+#else
+  (void)n;
+  return 1;
+#endif
+}
+
 void R_init_VIM(DllInfo* info) {
 	R_registerRoutines(info, NULL, NULL, NULL, NULL);
 	R_useDynamicSymbols(info, TRUE);
@@ -77,7 +90,7 @@ void whichminN_impl(std::vector<double>& x, int n, double* out, double* outMin=n
 }
 // [[Rcpp::export]]
 RcppExport SEXP gowerd(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,
-                       SEXP levOrders,SEXP mixedConstants) {
+                       SEXP levOrders,SEXP mixedConstants, int nthreads = 0) {
   BEGIN_RCPP
   NumericMatrix xMat(dataX);	// creates Rcpp matrix from SEXP
   NumericMatrix yMat(dataY);	// creates Rcpp matrix from SEXP
@@ -89,7 +102,9 @@ RcppExport SEXP gowerd(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,
   int ny = yMat.nrow();
   NumericMatrix delta(nx,ny);
   double ncolMAX = ncolVAR(0)+ncolVAR(1)+ncolVAR(2)+ncolVAR(3);
-#pragma omp parallel for collapse(2) if (nx * ny > 1)
+  const int nth = vim_omp_threads(nthreads);
+  (void)nth;  // only used by the OpenMP pragma
+#pragma omp parallel for collapse(2) if (nx * ny > 1) num_threads(nth)
   for (int i=0; i<nx; i++) {
     for (int j=0; j<ny; j++) {
         delta(i,j)=distW1(xMat, yMat, i, j, weight, levOrder,
@@ -130,16 +145,18 @@ RcppExport SEXP whichminN(SEXP xR, SEXP nR, int returnValue) {
 
 // [[Rcpp::export]]
 RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SEXP levOrders,
-  SEXP mixedConstants,SEXP nR,SEXP returnMinR){
+  SEXP mixedConstants,SEXP nR,SEXP returnMinR, int nthreads = 0){
   BEGIN_RCPP
-  List dist = gowerd( dataX,  dataY, weights, ncolNUMFAC, levOrders, mixedConstants);
+  List dist = gowerd( dataX,  dataY, weights, ncolNUMFAC, levOrders, mixedConstants, nthreads);
   NumericMatrix delta = as<NumericMatrix>(dist["delta"]);
   int nc=delta.cols();
   int n = as<int>(nR);
   int returnMin = as<int>(returnMinR);
   NumericMatrix inds(n,nc);
+  const int nth = vim_omp_threads(nthreads);
+  (void)nth;  // only used by the OpenMP pragmas
   if(returnMin==0){
-#pragma omp parallel for if (nc > 1)
+#pragma omp parallel for if (nc > 1) num_threads(nth)
     for (int i=0; i<nc; i++) {
       std::vector<double> column(delta.rows());
       std::copy(delta.begin() + static_cast<R_xlen_t>(i) * delta.rows(),
@@ -152,7 +169,7 @@ RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SE
     );
   }else{
     NumericMatrix mins(n,nc);
-#pragma omp parallel for if (nc > 1)
+#pragma omp parallel for if (nc > 1) num_threads(nth)
     for (int i=0; i<nc; i++) {
       std::vector<double> column(delta.rows());
       std::copy(delta.begin() + static_cast<R_xlen_t>(i) * delta.rows(),

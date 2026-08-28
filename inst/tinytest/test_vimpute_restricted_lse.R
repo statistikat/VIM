@@ -4,7 +4,7 @@ if (
 ) {
   utils::data("lse_synthetic", package = "VIM")
   utils::data("lse_synthetic_rules", package = "VIM")
-  lse_edit_rules <- lse_synthetic_rules$edit
+  lse_edit_rules <- validate::validator(.data = lse_synthetic_rules$edit)
 
   numeric_cols <- c(
     "persons_employed",

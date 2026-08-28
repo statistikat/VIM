@@ -238,15 +238,17 @@ c(
 ## Synthetic LSE Data
 
 The package includes `lse_synthetic` and `lse_synthetic_rules`, a compact
-synthetic business-statistics example with many linear edit rules. The test
-suite uses this data at larger scale; the vignette uses a smaller slice so it
-can be knitted quickly.
+synthetic business-statistics example with many linear edit rules. The rules
+ship as plain data frames of rule text (so the data set does not depend on
+`validate`); `validate::validator(.data = )` turns a rule set into a validator.
+The test suite uses this data at larger scale; the vignette uses a smaller
+slice so it can be knitted quickly.
 
 ```{r lse-example, eval=has_restricted_backend, message=FALSE, warning=FALSE}
 data("lse_synthetic", package = "VIM")
 data("lse_synthetic_rules", package = "VIM")
 
-lse_rules <- lse_synthetic_rules$edit
+lse_rules <- validate::validator(.data = lse_synthetic_rules$edit)
 
 numeric_cols <- c(
   "persons_employed",

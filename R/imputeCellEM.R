@@ -19,6 +19,17 @@
 #' @param uncert imputation uncertainty method: \code{"conditional"}
 #'   (default) draws from the conditional normal distribution, or
 #'   \code{"pmm"} uses predictive mean matching.
+#' @param conditioning how observed cells enter the E-step conditional
+#'   moments. \code{"weighted"} (default) multiplies each conditioning
+#'   deviation \eqn{x_{ik} - \mu_k} by its current cell weight
+#'   \eqn{w_{ik}} -- the posterior-expected clean deviation, so likely
+#'   contaminated cells are shrunk towards the mean before they enter
+#'   the conditional. \code{"trust"} conditions only on trusted cells:
+#'   deviations with \eqn{w_{ik} < } \code{trust_min} are set to zero
+#'   (hard threshold). \code{"unweighted"} uses the raw deviations
+#'   (all observed cells fully trusted, as in early versions).
+#' @param trust_min trust threshold in \eqn{(0, 1)} used when
+#'   \code{conditioning = "trust"} (default: 0.5). Ignored otherwise.
 #' @param trace logical; if \code{TRUE}, print progress information.
 #'
 #' @return A list with components:
@@ -156,7 +167,9 @@
 #' @importFrom stats dnorm rnorm cov median mad model.matrix predict
 imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
                          gamma_init = 3, eps_init = 0.1,
-                         uncert = "conditional", trace = FALSE) {
+                         uncert = "conditional",
+                         conditioning = "weighted", trust_min = 0.5,
+                         trace = FALSE) {
 
   ## ---- input validation ----
   check_data(data)
@@ -167,6 +180,11 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
       stop("data must be a data.frame or matrix")
   }
   uncert <- match.arg(uncert, c("conditional", "pmm"))
+  conditioning <- match.arg(conditioning,
+                            c("weighted", "trust", "unweighted"))
+  if (!is.numeric(trust_min) || length(trust_min) != 1L ||
+      trust_min <= 0 || trust_min >= 1)
+    stop("trust_min must be a single number in (0, 1)")
 
   if (gamma_init <= 1)
     stop("gamma_init must be > 1")
@@ -364,10 +382,18 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
         X_other <- X_cont[, other_cont, drop = FALSE]
         mu_other <- mu[other_cont]
 
-        # Cell-weight-adjusted deviations (use previous weights)
+        # Conditioning deviations, adjusted by the previous cell weights.
+        # "weighted": posterior-expected clean deviation w * (x - mu);
+        # "trust": hard threshold -- untrusted cells conditioned at the mean;
+        # "unweighted": raw deviations (all observed cells fully trusted).
         W_other <- W_prev[, cont_idx[other_cont], drop = FALSE]
         dev_other <- sweep(X_other, 2, mu_other, "-")
-        dev_weighted <- dev_other * W_other
+        cond_w <- switch(conditioning,
+          weighted   = W_other,
+          trust      = (W_other >= trust_min) * 1,
+          unweighted = matrix(1, nrow(W_other), ncol(W_other))
+        )
+        dev_weighted <- dev_other * cond_w
 
         mu_cond <- mu[jj] + as.numeric(dev_weighted %*%
                                          as.numeric(Sigma_mjmj_inv %*% Sigma_mjj))

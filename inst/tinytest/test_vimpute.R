@@ -220,26 +220,29 @@ library(VIM)
 # 
 
 # vimpute returns tuning_log output when tune is requested", {
-  d <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
-  method_all <- setNames(as.list(rep("ranger", ncol(d))), names(d))
-  pmm_all <- setNames(as.list(rep(TRUE, ncol(d))), names(d))
+## (skipped on CRAN -- check-time budget: tuning is long-running; runs with NOT_CRAN=true)
+if (at_home()) {
+    d <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
+    method_all <- setNames(as.list(rep("ranger", ncol(d))), names(d))
+    pmm_all <- setNames(as.list(rep(TRUE, ncol(d))), names(d))
 
-  set.seed(1)
-  out <- suppressWarnings(vimpute(
-    d,
-    method = method_all,
-    pmm = pmm_all,
-    sequential = TRUE,
-    nseq = 2,
-    tune = TRUE,
-    imp_var = FALSE
-  ))
+    set.seed(1)
+    out <- suppressWarnings(vimpute(
+      d,
+      method = method_all,
+      pmm = pmm_all,
+      sequential = TRUE,
+      nseq = 2,
+      tune = TRUE,
+      imp_var = FALSE
+    ))
 
-  # type-stable contract: data returned, tuning report as an attribute
-  expect_true(inherits(out, "data.frame"))
-  tl <- attr(out, "tuning_log")
-  expect_true(length(tl) > 0)
-  expect_true(all(c("variable", "tuned_better") %in% names(tl[[1]])))
+    # type-stable contract: data returned, tuning report as an attribute
+    expect_true(inherits(out, "data.frame"))
+    tl <- attr(out, "tuning_log")
+    expect_true(length(tl) > 0)
+    expect_true(all(c("variable", "tuned_better") %in% names(tl[[1]])))
+}
 # 
 
 # vimpute runs robust method without leaving missings", {

@@ -36,21 +36,24 @@ expect_error(
   "Unknown variable"
 )
 
-## --- integration: m > 1 with tune = TRUE tunes once, surfaces the report ----
-set.seed(1)
-r <- vimpute(d, method = "ranger", sequential = FALSE, m = 2,
-             boot = TRUE, uncert = "normalerror", tune = TRUE,
-             seed = 1, imp_var = FALSE, verbose = FALSE)
-expect_inherits(r, "vimmi")
-expect_true(!is.null(r$tuning_log) && length(r$tuning_log) > 0,
-            info = "vimmi lost run 1's tuning report")
-## every logged entry carries the parameters that all m runs then share
-vars_logged <- vapply(r$tuning_log, function(e) e$variable, character(1))
-expect_true(all(c("Sleep", "Dream", "Span") %in% vars_logged))
-has_params <- vapply(r$tuning_log, function(e) !is.null(e$params), logical(1))
-expect_true(any(has_params), info = "tuning_log entries carry no params")
-## the m imputations still differ (uncertainty is preserved)
-expect_false(identical(r$imp[["Sleep"]][[1]], r$imp[["Sleep"]][[2]]))
+## (tuning block skipped on CRAN -- check-time budget; runs with NOT_CRAN=true)
+if (at_home()) {
+  ## --- integration: m > 1 with tune = TRUE tunes once, surfaces the report ----
+  set.seed(1)
+  r <- vimpute(d, method = "ranger", sequential = FALSE, m = 2,
+               boot = TRUE, uncert = "normalerror", tune = TRUE,
+               seed = 1, imp_var = FALSE, verbose = FALSE)
+  expect_inherits(r, "vimmi")
+  expect_true(!is.null(r$tuning_log) && length(r$tuning_log) > 0,
+              info = "vimmi lost run 1's tuning report")
+  ## every logged entry carries the parameters that all m runs then share
+  vars_logged <- vapply(r$tuning_log, function(e) e$variable, character(1))
+  expect_true(all(c("Sleep", "Dream", "Span") %in% vars_logged))
+  has_params <- vapply(r$tuning_log, function(e) !is.null(e$params), logical(1))
+  expect_true(any(has_params), info = "tuning_log entries carry no params")
+  ## the m imputations still differ (uncertainty is preserved)
+  expect_false(identical(r$imp[["Sleep"]][[1]], r$imp[["Sleep"]][[2]]))
+}
 
 ## --- tune-once wall-clock guard (dev machines only; skipped on CRAN) --------
 if (at_home()) {

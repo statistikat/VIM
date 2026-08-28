@@ -29,6 +29,13 @@
 #' rule and biases nearest-neighbour selection towards records that share the
 #' same missingness pattern.
 #'
+#' The distance computation is parallelised with OpenMP where R was built with
+#' OpenMP support. The number of threads is `getOption("VIM.ncores")`; if the
+#' option is unset, at most 2 threads are used while the package is checked
+#' (`R CMD check` sets `_R_CHECK_LIMIT_CORES_`; CRAN policy allows at most two
+#' cores) and OpenMP's default -- typically all cores, or `OMP_NUM_THREADS` --
+#' otherwise. Results do not depend on the number of threads.
+#'
 #' returnIndex=FALSE: a numerical matrix n x m with the computed distances
 #' returnIndex=TRUE: a named list with "ind" containing the requested indices and "mins" the computed distances
 #' @examples
@@ -164,6 +171,7 @@ gowerD <- function(data.x, data.y = data.x,
   levOrders <- as.numeric(levOrders)
   if(returnIndex){
     out <- gowerDind( as.matrix(data.x), as.matrix(data.y),weights[weightind],
+        nthreads = vim_ncores(),
         c(length(numerical),length(factors),length(orders),length(mixed)),
         levOrders,mixed.constant,nMin,as.integer(returnMin))
     out <- list(ind=out$ind,mins=out$min)
@@ -174,6 +182,7 @@ gowerD <- function(data.x, data.y = data.x,
 
   }else{
     out <- gowerd(as.matrix(data.x), as.matrix(data.y),weights[weightind],
+        nthreads = vim_ncores(),
         c(length(numerical),length(factors),length(orders),length(mixed)),
         levOrders,mixed.constant)
     if(justone)

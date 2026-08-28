@@ -1,3 +1,7 @@
+## Skipped on CRAN (check-time budget): runs locally and on CI with NOT_CRAN=true
+## (devtools::check()/test(), GitHub Actions) -- see tests/tinytest.R.
+if (!at_home()) exit_file("skipped on CRAN: long-running (run with NOT_CRAN=true)")
+
 library(VIM)
 
 ## Regression test for tune = TRUE (Wave 1, audit P1).
