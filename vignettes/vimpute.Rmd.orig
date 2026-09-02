@@ -8,7 +8,16 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  fig.align = "center",
+  fig.path = "figures/vimpute-"
+)
+```
 
 ## Introduction
 
@@ -44,31 +53,22 @@ This vignette demonstrates how to use the `vimpute()` function for flexible miss
 
 To demonstrate the function, the `sleep` dataset from the `VIM` package is used. 
 
-
-
-``` r
+```{r, echo = FALSE, results='hide', message=FALSE, warning=FALSE}
+library(VIM)
+library(data.table)
+```
+```{r setup_2, message = FALSE}
 data <- as.data.table(VIM::sleep)
 a <- aggr(sleep, plot = FALSE)
 plot(a, numbers = TRUE, prop = FALSE)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="figures/vimpute-setup_2-1.png" alt="plot of chunk setup_2"  />
-<p class="caption">plot of chunk setup_2</p>
-</div>
-
 The left plot shows the amount of missings for each column in the dataset sleep and the right plot shows how often each combination of missings occur. For example, there are 9 rows wich contain a missing in both NonD and Dream.
 
-
-``` r
+```{r, message = FALSE}
 dataDS <- sleep[, c("Dream", "Sleep")]
 marginplot(dataDS, main = "Missing Values")
 ```
-
-<div class="figure" style="text-align: center">
-<img src="figures/vimpute-unnamed-chunk-3-1.png" alt="plot of chunk unnamed-chunk-3"  />
-<p class="caption">plot of chunk unnamed-chunk-3</p>
-</div>
 
 The __<font color="red">red</font>__ boxplot on the left shows the distrubution of all values of Sleep where Dream contains a missing value. 
 The __<font color="#87ceeb">blue</font>__ boxplot on the left shows the distribution of the values of Sleep where Dream is observed.
@@ -79,39 +79,21 @@ The __<font color="#87ceeb">blue</font>__ boxplot on the left shows the distribu
 
 In the basic usage, the `vimpute()` function uses the default settings: all variables are imputed with the "ranger" method, sequential imputation is enabled (`nseq = 10`, `eps = 0.005`), PMM is off, formulas are off, no tuning is performed, and imputation indicators are added.
 
-
-``` r
+```{r, include=TRUE, results='hide', message=FALSE, warning=FALSE}
 result <- vimpute(
   data = data,
   pred_history = TRUE)
 ```
-
-``` r
+```{r}
 print(head(result, 3))
-#>     BodyWgt BrainWgt  NonD Dream Sleep  Span  Gest  Pred   Exp Danger NonD_imp
-#>       <num>    <num> <num> <num> <num> <num> <num> <num> <num>  <num>   <lgcl>
-#> 1: 6654.000   5712.0   2.1   1.5   3.3  38.6   645     3     5      3     TRUE
-#> 2:    1.000      6.6   6.3   2.0   8.3   4.5    42     3     1      3    FALSE
-#> 3:    3.385     44.5  10.4   2.4  12.5  14.0    60     1     1      1     TRUE
-#>    Dream_imp Sleep_imp Span_imp Gest_imp
-#>       <lgcl>    <lgcl>   <lgcl>   <lgcl>
-#> 1:      TRUE     FALSE    FALSE    FALSE
-#> 2:     FALSE     FALSE    FALSE    FALSE
-#> 3:      TRUE     FALSE    FALSE    FALSE
 ```
 
 Results and information about missing/imputed values can be shown in the plot margins:
 
-
-``` r
+```{r}
 dataDS <- as.data.frame(result[, c("Dream", "Sleep", "Dream_imp", "Sleep_imp")])
 marginplot(dataDS, delimiter = "_imp", main = "Imputation with Default Model")
 ```
-
-<div class="figure" style="text-align: center">
-<img src="figures/vimpute-unnamed-chunk-6-1.png" alt="plot of chunk unnamed-chunk-6"  />
-<p class="caption">plot of chunk unnamed-chunk-6</p>
-</div>
 
 The result is the imputed dataset; with `pred_history = TRUE` the prediction history is attached as an attribute.
 
@@ -155,8 +137,7 @@ Per-variable settings can also be bundled into **spec objects** — one object p
 of coordinating the parallel `method`/`learner_params`/`formula`/`tune`/... arguments — or written
 as a compact **formula grammar**. Both compile to the classic arguments, so results are identical:
 
-
-``` r
+```{r, eval=FALSE}
 # spec objects: everything about a variable in one place,
 # learner parameters validated at the constructor call
 res <- vimpute(sleep_data,
@@ -183,8 +164,7 @@ Beyond the built-ins, any pair of mlr3 learners can be registered as an addition
 single call — no changes to VIM required. The registered name then works everywhere the built-in
 names do (global `method`, per-variable lists, method-keyed `learner_params`, specs and grammar):
 
-
-``` r
+```{r, eval=FALSE}
 # CART trees via mlr3's rpart learners
 register_vimpute_method("cart",
   learner  = list(regr = "regr.rpart", classif = "classif.rpart"),
@@ -194,8 +174,7 @@ imp_cart <- vimpute(sleep_data, method = "cart")
 vimpute_methods()  # lists built-ins plus registered methods
 ```
 
-
-``` r
+```{r, include=TRUE, results='hide', message=FALSE, warning=FALSE}
 result_mixed <- vimpute(
   data = data,
   method = list(NonD = "robust", 
@@ -207,32 +186,41 @@ result_mixed <- vimpute(
   sequential = FALSE
   )
 ```
-
-``` r
+```{r}
 dataDS <- as.data.frame(result_mixed[, c("Dream", "Sleep", "Dream_imp", "Sleep_imp")])
 marginplot(dataDS, delimiter = "_imp", main = "Imputation with different Models for each Variable")
 ```
-
-<div class="figure" style="text-align: center">
-<img src="figures/vimpute-unnamed-chunk-10-1.png" alt="plot of chunk unnamed-chunk-10"  />
-<p class="caption">plot of chunk unnamed-chunk-10</p>
-</div>
-
+```{r, include=TRUE, results='hide', message=FALSE, warning=FALSE, echo=F,}
+# single sweep (sequential = FALSE) keeps the vignette build short
+result_xgboost <- vimpute(
+  data = data,
+  method = setNames(as.list(rep("xgboost", ncol(data))), names(data)),
+  pred_history = TRUE, verbose = FALSE, sequential = FALSE
+  )
+dataDS_xgboost <- as.data.frame(result_xgboost[, c("Dream", "Sleep", "Dream_imp", "Sleep_imp")])
+result_regularized <- vimpute(
+  data = data,
+  method = setNames(as.list(rep("regularized", ncol(data))), names(data)),
+  pred_history = TRUE, sequential = FALSE
+  )
+dataDS_regularized <- as.data.frame(result_regularized[, c("Dream", "Sleep", "Dream_imp", "Sleep_imp")])
+```
 
 The side-by-side margin plots compare the performance of two imputation methods: xgboost (left) and regularized (right): 
 
-<div class="figure" style="text-align: center">
-<img src="figures/vimpute-unnamed-chunk-12-1.png" alt="plot of chunk unnamed-chunk-12"  />
-<p class="caption">plot of chunk unnamed-chunk-12</p>
-</div>
+```{r, echo=F, warning=F}
+par(mfrow = c(1, 2))
+marginplot(dataDS_xgboost, delimiter = "_imp", main = "Imputation with xgboost")
+marginplot(dataDS_regularized, delimiter = "_imp", main = "Imputation with Regularized")
+par(mfrow = c(1, 1))
+```
 
 xgboost handles missing values with data-driven, uneven imputations that capture complex patterns but may be less stable, while regularized methods produce smoother, more conservative estimates that are less prone to overfitting. The key difference lies in flexibility (xgboost) versus shrinkage-based stability (regularization). Note that regularization is not robustness in the statistical sense: it stabilises coefficients against multicollinearity and overfitting, but does not protect against outliers -- for outlier-resistant imputation use the `"robust"` or `"robgam"` methods.
 
 #### Parameter `pmm` 
 <small>*(default: FALSE)*</small>
 
-
-``` r
+```{r, eval = FALSE}
 result <- vimpute(
   data = data,
   method = list(NonD = "robust", 
@@ -276,8 +264,7 @@ If a variable-specific list contains `NULL`, `vimpute()` falls back to `"mean"` 
 
 You can provide `pmm_k_method` globally as a single value/function (applies to all numeric variables where `pmm = TRUE` and `pmm_k > 1`), or as a named list per variable.
 
-
-``` r
+```{r, eval = FALSE}
 result <- vimpute(
   data = data,
   pmm = list(Dream = TRUE, Sleep = TRUE, NonD = FALSE),
@@ -291,8 +278,7 @@ result <- vimpute(
 
 Custom aggregation functions are also possible. The function receives the nearest donor values and must return exactly one non-missing numeric value.
 
-
-``` r
+```{r, eval = FALSE}
 result <- vimpute(
   data = data,
   pmm = list(Dream = TRUE),
@@ -309,8 +295,7 @@ This is useful if different variables are imputed with different methods and eac
 
 You can provide `learner_params` globally (when one method is used for all variables), as a method-level list, or as a named list per variable.
 
-
-``` r
+```{r, eval = FALSE}
 result <- vimpute(
   data = data,
   method = list(Dream = "ranger", Sleep = "xgboost"),
@@ -363,8 +348,7 @@ Specifies custom model formulas for imputation of each variable, offering precis
 
 **Example Demonstration:**
 
-
-``` r
+```{r, eval = FALSE}
 result <- vimpute(
   data = data,
   method = setNames(as.list(rep("regularized", ncol(data))), names(data)),
@@ -400,8 +384,7 @@ result <- vimpute(
 - All model.matrix-compatible functions work for predictors (for more information see ?model.matrix) 
 - Response transformations (left side) are automatically back-transformed
 
-
-``` r
+```{r, eval = FALSE}
 result_gam <- vimpute(
   data = data,
   method = list(Gest = "gam"),
@@ -417,8 +400,7 @@ result_gam <- vimpute(
 `makeNA` defines values that should be treated as missing for selected variables.
 This is useful when special codes such as `-999`, `"unknown"` or `"not measured"` should be imputed, while regular `NA` values in the same variable should remain untouched.
 
-
-``` r
+```{r, eval = FALSE}
 result <- vimpute(
   data = data,
   method = list(Dream = "ranger"),
@@ -435,8 +417,7 @@ If a variable is listed in `makeNA`, only the matching values are imputed for th
 `donorcond` restricts which observed values are allowed to act as donors / training observations for a target variable.
 Conditions are supplied as character strings and evaluated on the target values via the temporary variable `x`.
 
-
-``` r
+```{r, eval = FALSE}
 result <- vimpute(
   data = data,
   method = list(Dream = "ranger"),
@@ -460,8 +441,7 @@ These arguments control additional imputation uncertainty.
   - `"pmm"` uses score-based predictive mean matching.
   - `"midastouch"` uses PMM with covariate-distance weighting.
 
-
-``` r
+```{r, eval = FALSE}
 result <- vimpute(
   data = data,
   method = list(Dream = "ranger"),
@@ -479,8 +459,7 @@ If explicit `pmm = TRUE` is used for a variable, it takes precedence over `uncer
 
 `m` controls multiple imputation. If `m > 1`, `vimpute()` returns a `vimmi` object instead of a single completed dataset.
 
-
-``` r
+```{r, eval = FALSE}
 mi <- vimpute(
   data = data,
   method = list(Dream = "ranger"),
@@ -501,8 +480,7 @@ The `vimmi` object stores the original data and the imputed values efficiently. 
 #### Parameter `tune` 
 <small>*(default: FALSE)*</small>
 
-
-``` r
+```{r, eval = FALSE}
 result <- vimpute(
   data = data,
   tune = TRUE
@@ -527,8 +505,7 @@ When tuning is enabled, the tuning report is attached to the imputed dataset as 
 #### Parameters `nseq` and `eps`
 <small>*(default: 10 and default: 0.005)*</small>
 
-
-``` r
+```{r, eval = FALSE}
 result <- vimpute(
   data = data,
   nseq = 20,
@@ -550,8 +527,7 @@ result <- vimpute(
 #### Parameter `imp_var`
 <small>*(default: TRUE)*</small>
 
-
-``` r
+```{r, eval = FALSE}
 result <- vimpute(
   data = data,
   imp_var = TRUE
@@ -564,28 +540,15 @@ Creating indicator variables for imputed values adds "_imp" columns (TRUE/FALSE)
 #### Parameter `pred_history`
 <small>*(default: FALSE)*</small> 
 
-
-``` r
+```{r}
 print(tail(attr(result, "pred_history"), 9))
-#>    iteration variable index predicted_values
-#>        <int>   <char> <int>            <num>
-#> 1:        10    Sleep    62             10.6
-#> 2:        10     Span     4              4.5
-#> 3:        10     Span    13              2.3
-#> 4:        10     Span    35              3.5
-#> 5:        10     Span    36              3.9
-#> 6:        10     Gest    13             30.0
-#> 7:        10     Gest    19            225.0
-#> 8:        10     Gest    20             33.0
-#> 9:        10     Gest    56             16.0
 ```
 
 When enabled (TRUE), this option saves prediction trajectories, allowing users to track how imputed values evolve across iterations. This feature is particularly useful for diagnosing convergence issues.
 
 Since VIM 7.3.0, `vimpute()` always returns the imputed dataset itself (classed like the input); the prediction history rides along as an attribute. Access it via `attr(result, "pred_history")` — the result is the imputed data directly.
 
-
-``` r
+```{r, eval = FALSE}
 result <- vimpute(data = data, pred_history = TRUE)
 
 # Access imputed data
@@ -599,8 +562,7 @@ tail(attr(result, "pred_history"), 9)
 ## Performance 
 
 In order to validate the performance of vimpute() the iris dataset is used. Firstly, some values are randomly set to `NA`.
-
-``` r
+```{r}
 library(reactable)
 
 data(iris)
@@ -616,32 +578,187 @@ df[as.matrix(y)]<-NA
 
 aggr(df)
 ```
-
-<div class="figure" style="text-align: center">
-<img src="figures/vimpute-unnamed-chunk-28-1.png" alt="plot of chunk unnamed-chunk-28"  />
-<p class="caption">plot of chunk unnamed-chunk-28</p>
-</div>
-
-``` r
+```{r}
 sapply(df, function(x)sum(is.na(x)))
-#> S.Length  S.Width P.Length  P.Width  Species 
-#>       12       10       13       12        0
 ```
 
 The data contains missing values across all variables, with some observations missing multiple values. The subsequent step involves variable imputation, and the following tables present the rounded first five imputation results for each variable.
 
 For default model: 
 
+```{r, results='hide', message=FALSE, warning=FALSE,include=FALSE}
+library(reactable)
 
-<div class="figure" style="text-align: center">
-<img src="figures/vimpute-unnamed-chunk-31-1.png" alt="plot of chunk unnamed-chunk-31"  />
-<p class="caption">plot of chunk unnamed-chunk-31</p>
-</div>
+data(iris)
+df <- as.data.table(iris)
+colnames(df) <- c("S.Length","S.Width","P.Length","P.Width","Species")
+
+# Create complete copy before introducing NAs
+complete_data <- df
+
+# Randomly produce missing values
+set.seed(1)
+nbr_missing <- 50
+y <- data.frame(row = sample(nrow(df), size = nbr_missing, replace = TRUE),
+                col = sample(ncol(df), size = nbr_missing, replace = TRUE))
+y <- y[!duplicated(y),]
+df[as.matrix(y)] <- NA
+
+# Perform imputation (single sweep keeps the vignette build short)
+result <- vimpute(data = df, pred_history = TRUE, sequential = FALSE)
+
+# Extracting the imputed columns from result
+imputed_columns <- grep("_imp$", names(result), value = TRUE)
+
+# Create a function to compare true and imputed values
+compare_values <- function(true_data, pred_data, imputed_data, col_name) {
+  comparison <- data.frame(
+    True_Value = true_data[[col_name]],
+    Imputed_Value = ifelse(imputed_data, pred_data[[col_name]], NA)
+  )
+  comparison <- comparison[!is.na(comparison$Imputed_Value), ]
+  return(comparison)
+}
+
+# Initialize an empty list to store the comparison tables
+comparison_list <- list()
+
+# Loop through each imputed column and create a comparison table
+for (imputed_col in imputed_columns) {
+  col_name <- sub("_imp$", "", imputed_col)
+  comparison_list[[col_name]] <- compare_values(complete_data, result, result[[imputed_col]], col_name)
+}
+
+# Prepare the results in a combined wide format, ensuring equal row numbers
+results <- cbind(
+  "TRUE1" = head(comparison_list[["S.Length"]][, "True_Value"], 5),
+  "IMPUTED1" = head(comparison_list[["S.Length"]][, "Imputed_Value"], 5),
+  "TRUE2" = head(comparison_list[["S.Width"]][, "True_Value"], 5),
+  "IMPUTED2" = head(comparison_list[["S.Width"]][, "Imputed_Value"], 5),
+  "TRUE3" = head(comparison_list[["P.Length"]][, "True_Value"], 5),
+  "IMPUTED3" = head(comparison_list[["P.Length"]][, "Imputed_Value"], 5),
+  "TRUE4" = head(comparison_list[["P.Width"]][, "True_Value"], 5),
+  "IMPUTED4" = head(comparison_list[["P.Width"]][, "Imputed_Value"], 5)
+)
+
+# Print the combined wide format table
+print(results)
+```
+```{r echo=F,warning=F}
+# Load the reactable library
+library(reactable)
+
+# Create the reactable
+reactable(results, columns = list(
+  TRUE1 = colDef(name = "True"),
+  IMPUTED1 = colDef(name = "Imputed"),
+  TRUE2 = colDef(name = "True"),
+  IMPUTED2 = colDef(name = "Imputed"),
+  TRUE3 = colDef(name = "True"),
+  IMPUTED3 = colDef(name = "Imputed"),
+  TRUE4 = colDef(name = "True"),
+  IMPUTED4 = colDef(name = "Imputed")
+),
+columnGroups = list(
+  colGroup(name = "S.Length", columns = c("TRUE1", "IMPUTED1")),
+  colGroup(name = "S.Width", columns = c("TRUE2", "IMPUTED2")),
+  colGroup(name = "P.Length", columns = c("TRUE3", "IMPUTED3")),
+  colGroup(name = "P.Width", columns = c("TRUE4", "IMPUTED4"))
+),
+striped = TRUE,
+highlight = TRUE,
+bordered = TRUE
+)
+```
 
 For xgboost model: 
 
+```{r, results='hide', message=FALSE, warning=FALSE,include=FALSE}
+library(reactable)
+library(VIM)
+data(iris)
 
-<div class="figure" style="text-align: center">
-<img src="figures/vimpute-unnamed-chunk-33-1.png" alt="plot of chunk unnamed-chunk-33"  />
-<p class="caption">plot of chunk unnamed-chunk-33</p>
-</div>
+# Create complete copy before introducing NAs
+complete_data <- iris
+colnames(complete_data) <- c("S.Length","S.Width","P.Length","P.Width","Species")
+df <- copy(complete_data)
+
+# Randomly produce missing values
+set.seed(1)
+nbr_missing <- 50
+y <- data.frame(row = sample(nrow(df), size = nbr_missing, replace = TRUE),
+                col = sample(ncol(df), size = nbr_missing, replace = TRUE))
+y <- y[!duplicated(y),]
+df[as.matrix(y)] <- NA
+
+# Perform imputation with proper method specification
+result <- vimpute(
+  data = df,
+  method = setNames(lapply(names(df), function(x) "xgboost"),names(df)),
+  pred_history = TRUE,
+  sequential = FALSE
+)
+
+# Extracting the imputed columns from result
+imputed_columns <- grep("_imp$", names(result), value = TRUE)
+
+# Create a function to compare true and imputed values
+compare_values <- function(true_data, pred_data, imputed_data, col_name) {
+  comparison <- data.frame(
+    True_Value = true_data[[col_name]],
+    Imputed_Value = ifelse(imputed_data, pred_data[[col_name]], NA)
+  )
+  comparison <- comparison[!is.na(comparison$Imputed_Value), ]
+  return(comparison)
+}
+
+# Initialize an empty list to store the comparison tables
+comparison_list <- list()
+
+# Loop through each imputed column and create a comparison table
+for (imputed_col in imputed_columns) {
+  col_name <- sub("_imp$", "", imputed_col)
+  comparison_list[[col_name]] <- compare_values(complete_data, result, result[[imputed_col]], col_name)
+}
+
+# Prepare the results in a combined wide format, ensuring equal row numbers
+results <- cbind(
+  "TRUE1" = head(comparison_list[["S.Length"]][, "True_Value"], 5),
+  "IMPUTED1" = head(comparison_list[["S.Length"]][, "Imputed_Value"], 5),
+  "TRUE2" = head(comparison_list[["S.Width"]][, "True_Value"], 5),
+  "IMPUTED2" = head(comparison_list[["S.Width"]][, "Imputed_Value"], 5),
+  "TRUE3" = head(comparison_list[["P.Length"]][, "True_Value"], 5),
+  "IMPUTED3" = head(comparison_list[["P.Length"]][, "Imputed_Value"], 5),
+  "TRUE4" = head(comparison_list[["P.Width"]][, "True_Value"], 5),
+  "IMPUTED4" = head(comparison_list[["P.Width"]][, "Imputed_Value"], 5)
+)
+
+# Print the combined wide format table
+print(results)
+```
+```{r echo=F,warning=F}
+# Load the reactable library
+library(reactable)
+
+# Create the reactable
+reactable(results, columns = list(
+  TRUE1 = colDef(name = "True"),
+  IMPUTED1 = colDef(name = "Imputed"),
+  TRUE2 = colDef(name = "True"),
+  IMPUTED2 = colDef(name = "Imputed"),
+  TRUE3 = colDef(name = "True"),
+  IMPUTED3 = colDef(name = "Imputed"),
+  TRUE4 = colDef(name = "True"),
+  IMPUTED4 = colDef(name = "Imputed")
+),
+columnGroups = list(
+  colGroup(name = "S.Length", columns = c("TRUE1", "IMPUTED1")),
+  colGroup(name = "S.Width", columns = c("TRUE2", "IMPUTED2")),
+  colGroup(name = "P.Length", columns = c("TRUE3", "IMPUTED3")),
+  colGroup(name = "P.Width", columns = c("TRUE4", "IMPUTED4"))
+),
+striped = TRUE,
+highlight = TRUE,
+bordered = TRUE
+)
+```

@@ -1,3 +1,7 @@
+## Skipped on CRAN -- check-time budget (10-min cap). The full suite runs
+## whenever NOT_CRAN=true: devtools::check()/test() and the CI workflow set it.
+if (!at_home()) exit_file("at_home only (CRAN check-time budget)")
+
 # uncert = "pmm" performs true predictive mean matching (Little 1988):
 # donors are matched on their PREDICTED values, not their observed values.
 # Factor targets receive a class-probability draw on every sweep whenever

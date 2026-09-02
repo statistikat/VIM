@@ -1,3 +1,7 @@
+## Skipped on CRAN -- check-time budget (10-min cap). The full suite runs
+## whenever NOT_CRAN=true: devtools::check()/test() and the CI workflow set it.
+if (!at_home()) exit_file("at_home only (CRAN check-time budget)")
+
 library(VIM)
 
 ## Regression tests for three defects reported with the colic data (2026-07):

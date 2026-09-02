@@ -1,6 +1,7 @@
-## Precompute the simulation vignettes
+## Precompute the expensive vignettes
 ## ==================================
-## `vimpute-benchmark.Rmd` and `vimpute-coverage.Rmd` are GENERATED from the
+## `vimpute.Rmd`, `vimpute-mi.Rmd`, `vimpute-benchmark.Rmd` and
+## `vimpute-coverage.Rmd` are GENERATED from the
 ## `*.Rmd.orig` sources next to them: the R code is executed here, once, and
 ## its output (tables, figures under figures/) is embedded in the generated
 ## .Rmd, so that R CMD build/check -- on CRAN in particular, where the whole
@@ -16,7 +17,7 @@
 
 if (basename(getwd()) != "vignettes") setwd("vignettes")
 stopifnot(file.exists("precompute.R"))
-for (v in c("vimpute-benchmark", "vimpute-coverage")) {
+for (v in c("vimpute-benchmark", "vimpute-coverage", "vimpute", "vimpute-mi")) {
   message("precomputing ", v, ".Rmd ...")
   knitr::knit(paste0(v, ".Rmd.orig"), output = paste0(v, ".Rmd"),
               envir = new.env(), quiet = TRUE)

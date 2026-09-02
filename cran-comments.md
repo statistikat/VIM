@@ -12,8 +12,40 @@ references across the documentation.
 
 ## Resubmission
 
-This is a resubmission of 7.3.0. The CRAN incoming pre-test (R-devel,
-Windows) reported one WARNING and one NOTE; both are fixed:
+This is a resubmission of 7.3.0 (third pre-test round). The 2026-09-01
+pre-test passed all checks on Windows and Debian (Status: OK) except one
+NOTE, which is addressed:
+
+* NOTE "Overall checktime 11 min > 10 min" (r-devel-windows; tests 167 s,
+  vignette rebuild 129 s): the two remaining executed vignettes (vimpute,
+  vimpute-mi) are now precomputed like the simulation vignettes -- their
+  code is executed by `vignettes/precompute.R` in the source repository and
+  the output is embedded, so the check only renders text; thirteen further
+  regression-test files moved behind the `NOT_CRAN`/`at_home()` gate (CRAN
+  keeps the fast core, in particular the dependency-facing tests:
+  `mice::complete()`/`tidyr::complete()` dispatch on `vimmi`, the mlr3
+  issue-98 pin, the xgboost/ranger backends and the base-graphics smoke
+  tests); and a dead all-comment test script was removed (one R process
+  fewer). Local `R CMD check --as-cran` on the same machine as the previous
+  round: tinytest suite 42 s -> 18 s, vignette rebuild 45 s -> 25 s. Scaled
+  by the measured Windows/local ratios of the 2026-09-01 pre-test, the
+  expected overall Windows checktime is ~8.5 min.
+
+### Second round (2026-09-01)
+
+The 2026-08-29 reverse-dependency report flagged MIGEE ("replacing previous
+import 'VIM::complete' by 'mice::complete'"): 7.3.0 had introduced an
+exported `complete()` generic that collided with the `mice`/`tidyr` ones in
+packages importing both. VIM no longer exports a `complete()` generic: the
+documented extractor is `vim_complete()`, and the `vimmi` method is
+registered on `mice::complete()` and `tidyr::complete()` via delayed S3
+registration (`S3method(mice::complete, vimmi)`), so `complete(obj, 1)`
+keeps working for users of those packages. The CRAN version of MIGEE loads
+warning-free against this tarball; no change is needed on their side.
+
+### First round (2026-08-28)
+
+The first pre-test reported one WARNING and one NOTE; both fixed:
 
 * WARNING "namespace references in data files" (`data/lse_synthetic_rules.rda`
   referenced the Suggests-only `validate` namespace): the rule sets are now
@@ -62,7 +94,9 @@ Windows) reported one WARNING and one NOTE; both are fixed:
 
 0 errors | 0 warnings | 0 notes
 
-(`R CMD check --as-cran` on the release tarball, local macOS.)
+(`R CMD check --as-cran` on the release tarball, local macOS; only the
+machine-local "unable to verify current time" timestamp NOTE appears when
+the world-clock service is unreachable.)
 
 ## Breaking changes
 

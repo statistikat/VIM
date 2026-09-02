@@ -1,3 +1,11 @@
+# VIM 7.3.1 (development)
+
+- CRAN check-time reductions for the r-devel-windows 10-minute budget: the
+  `vimpute` and `vimpute-mi` vignettes are precomputed like the simulation
+  vignettes (code runs in `vignettes/precompute.R`, the check renders text
+  only), and thirteen further long-running regression-test files run only
+  with `NOT_CRAN=true` (CI and `devtools::check()`). No user-facing changes.
+
 # VIM 7.3.0
 
 ## Breaking changes
