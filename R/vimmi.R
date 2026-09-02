@@ -25,13 +25,13 @@
 #'   \item{\code{seed}}{The seed applied at entry, or NULL.}
 #' }
 #'
-#' Use \code{\link{complete.vimmi}} to extract completed datasets,
+#' Use \code{\link{vim_complete}} to extract completed datasets,
 #' \code{\link{with.vimmi}} to fit models across imputations (returns a
 #' mice-compatible \code{mira}), \code{\link{vim_as_mids}} to convert to a
 #' mice \code{mids} object for pooling with \code{mice::pool()}, and
 #' \code{\link{plot.vimmi}} for convergence trace plots.
 #'
-#' @seealso \code{\link{vimpute}}, \code{\link{complete.vimmi}},
+#' @seealso \code{\link{vimpute}}, \code{\link{vim_complete}},
 #'   \code{\link{with.vimmi}}, \code{\link{vim_as_mids}},
 #'   \code{\link{plot.vimmi}}
 #' @name vimmi
@@ -45,24 +45,15 @@
 #' summary(result)
 #'
 #' # Extract completed datasets
-#' d1 <- complete(result, 1)
-#' all_d <- complete(result, "all")
+#' d1 <- vim_complete(result, 1)
+#' all_d <- vim_complete(result, "all")
+#' # complete(result, 1) does the same when mice or tidyr is attached
 #'
 #' # Fit models and pool
 #' fits <- with(result, lm(Sleep ~ Dream + Span))
 #' # mice::pool(fits)  # requires mice
 #' }
 NULL
-
-#' Extract completed datasets
-#'
-#' Generic function to extract completed datasets from a multiply imputed object.
-#' @param data A multiply imputed object
-#' @param ... Additional arguments
-#' @export
-complete <- function(data, ...) {
-  UseMethod("complete")
-}
 
 #' Constructor for vimmi objects
 #'
@@ -128,16 +119,34 @@ new_vimmi <- function(data, imp, where, m, nmis, method, boot, uncert, call,
 #'   }
 #' @param ... Currently unused
 #' @return A data.frame, list of data.frames, or long-format data.frame
+#'
+#' @details
+#' \code{vim_complete()} is the documented name and always works. The same
+#' function is additionally registered as an S3 method on
+#' \code{mice::complete()} and \code{tidyr::complete()}, so if either package
+#' is attached the familiar \code{complete(result, 1)} dispatches to it.
+#'
+#' VIM deliberately does \emph{not} export a \code{complete()} generic of its
+#' own. Both \pkg{mice} and \pkg{tidyr} export a generic of that name, so an
+#' exported VIM generic would mask them (and be masked by them), and would make
+#' any package that imports VIM and one of those packages wholesale emit
+#' \dQuote{replacing previous import} at load time. Registering the method on
+#' the foreign generics gives the same user-facing call without the clash --
+#' the same approach VIM takes for \code{\link{vim_as_mids}}.
+#'
 #' @export
-#' @rdname complete.vimmi
+#' @rdname vim_complete
 #' @examples
 #' \dontrun{
 #' result <- vimpute(sleep, method = "ranger", m = 5, boot = TRUE, uncert = "normalerror")
-#' d1 <- complete(result, 1)        # first completed dataset
-#' all_d <- complete(result, "all")  # list of 5 datasets
-#' long_d <- complete(result, "long") # long format with .imp column
+#' d1 <- vim_complete(result, 1)        # first completed dataset
+#' all_d <- vim_complete(result, "all")  # list of 5 datasets
+#' long_d <- vim_complete(result, "long") # long format with .imp column
+#'
+#' # With mice or tidyr attached, the generic dispatches to the same function:
+#' # library(mice); d1 <- complete(result, 1)
 #' }
-complete.vimmi <- function(data, action = 1, ...) {
+vim_complete <- function(data, action = 1, ...) {
   x <- data  # S3 generic passes object as first arg named 'data'
 
   reconstruct_one <- function(mi) {
@@ -180,6 +189,11 @@ complete.vimmi <- function(data, action = 1, ...) {
   stop("action must be an integer (1..m), 'all', or 'long'.")
 }
 
+#' @rdname vim_complete
+#' @exportS3Method mice::complete
+#' @rawNamespace S3method(tidyr::complete,vimmi)
+complete.vimmi <- vim_complete
+
 #' Evaluate an expression across all imputations
 #'
 #' Applies an expression (typically a model fit) to each completed dataset
@@ -209,7 +223,7 @@ with.vimmi <- function(data, expr, ...) {
   call_expr <- substitute(expr)
   caller_env <- parent.frame()
   fits <- lapply(seq_len(x$m), function(mi) {
-    d <- complete.vimmi(x, action = mi)
+    d <- vim_complete(x, action = mi)
     eval(call_expr, envir = d, enclos = caller_env)
   })
   # mice-compatible container (mirrors mice::with.mids): pool()/getfit()/
@@ -320,7 +334,7 @@ vim_as_mids <- function(x, ...) {
   original$.id <- seq_len(nrow(original))
 
   completed_list <- lapply(seq_len(x$m), function(mi) {
-    d <- complete.vimmi(x, action = mi)
+    d <- vim_complete(x, action = mi)
     d$.imp <- mi
     d$.id <- seq_len(nrow(d))
     d

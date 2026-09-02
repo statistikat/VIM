@@ -69,5 +69,5 @@ res3 <- tryCatch(
 )
 expect_inherits(res3, "vimmi")
 if (inherits(res3, "vimmi")) {
-  expect_equal(sum(is.na(complete(res3, 1)$y_bad)), 0L)
+  expect_equal(sum(is.na(vim_complete(res3, 1)$y_bad)), 0L)
 }

@@ -32,9 +32,9 @@ expect_equal(sum(is.na(out1$g)), 0L)
 set.seed(1)
 out2 <- vimpute(df, method = "ranger", sequential = FALSE, m = 3,
                 boot = TRUE, uncert = "normalerror", verbose = FALSE)
-c1 <- complete(out2, 1)
+c1 <- vim_complete(out2, 1)
 expect_true(is.ordered(c1$g),
-            info = "m>1: complete() lost the ordered class")
+            info = "m>1: vim_complete() lost the ordered class")
 expect_equal(levels(c1$g), c("low", "mid", "high"))
 expect_equal(sum(is.na(c1$g)), 0L)
 

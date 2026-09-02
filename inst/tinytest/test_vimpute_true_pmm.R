@@ -57,7 +57,7 @@ mi <- suppressWarnings(
   vimpute(dat_f, method = "robust", m = 4, boot = FALSE, seed = 3,
           eps = 1e6, verbose = FALSE)   # huge eps forces the early stop
 )
-imps <- sapply(1:4, function(i) as.character(complete(mi, i)$g[idx_g]))
+imps <- sapply(1:4, function(i) as.character(vim_complete(mi, i)$g[idx_g]))
 expect_false(all(imps[, 1] == imps[, 2]) && all(imps[, 2] == imps[, 3]) &&
                all(imps[, 3] == imps[, 4]),
              info = "factor imputations differ across imputations (draws, not argmax)")
@@ -69,7 +69,7 @@ mi_none <- suppressWarnings(
   vimpute(dat_f, method = "robust", m = 2, boot = FALSE, uncert = "none",
           sequential = FALSE, seed = 3, verbose = FALSE)
 )
-i1 <- as.character(complete(mi_none, 1)$g[1:25])
-i2 <- as.character(complete(mi_none, 2)$g[1:25])
+i1 <- as.character(vim_complete(mi_none, 1)$g[1:25])
+i2 <- as.character(vim_complete(mi_none, 2)$g[1:25])
 expect_true(all(i1 == i2),
             info = "uncert = 'none' factor imputations are deterministic")

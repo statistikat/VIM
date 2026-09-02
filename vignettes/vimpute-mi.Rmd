@@ -129,7 +129,7 @@ the true values — the loop `makeMissing()` → `vimpute()` → `evaluation()`
 that any benchmark study needs.
 
 ```{r}
-completed <- complete(mi, 1)
+completed <- vim_complete(mi, 1)
 evaluation(truth, completed, where = attr(amp, "where"))
 ```
 

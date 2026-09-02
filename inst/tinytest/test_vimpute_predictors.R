@@ -92,4 +92,4 @@ res_mi <- vimpute(dmi, method = "ranger", sequential = FALSE, m = 2,
                   imp_var = FALSE, verbose = FALSE,
                   predictors = list(y = "x1"), visit_sequence = "increasing.na")
 expect_inherits(res_mi, "vimmi")
-expect_equal(sum(is.na(complete(res_mi, 1)$y)), 0L)
+expect_equal(sum(is.na(vim_complete(res_mi, 1)$y)), 0L)

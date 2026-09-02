@@ -211,7 +211,7 @@ warns.}
 
 \item{m}{Number of multiple imputations. Default: 1 (single imputation).
 When \code{m > 1}, returns a \code{\link{vimmi}} object storing the original
-data and imputed values efficiently. Use \code{\link{complete.vimmi}} to
+data and imputed values efficiently. Use \code{\link{vim_complete}} to
 extract completed datasets.}
 
 \item{seed}{Optional single number for reproducibility. Applied once via
@@ -310,9 +310,9 @@ result <- vimpute(data = sleep, method = "ranger", sequential = FALSE,
 print(result)
 
 # Extract completed datasets
-d1 <- complete(result, 1)         # first imputed dataset
-all_d <- complete(result, "all")  # list of 5 datasets
-long_d <- complete(result, "long") # long format with .imp column
+d1 <- vim_complete(result, 1)         # first imputed dataset
+all_d <- vim_complete(result, "all")  # list of 5 datasets
+long_d <- vim_complete(result, "long") # long format with .imp column
 
 # Fit a model on each imputed dataset
 fits <- with(result, lm(Sleep ~ Dream + Span))

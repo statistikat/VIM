@@ -24,21 +24,21 @@ mi_default <- vimpute(d, method = "robust", m = 2, seed = 42,
                       sequential = FALSE, verbose = FALSE)
 mi_true    <- vimpute(d, method = "robust", m = 2, seed = 42, boot = TRUE,
                       sequential = FALSE, verbose = FALSE)
-expect_equal(complete(mi_default, 1), complete(mi_true, 1),
+expect_equal(vim_complete(mi_default, 1), vim_complete(mi_true, 1),
              info = "m > 1 default matches boot = TRUE (run 1)")
-expect_equal(complete(mi_default, 2), complete(mi_true, 2),
+expect_equal(vim_complete(mi_default, 2), vim_complete(mi_true, 2),
              info = "m > 1 default matches boot = TRUE (run 2)")
 
 # --- m > 1: default must differ from explicit boot = FALSE ------------------
 mi_false <- vimpute(d, method = "robust", m = 2, seed = 42, boot = FALSE,
                     sequential = FALSE, verbose = FALSE)
-expect_false(isTRUE(all.equal(complete(mi_default, 1), complete(mi_false, 1))),
+expect_false(isTRUE(all.equal(vim_complete(mi_default, 1), vim_complete(mi_false, 1))),
              info = "m > 1 default is not the old boot = FALSE behaviour")
 
 # --- explicit boot = FALSE at m > 1 is respected (old behaviour reachable) --
 mi_false2 <- vimpute(d, method = "robust", m = 2, seed = 42, boot = FALSE,
                      sequential = FALSE, verbose = FALSE)
-expect_equal(complete(mi_false, 1), complete(mi_false2, 1),
+expect_equal(vim_complete(mi_false, 1), vim_complete(mi_false2, 1),
              info = "explicit boot = FALSE is reproducible")
 
 # --- m = 1: default must equal explicit boot = FALSE (seed-identical) -------

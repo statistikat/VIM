@@ -24,7 +24,7 @@ expect_equal(nrow(obj$data), 5)
 
 # --- complete() single dataset ---
 
-c1 <- complete(obj, action = 1)
+c1 <- vim_complete(obj, action = 1)
 expect_true(is.data.frame(c1))
 expect_equal(nrow(c1), 5)
 expect_equal(sum(is.na(c1)), 0)
@@ -34,20 +34,20 @@ expect_equal(c1$x[4], 4.2)
 expect_equal(c1$y[1], 1.0)
 expect_equal(c1$y[3], 3.1)
 
-c2 <- complete(obj, action = 2)
+c2 <- vim_complete(obj, action = 2)
 expect_equal(c2$x[2], 1.9)
 expect_equal(c2$x[4], 3.8)
 
 # --- complete() all datasets ---
 
-all_datasets <- complete(obj, action = "all")
+all_datasets <- vim_complete(obj, action = "all")
 expect_true(is.list(all_datasets))
 expect_equal(length(all_datasets), 2)
 expect_true(all(sapply(all_datasets, function(d) sum(is.na(d)) == 0)))
 
 # --- complete() long format ---
 
-long <- complete(obj, action = "long")
+long <- vim_complete(obj, action = "long")
 expect_true(".imp" %in% names(long))
 expect_true(".id" %in% names(long))
 expect_equal(nrow(long), 5 * 2)  # n_rows * m
@@ -55,9 +55,9 @@ expect_true(all(long$.imp %in% 1:2))
 
 # --- complete() validates action ---
 
-expect_error(complete(obj, action = 0))
-expect_error(complete(obj, action = 3))
-expect_error(complete(obj, action = "invalid"))
+expect_error(vim_complete(obj, action = 0))
+expect_error(vim_complete(obj, action = 3))
+expect_error(vim_complete(obj, action = "invalid"))
 
 # --- with.vimmi ---
 
@@ -102,5 +102,5 @@ if (at_home()) {
 
   expect_true(inherits(robust_mi, "vimmi"))
   expect_equal(robust_mi$m, 5L)
-  expect_equal(sum(is.na(complete(robust_mi, 1))), 0)
+  expect_equal(sum(is.na(vim_complete(robust_mi, 1))), 0)
 }

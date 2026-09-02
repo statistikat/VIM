@@ -60,7 +60,7 @@
 - `vimpute()` handles per-variable method lists correctly: a named length-1 list validates the variable name, and an unnamed per-column list maps by column position.
 - `rangerImpute()` and `xgboostImpute()` forward their hyperparameters to the backend learner.
 - `regressionImp()` uses `lm`/`glm` as documented, falling back to regularized regression only when needed.
-- `complete()` on a `vimmi` object works even when `mice` or `tidyr` is attached.
+- Completed datasets are extracted with `vim_complete()`. VIM exports no `complete()` generic of its own: `mice` and `tidyr` both export one, so an exported VIM generic would mask theirs (and be masked by them) and would make packages importing VIM and `mice`/`tidyr` wholesale emit "replacing previous import" at load time. The same function is registered as a method on `mice::complete()` and `tidyr::complete()`, so `complete(obj, 1)` keeps working whenever either package is attached.
 - `evaluation()` supports `vartypes = "guess"`.
 - `irmi(mi > 1)` returns a list of imputations again (was a single mangled data.frame under the default `imp_var = TRUE`).
 - `imputeRobust()`: `method = "gamRob"` and `uncert = "wresid"` now work (previously crashed); `uncert` is validated with a clear error; the PMM donor pool no longer includes initialised values.

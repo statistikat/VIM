@@ -43,7 +43,7 @@ arrays \code{[variable, iteration, imputation]}) behind
 \item{\code{seed}}{The seed applied at entry, or NULL.}
 }
 
-Use \code{\link{complete.vimmi}} to extract completed datasets,
+Use \code{\link{vim_complete}} to extract completed datasets,
 \code{\link{with.vimmi}} to fit models across imputations (returns a
 mice-compatible \code{mira}), \code{\link{vim_as_mids}} to convert to a
 mice \code{mids} object for pooling with \code{mice::pool()}, and
@@ -58,8 +58,9 @@ print(result)
 summary(result)
 
 # Extract completed datasets
-d1 <- complete(result, 1)
-all_d <- complete(result, "all")
+d1 <- vim_complete(result, 1)
+all_d <- vim_complete(result, "all")
+# complete(result, 1) does the same when mice or tidyr is attached
 
 # Fit models and pool
 fits <- with(result, lm(Sleep ~ Dream + Span))
@@ -67,7 +68,7 @@ fits <- with(result, lm(Sleep ~ Dream + Span))
 }
 }
 \seealso{
-\code{\link{vimpute}}, \code{\link{complete.vimmi}},
+\code{\link{vimpute}}, \code{\link{vim_complete}},
 \code{\link{with.vimmi}}, \code{\link{vim_as_mids}},
 \code{\link{plot.vimmi}}
 

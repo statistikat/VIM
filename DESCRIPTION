@@ -61,7 +61,8 @@ Suggests:
     car,
     lgr,
     rpart,
-    missRanger
+    missRanger,
+    tidyr
 Description: Provides methods for imputation and visualization of
     missing values. It includes graphical tools to explore the amount, structure
     and patterns of missing and/or imputed values, supporting exploratory

@@ -58,9 +58,9 @@ set.seed(1)
 out2 <- vimpute(df, considered_variables = c("a", "b"),
                 method = "ranger", sequential = FALSE, m = 3,
                 boot = TRUE, uncert = "normalerror", verbose = FALSE)
-c1 <- complete(out2, 1)
+c1 <- vim_complete(out2, 1)
 expect_true(all(c("a", "b", "keep_num", "keep_chr") %in% names(c1)),
-            info = "m>1 complete() dropped non-considered columns")
+            info = "m>1 vim_complete() dropped non-considered columns")
 expect_equal(sum(is.na(c1$a)), 0L)
 expect_equal(c1$keep_chr, df$keep_chr)
 
@@ -70,7 +70,7 @@ out2b <- vimpute(df, considered_variables = c("a", "b"),
                  method = "ranger", sequential = FALSE, m = 3,
                  boot = TRUE, uncert = "normalerror",
                  keep_all_columns = FALSE, verbose = FALSE)
-c1b <- complete(out2b, 1)
+c1b <- vim_complete(out2b, 1)
 expect_false(any(c("keep_num", "keep_chr") %in% names(c1b)),
              info = "keep_all_columns = FALSE (m>1) should drop non-considered columns")
 

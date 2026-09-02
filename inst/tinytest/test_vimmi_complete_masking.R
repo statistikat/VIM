@@ -1,11 +1,19 @@
 library(VIM)
 
-## Regression test for complete(vimmi) generic masking (Wave 1, audit P1).
-## VIM defines its own complete() S3 generic; mice and tidyr export a generic of
-## the same name. The docs tell users to load mice to pool, which masks VIM's
-## generic so complete(vimmi_obj) errored with "no applicable method". The vimmi
-## method is now registered on the mice/tidyr generics in .onLoad, so their
-## generic dispatches to it regardless of load order.
+## Regression test for complete(vimmi) dispatch through the foreign generics.
+## mice and tidyr both export a complete() generic. VIM deliberately exports no
+## complete() generic of its own -- one would mask theirs (and be masked by
+## them), and would make any package importing VIM and mice/tidyr wholesale emit
+## "replacing previous import" at load time. Instead VIM exports vim_complete()
+## and registers the same function as a method on mice::complete() and
+## tidyr::complete(), so users of those packages keep writing complete(obj, 1).
+## This test pins that dispatch.
+
+## VIM must NOT export a complete() generic. Re-exporting one would reintroduce
+## the "replacing previous import 'VIM::complete' by 'mice::complete'" warning
+## that CRAN flagged in the reverse dependency MIGEE (2026-08-28).
+expect_false("complete" %in% getNamespaceExports("VIM"))
+expect_true("vim_complete" %in% getNamespaceExports("VIM"))
 
 if (!requireNamespace("mice", quietly = TRUE)) {
   exit_file("mice not available")

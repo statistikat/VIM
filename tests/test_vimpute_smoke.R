@@ -249,7 +249,7 @@ run_case("sequential convergence with prediction history", {
         "prediction history has unexpected columns.")
 })
 
-# Checks multiple imputation output, vimmi construction, and complete() methods.
+# Checks multiple imputation output, vimmi construction, and vim_complete() methods.
 run_case("multiple imputation returns vimmi and complete datasets", {
   data <- make_smoke_data()
   result <- vimpute(
@@ -267,13 +267,13 @@ run_case("multiple imputation returns vimmi and complete datasets", {
   check(inherits(result, "vimmi"), "m > 1 should return a vimmi object.")
   check(identical(result$m, 2L), "vimmi object should store m = 2.")
 
-  completed_one <- complete(result, 1L)
-  completed_all <- complete(result, "all")
-  completed_long <- complete(result, "long")
+  completed_one <- vim_complete(result, 1L)
+  completed_all <- vim_complete(result, "all")
+  completed_long <- vim_complete(result, "long")
 
-  check(is.data.frame(completed_one), "complete(vimmi, 1) should return a data.frame.")
-  check(length(completed_all) == 2L, "complete(vimmi, 'all') should return two datasets.")
-  check(nrow(completed_long) == 2L * nrow(data), "complete(vimmi, 'long') has unexpected row count.")
+  check(is.data.frame(completed_one), "vim_complete(vimmi, 1) should return a data.frame.")
+  check(length(completed_all) == 2L, "vim_complete(vimmi, 'all') should return two datasets.")
+  check(nrow(completed_long) == 2L * nrow(data), "vim_complete(vimmi, 'long') has unexpected row count.")
   check(!anyNA(completed_one$y_num), "completed numeric target still contains missing values.")
 })
 
