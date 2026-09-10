@@ -1,4 +1,4 @@
-# VIM 7.3.1 (development)
+# VIM 7.3.1
 
 - **The mlr3 stack moved from `Imports` to `Suggests`.** `mlr3`, `mlr3pipelines`,
   `mlr3learners`, `mlr3tuning`, `paradox`, `R6` and `future` back `vimpute()`
