@@ -1,5 +1,22 @@
 # VIM 7.3.1 (development)
 
+- **The mlr3 stack moved from `Imports` to `Suggests`.** `mlr3`, `mlr3pipelines`,
+  `mlr3learners`, `mlr3tuning`, `paradox`, `R6` and `future` back `vimpute()`
+  and nothing else -- 6 of 58 R files -- yet as hard dependencies they tied
+  VIM, and every package importing VIM, to the fate of the mlr3 chain: CRAN
+  archives reverse dependencies recursively, so one archived link would have
+  taken VIM down and sdcMicro, simPop, robCompositions, riskutility, deepImp
+  and 15 further packages with it. None of those packages executes a line of
+  mlr3-backed code; they use `kNN()`, `hotdeck()` and `gowerD()`, which are
+  mlr3-free. VIM now installs, loads and runs its visualisation, donor and
+  IRMI machinery without the stack present.
+  `vimpute()` -- and `regressionImp()`, `rangerImpute()`, `xgboostImpute()`
+  and `overimpute()`, which delegate to it -- stop with an actionable message
+  naming every missing package when the stack is absent. No behavioural change
+  when it is installed.
+- `vimpute()` no longer calls `lgr::get_logger()` unconditionally; `lgr` is a
+  suggested package and is now checked before use.
+
 - CRAN check-time reductions for the r-devel-windows 10-minute budget: the
   `vimpute` and `vimpute-mi` vignettes are precomputed like the simulation
   vignettes (code runs in `vignettes/precompute.R`, the check renders text

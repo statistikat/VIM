@@ -31,15 +31,15 @@ Imports:
     MASS,
     Matrix,
     xgboost,
-    data.table(>= 1.9.4),
+    data.table(>= 1.9.4)
+Suggests: 
     mlr3,
     mlr3pipelines,
-    R6,
-    paradox (>= 1.0.0),
-    mlr3tuning (>= 1.0.0),
     mlr3learners,
-    future
-Suggests: 
+    mlr3tuning (>= 1.0.0),
+    paradox (>= 1.0.0),
+    R6,
+    future,
     dplyr,
     tinytest,
     knitr,

@@ -18,7 +18,12 @@ knitr::opts_chunk$set(
 )
 
 has_restricted_backend <- requireNamespace("validate", quietly = TRUE) &&
-  requireNamespace("ECOSolveR", quietly = TRUE)
+  requireNamespace("ECOSolveR", quietly = TRUE) &&
+  # vimpute() itself runs on the mlr3 stack, which VIM suggests rather than
+  # imports; without it there is no restricted backend to demonstrate.
+  all(vapply(c("mlr3", "mlr3learners", "mlr3pipelines", "mlr3tuning",
+               "paradox", "R6", "future"),
+             requireNamespace, logical(1), quietly = TRUE))
 ```
 
 `vimpute(method = "restricted")` imputes numeric variables with a

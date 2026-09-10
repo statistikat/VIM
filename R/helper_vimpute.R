@@ -1,4 +1,34 @@
 # =============================================================================
+# Chapter 0: Suggested-dependency guard
+# =============================================================================
+
+# The mlr3 stack backs vimpute() and nothing else in VIM, so it sits in
+# Suggests rather than Imports. That is not cosmetic: a hard dependency makes
+# VIM -- and with it every package that imports VIM -- share the fate of the
+# weakest link in the mlr3 chain, because CRAN archives reverse dependencies
+# recursively. kNN(), hotdeck(), gowerD(), irmi() and the visualisations must
+# keep working on a machine that has never seen mlr3.
+#
+# The whole set is checked at once. Reporting them one at a time would send a
+# user through five install/retry rounds.
+.vimpute_deps <- c("mlr3", "mlr3learners", "mlr3pipelines", "mlr3tuning",
+                   "paradox", "R6", "future")
+
+require_vimpute_deps <- function(what = "vimpute()") {
+  have <- vapply(.vimpute_deps, requireNamespace, logical(1), quietly = TRUE)
+  if (all(have)) return(invisible(TRUE))
+  missing_pkgs <- .vimpute_deps[!have]
+  stop(sprintf(
+    paste0("%s needs the mlr3 stack, which VIM suggests rather than imports.\n",
+           "Missing: %s.\n",
+           "Install with:\n  install.packages(c(%s))"),
+    what,
+    paste(missing_pkgs, collapse = ", "),
+    paste0('"', missing_pkgs, '"', collapse = ", ")),
+    call. = FALSE)
+}
+
+# =============================================================================
 # Chapter 1: Robust learner registration
 # =============================================================================
 
@@ -8,23 +38,23 @@ register_robust_learners <- function() {
   # Robust Regression Learner
   LearnerRegrRobustLM = R6::R6Class(
     classname = "LearnerRegrRobustLM",
-    inherit = LearnerRegr,
+    inherit = mlr3::LearnerRegr,
     public = list(
       initialize = function() {
-        param_set = ps(
-          method = p_fct(c("M", "MM"), default = "MM"),
-          psi = p_fct(c("bisquare", "lqq", "optimal"), default = "bisquare"),
-          tuning.chi = p_dbl(lower = 0, upper = Inf, default = 1.55),
-          tuning.psi = p_dbl(lower = 0, upper = Inf, default = 4.69),
-          setting = p_fct(c("KS2014", "KS2011"), default = "KS2014"),
-          max.it = p_int(lower = 1, upper = Inf, default = 50),
-          k.max = p_int(lower = 1, upper = Inf, default = 200),
-          nResample = p_int(lower = 1, upper = Inf, default = 500),
-          subsampling = p_fct(c("simple", "nonsingular"), default = "nonsingular"),
-          ridge_lambda = p_dbl(lower = 0, upper = 1, default = 1e-4),
-          refine.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
-          solve.tol = p_dbl(lower = 0, upper = Inf, default = 1e-7),
-          trace.lev = p_int(lower = 0, upper = Inf, default = 0)
+        param_set = paradox::ps(
+          method = paradox::p_fct(c("M", "MM"), default = "MM"),
+          psi = paradox::p_fct(c("bisquare", "lqq", "optimal"), default = "bisquare"),
+          tuning.chi = paradox::p_dbl(lower = 0, upper = Inf, default = 1.55),
+          tuning.psi = paradox::p_dbl(lower = 0, upper = Inf, default = 4.69),
+          setting = paradox::p_fct(c("KS2014", "KS2011"), default = "KS2014"),
+          max.it = paradox::p_int(lower = 1, upper = Inf, default = 50),
+          k.max = paradox::p_int(lower = 1, upper = Inf, default = 200),
+          nResample = paradox::p_int(lower = 1, upper = Inf, default = 500),
+          subsampling = paradox::p_fct(c("simple", "nonsingular"), default = "nonsingular"),
+          ridge_lambda = paradox::p_dbl(lower = 0, upper = 1, default = 1e-4),
+          refine.tol = paradox::p_dbl(lower = 0, upper = Inf, default = 1e-7),
+          solve.tol = paradox::p_dbl(lower = 0, upper = Inf, default = 1e-7),
+          trace.lev = paradox::p_int(lower = 0, upper = Inf, default = 0)
         )
 
         super$initialize(
@@ -123,7 +153,7 @@ register_robust_learners <- function() {
           rep(NA_real_, nrow(newdata))
         })
 
-        PredictionRegr$new(task = task, response = response)
+        mlr3::PredictionRegr$new(task = task, response = response)
       }
     )
   )
@@ -265,10 +295,10 @@ register_robust_learners <- function() {
 register_restricted_learners <- function() {
   LearnerRegrRestricted <- R6::R6Class(
     classname = "LearnerRegrRestricted",
-    inherit = LearnerRegr,
+    inherit = mlr3::LearnerRegr,
     public = list(
       initialize = function() {
-        param_set <- ps(
+        param_set <- paradox::ps(
           rules = paradox::p_uty(
             custom_check = function(x) {
               if (inherits(x, "validator")) {
@@ -427,7 +457,7 @@ register_restricted_learners <- function() {
         }
 
         response <- as.vector(X_pred %*% beta)
-        PredictionRegr$new(task = task, response = response)
+        mlr3::PredictionRegr$new(task = task, response = response)
       }
     )
   )
@@ -2021,7 +2051,7 @@ pmm_observed_scores <- function(learner, data_temp, obs_idx, feature_cols,
       obs_dt <- impute_missing_values(obs_dt, data_temp)
     }
     obs_dt <- enforce_factor_levels(obs_dt, factor_levels)
-    obs_task <- TaskRegr$new(id = paste0(target_col, "_donors"),
+    obs_task <- mlr3::TaskRegr$new(id = paste0(target_col, "_donors"),
                              backend = obs_dt, target = target_col)
     finish(learner$predict(obs_task)$response)
   }, error = function(e) NULL)
@@ -2258,7 +2288,7 @@ train_with_fallback <- function(learner, task, var) {
     paste0("Learner '%s' failed for variable '%s' (%s). Falling back to a ",
            "featureless learner (mean/mode prediction) for this variable."),
     learner$id, var, conditionMessage(err)), call. = FALSE)
-  fb <- if (task$task_type == "regr") lrn("regr.featureless") else lrn("classif.featureless")
+  fb <- if (task$task_type == "regr") mlr3::lrn("regr.featureless") else mlr3::lrn("classif.featureless")
   # keep the predict type the caller configured (e.g. "prob" for factor targets)
   try(fb$predict_type <- learner$predict_type, silent = TRUE)
   fb$train(task)
@@ -2435,7 +2465,7 @@ predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, featur
         mode_value <- names(which.max(table(data_temp[[target_col]], useNA = "no")))
         backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <- mode_value
       }
-      pred_task <- TaskClassif$new(
+      pred_task <- mlr3::TaskClassif$new(
         id = target_col,
         backend = backend_dt,
         target = target_col
@@ -2482,7 +2512,7 @@ predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, featur
         backend_dt[[target_col]][is.na(backend_dt[[target_col]])] <-
           median(data_temp[[target_col]], na.rm = TRUE)
       }
-      pred_task <- TaskRegr$new(
+      pred_task <- mlr3::TaskRegr$new(
         id = target_col,
         backend = backend_dt,
         target = target_col
@@ -2854,60 +2884,60 @@ build_vimpute_search_space <- function(best_learner_id, task, method = NULL) {
     lambda_upper <- if (size == "small") 1 else 0.5
     if (best_learner_id == "regr.cv_glmnet") {
       upper_nfolds <- if (size == "small") 5L else 3L
-      space <- ps(
-        alpha  = p_dbl(0, 1),
-        lambda = p_dbl(1e-4, lambda_upper, logscale = TRUE),
-        nfolds = p_int(3L, upper_nfolds)
+      space <- paradox::ps(
+        alpha  = paradox::p_dbl(0, 1),
+        lambda = paradox::p_dbl(1e-4, lambda_upper, logscale = TRUE),
+        nfolds = paradox::p_int(3L, upper_nfolds)
       )
     } else {
-      space <- ps(
-        alpha  = p_dbl(0, 1),
-        lambda = p_dbl(1e-4, lambda_upper, logscale = TRUE)
+      space <- paradox::ps(
+        alpha  = paradox::p_dbl(0, 1),
+        lambda = paradox::p_dbl(1e-4, lambda_upper, logscale = TRUE)
       )
     }
     return(list(space = space, n_evals = if (size == "small") 10 else if (size == "medium") 12 else 8))
   }
 
   if (best_learner_id %in% c("regr.ranger", "classif.ranger")) {
-    space <- ps(
-      num.trees       = p_int(if (size == "large") 200L else 300L,
+    space <- paradox::ps(
+      num.trees       = paradox::p_int(if (size == "large") 200L else 300L,
                               if (size == "small") 900L else 600L),
-      min.node.size   = p_int(if (size == "small") 3L else 10L,
+      min.node.size   = paradox::p_int(if (size == "small") 3L else 10L,
                               if (size == "small") 10L else 50L),
-      sample.fraction = p_dbl(if (size == "large") 0.6 else 0.8, 1.0)
+      sample.fraction = paradox::p_dbl(if (size == "large") 0.6 else 0.8, 1.0)
     )
     return(list(space = space, n_evals = if (size == "small") 15 else if (size == "medium") 12 else 10))
   }
 
   if (best_learner_id %in% c("regr.xgboost", "classif.xgboost")) {
-    space <- ps(
-      nrounds          = p_int(100L, if (size == "small") 500L else 300L),
-      eta              = p_dbl(0.05, 0.3, logscale = TRUE),
-      max_depth        = p_int(2L, if (size == "small") 8L else 6L),
-      subsample        = p_dbl(0.5, 1.0),
-      colsample_bytree = p_dbl(0.5, 1.0)
+    space <- paradox::ps(
+      nrounds          = paradox::p_int(100L, if (size == "small") 500L else 300L),
+      eta              = paradox::p_dbl(0.05, 0.3, logscale = TRUE),
+      max_depth        = paradox::p_int(2L, if (size == "small") 8L else 6L),
+      subsample        = paradox::p_dbl(0.5, 1.0),
+      colsample_bytree = paradox::p_dbl(0.5, 1.0)
     )
     return(list(space = space, n_evals = if (size == "small") 20 else if (size == "medium") 15 else 12))
   }
 
   if (best_learner_id %in% c("regr.lm_rob", "classif.glm_rob")) {
-    space <- ps(
-      tuning.chi = p_dbl(1.2, 1.5),
-      tuning.psi = p_dbl(1.2, 1.5),
-      max.it     = p_int(50L, 200L)
+    space <- paradox::ps(
+      tuning.chi = paradox::p_dbl(1.2, 1.5),
+      tuning.psi = paradox::p_dbl(1.2, 1.5),
+      max.it     = paradox::p_int(50L, 200L)
     )
     return(list(space = space, n_evals = 8))
   }
 
   if (best_learner_id %in% c("regr.gam_imp", "classif.gam_imp")) {
-    space <- ps(min_unique = p_int(3L, 8L))
+    space <- paradox::ps(min_unique = paradox::p_int(3L, 8L))
     return(list(space = space, n_evals = 5))
   }
 
   if (best_learner_id %in% c("regr.robgam_imp", "classif.robgam_imp")) {
-    space <- ps(
-      alpha = p_dbl(0.7, 0.95),
-      min_unique = p_int(3L, 8L)
+    space <- paradox::ps(
+      alpha = paradox::p_dbl(0.7, 0.95),
+      min_unique = paradox::p_int(3L, 8L)
     )
     return(list(space = space, n_evals = 8))
   }
@@ -3014,11 +3044,11 @@ register_gam_learners <- function() {
   # ---- Regression GAM Learner ----
   LearnerRegrGAM <- R6::R6Class(
     classname = "LearnerRegrGAM",
-    inherit = LearnerRegr,
+    inherit = mlr3::LearnerRegr,
     public = list(
       initialize = function() {
-        param_set <- ps(
-          min_unique = p_int(lower = 2L, upper = Inf, default = 4L)
+        param_set <- paradox::ps(
+          min_unique = paradox::p_int(lower = 2L, upper = Inf, default = 4L)
         )
         super$initialize(
           id = "regr.gam_imp",
@@ -3085,7 +3115,7 @@ register_gam_learners <- function() {
           }
         )
 
-        PredictionRegr$new(task = task, response = response)
+        mlr3::PredictionRegr$new(task = task, response = response)
       }
     )
   )
@@ -3095,11 +3125,11 @@ register_gam_learners <- function() {
   # ---- Classification GAM Learner (binary + multiclass via OvR) ----
   LearnerClassifGAM <- R6::R6Class(
     classname = "LearnerClassifGAM",
-    inherit = LearnerClassif,
+    inherit = mlr3::LearnerClassif,
     public = list(
       initialize = function() {
-        param_set <- ps(
-          min_unique = p_int(lower = 2L, upper = Inf, default = 4L)
+        param_set <- paradox::ps(
+          min_unique = paradox::p_int(lower = 2L, upper = Inf, default = 4L)
         )
         super$initialize(
           id = "classif.gam_imp",
@@ -3258,10 +3288,10 @@ register_gam_learners <- function() {
         }
 
         if (self$predict_type == "prob") {
-          PredictionClassif$new(task = task, prob = probs)
+          mlr3::PredictionClassif$new(task = task, prob = probs)
         } else {
           resp <- classes[max.col(probs, ties.method = "first")]
-          PredictionClassif$new(task = task, response = resp)
+          mlr3::PredictionClassif$new(task = task, response = resp)
         }
       }
     )
@@ -3272,16 +3302,16 @@ register_gam_learners <- function() {
   # ---- Regression Robust GAM Learner ----
   LearnerRegrRobGAM <- R6::R6Class(
     classname = "LearnerRegrRobGAM",
-    inherit = LearnerRegr,
+    inherit = mlr3::LearnerRegr,
     public = list(
       initialize = function() {
-        param_set <- ps(
-          min_unique = p_int(lower = 2L, upper = Inf, default = 4L),
-          robust_method = p_fct(c("simple", "irw"), default = "simple"),
-          alpha = p_dbl(lower = 0.7, upper = 0.95, default = 0.8),
-          max_iter = p_int(lower = 1L, upper = 100L, default = 20L),
-          tol = p_dbl(lower = 1e-8, upper = 1e-1, default = 1e-4),
-          psi_k = p_dbl(lower = 1, upper = 10, default = 4.685)
+        param_set <- paradox::ps(
+          min_unique = paradox::p_int(lower = 2L, upper = Inf, default = 4L),
+          robust_method = paradox::p_fct(c("simple", "irw"), default = "simple"),
+          alpha = paradox::p_dbl(lower = 0.7, upper = 0.95, default = 0.8),
+          max_iter = paradox::p_int(lower = 1L, upper = 100L, default = 20L),
+          tol = paradox::p_dbl(lower = 1e-8, upper = 1e-1, default = 1e-4),
+          psi_k = paradox::p_dbl(lower = 1, upper = 10, default = 4.685)
         )
         super$initialize(
           id = "regr.robgam_imp",
@@ -3414,7 +3444,7 @@ register_gam_learners <- function() {
           }
         )
 
-        PredictionRegr$new(task = task, response = response)
+        mlr3::PredictionRegr$new(task = task, response = response)
       }
     )
   )
@@ -3424,16 +3454,16 @@ register_gam_learners <- function() {
   # ---- Classification Robust GAM Learner (binary + multiclass via OvR) ----
   LearnerClassifRobGAM <- R6::R6Class(
     classname = "LearnerClassifRobGAM",
-    inherit = LearnerClassif,
+    inherit = mlr3::LearnerClassif,
     public = list(
       initialize = function() {
-        param_set <- ps(
-          min_unique = p_int(lower = 2L, upper = Inf, default = 4L),
-          robust_method = p_fct(c("simple", "irw"), default = "simple"),
-          alpha = p_dbl(lower = 0.7, upper = 0.95, default = 0.8),
-          max_iter = p_int(lower = 1L, upper = 100L, default = 20L),
-          tol = p_dbl(lower = 1e-8, upper = 1e-1, default = 1e-4),
-          psi_k = p_dbl(lower = 1, upper = 10, default = 4.685)
+        param_set <- paradox::ps(
+          min_unique = paradox::p_int(lower = 2L, upper = Inf, default = 4L),
+          robust_method = paradox::p_fct(c("simple", "irw"), default = "simple"),
+          alpha = paradox::p_dbl(lower = 0.7, upper = 0.95, default = 0.8),
+          max_iter = paradox::p_int(lower = 1L, upper = 100L, default = 20L),
+          tol = paradox::p_dbl(lower = 1e-8, upper = 1e-1, default = 1e-4),
+          psi_k = paradox::p_dbl(lower = 1, upper = 10, default = 4.685)
         )
         super$initialize(
           id = "classif.robgam_imp",
@@ -3589,10 +3619,10 @@ register_gam_learners <- function() {
         }
 
         if (self$predict_type == "prob") {
-          PredictionClassif$new(task = task, prob = probs)
+          mlr3::PredictionClassif$new(task = task, prob = probs)
         } else {
           resp <- classes[max.col(probs, ties.method = "first")]
-          PredictionClassif$new(task = task, response = resp)
+          mlr3::PredictionClassif$new(task = task, response = resp)
         }
       }
     )

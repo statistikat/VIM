@@ -50,8 +50,14 @@ sleepx$Pred <- as.factor(LETTERS[sleepx$Pred])
 sleepx$Pred[1] <- NA
 # a numeric and a factor target imputed at once; nrounds = 30 keeps the
 # example fast (the default is 100 boosting rounds)
-imp <- xgboostImpute(Dream + Pred ~ BodyWgt + BrainWgt, data = sleepx, nrounds = 30)
-head(imp)
+# xgboostImpute() runs on vimpute(), which VIM backs with the suggested
+# mlr3 stack -- skip the example where that stack is not installed.
+if (requireNamespace("mlr3", quietly = TRUE) &&
+    requireNamespace("mlr3learners", quietly = TRUE) &&
+    requireNamespace("mlr3pipelines", quietly = TRUE)) {
+  imp <- xgboostImpute(Dream + Pred ~ BodyWgt + BrainWgt, data = sleepx, nrounds = 30)
+  head(imp)
+}
 }
 \seealso{
 Other imputation methods: 

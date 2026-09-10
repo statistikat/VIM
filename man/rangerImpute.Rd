@@ -41,7 +41,13 @@ Impute missing values based on random-forest models via \code{\link[=vimpute]{vi
 }
 \examples{
 data(sleep)
-rangerImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
+# rangerImpute() runs on vimpute(), which VIM backs with the suggested
+# mlr3 stack -- skip the example where that stack is not installed.
+if (requireNamespace("mlr3", quietly = TRUE) &&
+    requireNamespace("mlr3learners", quietly = TRUE) &&
+    requireNamespace("mlr3pipelines", quietly = TRUE)) {
+  rangerImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
+}
 }
 \seealso{
 Other imputation methods: 
