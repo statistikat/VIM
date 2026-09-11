@@ -23,3 +23,55 @@
                            drop.unused.levels = TRUE)
   stats::model.matrix(design, mf)
 }
+
+#' Weighted least-squares update of the cellGLoc mean structure
+#'
+#' Column \code{j} of \code{B} is fitted on the design using that column's cell
+#' weights as observation weights. Cross-response dependence is handled by the
+#' scatter step, not here.
+#'
+#' @param X \eqn{n x p} numeric matrix of continuous variables, may contain NA.
+#' @param U \eqn{n x q} design matrix from \code{.gloc_design}.
+#' @param W \eqn{n x p} matrix of cell weights in [0, 1].
+#' @return a \eqn{q x p} matrix of coefficients.
+#' @keywords internal
+.gloc_update_B <- function(X, U, W) {
+  p <- ncol(X); q <- ncol(U)
+  B <- matrix(0, q, p, dimnames = list(colnames(U), colnames(X)))
+  for (j in seq_len(p)) {
+    w  <- W[, j]
+    ok <- is.finite(X[, j]) & is.finite(w) & w > 0
+    if (sum(ok) <= q) { B[1L, j] <- stats::median(X[ok, j]); next }
+    sw <- sqrt(w[ok])
+    fit <- tryCatch(qr.solve(U[ok, , drop = FALSE] * sw, X[ok, j] * sw),
+                    error = function(e) NULL)
+    if (is.null(fit)) {                       # rank-deficient design: intercept only
+      B[1L, j] <- stats::weighted.mean(X[ok, j], w[ok])
+    } else B[, j] <- fit
+  }
+  B
+}
+
+#' Standardised conditional residuals of each cell given the others in its row
+#'
+#' @param R \eqn{n x p} matrix of residuals from the mean structure.
+#' @param Sigma \eqn{p x p} scatter matrix.
+#' @return an \eqn{n x p} matrix of standardised conditional residuals.
+#' @keywords internal
+.gloc_cond_resid <- function(R, Sigma) {
+  p <- ncol(R)
+  Z <- matrix(NA_real_, nrow(R), p, dimnames = dimnames(R))
+  if (p == 1L) return(R / sqrt(Sigma[1L, 1L]))
+  for (j in seq_len(p)) {
+    mj   <- -j
+    Sinv <- tryCatch(chol2inv(chol(Sigma[mj, mj, drop = FALSE])),
+                     error = function(e) MASS::ginv(Sigma[mj, mj, drop = FALSE]))
+    beta <- Sigma[j, mj, drop = FALSE] %*% Sinv
+    cvar <- as.numeric(Sigma[j, j] - beta %*% Sigma[mj, j, drop = FALSE])
+    cvar <- max(cvar, .Machine$double.eps)
+    Rm   <- R[, mj, drop = FALSE]
+    Rm[!is.finite(Rm)] <- 0                   # absent peers contribute nothing
+    Z[, j] <- (R[, j] - as.vector(Rm %*% t(beta))) / sqrt(cvar)
+  }
+  Z
+}
