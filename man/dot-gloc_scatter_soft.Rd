@@ -4,7 +4,13 @@
 \alias{.gloc_scatter_soft}
 \title{Cellwise weighted maximum likelihood scatter of the residuals}
 \usage{
-.gloc_scatter_soft(R, W, M)
+.gloc_scatter_soft(
+  R,
+  W,
+  M,
+  kappa = 1,
+  have_cw = requireNamespace("cellWise", quietly = TRUE)
+)
 }
 \arguments{
 \item{R}{\eqn{n x p} matrix of residuals from the mean structure.}
@@ -12,11 +18,20 @@
 \item{W}{\eqn{n x p} matrix of cell weights in [0, 1].}
 
 \item{M}{\eqn{n x p} logical mask of missing cells.}
+
+\item{kappa}{Gaussian consistency factor to divide by; see
+\code{.gloc_consistency}.}
+
+\item{have_cw}{whether \pkg{cellWise} may be used; exposed so the fallback
+path is directly testable.}
 }
 \value{
 a \eqn{p x p} scatter matrix.
 }
 \description{
-Cellwise weighted maximum likelihood scatter of the residuals
+Uses \code{cellWise::cwLocScat()} when available. \pkg{cellWise} is in
+Suggests, so its absence is a supported configuration rather than an edge
+case; the fallback is a weighted pairwise covariance, which still honours
+the cell weights, and it is never taken silently.
 }
 \keyword{internal}

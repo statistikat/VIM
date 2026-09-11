@@ -101,12 +101,138 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_true(max(abs(as.vector(got$B[1, ]) - ref$mu)) < 0.10)
   expect_true(mean(got$W == ref$W) > 0.97)          # same cells flagged
 
+  # The three assertions above are, on their own, VACUOUS. At design = ~ 1 the
+  # fitted mean is constant within each column, so R is a pure translation of X,
+  # and cellMCD is exactly translation-equivariant in S and W. They therefore
+  # hold for ANY B -- including B pinned to zero, with no iteration and no
+  # weighted least squares at all. The next assertions pin the parts that
+  # translation-equivariance cannot supply.
+
+  # (a) the weighted-least-squares step itself: with design = ~ 1 and binary
+  #     weights, B[1, j] IS the mean of column j's unflagged cells, exactly.
+  unflagged_mean <- vapply(seq_len(ncol(Xr)),
+                           function(j) mean(Xr[got$W[, j] == 1, j]), numeric(1))
+  expect_true(max(abs(as.vector(got$B[1, ]) - unflagged_mean)) < 1e-12)
+
+  # (b) the alternation actually ran, and the weights actually moved off their
+  #     all-ones initialisation (the comparison array borrows got$W's dimnames
+  #     so that this tests values, not attributes)
+  expect_true(got$iterations >= 2)
+  expect_false(identical(got$W, array(1, dim(got$W), dimnames(got$W))))
+
+  # --- REDUCTION 1b: a NON-INTERCEPT design, which translation-equivariance
+  # cannot satisfy. With three well-separated groups, any estimator that does
+  # not actually fit the mean structure reads the between-group spread as
+  # scatter. ---
+  set.seed(13)
+  ng  <- 250
+  gg  <- factor(rep(c("a", "b", "c"), each = ng))
+  Xg2 <- MASS::mvrnorm(3 * ng, rep(0, 3), 0.5 * diag(3) + 0.5)
+  shift <- rbind(c(0, 0, 0), c(5, -5, 2), c(-4, 3, -6))
+  Xg2 <- Xg2 + shift[as.integer(gg), ]
+  Xg2[1:15, 1] <- Xg2[1:15, 1] + 9                  # cellwise contamination
+  colnames(Xg2) <- paste0("x", 1:3)
+  dgg <- data.frame(Xg2, g = gg)
+
+  fit_g <- VIM::imputeCellGLoc(dgg, design = ~ g, weights = "binary",
+                               alpha = 0.75)
+  fitted_mu <- fit_g$U %*% fit_g$B
+
+  # the fitted group means reproduce a cellMCD fitted separately in each group
+  per_group_mu <- t(vapply(levels(gg), function(k)
+    cellWise::cellMCD(Xg2[gg == k, , drop = FALSE], alpha = 0.75,
+                      checkPars = list(silent = TRUE))$mu, numeric(3)))
+  own_mu <- t(vapply(levels(gg),
+                     function(k) fitted_mu[which(gg == k)[1], ], numeric(3)))
+  expect_true(max(abs(own_mu - per_group_mu)) < 0.10)
+
+  # and the single pooled scatter reproduces a cellMCD on oracle-centred data
+  ref_pooled <- cellWise::cellMCD(Xg2 - shift[as.integer(gg), ], alpha = 0.75,
+                                  checkPars = list(silent = TRUE))
+  expect_true(max(abs(fit_g$Sigma - ref_pooled$S)) /
+                max(abs(ref_pooled$S)) < 0.05)
+  # an estimator that ignores the design sees diagonals of ~14 here, not ~1
+  expect_true(max(diag(fit_g$Sigma)) < 2)
+
   # --- REDUCTION 2: design = ~1, all weights 1, soft corner gives the Gaussian MLE ---
   got1 <- VIM::imputeCellGLoc(dr, design = ~ 1, weights = "soft",
                               psi_c = Inf, maxit = 1)
   expect_true(max(abs(as.vector(got1$B[1, ]) - colMeans(Xr))) < 1e-8)
   mle <- crossprod(scale(Xr, TRUE, FALSE)) / nrow(Xr)
   expect_true(max(abs(got1$Sigma - mle)) / max(abs(mle)) < 1e-6)
+
+  # Reduction 2 sets psi_c = Inf, so every weight is 1 and a scatter step that
+  # ignored W entirely would also pass it to machine precision. The next block
+  # runs the soft corner at the DEFAULT psi_c against real contamination, where
+  # ignoring W is fatal.
+  set.seed(14)
+  ns <- 600; ps <- 4
+  Sc <- 0.5 * diag(ps) + 0.5
+  Xs <- MASS::mvrnorm(ns, rep(0, ps), Sc)
+  colnames(Xs) <- paste0("x", 1:ps)
+  Xclean <- Xs
+  inj <- matrix(FALSE, ns, ps)
+  inj[sample.int(ns * ps, round(0.03 * ns * ps))] <- TRUE
+  Xs[inj] <- Xs[inj] + 8
+
+  rs <- VIM::imputeCellGLoc(as.data.frame(Xs),     design = ~ 1, weights = "soft")
+  rc <- VIM::imputeCellGLoc(as.data.frame(Xclean), design = ~ 1, weights = "soft")
+
+  # Scatter recovery, stated as robustness: injecting 3% of cells at +8 must
+  # barely move the estimate away from the fit on the same data uncontaminated.
+  # This is the assertion that an estimator ignoring W cannot pass -- the
+  # second line pins that, by measuring how far the non-robust Gaussian ML fit
+  # on the same contaminated data is displaced (measured: 184%, vs 2.7% here).
+  expect_true(max(abs(rs$Sigma - rc$Sigma)) / max(abs(rc$Sigma)) < 0.05)
+  mle_contam <- crossprod(scale(Xs, TRUE, FALSE)) / nrow(Xs)
+  expect_true(max(abs(mle_contam - rc$Sigma)) / max(abs(rc$Sigma)) > 1)
+
+  # and it is the injected cells that get downweighted
+  flagged <- rs$W < 0.5
+  contam_row <- (rowSums(inj) > 0)[row(inj)]
+  expect_true(mean(flagged[inj]) > 0.90)                     # recall
+  expect_true(mean(flagged[!inj & !contam_row]) < 0.05)      # FPR in clean rows
+  # KNOWN WEAKNESS, pinned so it cannot silently worsen: .gloc_cond_resid()
+  # conditions a cell on ALL its peers regardless of their weights, so one bad
+  # cell inflates the conditional residual of every other cell in its row.
+  # Measured 0.66 here, and 0.88-0.94 when a single column is contaminated,
+  # against 0.017 in clean rows. cellMCD avoids this because a flagged cell
+  # leaves the conditioning set. See the report.
+  expect_true(mean(flagged[!inj & contam_row]) < 0.80)
+
+  # --- the soft corner must be Fisher-consistent at the Gaussian model. The
+  # bisquare deflates a sum(w)-normalised weighted scatter, by a factor that is
+  # kappa = E[w(Z)Z^2] / E[w(Z)] = 0.828 only when the columns are INDEPENDENT;
+  # the weights act on conditional residuals, so with correlation the factor is
+  # 1 - (s_j^2 / sigma_j^2)(1 - kappa). Uncorrected the fixed point is 0.786, a
+  # ~21% under-estimate that inflates the standardised residuals and makes the
+  # estimator over-flag. ---
+  set.seed(15)
+  Xf <- MASS::mvrnorm(4000, rep(0, 3), diag(3))
+  colnames(Xf) <- paste0("x", 1:3)
+  rf <- VIM::imputeCellGLoc(as.data.frame(Xf), design = ~ 1, weights = "soft")
+  expect_true(max(abs(diag(rf$Sigma) - 1)) < 0.06)
+
+  # the same claim at correlated Sigma, where a single scalar kappa over-corrects
+  # by +8% at rho = 0.5 and +15% at rho = 0.8. Comparing against the psi_c = Inf
+  # fit on the SAME data cancels sampling and isolates the downweighting bias.
+  for (rho in c(0.5, 0.8)) {
+    set.seed(19)
+    Xk <- MASS::mvrnorm(4000, rep(0, 3), (1 - rho) * diag(3) + rho)
+    colnames(Xk) <- paste0("x", 1:3)
+    rk <- VIM::imputeCellGLoc(as.data.frame(Xk), design = ~ 1, weights = "soft")
+    mk <- VIM::imputeCellGLoc(as.data.frame(Xk), design = ~ 1, weights = "soft",
+                              psi_c = Inf, maxit = 1)
+    expect_true(max(abs(diag(rk$Sigma) / diag(mk$Sigma) - 1)) < 0.06)
+  }
+
+  # kappa itself: 1 at no downweighting, and the published value at the default
+  expect_equal(VIM:::.gloc_consistency(Inf), 1)
+  expect_true(abs(VIM:::.gloc_consistency(4.685) - 0.828073) < 1e-5)
+  # and the matrix-aware correction reduces to the scalar one under independence
+  expect_true(max(abs(VIM:::.gloc_correct_scatter(diag(3) * 0.828073, 0.828073) -
+                        diag(3))) < 1e-8)
+  expect_equal(VIM:::.gloc_correct_scatter(diag(3), 1), diag(3))
 }
 
 # --- the mean structure is actually used: a strong group effect is absorbed ---
@@ -122,7 +248,9 @@ with_g <- VIM::imputeCellGLoc(dg, design = ~ ., weights = "soft")
 no_g   <- VIM::imputeCellGLoc(dg, design = ~ 1, weights = "soft")
 # ignoring the design inflates the scatter; modelling it recovers the identity
 expect_true(mean(diag(with_g$Sigma)) < mean(diag(no_g$Sigma)))
-expect_true(max(abs(diag(with_g$Sigma) - 1)) < 0.35)
+# tightened from 0.35: that tolerance had been sized around the ~21% scatter
+# deflation of the uncorrected bisquare, which the consistency factor removes
+expect_true(max(abs(diag(with_g$Sigma) - 1)) < 0.10)
 
 # --- missing continuous cells are filled by the model's conditional expectation ---
 set.seed(21)
@@ -143,3 +271,71 @@ expect_true(is.factor(res$imputed$g))
 rmse_model  <- sqrt(mean((res$imputed$x1[1:40] - truth[1:40])^2))
 rmse_pooled <- sqrt(mean((mean(di$x1, na.rm = TRUE) - truth[1:40])^2))
 expect_true(rmse_model < rmse_pooled)
+
+# ==========================================================================
+# Convergence, degraded paths and edge cases
+# ==========================================================================
+
+# --- convergence must not be declared while the weights are still moving.
+# The criterion divides the change in the FITTED MEANS by the scatter. A
+# criterion that divided a coefficient change by a LOCATION (max|B_old|) would
+# loosen 200,000-fold when the data is shifted by +1000, stopping after one
+# iteration with hundreds of weights still moving and returning a scatter
+# several times too large. Shifting must leave the fit equivariant. ---
+set.seed(16)
+Xe <- MASS::mvrnorm(300, rep(0, 3), 0.5 * diag(3) + 0.5)
+Xe[1:10, 2] <- Xe[1:10, 2] + 9
+colnames(Xe) <- paste0("x", 1:3)
+
+e0 <- VIM::imputeCellGLoc(as.data.frame(Xe),        design = ~ 1, weights = "soft")
+e1 <- VIM::imputeCellGLoc(as.data.frame(Xe + 1000), design = ~ 1, weights = "soft")
+
+expect_true(max(abs(e1$Sigma - e0$Sigma)) / max(abs(e0$Sigma)) < 1e-6)
+expect_true(max(abs(e1$W - e0$W)) < 1e-6)
+expect_true(max(abs((as.vector(e1$B[1, ]) - as.vector(e0$B[1, ])) - 1000)) < 1e-6)
+expect_equal(e1$iterations, e0$iterations)
+expect_true(e0$converged)
+
+# --- the degraded scatter path honours the cell weights and is never silent.
+# cellWise is in Suggests, so running without it is supported, not an edge
+# case; have_cw = FALSE exercises exactly that path. ---
+set.seed(17)
+Rw <- matrix(rnorm(300), 100, 3, dimnames = list(NULL, paste0("x", 1:3)))
+Ww <- matrix(1, 100, 3)
+Mw <- matrix(FALSE, 100, 3)
+Rw[1:5, 1] <- 50; Ww[1:5, 1] <- 0        # garbage cells, driven to weight zero
+
+expect_warning(Sw <- VIM:::.gloc_scatter_soft(Rw, Ww, Mw, have_cw = FALSE),
+               "cellWise")
+# a covariance that discarded W would put ~125 here, not ~1
+expect_true(Sw[1, 1] < 2)
+expect_true(min(eigen(Sw, symmetric = TRUE)$values) > 0)   # repaired to p.d.
+# and it really is weighted: zeroing more cells changes the answer
+Ww2 <- Ww; Ww2[6:40, 2] <- 0
+Sw2 <- suppressWarnings(VIM:::.gloc_scatter_soft(Rw, Ww2, Mw, have_cw = FALSE))
+expect_false(isTRUE(all.equal(Sw, Sw2)))
+
+# --- maxit = 0 returns the starting fit instead of erroring ---
+z0 <- VIM::imputeCellGLoc(dg, design = ~ ., weights = "soft", maxit = 0)
+expect_equal(z0$iterations, 0L)
+expect_false(z0$converged)
+expect_true(all(is.finite(z0$Sigma)))
+expect_false(anyNA(z0$imputed))
+
+# --- integer columns keep their class through imputation ---
+set.seed(18)
+di2 <- data.frame(a = as.integer(round(rnorm(200, 50, 10))),
+                  b = rnorm(200),
+                  g = factor(rep(c("u", "v"), 100)))
+di2$a[1:20] <- NA_integer_
+zi <- VIM::imputeCellGLoc(di2, design = ~ ., weights = "soft")
+expect_true(is.integer(zi$imputed$a))
+expect_false(anyNA(zi$imputed$a))
+expect_true(is.double(zi$imputed$b))
+
+# --- a non-finite value that is not NA is imputed, but never silently ---
+di3 <- dg; di3$x1[3] <- Inf
+expect_warning(zf <- VIM::imputeCellGLoc(di3, design = ~ ., weights = "soft"),
+               "non-finite")
+expect_false(anyNA(zf$imputed$x1))
+expect_true(all(is.finite(zf$imputed$x1)))

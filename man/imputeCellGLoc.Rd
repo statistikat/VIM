@@ -25,9 +25,11 @@ imputeCellGLoc(
 \item{weights}{\code{"soft"} for redescending weights in [0, 1],
 \code{"binary"} for the penalised cellwise MCD objective.}
 
-\item{maxit}{maximum number of outer iterations.}
+\item{maxit}{maximum number of outer iterations. \code{0} returns the
+starting fit.}
 
-\item{eps}{convergence tolerance on the relative change in \code{B}.}
+\item{eps}{convergence tolerance, applied to the scaled change in the
+fitted means and to the change in the cell weights.}
 
 \item{alpha}{minimum fraction of unflagged cells per column (binary corner).}
 
@@ -52,6 +54,28 @@ With \code{design = ~ 1} the estimator reduces to the published continuous-only
 estimators: to the cellwise MCD of Raymaekers and Rousseeuw (2024) with
 \code{weights = "binary"}, and to the cellwise weighted maximum likelihood
 estimator of Rousseeuw (2026) with \code{weights = "soft"}.
+
+The soft corner rescales the weighted scatter so that it is
+Fisher-consistent at the Gaussian model. Without it the bisquare
+downweighting deflates the scatter by about 21\\% at the default tuning,
+which would inflate the standardised residuals and make the estimator
+over-flag. The correction is per column and depends on \eqn{\Sigma}, not a
+single constant: the weights act on \emph{conditional} residuals, so they
+shrink only the unpredictable part of each cell. See
+\code{.gloc_correct_scatter}. It is exact for the scale at any correlation
+and vanishes at \code{psi_c = Inf}. The correlations themselves stay mildly
+biased upward; see that function's note.
+
+Iteration stops when both the fitted means and the cell weights have settled:
+\eqn{\max|U(B - B_{old})| / \sqrt{\max \mathrm{diag}(\Sigma)} < eps} and
+\eqn{\max|W - W_{old}| < eps}. The first term is a change in the fitted
+values measured in units of the scatter, not a change in a coefficient
+measured against a location, so the criterion is invariant to shifting the
+data.
+
+Continuous columns that are \code{integer} in \code{data} stay
+\code{integer} in \code{$imputed}; their conditional expectations are
+rounded.
 }
 \references{
 Raymaekers, J. and Rousseeuw, P. J. (2024). The cellwise minimum covariance

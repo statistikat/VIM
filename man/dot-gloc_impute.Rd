@@ -21,6 +21,9 @@
 \code{X} with its missing cells replaced.
 }
 \description{
-Fill missing continuous cells by their conditional expectation
+Rows are grouped by their missingness pattern, so one matrix inversion is
+done per distinct pattern rather than one per row, matching
+\code{.gloc_cond_resid}. A row with no observed continuous cell falls back
+to its fitted mean.
 }
 \keyword{internal}
