@@ -335,6 +335,33 @@ expect_equal(z0$iterations, 0L)
 expect_false(z0$converged)
 expect_true(all(is.finite(z0$Sigma)))
 expect_false(anyNA(z0$imputed))
+expect_equal(names(z0$criterion),
+             c("means", "scatter", "weights", "scatter_spread"))
+expect_true(all(is.na(z0$criterion)))          # nothing was computed at all
+
+# --- $criterion reports the stopping residuals, so a caller can test them
+# rather than parse a warning string. A NON-converged fit returns whatever the
+# last iteration produced, and from Sigma alone there is no way to see whether
+# that is a point on a settled cycle -- where the answer depends on which phase
+# maxit stopped in -- or a value still drifting. scatter_spread measures that
+# dependence; it is deliberately NA on a converged fit, where the trailing
+# window still holds the approach and a number there would invite the wrong
+# reading. ---
+zk <- VIM::imputeCellGLoc(dg, design = ~ 1, weights = "soft")
+expect_true(zk$converged)
+expect_equal(names(zk$criterion),
+             c("means", "scatter", "weights", "scatter_spread"))
+expect_true(all(zk$criterion[c("means", "scatter", "weights")] < 5e-3))
+expect_true(is.na(zk$criterion[["scatter_spread"]]))
+
+expect_warning(zm <- VIM::imputeCellGLoc(dg, design = ~ 1, weights = "soft",
+                                         maxit = 2))
+expect_false(zm$converged)
+expect_true(is.finite(zm$criterion[["scatter_spread"]]))
+expect_true(zm$criterion[["scatter_spread"]] > 0)
+# it really is a spread over the window, not a copy of the one-step residual:
+# at two iterations the window holds two scatters, so the two coincide
+expect_equal(zm$criterion[["scatter_spread"]], zm$criterion[["scatter"]])
 
 # --- integer columns keep their class through imputation ---
 set.seed(18)
@@ -571,10 +598,16 @@ if (at_home()) {
                  "cycling")
   expect_false(zh$converged)
 
+  # the hard-cut arm is exactly the case $criterion exists for: it returns a
+  # scatter that is still moving, and says so in a number
+  expect_true(is.finite(zh$criterion[["scatter_spread"]]))
+  expect_true(zh$criterion[["scatter_spread"]] > 0)
+
   zc <- VIM::imputeCellGLoc(as.data.frame(Xz), design = ~ 1, weights = "soft",
                             maxit = 200)
   expect_true(zc$converged)
   expect_true(zc$iterations < 50)
+  expect_true(is.na(zc$criterion[["scatter_spread"]]))
   # and it converges to what the cycling run was orbiting, not somewhere else:
   # the fix must remove the oscillation, not relocate the estimate
   expect_true(max(abs(zc$Sigma - zh$Sigma)) / max(abs(zh$Sigma)) < 0.05)

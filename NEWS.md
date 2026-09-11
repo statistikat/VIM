@@ -12,26 +12,59 @@
 
 ## Changes
 - **`imputeCellGLoc()`'s peer-inclusion threshold is now a band, and the `design = ~ .` arm
-  converges.** "Condition on a peer only if its weight exceeds `peer_w_min`" made the weight map
-  discontinuous, and a discontinuous self-map of the weight cube need not have a fixed point at
-  all -- so the stopping rule could be asking for a state that does not exist, and on the
-  categorical-mean-structure arm it usually was. A peer whose weight lies within
+  converges far more often.** "Condition on a peer only if its weight exceeds `peer_w_min`" made
+  the weight map discontinuous, and a discontinuous self-map of the weight cube need not have a
+  fixed point at all -- so the stopping rule could be asking for a state that does not exist, and
+  on the categorical-mean-structure arm it usually was. A peer whose weight lies within
   `peer_band` of the threshold is now conditioned on with its information discounted, as though
   observed with measurement error, instead of switching in and out at a step. Confidently clean
   and confidently flagged peers are treated exactly as before, so nothing changes outside the
-  ambiguous fringe. Measured on 40 fits at n = 200 with 6 continuous and 6 categorical variables:
-  `converged` rises from 15/40 to 40/40 and the mean time per fit falls from 15.7 s to 5.6 s;
-  with `design = ~ 1`, from 38/40 to 40/40 and 3.3 s to 1.7 s. `peer_band = 0` restores the old
-  hard cut. The reduction to `cellWise::cellMCD()`, the reduction to the Gaussian MLE, the
+  ambiguous fringe.
+
+  Measured over 260 fits of the mean-structure arm, `converged` goes from **131 to 245 (94%)**.
+  The gain is *not* the band alone: raising the relaxation floor and adding the scatter condition,
+  with the cut still hard, already gets 181, so about 40% of it is the floor. Convergence is not
+  universal -- the remaining failures sit at correlations of 0.6 and above combined with 20% of
+  cells contaminated, and simulation code must not assume otherwise. On the narrower pilot
+  configuration (n = 200, 6 continuous and 6 categorical variables, 40 fits) it is 15/40 to 40/40
+  with the mean time per fit falling from 15.7 s to 5.6 s, and with `design = ~ 1` 38/40 to 40/40
+  and 3.3 s to 1.7 s.
+
+  **The band changes the estimate and is not an accuracy improvement.** Over 520 paired fits
+  against `peer_band = 0` on the same data, the scatter moves by up to about 20% per fit in either
+  direction (largest relative changes -19.9% and +20.7%; 22% of fits move by more than 1%), with a
+  mean effect near zero (relative error 0.8401 against 0.8389) and no measurable effect on
+  detection (F1 0.4837 against 0.4842). The direction is a coin flip and no predictor of it was
+  found. The reduction to `cellWise::cellMCD()`, the reduction to the Gaussian MLE, the
   Fisher-consistency check and the outlier-propagation rates are unchanged to machine precision.
+
+  `peer_band = 0` restores the hard cut, but it does **not** reproduce a pre-7.4.0 fit, because
+  the relaxation floor moved with it and the two interact: the hard cut converges 208 of 260
+  pooled fits at the new floor of 0.5 against 245 at the old 0.25.
 - **`imputeCellGLoc()` now tests the scatter for convergence as well**, not only the fitted means
   and the cell weights. `Sigma` was the one returned quantity with no stopping test of its own.
-  Adding a condition can only make convergence harder, never easier.
+  Adding a condition can only make convergence harder, never easier. In practice it is a formal
+  guard rather than an active one: it has not yet been observed to bind, standing at most a
+  seventh of its tolerance when the other two conditions are first met.
+- **`imputeCellGLoc()` returns `$criterion`**, the named vector
+  `(means, scatter, weights, scatter_spread)`: the three stopping residuals plus the elementwise
+  spread of `Sigma` over the last 20 iterations, relative to its largest variance. When
+  `converged` is `FALSE` the last of these says how much the returned scatter depends on where
+  `maxit` stopped, which the returned `Sigma` alone cannot show. It matters mainly for
+  `weights = "binary"`, where the cell weights come from `cellWise::cellMCD()` and are binary by
+  construction, so the band does not apply: of 10 non-converged binary fits, 8 are bit-identical
+  at a raised `maxit` (a settled cycle) and 2 still move, by about 0.01 and 0.096 relative. That
+  is the published estimator's own discreteness and is not fixed here, but it is now detectable
+  without parsing a warning string. `scatter_spread` was positive for all 10, which is the
+  intended behaviour -- every one of them returns a scatter that depends on the stopping point --
+  but it does not separate a cycle from a drift and must not be read as predicting how much the
+  answer would change at a different `maxit`.
 - **The relaxation floor `.gloc_damp` rises from 0.25 to 0.5.** The low floor existed to suppress
   the limit cycles that the band removes; at 0.25 the relaxed iteration is simply slow, and on the
-  mean-structure arm it no longer fits inside `maxit` (35/40 against 40/40 at 0.5). Relaxation
+  mean-structure arm it no longer fits inside `maxit` (35/40 against 40/40 at 0.5). It is the
+  right floor only *with* the band -- under the hard cut the lower floor is better. Relaxation
   moves no fixed point, so this changes speed and not the answer -- verified: with
-  `peer_band = 0` the new code reproduces 7.4.0's previous fits to 1e-7 in scatter and to an
+  `peer_band = 0` and `damp` pinned, the new code reproduces the old to 1e-7 in scatter and to an
   identical flagged set.
 - **`imputeCellGLoc()`'s non-convergence warning had its advice backwards.** It suggested widening
   the conditioning set with a *larger* `peer_w_min`; larger values discard more peers.

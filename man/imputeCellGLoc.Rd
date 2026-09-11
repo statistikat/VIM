@@ -77,11 +77,25 @@ demonstrating what the filtering buys.}
 \item{peer_band}{half-width of the band around \code{peer_w_min} over which
 a peer fades out of the conditioning set instead of leaving it at a step;
 see \code{.gloc_peer_band} for the value and \code{.gloc_cond_resid} for
-the construction. \code{0} restores the hard cut of releases before 7.4.0,
-which is useful only for demonstrating what the band buys: it makes the
-weight map discontinuous again, and with it the limit cycles that made
-\code{converged = FALSE} the usual outcome of a
-\code{design = ~ .} fit.}
+the construction. \code{0} restores the hard cut, which is useful only for
+demonstrating what the band buys: it makes the weight map discontinuous
+again, and with it the limit cycles that made \code{converged = FALSE} the
+usual outcome of a \code{design = ~ .} fit. It does \emph{not} reproduce a
+release from before 7.4.0, because the relaxation floor moved at the same
+time and the two interact: measured on 260 pooled fits, the hard cut
+converges 208 times at the current floor of 0.5 against 245 at the old
+0.25. A low floor helps under the hard cut and merely costs iterations
+under the band.
+
+Setting it changes the estimator and not only the iteration. Measured over
+520 paired fits against \code{peer_band = 0} on the same data, the scatter
+moves by up to about 20\\% either way (the largest relative Frobenius
+changes seen were -19.9\\% and +20.7\\%, and 22\\% of fits move by more than
+1\\%). The mean effect is near zero -- 0.8401 against 0.8389 in relative
+error against a known truth -- the direction is not predictable from
+anything but the design arm itself, and detection is unaffected (F1 0.4837
+against 0.4842). The band is a fix for convergence, not for accuracy, and
+is not claimed to improve the estimate.}
 
 \item{damp}{relaxation factor for the soft corner's weight update.
 \code{NULL} (default) runs the adaptive schedule of
@@ -109,7 +123,29 @@ function immediately discards. See \code{.gloc_scatter_soft}.}
 }
 \value{
 a list with \code{B}, \code{Sigma}, \code{W}, \code{U},
-\code{imputed}, \code{converged} and \code{iterations}.
+\code{imputed}, \code{converged}, \code{iterations} and \code{criterion}.
+
+\code{criterion} is the named vector \code{(means, scatter, weights,
+  scatter_spread)}: the three stopping residuals as of the last iteration,
+compared against \code{eps}, plus the elementwise spread of \eqn{\Sigma}
+over the last \code{.gloc_stall_iters} iterations relative to its largest
+variance. \code{scatter_spread} is reported only when \code{converged} is
+\code{FALSE}, and is \code{NA} otherwise: on a converged fit the window
+still holds the last steps of the approach, so a value there would say
+nothing about stability. When the fit did not converge it says how much
+the returned scatter depends on where \code{maxit} happened to stop -- a
+settled cycle reports its amplitude, a run still drifting reports the
+drift -- and a caller can test it instead of parsing a warning string.
+
+It does not tell those two apart, and it is not an error estimate. On 10
+non-converged \code{weights = "binary"} fits it was positive for all 10,
+while raising \code{maxit} left 8 of them bit-identical and moved 2 (by
+0.008 and 0.096 relative, the latter matching its reported spread
+exactly). That is the intended behaviour -- all 10 return a scatter that
+depends on the stopping point -- but the rank correlation with what
+raising \code{maxit} actually does is only 0.16, so read it as "this
+answer is not settled", never as "it would move by this much".
+Every entry is \code{NA} at \code{maxit = 0}.
 }
 \description{
 Estimates the mean structure \eqn{B}, scatter \eqn{\Sigma} and cell weights
@@ -149,15 +185,31 @@ returns is still moving, which is the only reading of convergence a
 detection method can defend: \eqn{W} is not a nuisance quantity here, it is
 the flag set the caller uses.
 
+The scatter condition is a formal guard rather than an active one. Across
+every fit measured so far it has never been the binding constraint: at the
+iteration where the other two conditions are first met it stands at most a
+seventh of its own tolerance. It is there because \eqn{\Sigma} is returned
+and was the one returned quantity the rule did not test, and because it
+costs nothing; it is not there because it was observed to catch anything.
+
 The soft corner's weight update is relaxed (see \code{.gloc_damp}) to keep
 the fixed-point iteration inside its contraction radius, and the factor is
-adapted rather than fixed; see \code{damp}. Relaxation is \emph{not} what
-makes the criterion attainable. That is the job of the peer band (see
-\code{.gloc_peer_band}): conditioning on a peer only when its weight
+adapted rather than fixed; see \code{damp}. Relaxation alone does not make
+the criterion attainable: conditioning on a peer only when its weight
 exceeds a threshold makes the weight map discontinuous, and a discontinuous
 self-map of \eqn{[0,1]^{n \times p}} need not have a fixed point at all, so
 before 7.4.0 the iteration could be asked to reach a state that did not
-exist -- and in the \code{design = ~ .} arm it usually was.
+exist -- and in the \code{design = ~ .} arm it usually was. The peer band
+(see \code{.gloc_peer_band}) removes that, and the two work together rather
+than one of them doing the work: over 260 fits of the
+categorical-mean-structure arm, \code{converged} is 131 under the 7.3.1
+schedule and hard cut, 181 with the relaxation floor at 0.5 and the scatter
+condition but the cut still hard, and 245 with the band as well. About 40\\%
+of the gain is the floor, the rest the band.
+
+Convergence is not universal and should not be assumed. On that 260-fit grid
+it is 245, or 94\\%, with the failures concentrated at correlations of 0.6
+and above combined with 20\\% of cells contaminated.
 
 Continuous columns that are \code{integer} in \code{data} stay
 \code{integer} in \code{$imputed}; their conditional expectations are

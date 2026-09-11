@@ -47,10 +47,18 @@ no amount of relaxation could make the stopping rule attainable, and the
 documentation said as much -- configurations existed that cycled forever at
 the floor. Since the threshold became a band (see
 \code{.gloc_peer_band}) the map is continuous, cycling in the
-peer-inclusion decision is gone, and relaxation is back to its ordinary job:
-keeping the fixed-point iteration inside its contraction radius. The floor
-is therefore set by how fast the iteration converges, not by how badly it
-cycles, and it rises from 0.25 to 0.50.
+peer-inclusion decision is largely gone, and relaxation is back to its
+ordinary job: keeping the fixed-point iteration inside its contraction
+radius. The floor is therefore set by how fast the iteration converges, not
+by how badly it cycles, and it rises from 0.25 to 0.50.
+
+The floor and the band are a package and must not be quoted apart. The floor
+is worth about 40\\% of the convergence gain on the mean-structure arm (131,
+then 181, then 245 of 260 fits, adding the floor and the scatter condition
+first and the band second), and it is worth that only \emph{with} the band:
+under the hard cut a low floor is the better setting, and raising it costs
+convergence rather than buying it -- measured on 260 pooled fits, the hard
+cut converges 208 times at 0.5 against 245 at 0.25.
 
 The table below is the 36-configuration sweep, re-measured under the band
 and under the current convergence rule, from a generator stated in full so

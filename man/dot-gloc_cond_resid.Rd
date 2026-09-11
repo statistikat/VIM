@@ -79,6 +79,23 @@ the rest of the soft corner already treats partial information. The map
 becomes continuous in \eqn{W}, a fixed point exists, and the convergence
 test can stay exactly as strict as it was.
 
+\strong{What the band does to the estimate.} It is a fix for convergence and
+nothing else, and it must not be described as an improvement in accuracy.
+Measured over 520 paired fits with known ground truth -- band against no
+band within the same build, varying correlation, contamination fraction,
+shift and contamination type, so that only the band differs -- the scatter
+moves by up to about 20\\% per fit in \emph{either} direction (largest
+relative changes -19.9\\% and +20.7\\%), and 22\\% of fits move by more than
+1\\% of their error. The direction is a coin flip: 48.5\\% of fits move
+towards the truth on the mean-structure arm, sign test p = 0.66, and among
+the fits that move appreciably it is about 2 to 1 \emph{away}. What can be
+said is that the mean effect is near zero (relative error 0.8401 against
+0.8389) and that detection is untouched (F1 0.4837 against 0.4842), so
+convergence is not being bought at the cost of accuracy. No predictor of the
+direction was found other than the arm itself. An earlier revision of this
+page inferred "always towards the truth" from four hand-picked cases; that
+was four points out of 520, and it was wrong.
+
 Implementation notes. (i) The noise-inflated system is solved in the scaled
 form \eqn{\Sigma_{jS} D G^{-1} D} with \eqn{D = \mathrm{diag}(\sqrt r)} and
 \eqn{G = D \Sigma_{SS} D + \mathrm{diag}(\sigma_{kk}(1 - r))}, which

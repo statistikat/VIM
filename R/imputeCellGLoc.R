@@ -36,15 +36,31 @@
 #' detection method can defend: \eqn{W} is not a nuisance quantity here, it is
 #' the flag set the caller uses.
 #'
+#' The scatter condition is a formal guard rather than an active one. Across
+#' every fit measured so far it has never been the binding constraint: at the
+#' iteration where the other two conditions are first met it stands at most a
+#' seventh of its own tolerance. It is there because \eqn{\Sigma} is returned
+#' and was the one returned quantity the rule did not test, and because it
+#' costs nothing; it is not there because it was observed to catch anything.
+#'
 #' The soft corner's weight update is relaxed (see \code{.gloc_damp}) to keep
 #' the fixed-point iteration inside its contraction radius, and the factor is
-#' adapted rather than fixed; see \code{damp}. Relaxation is \emph{not} what
-#' makes the criterion attainable. That is the job of the peer band (see
-#' \code{.gloc_peer_band}): conditioning on a peer only when its weight
+#' adapted rather than fixed; see \code{damp}. Relaxation alone does not make
+#' the criterion attainable: conditioning on a peer only when its weight
 #' exceeds a threshold makes the weight map discontinuous, and a discontinuous
 #' self-map of \eqn{[0,1]^{n \times p}} need not have a fixed point at all, so
 #' before 7.4.0 the iteration could be asked to reach a state that did not
-#' exist -- and in the \code{design = ~ .} arm it usually was.
+#' exist -- and in the \code{design = ~ .} arm it usually was. The peer band
+#' (see \code{.gloc_peer_band}) removes that, and the two work together rather
+#' than one of them doing the work: over 260 fits of the
+#' categorical-mean-structure arm, \code{converged} is 131 under the 7.3.1
+#' schedule and hard cut, 181 with the relaxation floor at 0.5 and the scatter
+#' condition but the cut still hard, and 245 with the band as well. About 40\%
+#' of the gain is the floor, the rest the band.
+#'
+#' Convergence is not universal and should not be assumed. On that 260-fit grid
+#' it is 245, or 94\%, with the failures concentrated at correlations of 0.6
+#' and above combined with 20\% of cells contaminated.
 #'
 #' Continuous columns that are \code{integer} in \code{data} stay
 #' \code{integer} in \code{$imputed}; their conditional expectations are
@@ -119,14 +135,50 @@
 #' @param peer_band half-width of the band around \code{peer_w_min} over which
 #'   a peer fades out of the conditioning set instead of leaving it at a step;
 #'   see \code{.gloc_peer_band} for the value and \code{.gloc_cond_resid} for
-#'   the construction. \code{0} restores the hard cut of releases before 7.4.0,
-#'   which is useful only for demonstrating what the band buys: it makes the
-#'   weight map discontinuous again, and with it the limit cycles that made
-#'   \code{converged = FALSE} the usual outcome of a
-#'   \code{design = ~ .} fit.
+#'   the construction. \code{0} restores the hard cut, which is useful only for
+#'   demonstrating what the band buys: it makes the weight map discontinuous
+#'   again, and with it the limit cycles that made \code{converged = FALSE} the
+#'   usual outcome of a \code{design = ~ .} fit. It does \emph{not} reproduce a
+#'   release from before 7.4.0, because the relaxation floor moved at the same
+#'   time and the two interact: measured on 260 pooled fits, the hard cut
+#'   converges 208 times at the current floor of 0.5 against 245 at the old
+#'   0.25. A low floor helps under the hard cut and merely costs iterations
+#'   under the band.
+#'
+#'   Setting it changes the estimator and not only the iteration. Measured over
+#'   520 paired fits against \code{peer_band = 0} on the same data, the scatter
+#'   moves by up to about 20\% either way (the largest relative Frobenius
+#'   changes seen were -19.9\% and +20.7\%, and 22\% of fits move by more than
+#'   1\%). The mean effect is near zero -- 0.8401 against 0.8389 in relative
+#'   error against a known truth -- the direction is not predictable from
+#'   anything but the design arm itself, and detection is unaffected (F1 0.4837
+#'   against 0.4842). The band is a fix for convergence, not for accuracy, and
+#'   is not claimed to improve the estimate.
 #' @param trace print progress.
 #' @return a list with \code{B}, \code{Sigma}, \code{W}, \code{U},
-#'   \code{imputed}, \code{converged} and \code{iterations}.
+#'   \code{imputed}, \code{converged}, \code{iterations} and \code{criterion}.
+#'
+#'   \code{criterion} is the named vector \code{(means, scatter, weights,
+#'   scatter_spread)}: the three stopping residuals as of the last iteration,
+#'   compared against \code{eps}, plus the elementwise spread of \eqn{\Sigma}
+#'   over the last \code{.gloc_stall_iters} iterations relative to its largest
+#'   variance. \code{scatter_spread} is reported only when \code{converged} is
+#'   \code{FALSE}, and is \code{NA} otherwise: on a converged fit the window
+#'   still holds the last steps of the approach, so a value there would say
+#'   nothing about stability. When the fit did not converge it says how much
+#'   the returned scatter depends on where \code{maxit} happened to stop -- a
+#'   settled cycle reports its amplitude, a run still drifting reports the
+#'   drift -- and a caller can test it instead of parsing a warning string.
+#'
+#'   It does not tell those two apart, and it is not an error estimate. On 10
+#'   non-converged \code{weights = "binary"} fits it was positive for all 10,
+#'   while raising \code{maxit} left 8 of them bit-identical and moved 2 (by
+#'   0.008 and 0.096 relative, the latter matching its reported spread
+#'   exactly). That is the intended behaviour -- all 10 return a scatter that
+#'   depends on the stopping point -- but the rank correlation with what
+#'   raising \code{maxit} actually does is only 0.16, so read it as "this
+#'   answer is not settled", never as "it would move by this much".
+#'   Every entry is \code{NA} at \code{maxit = 0}.
 #' @references
 #' Raymaekers, J. and Rousseeuw, P. J. (2024). The cellwise minimum covariance
 #' determinant estimator. \emph{JASA} 119(548), 2610-2621.
@@ -191,6 +243,16 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   stall   <- 0L           # iterations since the weight change last improved
   restarted <- FALSE      # has the floor-schedule fallback already been used?
   W0 <- W; B0 <- B        # the cold start, kept for that fallback
+  dB <- dS <- dW <- NA_real_       # stopping residuals, reported in $criterion
+  # Ring buffer of the last .gloc_stall_iters scatters. A non-converged fit
+  # returns whatever the last iteration produced, and from the returned Sigma
+  # alone the caller cannot tell a point on a settled cycle -- where the answer
+  # depends on which phase maxit stopped in -- from a value still drifting.
+  # Measured on the binary corner, 8 of 10 non-converged fits are bit-identical
+  # at a raised maxit and 2 move, by 0.011 and 0.096 relative. The trailing
+  # spread measures that dependence directly and is returned, so it can be
+  # tested by a caller rather than only read out of a warning string.
+  S_hist <- vector("list", .gloc_stall_iters)
 
   kappa_soft <- .gloc_consistency(psi_c, "bisquare")
   hard_q     <- sqrt(stats::qchisq(0.99, df = 1))
@@ -268,8 +330,12 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
         # recrossed every few iterations while the rest of the system
         # contracted geometrically, each crossing kicking max|f(W) - W| back up
         # to 0.1-0.2 against a tolerance of 5e-3. The band in
-        # .gloc_cond_resid() is what fixes that; relaxation is here for the
-        # ordinary reason, to keep the iteration inside its contraction radius.
+        # .gloc_cond_resid() is what makes a fixed point exist; relaxation is
+        # here for the ordinary reason, to keep the iteration inside its
+        # contraction radius. Neither alone accounts for the convergence gain
+        # -- raising the floor is worth about 40% of it and the band the rest
+        # -- and neither is worth much without the other; see
+        # .gloc_damp_schedule.
         W <- (1 - damp) * W + damp * .gloc_bisquare(Z, psi_c)
       }
       W[M] <- 0
@@ -311,6 +377,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
       # strengthening of the rule, not a loosening of it.
       dS <- if (is.null(Sigma_old)) Inf else
         max(abs(Sigma - Sigma_old)) / max(max(diag(Sigma)), .Machine$double.eps)
+      S_hist[[(it - 1L) %% .gloc_stall_iters + 1L]] <- Sigma
       if (trace) message(sprintf(paste("  iter %d: scaled change in fitted",
                                        "means = %.3g, in scatter = %.3g,",
                                        "fixed-point residual in W = %.3g,",
@@ -379,6 +446,21 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
     # smaller relaxation floor. Relaxation is NOT a cure for cycling in
     # general: one configuration at rho = 0.5 on clean data still cycles
     # forever at 0.25, which is why this warning exists at all.
+    # How much the returned scatter depends on where maxit stopped: the
+    # elementwise spread of Sigma over the last .gloc_stall_iters iterations,
+    # relative to its largest variance. Zero for a converged fit, the cycle
+    # amplitude for a settled cycle, the drift for a run still moving.
+    # Only for a fit that did NOT converge: on a converged one the window still
+    # holds the last steps of the approach, so a non-zero value there would say
+    # nothing about stability and would invite exactly the wrong reading.
+    S_keep <- Filter(Negate(is.null), S_hist)
+    S_spread <- if (converged || length(S_keep) < 2L || is.null(Sigma))
+      NA_real_ else {
+      A <- simplify2array(S_keep)
+      max(apply(A, seq_len(2L), max) - apply(A, seq_len(2L), min)) /
+        max(max(diag(Sigma)), .Machine$double.eps)
+    }
+
     if (maxit >= 1L && !converged) {
       cycling <- stall >= .gloc_stall_iters
       diagnosis <- if (cycling)
@@ -395,12 +477,20 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
       else
         paste("max |dW| is still improving, so this is the iteration limit",
               "and not a cycle: raise maxit.")
+      drift <- if (is.na(S_spread)) "" else sprintf(paste(
+        "Over the last %d iteration(s) the scatter moved by a relative %.3g,",
+        "which is how much the returned Sigma depends on where maxit stopped."),
+        min(maxit, .gloc_stall_iters), S_spread)
       warning(sprintf(paste("cellGLoc: did not converge in %d iteration(s)",
-                            "(scaled change in fitted means %.3g, in scatter",
-                            "%.3g, max |dW| %.3g, tolerance %.3g). The",
-                            "estimates are still moving, so B, Sigma and W are",
-                            "only whatever the last iteration produced. %s"),
-                      maxit, dB, dS, dW, eps, diagnosis), call. = FALSE)
+                            "(scaled change in fitted means %s, in scatter %s,",
+                            "max |dW| %s, tolerance %.3g). The estimates are",
+                            "still moving, so B, Sigma and W are only whatever",
+                            "the last iteration produced. %s%s $criterion",
+                            "carries all four numbers."),
+                      maxit, .gloc_fmt(dB), .gloc_fmt(dS), .gloc_fmt(dW), eps,
+                      drift, if (nzchar(drift)) paste0(" ", diagnosis)
+                             else diagnosis),
+              call. = FALSE)
     }
 
     if (is.null(Sigma))                                  # maxit = 0
@@ -415,7 +505,9 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   for (v in cont_vars) out[[v]] <- .gloc_restore_class(Ximp[, v], data[[v]], v)
 
   list(B = B, Sigma = Sigma, W = W, U = U, imputed = out,
-       converged = converged, iterations = iter_count)
+       converged = converged, iterations = iter_count,
+       criterion = c(means = dB, scatter = dS, weights = dW,
+                     scatter_spread = S_spread))
 }
 
 #' Relaxation schedule for the soft corner's weight update
@@ -442,10 +534,18 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 #' documentation said as much -- configurations existed that cycled forever at
 #' the floor. Since the threshold became a band (see
 #' \code{.gloc_peer_band}) the map is continuous, cycling in the
-#' peer-inclusion decision is gone, and relaxation is back to its ordinary job:
-#' keeping the fixed-point iteration inside its contraction radius. The floor
-#' is therefore set by how fast the iteration converges, not by how badly it
-#' cycles, and it rises from 0.25 to 0.50.
+#' peer-inclusion decision is largely gone, and relaxation is back to its
+#' ordinary job: keeping the fixed-point iteration inside its contraction
+#' radius. The floor is therefore set by how fast the iteration converges, not
+#' by how badly it cycles, and it rises from 0.25 to 0.50.
+#'
+#' The floor and the band are a package and must not be quoted apart. The floor
+#' is worth about 40\% of the convergence gain on the mean-structure arm (131,
+#' then 181, then 245 of 260 fits, adding the floor and the scatter condition
+#' first and the band second), and it is worth that only \emph{with} the band:
+#' under the hard cut a low floor is the better setting, and raising it costs
+#' convergence rather than buying it -- measured on 260 pooled fits, the hard
+#' cut converges 208 times at 0.5 against 245 at 0.25.
 #'
 #' The table below is the 36-configuration sweep, re-measured under the band
 #' and under the current convergence rule, from a generator stated in full so
@@ -615,6 +715,22 @@ NULL
   }
   dimnames(S) <- dimnames(S_raw)
   S
+}
+
+#' Format a stopping residual for the non-convergence warning
+#'
+#' The scatter residual is \code{Inf} on the first iteration, where there is no
+#' previous scatter to compare against, and every residual is \code{NA} at
+#' \code{maxit = 0}. Printing those verbatim reads as a numerical failure
+#' rather than as "not defined yet", so they are spelled out.
+#'
+#' @param x a length-one numeric.
+#' @return a length-one character string.
+#' @keywords internal
+.gloc_fmt <- function(x) {
+  if (length(x) != 1L || is.na(x)) "not available"
+  else if (!is.finite(x)) "not defined on the first iteration"
+  else sprintf("%.3g", x)
 }
 
 #' Tukey bisquare weights for standardised conditional residuals
