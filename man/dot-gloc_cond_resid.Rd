@@ -4,12 +4,21 @@
 \alias{.gloc_cond_resid}
 \title{Standardised conditional residuals of each cell given the others in its row}
 \usage{
-.gloc_cond_resid(R, Sigma)
+.gloc_cond_resid(R, Sigma, W = NULL, w_min = 0.5)
 }
 \arguments{
 \item{R}{\eqn{n x p} matrix of residuals from the mean structure.}
 
 \item{Sigma}{\eqn{p x p} scatter matrix.}
+
+\item{W}{optional \eqn{n x p} matrix of cell weights. \code{NULL} (default)
+conditions on every finite peer, which is the behaviour existing callers
+rely on.}
+
+\item{w_min}{weight above which a peer counts as clean enough to condition
+on. The default 0.5 is the conventional 1\\% flagging rule: the Tukey
+bisquare weight at \eqn{|z| = 2.576} is 0.487, so "weight below 0.5" and
+"flagged at the 99\\% cut-off" coincide.}
 }
 \value{
 an \eqn{n x p} matrix of standardised conditional residuals.
@@ -26,5 +35,19 @@ right no-information answer when it is paired with the no-information
 (marginal) variance -- dividing it by the full-peer-set conditional
 variance instead would understate the true spread and inflate the
 standardised residual.
+}
+\details{
+When \code{W} is supplied, a peer counts as usable only if it is finite
+\emph{and} its cell weight exceeds \code{w_min}: a downweighted peer is
+treated exactly like an absent one and simply joins the unobserved set, so
+the grouping machinery above handles it unchanged. Without this, a single
+contaminated cell corrupts the conditional mean of every other cell in its
+row and they are all flagged -- outlier propagation. Measured on data whose
+only contamination was in \code{x1}, the flag rate for the clean peers
+\code{x2} and \code{x3} in those same rows was 0.875 and 0.940, against
+0.017 in clean rows; excluding downweighted peers brings it back to the
+clean-row rate. This also aligns the soft corner with
+\code{cellWise::cellMCD}, which predicts a flagged cell from the clean cells
+in the same row.
 }
 \keyword{internal}

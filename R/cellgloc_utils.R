@@ -85,20 +85,46 @@
 #' variance instead would understate the true spread and inflate the
 #' standardised residual.
 #'
+#' When \code{W} is supplied, a peer counts as usable only if it is finite
+#' \emph{and} its cell weight exceeds \code{w_min}: a downweighted peer is
+#' treated exactly like an absent one and simply joins the unobserved set, so
+#' the grouping machinery above handles it unchanged. Without this, a single
+#' contaminated cell corrupts the conditional mean of every other cell in its
+#' row and they are all flagged -- outlier propagation. Measured on data whose
+#' only contamination was in \code{x1}, the flag rate for the clean peers
+#' \code{x2} and \code{x3} in those same rows was 0.875 and 0.940, against
+#' 0.017 in clean rows; excluding downweighted peers brings it back to the
+#' clean-row rate. This also aligns the soft corner with
+#' \code{cellWise::cellMCD}, which predicts a flagged cell from the clean cells
+#' in the same row.
+#'
 #' @param R \eqn{n x p} matrix of residuals from the mean structure.
 #' @param Sigma \eqn{p x p} scatter matrix.
+#' @param W optional \eqn{n x p} matrix of cell weights. \code{NULL} (default)
+#'   conditions on every finite peer, which is the behaviour existing callers
+#'   rely on.
+#' @param w_min weight above which a peer counts as clean enough to condition
+#'   on. The default 0.5 is the conventional 1\% flagging rule: the Tukey
+#'   bisquare weight at \eqn{|z| = 2.576} is 0.487, so "weight below 0.5" and
+#'   "flagged at the 99\% cut-off" coincide.
 #' @return an \eqn{n x p} matrix of standardised conditional residuals.
 #' @keywords internal
-.gloc_cond_resid <- function(R, Sigma) {
+.gloc_cond_resid <- function(R, Sigma, W = NULL, w_min = 0.5) {
   n <- nrow(R); p <- ncol(R)
   Z <- matrix(NA_real_, n, p, dimnames = dimnames(R))
   if (p == 1L) return(R / sqrt(Sigma[1L, 1L]))
-  finite_mat <- is.finite(R)
+  usable <- is.finite(R)
+  if (!is.null(W)) {
+    Wf <- W
+    Wf[!is.finite(Wf)] <- 0
+    usable <- usable & (Wf > w_min)
+  }
   for (j in seq_len(p)) {
     mj      <- setdiff(seq_len(p), j)
-    pat     <- finite_mat[, mj, drop = FALSE]
-    weights <- 2^(seq_along(mj) - 1)
-    patcode <- as.vector((pat + 0) %*% weights)   # one code per distinct pattern
+    pat     <- usable[, mj, drop = FALSE]
+    # string key rather than a 2^k dot product: downweighting multiplies the
+    # number of distinct patterns, and the numeric code overflows past ~53 peers
+    patcode <- do.call(paste, c(as.data.frame(pat + 0L), sep = ""))
     for (rows in split(seq_len(n), patcode)) {
       obs_idx <- mj[pat[rows[1L], ]]
       if (length(obs_idx) == 0L) {                # no peer observed: marginal fallback

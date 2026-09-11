@@ -192,13 +192,12 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   contam_row <- (rowSums(inj) > 0)[row(inj)]
   expect_true(mean(flagged[inj]) > 0.90)                     # recall
   expect_true(mean(flagged[!inj & !contam_row]) < 0.05)      # FPR in clean rows
-  # KNOWN WEAKNESS, pinned so it cannot silently worsen: .gloc_cond_resid()
-  # conditions a cell on ALL its peers regardless of their weights, so one bad
-  # cell inflates the conditional residual of every other cell in its row.
-  # Measured 0.66 here, and 0.88-0.94 when a single column is contaminated,
-  # against 0.017 in clean rows. cellMCD avoids this because a flagged cell
-  # leaves the conditioning set. See the report.
-  expect_true(mean(flagged[!inj & contam_row]) < 0.80)
+  # Clean cells sharing a row with a contaminated one must not be dragged down
+  # with it. .gloc_cond_resid() used to condition on every finite peer, which
+  # put this at 0.663 against 0.0155 in clean rows; excluding downweighted
+  # peers from the conditioning set brings it to 0.0408. The dedicated
+  # single-column test below is the clean demonstration.
+  expect_true(mean(flagged[!inj & contam_row]) < 0.08)
 
   # --- the soft corner must be Fisher-consistent at the Gaussian model. The
   # bisquare deflates a sum(w)-normalised weighted scatter, by a factor that is
@@ -339,3 +338,65 @@ expect_warning(zf <- VIM::imputeCellGLoc(di3, design = ~ ., weights = "soft"),
                "non-finite")
 expect_false(anyNA(zf$imputed$x1))
 expect_true(all(is.finite(zf$imputed$x1)))
+
+# ==========================================================================
+# Outlier propagation within a row (the "swamping" test)
+#
+# A cell is conditioned only on peers that are themselves still clean, so a
+# contaminated cell is treated exactly like an absent one. Conditioning on
+# every finite peer instead lets one bad cell inflate the conditional residual
+# of every other cell in its row, and they are all flagged -- the precise
+# failure the cellwise literature exists to prevent, and a divergence from
+# cellMCD, which predicts a flagged cell from the clean cells in its row.
+# ==========================================================================
+
+set.seed(24)
+np <- 1000; ncont <- 50
+Xp <- MASS::mvrnorm(np, rep(0, 3), 0.5 * diag(3) + 0.5)
+colnames(Xp) <- paste0("x", 1:3)
+Xp[seq_len(ncont), 1] <- Xp[seq_len(ncont), 1] + 8    # ONLY x1, ONLY these rows
+dp <- as.data.frame(Xp)
+ci <- seq_len(ncont); cl <- (ncont + 1):np
+
+fixed <- VIM::imputeCellGLoc(dp, design = ~ 1, weights = "soft")
+ff <- fixed$W < 0.5
+clean_rate <- mean(ff[cl, 2])                          # clean rows, clean column
+
+# the contaminated cells are still all caught
+expect_true(mean(ff[ci, 1]) > 0.95)
+# and their clean row-mates are flagged at the clean-row rate, not above it
+# (measured 0.0200 and 0.0200 against a clean-row rate of 0.0189)
+expect_true(mean(ff[ci, 2]) < 2 * clean_rate)
+expect_true(mean(ff[ci, 3]) < 2 * clean_rate)
+expect_true(mean(ff[ci, 2]) < 0.05)
+expect_true(mean(ff[ci, 3]) < 0.05)
+expect_true(fixed$converged)
+
+# Teeth: a negative peer_w_min conditions on every finite peer, which is the
+# old behaviour, and the propagation comes straight back (0.82 and 0.66).
+# Note that 0 would NOT do this -- the bisquare redescends to exactly zero, so
+# the worst outliers are excluded from the conditioning set even at 0.
+prop <- VIM::imputeCellGLoc(dp, design = ~ 1, weights = "soft", peer_w_min = -1)
+fp <- prop$W < 0.5
+expect_true(mean(fp[ci, 2]) > 0.5)
+expect_true(mean(fp[ci, 3]) > 0.5)
+expect_true(mean(fp[cl, 2]) < 0.05)      # clean rows unaffected either way
+
+# --- .gloc_cond_resid honours the weights, and ignores them when W is NULL ---
+set.seed(25)
+Sw3 <- 0.5 * diag(3) + 0.5
+Rw3 <- MASS::mvrnorm(500, rep(0, 3), Sw3)
+colnames(Rw3) <- paste0("x", 1:3)
+Rw3[1:50, 1] <- Rw3[1:50, 1] + 10                     # a grossly bad peer
+Ww3 <- matrix(1, 500, 3); Ww3[1:50, 1] <- 0           # correctly downweighted
+
+Z_all  <- VIM:::.gloc_cond_resid(Rw3, Sw3)                 # conditions on it
+Z_wgt  <- VIM:::.gloc_cond_resid(Rw3, Sw3, W = Ww3)        # treats it as absent
+# the bad peer drags its row-mates' standardised residuals far out ...
+expect_true(mean(abs(Z_all[1:50, 2])) > 3 * mean(abs(Z_all[51:500, 2])))
+# ... and excluding it puts them back on the same scale as everyone else
+expect_true(mean(abs(Z_wgt[1:50, 2])) < 1.5 * mean(abs(Z_wgt[51:500, 2])))
+# W = NULL must reproduce the old behaviour exactly
+expect_equal(Z_all, VIM:::.gloc_cond_resid(Rw3, Sw3, W = NULL))
+# and an all-clean W must agree with no W at all
+expect_equal(Z_all, VIM:::.gloc_cond_resid(Rw3, Sw3, W = matrix(1, 500, 3)))

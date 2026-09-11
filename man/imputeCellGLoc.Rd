@@ -12,6 +12,7 @@ imputeCellGLoc(
   eps = 0.005,
   alpha = 0.75,
   psi_c = 4.685,
+  peer_w_min = 0.5,
   trace = FALSE
 )
 }
@@ -35,6 +36,14 @@ fitted means and to the change in the cell weights.}
 
 \item{psi_c}{tuning constant of the Tukey bisquare (soft corner).
 \code{Inf} disables downweighting.}
+
+\item{peer_w_min}{a cell is conditioned on only when its weight exceeds
+this, so that a downweighted peer is treated as absent rather than as
+evidence. The default 0.5 is the conventional 1\\% flagging rule. Raising
+it discards more peers. Note that 0 does \emph{not} restore the old
+propagating behaviour, because the bisquare redescends to exactly zero
+and the worst outliers are excluded anyway; a negative value does, and is
+useful only for demonstrating what the exclusion buys.}
 
 \item{trace}{print progress.}
 }
@@ -71,7 +80,9 @@ Iteration stops when both the fitted means and the cell weights have settled:
 \eqn{\max|W - W_{old}| < eps}. The first term is a change in the fitted
 values measured in units of the scatter, not a change in a coefficient
 measured against a location, so the criterion is invariant to shifting the
-data.
+data. The soft corner's weight update is relaxed (see \code{.gloc_damp}),
+because peer inclusion is a discrete decision and cells near the threshold
+would otherwise oscillate forever.
 
 Continuous columns that are \code{integer} in \code{data} stay
 \code{integer} in \code{$imputed}; their conditional expectations are

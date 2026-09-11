@@ -27,7 +27,9 @@
 #' \eqn{\max|W - W_{old}| < eps}. The first term is a change in the fitted
 #' values measured in units of the scatter, not a change in a coefficient
 #' measured against a location, so the criterion is invariant to shifting the
-#' data.
+#' data. The soft corner's weight update is relaxed (see \code{.gloc_damp}),
+#' because peer inclusion is a discrete decision and cells near the threshold
+#' would otherwise oscillate forever.
 #'
 #' Continuous columns that are \code{integer} in \code{data} stay
 #' \code{integer} in \code{$imputed}; their conditional expectations are
@@ -46,6 +48,13 @@
 #' @param alpha minimum fraction of unflagged cells per column (binary corner).
 #' @param psi_c tuning constant of the Tukey bisquare (soft corner).
 #'   \code{Inf} disables downweighting.
+#' @param peer_w_min a cell is conditioned on only when its weight exceeds
+#'   this, so that a downweighted peer is treated as absent rather than as
+#'   evidence. The default 0.5 is the conventional 1\% flagging rule. Raising
+#'   it discards more peers. Note that 0 does \emph{not} restore the old
+#'   propagating behaviour, because the bisquare redescends to exactly zero
+#'   and the worst outliers are excluded anyway; a negative value does, and is
+#'   useful only for demonstrating what the exclusion buys.
 #' @param trace print progress.
 #' @return a list with \code{B}, \code{Sigma}, \code{W}, \code{U},
 #'   \code{imputed}, \code{converged} and \code{iterations}.
@@ -60,7 +69,7 @@
 #' @export
 imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                            maxit = 50, eps = 5e-3, alpha = 0.75,
-                           psi_c = 4.685, trace = FALSE) {
+                           psi_c = 4.685, peer_w_min = 0.5, trace = FALSE) {
   weights <- match.arg(weights)
   stopifnot(is.data.frame(data))
   is_cat <- vapply(data, function(x) is.factor(x) || is.character(x) ||
@@ -138,7 +147,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                         "the cellwise MCD and the result is not the published",
                         "cellMCD."), call. = FALSE)
           Sigma <- .gloc_scatter_soft(R, W, M)          # working scatter
-          Z <- .gloc_cond_resid(R, Sigma)
+          Z <- .gloc_cond_resid(R, Sigma, W = W, w_min = peer_w_min)
           # recompute W rather than carrying the previous iteration's stale one
           W <- matrix(as.numeric(is.finite(Z) & abs(Z) <= hard_q), n, p,
                       dimnames = dimnames(X))
@@ -149,8 +158,21 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
         }
       } else {
         Sigma <- .gloc_scatter_soft(R, W, M, kappa = kappa_soft)
-        Z <- .gloc_cond_resid(R, Sigma)
-        W <- .gloc_bisquare(Z, psi_c)
+        # Condition each cell only on peers that are themselves still clean.
+        # Conditioning on every finite peer propagates a single bad cell to its
+        # whole row: contaminating only x1 flagged 88-94% of the clean x2 and
+        # x3 cells in those same rows, against 1.7% in clean rows. cellMCD does
+        # not have this problem because a flagged cell leaves the conditioning
+        # set, and the reduction claim requires the soft corner to match.
+        Z <- .gloc_cond_resid(R, Sigma, W = W, w_min = peer_w_min)
+        # Damped weight update. Peer inclusion is a DISCRETE decision, so the
+        # undamped map is discontinuous and a cell whose weight sits near
+        # w_min flips in and out forever: an exact period-2 limit cycle in
+        # which B was stable to 4e-4 and Sigma to 9e-4, yet 7 cells of 4500
+        # kept swinging |dW| = 0.325 and convergence was never declared.
+        # Damping leaves every genuine fixed point untouched (W = f(W) implies
+        # W = (1 - d) W + d f(W)) and collapses the cycle to its average.
+        W <- (1 - .gloc_damp) * W + .gloc_damp * .gloc_bisquare(Z, psi_c)
       }
       W[M] <- 0
       B <- .gloc_update_B(X, U, W)
@@ -182,6 +204,26 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   list(B = B, Sigma = Sigma, W = W, U = U, imputed = out,
        converged = converged, iterations = iter_count)
 }
+
+#' Relaxation factor for the soft corner's weight update
+#'
+#' Peer inclusion in \code{.gloc_cond_resid} is a discrete decision, which
+#' makes the undamped weight map discontinuous and lets cells sitting near the
+#' inclusion threshold oscillate indefinitely. Relaxation removes that without
+#' moving any genuine fixed point, since \eqn{W = f(W)} implies
+#' \eqn{W = (1 - d) W + d f(W)}.
+#'
+#' The update has the same form as the damping in \code{imputeCellEM} and
+#' \code{imputeCellwise}, which ramp \eqn{\lambda} adaptively rather than
+#' holding it fixed. The value 0.5 was chosen by sweeping it over five
+#' configurations (contaminated and clean, \eqn{\rho} 0, 0.5 and 0.8): 0.5
+#' converged in all five, 0.75 failed at \eqn{\rho = 0.8}, 0.9 failed in four,
+#' and no damping at all failed in three.
+#'
+#' @format a length-one numeric.
+#'
+#' @keywords internal
+.gloc_damp <- 0.5
 
 #' Gaussian consistency factor of a cell-weight function
 #'
