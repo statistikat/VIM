@@ -305,6 +305,17 @@ vimpute <- function(
     spec = NULL
 ) {
 
+  # vimpute() is the single choke point for the mlr3 stack: regressionImp(),
+  # rangerImpute(), xgboostImpute() and overimpute() all delegate here, so one
+  # check covers them too. See require_vimpute_deps() for why mlr3 is only
+  # suggested.
+  require_vimpute_deps()
+
+  # Everything else reaches mlr3pipelines with ::, but %>>% is an infix
+  # operator -- mlr3pipelines::`%>>%`(a, b) would wreck the pipeline chains
+  # below. Bind it once for the duration of the call instead.
+  `%>>%` <- mlr3pipelines::`%>>%`
+
   # Distinguish the user explicitly choosing an uncertainty method from the
   # default, so pmm = TRUE with the default uncert does not warn spuriously.
   uncert_explicit <- !missing(uncert)
@@ -442,7 +453,9 @@ vimpute <- function(
   on.exit(future::plan(old_plan), add = TRUE)  # Restore on exit, even if error
 
   # Silence mlr3 info logs unless explicitly requested.
-  if (!isTRUE(verbose)) {
+  # lgr rides along with mlr3, but VIM only suggests it: never call into a
+  # suggested package without checking, even one a hard dependency pulls in.
+  if (!isTRUE(verbose) && requireNamespace("lgr", quietly = TRUE)) {
     mlr3_logger <- lgr::get_logger("mlr3")
     old_mlr3_threshold <- mlr3_logger$threshold
     mlr3_logger$set_threshold("warn")
@@ -719,20 +732,20 @@ vimpute <- function(
     unlist(entry$learner, use.names = FALSE)
   })))
 
-  learners <- lapply(learner_ids, function(id) lrn(id))
+  learners <- lapply(learner_ids, function(id) mlr3::lrn(id))
   names(learners) <- learner_ids
   ensure_robust_learners <- function(learners) {
     if (is.null(learners[["regr.lm_rob"]]) || is.null(learners[["classif.glm_rob"]])) {
       register_robust_learners()
-      learners[["regr.lm_rob"]] <- lrn("regr.lm_rob")
-      learners[["classif.glm_rob"]] <- lrn("classif.glm_rob")
+      learners[["regr.lm_rob"]] <- mlr3::lrn("regr.lm_rob")
+      learners[["classif.glm_rob"]] <- mlr3::lrn("classif.glm_rob")
     }
     learners
   }
   ensure_restricted_learners <- function(learners) {
     if (is.null(learners[["regr.restricted"]])) {
       register_restricted_learners()
-      learners[["regr.restricted"]] <- lrn("regr.restricted")
+      learners[["regr.restricted"]] <- mlr3::lrn("regr.restricted")
     }
     learners
   }
@@ -1051,13 +1064,13 @@ vimpute <- function(
         is_target_numeric <- is.numeric(data[[target_col]])
         
         if (is_target_numeric) {
-          task_mm_na_omit <- TaskRegr$new(
+          task_mm_na_omit <- mlr3::TaskRegr$new(
             id = "imputation_task_na_omit",
             backend = data_clean,
             target = target_col
           )
         } else {
-          task_mm_na_omit <- TaskClassif$new(
+          task_mm_na_omit <- mlr3::TaskClassif$new(
             id = "imputation_task_na_omit",
             backend = data_clean,
             target = target_col
@@ -1065,7 +1078,7 @@ vimpute <- function(
         }
         
         # modelmatrix for x variables
-        po_mm_na_omit <- PipeOpModelMatrix$new()
+        po_mm_na_omit <- mlr3pipelines::PipeOpModelMatrix$new()
         po_mm_na_omit$param_set$values$formula <- rewrited_formula
         rewrited_formula <- as.formula(paste("~", as.character(rewrited_formula)[3]))
         po_mm_na_omit$param_set$values$formula <- rewrited_formula
@@ -1082,14 +1095,14 @@ vimpute <- function(
         # Train on complete targets only (mlr3 disallows NA in target)
         data_train_mm <- data[donor_mask[[target_col]] & !is.na(get(target_col))]
         if (is_target_numeric) {
-          task_mm <- TaskRegr$new(id = "imputation_task_mm", backend = data_train_mm, target = target_col)
+          task_mm <- mlr3::TaskRegr$new(id = "imputation_task_mm", backend = data_train_mm, target = target_col)
         } else {
-          task_mm <- TaskClassif$new(id = "imputation_task_mm", backend = data_train_mm, target = target_col)
+          task_mm <- mlr3::TaskClassif$new(id = "imputation_task_mm", backend = data_train_mm, target = target_col)
         }
         
-        pipeline_impute <- po("imputehist") %>>%  # Histogram-based imputation for numeric variables (Median)
-          po("imputemode") %>>%                  # Mode imputation for categorical variables
-          po("modelmatrix", formula = rewrited_formula) #rewrited_formula  # Create design matrix
+        pipeline_impute <- mlr3pipelines::po("imputehist") %>>%  # Histogram-based imputation for numeric variables (Median)
+          mlr3pipelines::po("imputemode") %>>%                  # Mode imputation for categorical variables
+          mlr3pipelines::po("modelmatrix", formula = rewrited_formula) #rewrited_formula  # Create design matrix
         
         pipeline_impute$train(task_mm)
 
@@ -1105,9 +1118,9 @@ vimpute <- function(
           }
         }
         if (is_target_numeric) {
-          task_mm_pred <- TaskRegr$new(id = "imputation_task_mm_pred", backend = data_pred_mm, target = target_col)
+          task_mm_pred <- mlr3::TaskRegr$new(id = "imputation_task_mm_pred", backend = data_pred_mm, target = target_col)
         } else {
-          task_mm_pred <- TaskClassif$new(id = "imputation_task_mm_pred", backend = data_pred_mm, target = target_col)
+          task_mm_pred <- mlr3::TaskClassif$new(id = "imputation_task_mm_pred", backend = data_pred_mm, target = target_col)
         }
         po_task_mm <- pipeline_impute$predict(task_mm_pred)[[1]]
         mm_data <- po_task_mm$data() # mm_data = transformed data with missings filled in, data_temp = transformed data without missings
@@ -1239,15 +1252,15 @@ vimpute <- function(
       }
       
       if (needs_ohe) {
-        po_ohe <- po("encode", method = "one-hot")
+        po_ohe <- mlr3pipelines::po("encode", method = "one-hot")
         
         # OHE on data
         if (task_type == "regr") {
           train_dt <- data_temp[donor_ok_rows & !is.na(get(target_col))]
-          train_task <- as_task_regr(train_dt, target = target_col)  
+          train_task <- mlr3::as_task_regr(train_dt, target = target_col)  
         } else {
           train_dt <- data_temp[donor_ok_rows & !is.na(get(target_col))]
-          train_task <- as_task_classif(train_dt, target = target_col)  
+          train_task <- mlr3::as_task_classif(train_dt, target = target_col)  
         }
         
         po_ohe$train(list(train_task))  # Train Encoder
@@ -1264,9 +1277,9 @@ vimpute <- function(
           }
         }
         if (task_type == "regr") {
-          pred_task_ohe <- as_task_regr(pred_dt, target = target_col)
+          pred_task_ohe <- mlr3::as_task_regr(pred_dt, target = target_col)
         } else {
-          pred_task_ohe <- as_task_classif(pred_dt, target = target_col)
+          pred_task_ohe <- mlr3::as_task_classif(pred_dt, target = target_col)
         }
         data_temp <- po_ohe$predict(list(pred_task_ohe))[[1]]$data()
       }
@@ -1366,9 +1379,9 @@ vimpute <- function(
       
       # Create task
       if (is.numeric(data_y_fill_final[[target_col]])) {
-        task <- TaskRegr$new(id = target_col, backend = data_y_fill_final, target = target_col)
+        task <- mlr3::TaskRegr$new(id = target_col, backend = data_y_fill_final, target = target_col)
       } else if (is.factor(data_y_fill_final[[target_col]])) {
-        task <- TaskClassif$new(id = target_col, backend = data_y_fill_final, target = target_col)
+        task <- mlr3::TaskClassif$new(id = target_col, backend = data_y_fill_final, target = target_col)
       } else {
         stop("Mistake: Target variable is neither numerical nor a factor!")
       }
@@ -1410,7 +1423,7 @@ vimpute <- function(
         verbose     = verbose
       )
       is_regr_task <- is.numeric(data_y_fill_final[[target_col]])
-      measure <- if (is_regr_task) msr("regr.rmse") else msr("classif.acc")
+      measure <- if (is_regr_task) mlr3::msr("regr.rmse") else mlr3::msr("classif.acc")
 
       cv_folds <- safe_cv_folds(task, 5L)
       if (length(learner_candidates) > 1 && !is.na(cv_folds)) {
@@ -1428,7 +1441,7 @@ vimpute <- function(
               lrn$predict_type <- "response"
             }
           }
-          resample(task, lrn, rsmp("cv", folds = cv_folds))
+          mlr3::resample(task, lrn, mlr3::rsmp("cv", folds = cv_folds))
         })
         
         scores <- sapply(resample_results, function(res) res$aggregate(measure))
@@ -1443,7 +1456,7 @@ vimpute <- function(
       }
       
       # Initialize learner and set parameters
-      learner_obj <- lrn(best_learner$id)
+      learner_obj <- mlr3::lrn(best_learner$id)
       default_learner <- learner_obj$clone(deep = TRUE)
       current_learner <- learner_obj$clone(deep = TRUE)
       best_learner    <- learner_obj$clone(deep = TRUE)
@@ -1531,27 +1544,27 @@ vimpute <- function(
                   stop("Too few usable observations per fold for cross-validation.")
                 }
                 tuning_meta[[var]] <- list(n_evals = n_evals, folds = folds)
-                resampling <- rsmp("cv", folds = folds)
+                resampling <- mlr3::rsmp("cv", folds = folds)
                 resampling$instantiate(task)
                 
                 # Measure
-                msr_obj <- if (task$task_type == "regr") msr("regr.rmse") else msr("classif.acc")
+                msr_obj <- if (task$task_type == "regr") mlr3::msr("regr.rmse") else mlr3::msr("classif.acc")
                 
                 # Tuning-Instance
-                instance <- TuningInstanceBatchSingleCrit$new(
+                instance <- mlr3tuning::TuningInstanceBatchSingleCrit$new(
                   task         = task,
                   learner      = best_learner,
                   resampling   = resampling,
                   measure      = msr_obj,
                   search_space = search_space,
-                  terminator   = trm("evals", n_evals = n_evals)
+                  terminator   = mlr3tuning::trm("evals", n_evals = n_evals)
                 )
                 
                 # Tuner
                 # default batch_size = 1 keeps random-search RNG consumption
                 # identical across machines, so seed = ... reproduces tuning
                 # everywhere (detectCores() - 1 made tuning machine-dependent).
-                tuner <- tnr(tune_control$tuner, batch_size = tune_control$batch_size)
+                tuner <- mlr3tuning::tnr(tune_control$tuner, batch_size = tune_control$batch_size)
                 tuner$optimize(instance)
                 
                 # Best Parameters
@@ -1559,11 +1572,11 @@ vimpute <- function(
                 tuned_learner$param_set$values <- best_params
                 
                 # Compare tuned vs default
-                resampling1 <- rsmp("cv", folds = folds); resampling1$instantiate(task)
-                default_result <- resample(task, default_learner, resampling1)
+                resampling1 <- mlr3::rsmp("cv", folds = folds); resampling1$instantiate(task)
+                default_result <- mlr3::resample(task, default_learner, resampling1)
                 
-                resampling2 <- rsmp("cv", folds = folds); resampling2$instantiate(task)
-                tuned_result <- resample(task, tuned_learner, resampling2)
+                resampling2 <- mlr3::rsmp("cv", folds = folds); resampling2$instantiate(task)
+                tuned_result <- mlr3::resample(task, tuned_learner, resampling2)
                 
                 default_metric <- default_result$aggregate(msr_obj)
                 tuned_metric   <- tuned_result$aggregate(msr_obj)
@@ -1632,30 +1645,30 @@ vimpute <- function(
                 stop("Too few usable observations for cross-validation.")
               }
               tuning_meta[[var]] <- list(n_evals = n_evals, folds = folds)
-              resampling <- rsmp("cv", folds = folds); resampling$instantiate(task)
-              msr_obj <- msr("regr.rmse")
+              resampling <- mlr3::rsmp("cv", folds = folds); resampling$instantiate(task)
+              msr_obj <- mlr3::msr("regr.rmse")
               
-              instance <- TuningInstanceBatchSingleCrit$new(
+              instance <- mlr3tuning::TuningInstanceBatchSingleCrit$new(
                 task         = task,
                 learner      = best_learner,
                 resampling   = resampling,
                 measure      = msr_obj,
                 search_space = search_space,
-                terminator   = trm("evals", n_evals = n_evals)
+                terminator   = mlr3tuning::trm("evals", n_evals = n_evals)
               )
               
               # default batch_size = 1: machine-independent (see comment above)
-              tuner <- tnr(tune_control$tuner, batch_size = tune_control$batch_size)
+              tuner <- mlr3tuning::tnr(tune_control$tuner, batch_size = tune_control$batch_size)
               tuner$optimize(instance)
               
               best_params <- as.list(instance$result[, get("learner_param_vals")][[1]])
               tuned_learner$param_set$values <- best_params
               
-              res1 <- rsmp("cv", folds = folds); res1$instantiate(task)
-              default_result <- resample(task, default_learner, res1)
+              res1 <- mlr3::rsmp("cv", folds = folds); res1$instantiate(task)
+              default_result <- mlr3::resample(task, default_learner, res1)
               
-              res2 <- rsmp("cv", folds = folds); res2$instantiate(task)
-              tuned_result <- resample(task, tuned_learner, res2)
+              res2 <- mlr3::rsmp("cv", folds = folds); res2$instantiate(task)
+              tuned_result <- mlr3::resample(task, tuned_learner, res2)
               
               default_metric <- default_result$aggregate(msr_obj)
               tuned_metric   <- tuned_result$aggregate(msr_obj)
@@ -1912,7 +1925,7 @@ vimpute <- function(
         
       } else if (supports_missing) {
         if (sum(is.na(data_temp)) > 0)  {  #task$data_temp()
-          po_x_miss <- po("missind", param_vals = list(
+          po_x_miss <- mlr3pipelines::po("missind", param_vals = list(
             affect_columns = mlr3pipelines::selector_all(),
             which = "all",
             type = "factor"
@@ -1947,7 +1960,7 @@ vimpute <- function(
         learners <- ensure_robust_learners(learners)
         method_var <- "robust"
         robust_learner_id <- if (is.numeric(data[[target_col]])) "regr.lm_rob" else "classif.glm_rob"
-        best_learner <- lrn(robust_learner_id)
+        best_learner <- mlr3::lrn(robust_learner_id)
         current_learner <- best_learner$clone(deep = TRUE)
         default_learner <- best_learner$clone(deep = TRUE)
         tuned_learner <- best_learner$clone(deep = TRUE)
@@ -2017,9 +2030,9 @@ vimpute <- function(
         )
         
         classif_learner <- if (use_ranger) {
-          lrn("classif.ranger")   # kann missings (property "missings")
+          mlr3::lrn("classif.ranger")   # kann missings (property "missings")
         } else {
-          lrn("classif.log_reg")  # kann KEINE missings
+          mlr3::lrn("classif.log_reg")  # kann KEINE missings
         }
         supports_missing_cls <- "missings" %in% classif_learner$properties
         
@@ -2039,20 +2052,20 @@ vimpute <- function(
         }
         
         # Classification Task & Pipeline
-        class_task <- TaskClassif$new(
+        class_task <- mlr3::TaskClassif$new(
           id = paste0(zero_flag_col, "_task"),
           backend = class_data,
           target = zero_flag_col
         )
         class_task$select(relevant_features)
         
-        po_fix <- po("fixfactors", droplevels = FALSE) # no level drops
-        po_oor <- po("imputeoor",
+        po_fix <- mlr3pipelines::po("fixfactors", droplevels = FALSE) # no level drops
+        po_oor <- mlr3pipelines::po("imputeoor",
                      affect_columns = mlr3pipelines::selector_type("factor"),
                      create_empty_level = TRUE) # new levels -> reserve levels
         
         class_pipeline <- po_fix %>>% po_oor %>>% classif_learner
-        class_learner <- GraphLearner$new(class_pipeline)
+        class_learner <- mlr3pipelines::GraphLearner$new(class_pipeline)
         class_learner$predict_type <- "prob"
         
         # Train
@@ -2060,7 +2073,7 @@ vimpute <- function(
         
         # Regression-Learner
         regr_learner_id <- best_learner$id
-        regr_learner <- lrn(regr_learner_id)
+        regr_learner <- mlr3::lrn(regr_learner_id)
 
         regr_valid <- intersect(names(method_params), regr_learner$param_set$ids())
         regr_learner$param_set$values <- modifyList(regr_learner$param_set$values, method_params[regr_valid])
@@ -2119,7 +2132,7 @@ vimpute <- function(
         
         po_x_miss_reg <- NULL
         if (has_na_in_features && supports_missing && method_var != "xgboost") {
-          po_x_miss_reg <- po("missind", param_vals = list(
+          po_x_miss_reg <- mlr3pipelines::po("missind", param_vals = list(
             affect_columns = mlr3pipelines::selector_name(reg_features),
             which = "all",
             type = "factor"
@@ -2138,7 +2151,7 @@ vimpute <- function(
           reg_learner <- NULL
         } else {
           # Task
-          reg_task <- TaskRegr$new(id = var, backend = reg_data, target = var)
+          reg_task <- mlr3::TaskRegr$new(id = var, backend = reg_data, target = var)
           reg_task$select(reg_features)
           # Pipeline
           reg_pipeline <- if (!is.null(po_x_miss_reg)) {
@@ -2147,7 +2160,7 @@ vimpute <- function(
             regr_learner
           }
           
-          reg_learner <- GraphLearner$new(reg_pipeline)
+          reg_learner <- mlr3pipelines::GraphLearner$new(reg_pipeline)
           
           # Train
           reg_learner <- train_with_fallback(reg_learner, reg_task, var)
@@ -2175,7 +2188,7 @@ vimpute <- function(
         # full_pipeline <- po_fixfactors %>>% full_pipeline
         
         # create and train graphLearner 
-        learner <- GraphLearner$new(full_pipeline)
+        learner <- mlr3pipelines::GraphLearner$new(full_pipeline)
         
         if (isTRUE(tuning_status[[var]])) {
           # if tuning was done
@@ -2258,10 +2271,10 @@ vimpute <- function(
           boot_data <- enforce_factor_levels(boot_data, factor_levels)
 
           if (is.numeric(boot_data[[target_col]])) {
-            boot_task <- TaskRegr$new(id = paste0(target_col, "_boot"),
+            boot_task <- mlr3::TaskRegr$new(id = paste0(target_col, "_boot"),
                                       backend = boot_data, target = target_col)
           } else {
-            boot_task <- TaskClassif$new(id = paste0(target_col, "_boot"),
+            boot_task <- mlr3::TaskClassif$new(id = paste0(target_col, "_boot"),
                                          backend = boot_data, target = target_col)
           }
 

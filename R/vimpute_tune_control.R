@@ -95,5 +95,6 @@ vimpute_tune_control <- function(budget = NULL, folds = NULL,
 #' vimpute_search_space("regr.ranger", task)
 #' }
 vimpute_search_space <- function(learner_id, task) {
+  require_vimpute_deps("vimpute_search_space()")
   build_vimpute_search_space(learner_id, task)
 }

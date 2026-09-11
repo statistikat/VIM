@@ -79,6 +79,11 @@ vimpute_spec <- function(method, ..., formula = NULL, predictors = NULL,
                          tune = FALSE, pmm = FALSE, pmm_k = NULL,
                          pmm_k_method = NULL, makeNA = NULL, donorcond = NULL,
                          uncert = NULL) {
+  # A spec resolves and registers its learner eagerly (prepare_vimpute_method
+  # runs the method setup, and named parameters are validated against the
+  # learner param set), so this exported entry point reaches mlr3 before
+  # vimpute() ever sees the spec. The vs_*() helpers all route through here.
+  require_vimpute_deps("vimpute_spec()")
   if (!is.character(method) || length(method) != 1L || !nzchar(method)) {
     stop("'method' must be a single method name; see vimpute_methods().")
   }
@@ -99,7 +104,7 @@ vimpute_spec <- function(method, ..., formula = NULL, predictors = NULL,
     # time, as for the flat learner_params)
     valid_ids <- unique(unlist(lapply(
       unlist(entry$learner, use.names = FALSE),
-      function(id) lrn(id)$param_set$ids()
+      function(id) mlr3::lrn(id)$param_set$ids()
     )))
     bad <- setdiff(names(params), valid_ids)
     if (length(bad) > 0L) {

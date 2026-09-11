@@ -1,3 +1,12 @@
+## VIM suggests the mlr3 stack rather than importing it: it backs vimpute()
+## alone, and a hard dependency would put every reverse dependency of VIM at
+## the mercy of the mlr3 chain. This file exercises that path, so it cannot
+## run when the stack is absent -- e.g. under _R_CHECK_DEPENDS_ONLY_=true.
+if (!all(vapply(c("mlr3", "mlr3learners", "mlr3pipelines", "mlr3tuning",
+                  "paradox", "R6", "future"),
+                requireNamespace, logical(1), quietly = TRUE)))
+  exit_file("mlr3 stack not installed (VIM only suggests it)")
+
 library(VIM)
 library(data.table)
 
