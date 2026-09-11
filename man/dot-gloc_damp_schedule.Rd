@@ -51,18 +51,31 @@ the cold start at the floor, which is precisely the fixed-\code{.gloc_damp}
 run. Adapting the factor therefore cannot converge on fewer configurations
 than fixing it did.
 
-The floor was chosen by sweeping 36 configurations -- 6 seeds x
-\eqn{\rho \in \{0, 0.5, 0.8\}} x (clean, 5\% contaminated), \eqn{n = 800},
-\code{maxit = 200}:
+The floor was chosen by sweeping 36 configurations. An earlier version of
+this page reported that sweep as 36/36 at 0.25 without recording the
+generator, and that figure has not reproduced: two independent
+reconstructions both give 34/36. The table below is the re-measurement,
+under the current relaxation-invariant convergence rule, from a generator
+stated in full so that it can be checked -- 6 seeds, \eqn{\rho \in \{0,
+0.5, 0.8\}}, clean and 5\% of cells shifted by +8, \eqn{n = 800},
+\eqn{p = 4}, \code{design = ~ 1}, \code{weights = "soft"},
+\code{maxit = 200}, data from \code{MASS::mvrnorm} with
+\eqn{\Sigma = (1 - \rho) I + \rho}:
 
-\tabular{lrrr}{
-damping \tab converged \tab median iters \tab max iters \cr
-1.00 (none) \tab 21/36 \tab  6 \tab   9 \cr
-0.75        \tab 25/36 \tab 10 \tab  16 \cr
-0.50        \tab 33/36 \tab 17 \tab  26 \cr
-0.25        \tab 36/36 \tab 34 \tab  51 \cr
-0.10        \tab 36/36 \tab 66 \tab 126
+\tabular{lrr}{
+damping \tab converged \tab median iters \cr
+1.00 (none) \tab 20/36 \tab   8 \cr
+0.75        \tab 26/36 \tab  13 \cr
+0.50        \tab 30/36 \tab  21 \cr
+0.25        \tab 34/36 \tab  44 \cr
+0.10        \tab 35/36 \tab 113 \cr
+adaptive    \tab 34/36 \tab  14
 }
+
+The floor buys convergence monotonically down to 0.25 and then stops
+buying much: 0.10 adds one configuration for two and a half times the
+iterations. The adaptive schedule matches the floor's convergence at a
+third of its median iteration count.
 
 Every failure, at every damping level, is at \eqn{\rho \ge 0.5}; nothing
 ever fails at \eqn{\rho = 0}, even undamped. That is the shape of the
@@ -70,8 +83,8 @@ boundary: the cycle is driven by correlation, because when the columns are
 strongly correlated dropping one peer moves the conditional variance a long
 way, so a cell near the inclusion threshold swings far enough to flip the
 discrete decision back. It is also what makes the adaptive schedule pay:
-a fixed 0.25 spends roughly six times the iterations it needs on
-uncorrelated data, where no relaxation is called for at all.
+a fixed 0.25 spends several times the iterations it needs on uncorrelated
+data, where no relaxation is called for at all.
 
 Relaxation does not abolish cycling and is not claimed to. One
 configuration at \eqn{\rho = 0.5} on clean data cycles permanently even at

@@ -49,7 +49,12 @@
 #'   converge within \code{maxit} warns, and the warning says whether the
 #'   limit was merely exhausted or the iteration is cycling.
 #' @param eps convergence tolerance, applied to the scaled change in the
-#'   fitted means and to the change in the cell weights.
+#'   fitted means and to the cell weights' fixed-point residual
+#'   \eqn{\max|f(W) - W|}. The weight step is divided by \code{damp} before
+#'   the comparison, because the step itself is \code{damp} times that
+#'   residual: without the division a relaxed run would stop at a
+#'   proportionally looser residual than an unrelaxed one, and \code{eps}
+#'   would not mean the same thing at two relaxation factors.
 #' @param alpha minimum fraction of unflagged cells per column (binary corner).
 #' @param psi_c tuning constant of the Tukey bisquare (soft corner).
 #'   \code{Inf} disables downweighting.
@@ -59,9 +64,13 @@
 #'   it starts unrelaxed, strengthens only when the weight change stops
 #'   falling, and falls back once to the cold start at the floor if it is
 #'   still cycling there. A number in (0, 1] pins the factor instead, with no
-#'   backoff and no fallback; \code{damp = 0.25} is the behaviour of releases
-#'   before 7.4.0, and is what the tests use to show that adapting the factor
-#'   does not move the fixed point.
+#'   backoff and no fallback; \code{damp = 0.25} is the relaxation factor used
+#'   by releases before 7.4.0 and is what the tests compare the schedule
+#'   against. It is not bit-identical to those releases, because they also
+#'   compared the undivided weight step against \code{eps} and so stopped
+#'   four times earlier than \code{eps} asked; see \code{eps}. Ignored for
+#'   \code{weights = "binary"}, which takes \eqn{W} from
+#'   \code{cellWise::cellMCD} and never relaxes it.
 #' @param cw_crit convergence tolerance of the EM inside
 #'   \code{cellWise::cwLocScat}, the scatter step. That step is 98.8\% of an
 #'   outer iteration, and \code{cwLocScat}'s own default of 1e-12 is seven
@@ -98,9 +107,15 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   stopifnot(is.data.frame(data))
   adaptive <- is.null(damp)
   if (adaptive) damp <- .gloc_damp_start
+  # Only the soft corner relaxes its weight update. The binary corner takes W
+  # straight from cellMCD, so there is no relaxation factor to adapt and none
+  # to divide out of the convergence test below; pinning it at 1 keeps both
+  # off.
+  relax <- identical(weights, "soft")
   stopifnot(is.numeric(damp), length(damp) == 1L, is.finite(damp),
             damp > 0, damp <= 1,
             is.numeric(cw_crit), length(cw_crit) == 1L, cw_crit > 0)
+  if (!relax) { adaptive <- FALSE; damp <- 1 }
   is_cat <- vapply(data, function(x) is.factor(x) || is.character(x) ||
                      is.logical(x), logical(1))
   cont_vars <- names(data)[!is_cat]
@@ -221,10 +236,25 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
       sd_ref <- sqrt(max(diag(Sigma)))
       if (!is.finite(sd_ref) || sd_ref <= 0) sd_ref <- 1
       dB <- max(abs(U %*% (B - B_old))) / sd_ref
-      dW <- max(abs(W - W_old))
+      # Divide the weight step by the relaxation factor. The update is
+      # W_new - W = damp * (f(W) - W), so testing max|W_new - W| would test
+      # DAMP TIMES the fixed-point residual and a relaxed run would stop at a
+      # proportionally looser residual: at the 0.25 floor, four times looser
+      # than an unrelaxed one. That is not a harmless difference in a
+      # detection method. Before this division, the same data fitted at 0.25
+      # and adaptively disagreed by a relative 1.3e-2 in Sigma and on 4 cell
+      # flags; tightening eps from 5e-3 to 1e-5 collapsed both (3.3e-6 and 0
+      # cells), which is how we know it was slack and not, as first supposed,
+      # a discontinuous map with several fixed points -- distinct fixed points
+      # do not merge under a tighter tolerance. The slack was systematic
+      # rather than random: in the unsaturated detection regime (shift 2 to 4)
+      # the looser run had the lower recall every time it disagreed. Dividing
+      # here makes eps mean the same thing at every relaxation factor, and
+      # incidentally makes the old fixed-0.25 runs the sloppy ones.
+      dW <- max(abs(W - W_old)) / damp
       if (trace) message(sprintf(paste("  iter %d: scaled change in fitted",
-                                       "means = %.3g, max |dW| = %.3g,",
-                                       "damping = %.3g"),
+                                       "means = %.3g, fixed-point residual",
+                                       "in W = %.3g, damping = %.3g"),
                                  it, dB, dW, damp))
       if (dW < 0.99 * dW_best) { dW_best <- dW; stall <- 0L } else
         stall <- stall + 1L
@@ -237,26 +267,32 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
       # .gloc_damp_start and backing off on demand pays the cost of damping
       # only where it buys something. The factor never rises again, so a
       # spurious trigger costs iterations, never correctness.
-      if (adaptive && dW >= dW_prev)
+      if (adaptive && relax && dW >= dW_prev)
         damp <- max(damp * .gloc_damp_shrink, .gloc_damp)
       dW_prev <- dW
 
-      # Backing off is not enough on its own, because the weight map is
-      # DISCONTINUOUS in the peer-inclusion decision and therefore has more
-      # than one fixed point: arriving at the floor along a weakly relaxed
-      # path can land in a limit cycle that starting at the floor avoids.
-      # Measured at rho = 0.8, two configurations of 36 reached the floor by
-      # iteration 7 and then cycled with period 3 (max |dW| repeating
-      # 0.058, 0.033, 0.025) for the remaining 193 iterations, while a run
-      # pinned at the floor from the start converged in 39 and 50. So when the
-      # floor has been reached and the iteration has still stopped improving,
-      # fall back once to exactly that run: the cold start, at the floor. This
-      # makes adaptation incapable of converging on strictly fewer
-      # configurations than the fixed floor did -- the fallback IS the fixed
-      # floor -- and it is paid for only where the alternative was to burn the
-      # rest of maxit. It does consume part of the iteration budget, which is
-      # the other reason maxit defaults to 200.
-      if (adaptive && !restarted && damp <= .gloc_damp &&
+      # Backing off is not enough on its own: arriving at the floor along a
+      # weakly relaxed path can land in a limit cycle that starting at the
+      # floor avoids. Measured at rho = 0.8, two configurations of 36 reached
+      # the floor by iteration 7 and then cycled with period 3 for the
+      # remaining 193 iterations, while a run pinned at the floor from the
+      # start converged in 39 and 50. So when the floor has been reached and
+      # the iteration has still stopped improving, fall back once to exactly
+      # that run: the cold start, at the floor.
+      #
+      # This does NOT make non-regression structural, and an earlier comment
+      # here wrongly claimed it did. The fallback reproduces the fixed-floor
+      # run only if enough of maxit is left when it fires: it costs the 20
+      # stalled iterations plus everything spent reaching the floor, and the
+      # fixed-floor run then needs its own 39 to 50. Measured on the same 36
+      # configurations at maxit = 60, the adaptive schedule converges on 30
+      # against the fixed floor's 32 -- two regressions, in configurations
+      # where this fallback fired and then ran out of budget. Non-regression
+      # is an EMPIRICAL property at the default maxit = 200 (34 against 34
+      # there), not a structural one, and an earlier version of this comment
+      # was wrong to claim otherwise. It is a further reason the default is
+      # 200 and not 50.
+      if (adaptive && relax && !restarted && damp <= .gloc_damp &&
           stall >= .gloc_stall_iters) {
         restarted <- TRUE
         W <- W0; B <- B0
@@ -343,18 +379,31 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 #' run. Adapting the factor therefore cannot converge on fewer configurations
 #' than fixing it did.
 #'
-#' The floor was chosen by sweeping 36 configurations -- 6 seeds x
-#' \eqn{\rho \in \{0, 0.5, 0.8\}} x (clean, 5% contaminated), \eqn{n = 800},
-#' \code{maxit = 200}:
+#' The floor was chosen by sweeping 36 configurations. An earlier version of
+#' this page reported that sweep as 36/36 at 0.25 without recording the
+#' generator, and that figure has not reproduced: two independent
+#' reconstructions both give 34/36. The table below is the re-measurement,
+#' under the current relaxation-invariant convergence rule, from a generator
+#' stated in full so that it can be checked -- 6 seeds, \eqn{\rho \in \{0,
+#' 0.5, 0.8\}}, clean and 5% of cells shifted by +8, \eqn{n = 800},
+#' \eqn{p = 4}, \code{design = ~ 1}, \code{weights = "soft"},
+#' \code{maxit = 200}, data from \code{MASS::mvrnorm} with
+#' \eqn{\Sigma = (1 - \rho) I + \rho}:
 #'
-#' \tabular{lrrr}{
-#'   damping \tab converged \tab median iters \tab max iters \cr
-#'   1.00 (none) \tab 21/36 \tab  6 \tab   9 \cr
-#'   0.75        \tab 25/36 \tab 10 \tab  16 \cr
-#'   0.50        \tab 33/36 \tab 17 \tab  26 \cr
-#'   0.25        \tab 36/36 \tab 34 \tab  51 \cr
-#'   0.10        \tab 36/36 \tab 66 \tab 126
+#' \tabular{lrr}{
+#'   damping \tab converged \tab median iters \cr
+#'   1.00 (none) \tab 20/36 \tab   8 \cr
+#'   0.75        \tab 26/36 \tab  13 \cr
+#'   0.50        \tab 30/36 \tab  21 \cr
+#'   0.25        \tab 34/36 \tab  44 \cr
+#'   0.10        \tab 35/36 \tab 113 \cr
+#'   adaptive    \tab 34/36 \tab  14
 #' }
+#'
+#' The floor buys convergence monotonically down to 0.25 and then stops
+#' buying much: 0.10 adds one configuration for two and a half times the
+#' iterations. The adaptive schedule matches the floor's convergence at a
+#' third of its median iteration count.
 #'
 #' Every failure, at every damping level, is at \eqn{\rho \ge 0.5}; nothing
 #' ever fails at \eqn{\rho = 0}, even undamped. That is the shape of the
@@ -362,8 +411,8 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 #' strongly correlated dropping one peer moves the conditional variance a long
 #' way, so a cell near the inclusion threshold swings far enough to flip the
 #' discrete decision back. It is also what makes the adaptive schedule pay:
-#' a fixed 0.25 spends roughly six times the iterations it needs on
-#' uncorrelated data, where no relaxation is called for at all.
+#' a fixed 0.25 spends several times the iterations it needs on uncorrelated
+#' data, where no relaxation is called for at all.
 #'
 #' Relaxation does not abolish cycling and is not claimed to. One
 #' configuration at \eqn{\rho = 0.5} on clean data cycles permanently even at
@@ -511,8 +560,8 @@ NULL
 #'   tighter than the outer loop's \code{eps} of 5e-3 can resolve, so the EM
 #'   spends most of its steps refining digits the caller discards. The default
 #'   1e-8 is still five orders tighter than the outer tolerance; measured on
-#'   \eqn{n = 1000, p = 10} it changed the scatter by 3e-9 in absolute value
-#'   and roughly halved the time.
+#'   \eqn{n = 1000, p = 10} it changed the scatter by 1.5e-9 in absolute value
+#'   and cut the scatter step's time by about 30%.
 #' @param have_cw whether \pkg{cellWise} may be used; exposed so the fallback
 #'   path is directly testable.
 #' @return a \eqn{p x p} scatter matrix.

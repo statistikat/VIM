@@ -36,7 +36,12 @@ converge within \code{maxit} warns, and the warning says whether the
 limit was merely exhausted or the iteration is cycling.}
 
 \item{eps}{convergence tolerance, applied to the scaled change in the
-fitted means and to the change in the cell weights.}
+fitted means and to the cell weights' fixed-point residual
+\eqn{\max|f(W) - W|}. The weight step is divided by \code{damp} before
+the comparison, because the step itself is \code{damp} times that
+residual: without the division a relaxed run would stop at a
+proportionally looser residual than an unrelaxed one, and \code{eps}
+would not mean the same thing at two relaxation factors.}
 
 \item{alpha}{minimum fraction of unflagged cells per column (binary corner).}
 
@@ -61,9 +66,13 @@ demonstrating what the filtering buys.}
 it starts unrelaxed, strengthens only when the weight change stops
 falling, and falls back once to the cold start at the floor if it is
 still cycling there. A number in (0, 1] pins the factor instead, with no
-backoff and no fallback; \code{damp = 0.25} is the behaviour of releases
-before 7.4.0, and is what the tests use to show that adapting the factor
-does not move the fixed point.}
+backoff and no fallback; \code{damp = 0.25} is the relaxation factor used
+by releases before 7.4.0 and is what the tests compare the schedule
+against. It is not bit-identical to those releases, because they also
+compared the undivided weight step against \code{eps} and so stopped
+four times earlier than \code{eps} asked; see \code{eps}. Ignored for
+\code{weights = "binary"}, which takes \eqn{W} from
+\code{cellWise::cellMCD} and never relaxes it.}
 
 \item{cw_crit}{convergence tolerance of the EM inside
 \code{cellWise::cwLocScat}, the scatter step. That step is 98.8\\% of an

@@ -31,8 +31,8 @@ the whole cost of a cellGLoc step: at \eqn{p = 10} the scatter step was
 tighter than the outer loop's \code{eps} of 5e-3 can resolve, so the EM
 spends most of its steps refining digits the caller discards. The default
 1e-8 is still five orders tighter than the outer tolerance; measured on
-\eqn{n = 1000, p = 10} it changed the scatter by 3e-9 in absolute value
-and roughly halved the time.}
+\eqn{n = 1000, p = 10} it changed the scatter by 1.5e-9 in absolute value
+and cut the scatter step's time by about 30\%.}
 
 \item{have_cw}{whether \pkg{cellWise} may be used; exposed so the fallback
 path is directly testable.}

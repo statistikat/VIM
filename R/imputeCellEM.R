@@ -1035,11 +1035,20 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
                            uncert = "conditional",
                            m = 1L, boot = FALSE,
                            trace = FALSE) {
-  .Deprecated("imputeCellGLoc",
-              msg = paste("imputeCellMCD() is deprecated and will be removed in a",
-                          "future release. Use imputeCellGLoc(design = ~ 1) for the",
-                          "same continuous-only behaviour, or imputeCellGLoc() to",
-                          "model the categorical mean structure."))
+  # Warn once per user call. The m > 1 branch below recurses into this same
+  # function -- twice per draw when boot = TRUE -- so an unconditional notice
+  # emits m + 1 warnings at m > 1 (four at m = 3), which is noise and hides
+  # any real warning the imputation raises.
+  .from_self <- {
+    pf <- sys.parent()
+    pf > 0L && identical(sys.function(pf), sys.function())
+  }
+  if (!.from_self)
+    .Deprecated("imputeCellGLoc",
+                msg = paste("imputeCellMCD() is deprecated and will be removed in a",
+                            "future release. Use imputeCellGLoc(design = ~ 1) for the",
+                            "same continuous-only behaviour, or imputeCellGLoc() to",
+                            "model the categorical mean structure."))
   # Multiple imputation wrapper
   m <- as.integer(m)
   if (m > 1L) {

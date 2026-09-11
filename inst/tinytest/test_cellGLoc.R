@@ -437,19 +437,26 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   colnames(Xv) <- paste0("x", 1:4)
   dv <- as.data.frame(Xv)
 
-  # damp = 0.25 with cw_crit = 1e-12 is exactly the iteration of releases
-  # before 7.4.0, so this is a direct before/after on the same data.
+  # damp = 0.25 is the relaxation factor of releases before 7.4.0. It is not
+  # bit-identical to them: they compared the undivided weight step against
+  # eps, so a relaxed run stopped at four times the fixed-point residual eps
+  # asked for. That is now divided out, which is what makes the two schedules
+  # comparable at all.
   ad  <- VIM::imputeCellGLoc(dv, design = ~ 1, weights = "soft")
   ref <- VIM::imputeCellGLoc(dv, design = ~ 1, weights = "soft",
                              damp = 0.25, cw_crit = 1e-12)
   expect_true(ad$converged)
   expect_true(ref$converged)
-  # The fixed point does not move. The tolerance is not machine precision and
-  # cannot be: the weight map is DISCONTINUOUS in the peer-inclusion decision,
-  # so it has several fixed points and a cell sitting on the threshold can
-  # settle on either side. Across the 36-configuration sweep the median
-  # relative difference in Sigma was 2.3e-4 and the worst 1.3e-2, and in 31 of
-  # 34 configurations not one cell weight of 3200 moved by more than 0.1.
+  # The fixed point does not move. The tolerance is not machine precision
+  # because both schedules stop at a residual of eps rather than at 0, and
+  # they stop at different points inside that slack. Across the
+  # 36-configuration sweep the median relative difference in Sigma is 8.6e-5
+  # and the worst 4.2e-3, and 29 of 34 configurations produce an IDENTICAL
+  # flagged set (8 cells differ in total, worst case 3 of 3200). Tightening
+  # eps shrinks all of it, which is how we know it is tolerance slack: at
+  # eps = 1e-5 the flagged sets agree in 44 of 54 detection runs against 33
+  # at the default, and the residual recall difference loses its sign
+  # (paired p = 0.24 against 0.022).
   expect_true(max(abs(ad$Sigma - ref$Sigma)) / max(abs(ref$Sigma)) < 0.02)
   expect_true(max(abs(ad$B - ref$B)) < 0.01)
   # ... and it is reached in strictly fewer iterations

@@ -10,6 +10,26 @@
   estimator reduces to `cellWise::cellMCD()` under `weights = "binary"` and to the cellwise weighted
   MLE under `weights = "soft"`; both reductions are covered by tests.
 
+## Changes
+- **`imputeCellGLoc()`'s convergence test is now independent of the relaxation
+  factor.** The weight update moves `damp * (f(W) - W)`, so comparing the raw step
+  against `eps` compared `damp` times the fixed-point residual, and a relaxed run stopped at a
+  proportionally looser residual -- four times looser at the 0.25 floor. The step is now divided
+  by `damp` first. This is a behaviour change: fits are slightly tighter and take a few more
+  iterations than 7.3.1 at the same `eps`, and cell detection shifts accordingly. In the
+  unsaturated regime (cell shifts of 2 to 4) the old rule gave the relaxed run a systematically
+  lower recall, by up to 0.5 percentage points on average (paired p < 0.001); that systematic
+  component is gone.
+- **`imputeCellGLoc()` is faster: about 1.8x at 10 continuous variables and more at 20.** The
+  scatter step is 97.5% of an iteration, so `cwLocScat()`'s EM tolerance is now exposed as
+  `cw_crit` and defaults to 1e-8 rather than that function's own 1e-12, which is five orders of
+  magnitude tighter than `eps` can resolve; and the relaxation factor is adaptive
+  (`damp = NULL`), starting unrelaxed and strengthening only when the iteration stops
+  contracting. Measured end to end against 7.3.1 at n = 1000, 5% of cells contaminated: 1.83x
+  pooled over three draws at p = 10 (range 1.69-1.90) and 4.7x pooled over two draws at p = 20
+  (range 3.2-9.6, too few draws to pin down). Part of the gross saving is given back by the
+  stricter convergence test above, which is the right trade.
+
 ## Deprecated
 - **`imputeCellMCD()` is deprecated** in favour of `imputeCellGLoc()`. It continues to work
   unchanged; `imputeCellGLoc(design = ~ 1)` is the direct replacement. The old name referred to an
