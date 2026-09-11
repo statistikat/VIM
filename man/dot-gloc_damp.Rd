@@ -20,9 +20,26 @@ moving any genuine fixed point, since \eqn{W = f(W)} implies
 \details{
 The update has the same form as the damping in \code{imputeCellEM} and
 \code{imputeCellwise}, which ramp \eqn{\lambda} adaptively rather than
-holding it fixed. The value 0.5 was chosen by sweeping it over five
-configurations (contaminated and clean, \eqn{\rho} 0, 0.5 and 0.8): 0.5
-converged in all five, 0.75 failed at \eqn{\rho = 0.8}, 0.9 failed in four,
-and no damping at all failed in three.
+holding it fixed.
+
+The value was chosen by sweeping 36 configurations -- 6 seeds x
+\eqn{\rho \in \{0, 0.5, 0.8\}} x (clean, 5\\% contaminated), \eqn{n = 800},
+\code{maxit = 200}:
+
+\tabular{lrrr}{
+damping \tab converged \tab median iters \tab max iters \cr
+1.00 (none) \tab 21/36 \tab  6 \tab   9 \cr
+0.75        \tab 25/36 \tab 10 \tab  16 \cr
+0.50        \tab 33/36 \tab 17 \tab  26 \cr
+0.25        \tab 36/36 \tab 34 \tab  51 \cr
+0.10        \tab 36/36 \tab 66 \tab 126
+}
+
+Every failure, at every damping level, is at \eqn{\rho \ge 0.5}; nothing
+ever fails at \eqn{\rho = 0}, even undamped. That is the shape of the
+boundary: the cycle is driven by correlation, because when the columns are
+strongly correlated dropping one peer moves the conditional variance a long
+way, so a cell near the inclusion threshold swings far enough to flip the
+discrete decision back.
 }
 \keyword{internal}

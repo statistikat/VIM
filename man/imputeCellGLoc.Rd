@@ -8,7 +8,7 @@ imputeCellGLoc(
   data,
   design = ~.,
   weights = c("soft", "binary"),
-  maxit = 50,
+  maxit = 200,
   eps = 0.005,
   alpha = 0.75,
   psi_c = 4.685,
@@ -27,7 +27,10 @@ imputeCellGLoc(
 \code{"binary"} for the penalised cellwise MCD objective.}
 
 \item{maxit}{maximum number of outer iterations. \code{0} returns the
-starting fit.}
+starting fit. The default is 200 rather than 50 because the damped
+iteration needed up to 51 steps across the sweep in \code{.gloc_damp};
+converged fits leave the loop early, so the cap costs nothing. Failing to
+converge within \code{maxit} warns.}
 
 \item{eps}{convergence tolerance, applied to the scaled change in the
 fitted means and to the change in the cell weights.}
@@ -40,10 +43,14 @@ fitted means and to the change in the cell weights.}
 \item{peer_w_min}{a cell is conditioned on only when its weight exceeds
 this, so that a downweighted peer is treated as absent rather than as
 evidence. The default 0.5 is the conventional 1\\% flagging rule. Raising
-it discards more peers. Note that 0 does \emph{not} restore the old
-propagating behaviour, because the bisquare redescends to exactly zero
-and the worst outliers are excluded anyway; a negative value does, and is
-useful only for demonstrating what the exclusion buys.}
+it discards more peers. A threshold of 0 does \emph{not} disable peer
+filtering: the damped weight update multiplies a weight by
+\eqn{1 - d} each time the bisquare sends it to zero, so a contaminated
+weight decays geometrically towards zero without ever attaining it
+(measured around 4e-6 at convergence, with no cell exactly 0), and a
+zero threshold readmits those cells at full influence. Use a negative
+value to condition on every finite peer, which is useful only for
+demonstrating what the filtering buys.}
 
 \item{trace}{print progress.}
 }

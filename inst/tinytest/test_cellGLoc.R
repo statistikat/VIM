@@ -223,6 +223,12 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
     mk <- VIM::imputeCellGLoc(as.data.frame(Xk), design = ~ 1, weights = "soft",
                               psi_c = Inf, maxit = 1)
     expect_true(max(abs(diag(rk$Sigma) / diag(mk$Sigma) - 1)) < 0.06)
+    # Assert CONVERGENCE, not just the value. High correlation is exactly where
+    # the peer-inclusion decision cycles -- every damping failure in the sweep
+    # behind .gloc_damp is at rho >= 0.5, and none at rho = 0 -- so a block
+    # that checks only the diagonal ratio is blind to the failure mode that
+    # this configuration is most likely to hit.
+    expect_true(rk$converged)
   }
 
   # kappa itself: 1 at no downweighting, and the published value at the default
@@ -374,8 +380,12 @@ expect_true(fixed$converged)
 
 # Teeth: a negative peer_w_min conditions on every finite peer, which is the
 # old behaviour, and the propagation comes straight back (0.82 and 0.66).
-# Note that 0 would NOT do this -- the bisquare redescends to exactly zero, so
-# the worst outliers are excluded from the conditioning set even at 0.
+# It has to be negative, not 0. The damped weight update multiplies a weight
+# by (1 - d) each time the bisquare sends it to zero, so a contaminated weight
+# decays geometrically without ever reaching zero -- measured ~4e-6 at
+# convergence, with no cell exactly 0. A threshold of 0 therefore readmits
+# every one of those cells at full influence and reproduces the propagation
+# rather than preventing it.
 prop <- VIM::imputeCellGLoc(dp, design = ~ 1, weights = "soft", peer_w_min = -1)
 fp <- prop$W < 0.5
 expect_true(mean(fp[ci, 2]) > 0.5)

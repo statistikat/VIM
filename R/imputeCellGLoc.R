@@ -42,7 +42,10 @@
 #' @param weights \code{"soft"} for redescending weights in \[0, 1\],
 #'   \code{"binary"} for the penalised cellwise MCD objective.
 #' @param maxit maximum number of outer iterations. \code{0} returns the
-#'   starting fit.
+#'   starting fit. The default is 200 rather than 50 because the damped
+#'   iteration needed up to 51 steps across the sweep in \code{.gloc_damp};
+#'   converged fits leave the loop early, so the cap costs nothing. Failing to
+#'   converge within \code{maxit} warns.
 #' @param eps convergence tolerance, applied to the scaled change in the
 #'   fitted means and to the change in the cell weights.
 #' @param alpha minimum fraction of unflagged cells per column (binary corner).
@@ -51,10 +54,14 @@
 #' @param peer_w_min a cell is conditioned on only when its weight exceeds
 #'   this, so that a downweighted peer is treated as absent rather than as
 #'   evidence. The default 0.5 is the conventional 1\% flagging rule. Raising
-#'   it discards more peers. Note that 0 does \emph{not} restore the old
-#'   propagating behaviour, because the bisquare redescends to exactly zero
-#'   and the worst outliers are excluded anyway; a negative value does, and is
-#'   useful only for demonstrating what the exclusion buys.
+#'   it discards more peers. A threshold of 0 does \emph{not} disable peer
+#'   filtering: the damped weight update multiplies a weight by
+#'   \eqn{1 - d} each time the bisquare sends it to zero, so a contaminated
+#'   weight decays geometrically towards zero without ever attaining it
+#'   (measured around 4e-6 at convergence, with no cell exactly 0), and a
+#'   zero threshold readmits those cells at full influence. Use a negative
+#'   value to condition on every finite peer, which is useful only for
+#'   demonstrating what the filtering buys.
 #' @param trace print progress.
 #' @return a list with \code{B}, \code{Sigma}, \code{W}, \code{U},
 #'   \code{imputed}, \code{converged} and \code{iterations}.
@@ -68,7 +75,7 @@
 #' \doi{10.1016/j.ecosta.2023.01.007}
 #' @export
 imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
-                           maxit = 50, eps = 5e-3, alpha = 0.75,
+                           maxit = 200, eps = 5e-3, alpha = 0.75,
                            psi_c = 4.685, peer_w_min = 0.5, trace = FALSE) {
   weights <- match.arg(weights)
   stopifnot(is.data.frame(data))
@@ -191,6 +198,19 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
       if (dB < eps && dW < eps) { converged <- TRUE; break }
     }
 
+    # Non-convergence is now the likeliest degraded path, and it was the only
+    # silent one: every other degraded path in this function warns.
+    if (maxit >= 1L && !converged)
+      warning(sprintf(paste("cellGLoc: did not converge in %d iteration(s)",
+                            "(scaled change in fitted means %.3g, max |dW|",
+                            "%.3g, tolerance %.3g). The cell weights are still",
+                            "moving, so B, Sigma and W are only whatever the",
+                            "last iteration produced. Raise maxit; if max |dW|",
+                            "has stalled at a constant, the peer-inclusion",
+                            "decision is cycling and a smaller",
+                            "VIM:::.gloc_damp is what helps."),
+                      maxit, dB, dW, eps), call. = FALSE)
+
     if (is.null(Sigma))                                  # maxit = 0
       Sigma <- .gloc_scatter_soft(X - U %*% B, W, M,
                                   kappa = if (weights == "binary") 1
@@ -215,15 +235,32 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 #'
 #' The update has the same form as the damping in \code{imputeCellEM} and
 #' \code{imputeCellwise}, which ramp \eqn{\lambda} adaptively rather than
-#' holding it fixed. The value 0.5 was chosen by sweeping it over five
-#' configurations (contaminated and clean, \eqn{\rho} 0, 0.5 and 0.8): 0.5
-#' converged in all five, 0.75 failed at \eqn{\rho = 0.8}, 0.9 failed in four,
-#' and no damping at all failed in three.
+#' holding it fixed.
+#'
+#' The value was chosen by sweeping 36 configurations -- 6 seeds x
+#' \eqn{\rho \in \{0, 0.5, 0.8\}} x (clean, 5\% contaminated), \eqn{n = 800},
+#' \code{maxit = 200}:
+#'
+#' \tabular{lrrr}{
+#'   damping \tab converged \tab median iters \tab max iters \cr
+#'   1.00 (none) \tab 21/36 \tab  6 \tab   9 \cr
+#'   0.75        \tab 25/36 \tab 10 \tab  16 \cr
+#'   0.50        \tab 33/36 \tab 17 \tab  26 \cr
+#'   0.25        \tab 36/36 \tab 34 \tab  51 \cr
+#'   0.10        \tab 36/36 \tab 66 \tab 126
+#' }
+#'
+#' Every failure, at every damping level, is at \eqn{\rho \ge 0.5}; nothing
+#' ever fails at \eqn{\rho = 0}, even undamped. That is the shape of the
+#' boundary: the cycle is driven by correlation, because when the columns are
+#' strongly correlated dropping one peer moves the conditional variance a long
+#' way, so a cell near the inclusion threshold swings far enough to flip the
+#' discrete decision back.
 #'
 #' @format a length-one numeric.
 #'
 #' @keywords internal
-.gloc_damp <- 0.5
+.gloc_damp <- 0.25
 
 #' Gaussian consistency factor of a cell-weight function
 #'
