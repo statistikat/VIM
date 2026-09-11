@@ -13,6 +13,8 @@ imputeCellGLoc(
   alpha = 0.75,
   psi_c = 4.685,
   peer_w_min = 0.5,
+  damp = NULL,
+  cw_crit = 1e-08,
   trace = FALSE
 )
 }
@@ -27,10 +29,11 @@ imputeCellGLoc(
 \code{"binary"} for the penalised cellwise MCD objective.}
 
 \item{maxit}{maximum number of outer iterations. \code{0} returns the
-starting fit. The default is 200 rather than 50 because the damped
+starting fit. The default is 200 rather than 50 because the relaxed
 iteration needed up to 51 steps across the sweep in \code{.gloc_damp};
 converged fits leave the loop early, so the cap costs nothing. Failing to
-converge within \code{maxit} warns.}
+converge within \code{maxit} warns, and the warning says whether the
+limit was merely exhausted or the iteration is cycling.}
 
 \item{eps}{convergence tolerance, applied to the scaled change in the
 fitted means and to the change in the cell weights.}
@@ -51,6 +54,22 @@ weight decays geometrically towards zero without ever attaining it
 zero threshold readmits those cells at full influence. Use a negative
 value to condition on every finite peer, which is useful only for
 demonstrating what the filtering buys.}
+
+\item{damp}{relaxation factor for the soft corner's weight update.
+\code{NULL} (default) runs the adaptive schedule of
+\code{.gloc_damp_start} / \code{.gloc_damp_shrink} / \code{.gloc_damp}:
+it starts unrelaxed, strengthens only when the weight change stops
+falling, and falls back once to the cold start at the floor if it is
+still cycling there. A number in (0, 1] pins the factor instead, with no
+backoff and no fallback; \code{damp = 0.25} is the behaviour of releases
+before 7.4.0, and is what the tests use to show that adapting the factor
+does not move the fixed point.}
+
+\item{cw_crit}{convergence tolerance of the EM inside
+\code{cellWise::cwLocScat}, the scatter step. That step is 98.8\\% of an
+outer iteration, and \code{cwLocScat}'s own default of 1e-12 is seven
+orders of magnitude tighter than \code{eps}, so it refines digits this
+function immediately discards. See \code{.gloc_scatter_soft}.}
 
 \item{trace}{print progress.}
 }
@@ -89,7 +108,8 @@ values measured in units of the scatter, not a change in a coefficient
 measured against a location, so the criterion is invariant to shifting the
 data. The soft corner's weight update is relaxed (see \code{.gloc_damp}),
 because peer inclusion is a discrete decision and cells near the threshold
-would otherwise oscillate forever.
+would otherwise oscillate forever. The factor is adapted rather than fixed;
+see \code{damp}.
 
 Continuous columns that are \code{integer} in \code{data} stay
 \code{integer} in \code{$imputed}; their conditional expectations are

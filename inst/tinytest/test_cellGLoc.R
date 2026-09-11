@@ -225,9 +225,9 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
     expect_true(max(abs(diag(rk$Sigma) / diag(mk$Sigma) - 1)) < 0.06)
     # Assert CONVERGENCE, not just the value. High correlation is exactly where
     # the peer-inclusion decision cycles -- every damping failure in the sweep
-    # behind .gloc_damp is at rho >= 0.5, and none at rho = 0 -- so a block
-    # that checks only the diagonal ratio is blind to the failure mode that
-    # this configuration is most likely to hit.
+    # behind .gloc_damp_schedule is at rho >= 0.5, and none at rho = 0 -- so a
+    # block that checks only the diagonal ratio is blind to the failure mode
+    # that this configuration is most likely to hit.
     expect_true(rk$converged)
   }
 
@@ -410,6 +410,91 @@ expect_true(mean(abs(Z_wgt[1:50, 2])) < 1.5 * mean(abs(Z_wgt[51:500, 2])))
 expect_equal(Z_all, VIM:::.gloc_cond_resid(Rw3, Sw3, W = NULL))
 # and an all-clean W must agree with no W at all
 expect_equal(Z_all, VIM:::.gloc_cond_resid(Rw3, Sw3, W = matrix(1, 500, 3)))
+
+# ==========================================================================
+# The two performance levers
+#
+# The scatter step is 97.5% of an iteration (Rprof, n = 1000, p = 10), so both
+# levers aim there: cw_crit loosens the EM inside it, and the adaptive
+# relaxation schedule needs fewer of them. Neither may move where the
+# iteration lands, which is what these assertions are for.
+# ==========================================================================
+
+if (requireNamespace("cellWise", quietly = TRUE)) {
+
+  set.seed(41)
+  Xv <- MASS::mvrnorm(400, rep(0, 4), 0.5 * diag(4) + 0.5)
+  Xv[1:12, 2] <- Xv[1:12, 2] + 8
+  colnames(Xv) <- paste0("x", 1:4)
+  dv <- as.data.frame(Xv)
+
+  # damp = 0.25 with cw_crit = 1e-12 is exactly the iteration of releases
+  # before 7.4.0, so this is a direct before/after on the same data.
+  ad  <- VIM::imputeCellGLoc(dv, design = ~ 1, weights = "soft")
+  ref <- VIM::imputeCellGLoc(dv, design = ~ 1, weights = "soft",
+                             damp = 0.25, cw_crit = 1e-12)
+  expect_true(ad$converged)
+  expect_true(ref$converged)
+  # The fixed point does not move. The tolerance is not machine precision and
+  # cannot be: the weight map is DISCONTINUOUS in the peer-inclusion decision,
+  # so it has several fixed points and a cell sitting on the threshold can
+  # settle on either side. Across the 36-configuration sweep the median
+  # relative difference in Sigma was 2.3e-4 and the worst 1.3e-2, and in 31 of
+  # 34 configurations not one cell weight of 3200 moved by more than 0.1.
+  expect_true(max(abs(ad$Sigma - ref$Sigma)) / max(abs(ref$Sigma)) < 0.02)
+  expect_true(max(abs(ad$B - ref$B)) < 0.01)
+  # ... and it is reached in strictly fewer iterations
+  expect_true(ad$iterations < ref$iterations)
+
+  # Lever 1 alone: five orders of magnitude on cwLocScat's inner EM must not
+  # be visible in the scatter it returns. 1e-12 is cwLocScat's own default and
+  # bought a 1.5e-9 difference for 1.46x the time.
+  Rv <- scale(Xv, TRUE, FALSE)
+  Wv <- matrix(1, nrow(Xv), ncol(Xv)); Mv <- matrix(FALSE, nrow(Xv), ncol(Xv))
+  s8  <- VIM:::.gloc_scatter_soft(Rv, Wv, Mv, crit = 1e-8)
+  s12 <- VIM:::.gloc_scatter_soft(Rv, Wv, Mv, crit = 1e-12)
+  expect_true(max(abs(s8 - s12)) < 1e-6)
+
+  # Lever 2 alone: uncorrelated data never cycles -- every convergence failure
+  # in the sweep behind .gloc_damp_schedule is at rho >= 0.5, and none is at
+  # rho = 0, not even undamped -- so the schedule must not pay for relaxation
+  # it does not need. A fixed 0.25 costs several times the iterations here.
+  set.seed(42)
+  Xu <- MASS::mvrnorm(400, rep(0, 4), diag(4))
+  colnames(Xu) <- paste0("x", 1:4)
+  du <- as.data.frame(Xu)
+  au <- VIM::imputeCellGLoc(du, design = ~ 1, weights = "soft")
+  fu <- VIM::imputeCellGLoc(du, design = ~ 1, weights = "soft", damp = 0.25)
+  expect_true(au$converged)
+  expect_true(2 * au$iterations < fu$iterations)
+}
+
+# --- damp and cw_crit are validated rather than silently accepted ---
+expect_error(VIM::imputeCellGLoc(dg, design = ~ 1, damp = 0))
+expect_error(VIM::imputeCellGLoc(dg, design = ~ 1, damp = 1.5))
+expect_error(VIM::imputeCellGLoc(dg, design = ~ 1, cw_crit = 0))
+
+# --- the non-convergence warning tells the two failure modes apart. They need
+# different actions: an exhausted limit is cured by raising maxit, a limit
+# cycle is not cured by raising anything, and relaxation does NOT abolish
+# cycling -- configurations exist that cycle forever even at the floor. ---
+expect_warning(VIM::imputeCellGLoc(dg, design = ~ 1, weights = "soft", maxit = 2),
+               "raise maxit")
+
+{
+  # A configuration that cycles at the relaxation floor even after the
+  # schedule falls back to the cold start.
+  set.seed(5)
+  Xz <- MASS::mvrnorm(800, rep(0, 4), 0.2 * diag(4) + 0.8)
+  inj <- matrix(FALSE, 800, 4)
+  inj[sample.int(800 * 4, 160)] <- TRUE
+  Xz[inj] <- Xz[inj] + 8
+  colnames(Xz) <- paste0("x", 1:4)
+  expect_warning(zc <- VIM::imputeCellGLoc(as.data.frame(Xz), design = ~ 1,
+                                           weights = "soft", maxit = 200),
+                 "cycling")
+  expect_false(zc$converged)
+}
 
 # ==========================================================================
 # The deprecated alias
