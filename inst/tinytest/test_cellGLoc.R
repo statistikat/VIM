@@ -123,3 +123,23 @@ no_g   <- VIM::imputeCellGLoc(dg, design = ~ 1, weights = "soft")
 # ignoring the design inflates the scatter; modelling it recovers the identity
 expect_true(mean(diag(with_g$Sigma)) < mean(diag(no_g$Sigma)))
 expect_true(max(abs(diag(with_g$Sigma) - 1)) < 0.35)
+
+# --- missing continuous cells are filled by the model's conditional expectation ---
+set.seed(21)
+n  <- 400
+g  <- factor(sample(c("a", "b"), n, TRUE))
+Xi <- MASS::mvrnorm(n, rep(0, 3), 0.4 * diag(3) + 0.6)
+Xi[g == "a", ] <- Xi[g == "a", ] + 3
+di <- data.frame(Xi, g = g); names(di)[1:3] <- paste0("x", 1:3)
+truth <- di$x1
+di$x1[1:40] <- NA
+
+res <- VIM::imputeCellGLoc(di, design = ~ ., weights = "soft")
+expect_false(anyNA(res$imputed$x1))
+expect_equal(nrow(res$imputed), n)
+expect_equal(names(res$imputed), names(di))
+expect_true(is.factor(res$imputed$g))
+# imputations must respect the group structure: better than the pooled mean
+rmse_model  <- sqrt(mean((res$imputed$x1[1:40] - truth[1:40])^2))
+rmse_pooled <- sqrt(mean((mean(di$x1, na.rm = TRUE) - truth[1:40])^2))
+expect_true(rmse_model < rmse_pooled)

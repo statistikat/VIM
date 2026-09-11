@@ -94,8 +94,38 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
     if (max(abs(B - B_old)) / den < eps) { converged <- TRUE; break }
   }
 
-  list(B = B, Sigma = Sigma, W = W, U = U, imputed = data,
+  Ximp <- .gloc_impute(X, U, B, Sigma, M)
+  out <- data
+  out[, cont_vars] <- as.data.frame(Ximp)
+
+  list(B = B, Sigma = Sigma, W = W, U = U, imputed = out,
        converged = converged, iterations = it)
+}
+
+#' Fill missing continuous cells by their conditional expectation
+#'
+#' @param X \eqn{n x p} numeric matrix of continuous variables.
+#' @param U \eqn{n x q} design matrix from \code{.gloc_design}.
+#' @param B \eqn{q x p} matrix of mean-structure coefficients.
+#' @param Sigma \eqn{p x p} scatter matrix.
+#' @param M \eqn{n x p} logical mask of missing cells.
+#' @return \code{X} with its missing cells replaced.
+#' @keywords internal
+.gloc_impute <- function(X, U, B, Sigma, M) {
+  if (!any(M)) return(X)
+  Mu <- U %*% B
+  R  <- X - Mu
+  Xi <- X
+  rows <- which(rowSums(M) > 0)
+  for (i in rows) {
+    miss <- which(M[i, ]); obs <- which(!M[i, ])
+    if (!length(obs)) { Xi[i, miss] <- Mu[i, miss]; next }
+    Soo  <- Sigma[obs, obs, drop = FALSE]
+    Sinv <- tryCatch(chol2inv(chol(Soo)), error = function(e) MASS::ginv(Soo))
+    Xi[i, miss] <- Mu[i, miss] +
+      as.vector(Sigma[miss, obs, drop = FALSE] %*% Sinv %*% R[i, obs])
+  }
+  Xi
 }
 
 #' Tukey bisquare weights for standardised conditional residuals
