@@ -23,7 +23,7 @@ The update has the same form as the damping in \code{imputeCellEM} and
 holding it fixed.
 
 The value was chosen by sweeping 36 configurations -- 6 seeds x
-\eqn{\rho \in \{0, 0.5, 0.8\}} x (clean, 5\\% contaminated), \eqn{n = 800},
+\eqn{\rho \in \{0, 0.5, 0.8\}} x (clean, 5\% contaminated), \eqn{n = 800},
 \code{maxit = 200}:
 
 \tabular{lrrr}{

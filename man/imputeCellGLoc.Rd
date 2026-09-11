@@ -42,7 +42,7 @@ fitted means and to the change in the cell weights.}
 
 \item{peer_w_min}{a cell is conditioned on only when its weight exceeds
 this, so that a downweighted peer is treated as absent rather than as
-evidence. The default 0.5 is the conventional 1\\% flagging rule. Raising
+evidence. The default 0.5 is the conventional 1\% flagging rule. Raising
 it discards more peers. A threshold of 0 does \emph{not} disable peer
 filtering: the damped weight update multiplies a weight by
 \eqn{1 - d} each time the bisquare sends it to zero, so a contaminated
@@ -73,7 +73,7 @@ estimator of Rousseeuw (2026) with \code{weights = "soft"}.
 
 The soft corner rescales the weighted scatter so that it is
 Fisher-consistent at the Gaussian model. Without it the bisquare
-downweighting deflates the scatter by about 21\\% at the default tuning,
+downweighting deflates the scatter by about 21\% at the default tuning,
 which would inflate the standardised residuals and make the estimator
 over-flag. The correction is per column and depends on \eqn{\Sigma}, not a
 single constant: the weights act on \emph{conditional} residuals, so they

@@ -38,7 +38,7 @@
 #'
 #' @param X \eqn{n x p} numeric matrix of continuous variables, may contain NA.
 #' @param U \eqn{n x q} design matrix from \code{.gloc_design}.
-#' @param W \eqn{n x p} matrix of cell weights in [0, 1].
+#' @param W \eqn{n x p} matrix of cell weights in \[0, 1\].
 #' @return a \eqn{q x p} matrix of coefficients.
 #' @keywords internal
 .gloc_update_B <- function(X, U, W) {
@@ -104,9 +104,9 @@
 #'   conditions on every finite peer, which is the behaviour existing callers
 #'   rely on.
 #' @param w_min weight above which a peer counts as clean enough to condition
-#'   on. The default 0.5 is the conventional 1\% flagging rule: the Tukey
+#'   on. The default 0.5 is the conventional 1% flagging rule: the Tukey
 #'   bisquare weight at \eqn{|z| = 2.576} is 0.487, so "weight below 0.5" and
-#'   "flagged at the 99\% cut-off" coincide.
+#'   "flagged at the 99% cut-off" coincide.
 #' @return an \eqn{n x p} matrix of standardised conditional residuals.
 #' @keywords internal
 .gloc_cond_resid <- function(R, Sigma, W = NULL, w_min = 0.5) {

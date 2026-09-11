@@ -410,3 +410,15 @@ expect_true(mean(abs(Z_wgt[1:50, 2])) < 1.5 * mean(abs(Z_wgt[51:500, 2])))
 expect_equal(Z_all, VIM:::.gloc_cond_resid(Rw3, Sw3, W = NULL))
 # and an all-clean W must agree with no W at all
 expect_equal(Z_all, VIM:::.gloc_cond_resid(Rw3, Sw3, W = matrix(1, 500, 3)))
+
+# ==========================================================================
+# The deprecated alias
+# ==========================================================================
+
+# --- the old name still works and warns once ---
+set.seed(31)
+do <- data.frame(x1 = rnorm(120), x2 = rnorm(120),
+                 f = factor(sample(c("a", "b"), 120, TRUE)))
+do$x1[1:10] <- NA
+expect_warning(old <- VIM::imputeCellMCD(do), pattern = "deprecated")
+expect_false(anyNA(old$x1) && anyNA(old$x2))

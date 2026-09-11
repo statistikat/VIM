@@ -1,3 +1,21 @@
+# VIM 7.4.0
+
+## New features
+- **`imputeCellGLoc()`**: cellwise-robust estimation of location and scatter on a *categorical mean
+  structure*. Cell detection uses the conditional residual of a cell given the other continuous
+  cells in its row **and** the row's categorical pattern, instead of pooling across groups. Pooling
+  targets the marginal scatter when detection and conditional imputation need the within-group
+  scatter; on NHANES the two differ by 31% in Frobenius norm. `design = ~ .` models main effects,
+  `~ .^2` adds interactions, `~ 1` reproduces the continuous-only behaviour. With `design = ~ 1` the
+  estimator reduces to `cellWise::cellMCD()` under `weights = "binary"` and to the cellwise weighted
+  MLE under `weights = "soft"`; both reductions are covered by tests.
+
+## Deprecated
+- **`imputeCellMCD()` is deprecated** in favour of `imputeCellGLoc()`. It continues to work
+  unchanged; `imputeCellGLoc(design = ~ 1)` is the direct replacement. The old name referred to an
+  estimator the function never called: it initialises with `robustbase::covMcd()`, estimates with
+  `cellWise::cwLocScat()` and weights cells with a Tukey bisquare.
+
 # VIM 7.3.1
 
 - **The mlr3 stack moved from `Imports` to `Suggests`.** `mlr3`, `mlr3pipelines`,

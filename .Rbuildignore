@@ -22,3 +22,4 @@ pkgdown
 ^cran-comments\.md$
 ^vignettes/.*\.Rmd\.orig$
 ^vignettes/precompute\.R$
+^\.superpowers$

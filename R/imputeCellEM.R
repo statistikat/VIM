@@ -1035,6 +1035,11 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
                            uncert = "conditional",
                            m = 1L, boot = FALSE,
                            trace = FALSE) {
+  .Deprecated("imputeCellGLoc",
+              msg = paste("imputeCellMCD() is deprecated and will be removed in a",
+                          "future release. Use imputeCellGLoc(design = ~ 1) for the",
+                          "same continuous-only behaviour, or imputeCellGLoc() to",
+                          "model the categorical mean structure."))
   # Multiple imputation wrapper
   m <- as.integer(m)
   if (m > 1L) {

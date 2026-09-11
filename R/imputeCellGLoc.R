@@ -13,7 +13,7 @@
 #'
 #' The soft corner rescales the weighted scatter so that it is
 #' Fisher-consistent at the Gaussian model. Without it the bisquare
-#' downweighting deflates the scatter by about 21\% at the default tuning,
+#' downweighting deflates the scatter by about 21% at the default tuning,
 #' which would inflate the standardised residuals and make the estimator
 #' over-flag. The correction is per column and depends on \eqn{\Sigma}, not a
 #' single constant: the weights act on \emph{conditional} residuals, so they
@@ -53,7 +53,7 @@
 #'   \code{Inf} disables downweighting.
 #' @param peer_w_min a cell is conditioned on only when its weight exceeds
 #'   this, so that a downweighted peer is treated as absent rather than as
-#'   evidence. The default 0.5 is the conventional 1\% flagging rule. Raising
+#'   evidence. The default 0.5 is the conventional 1% flagging rule. Raising
 #'   it discards more peers. A threshold of 0 does \emph{not} disable peer
 #'   filtering: the damped weight update multiplies a weight by
 #'   \eqn{1 - d} each time the bisquare sends it to zero, so a contaminated
@@ -238,7 +238,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 #' holding it fixed.
 #'
 #' The value was chosen by sweeping 36 configurations -- 6 seeds x
-#' \eqn{\rho \in \{0, 0.5, 0.8\}} x (clean, 5\% contaminated), \eqn{n = 800},
+#' \eqn{\rho \in \{0, 0.5, 0.8\}} x (clean, 5% contaminated), \eqn{n = 800},
 #' \code{maxit = 200}:
 #'
 #' \tabular{lrrr}{

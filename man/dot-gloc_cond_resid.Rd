@@ -16,9 +16,9 @@ conditions on every finite peer, which is the behaviour existing callers
 rely on.}
 
 \item{w_min}{weight above which a peer counts as clean enough to condition
-on. The default 0.5 is the conventional 1\\% flagging rule: the Tukey
+on. The default 0.5 is the conventional 1\% flagging rule: the Tukey
 bisquare weight at \eqn{|z| = 2.576} is 0.487, so "weight below 0.5" and
-"flagged at the 99\\% cut-off" coincide.}
+"flagged at the 99\% cut-off" coincide.}
 }
 \value{
 an \eqn{n x p} matrix of standardised conditional residuals.

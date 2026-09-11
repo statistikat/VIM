@@ -11,7 +11,7 @@
 
 \item{U}{\eqn{n x q} design matrix from \code{.gloc_design}.}
 
-\item{W}{\eqn{n x p} matrix of cell weights in \link{0, 1}.}
+\item{W}{\eqn{n x p} matrix of cell weights in [0, 1].}
 }
 \value{
 a \eqn{q x p} matrix of coefficients.
