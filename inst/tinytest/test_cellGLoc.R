@@ -76,3 +76,50 @@ Rmiss <- MASS::mvrnorm(4000, rep(0, 3), S)
 Rmiss[, 2:3] <- NA_real_                             # column 1's peers fully absent
 Zmiss <- VIM:::.gloc_cond_resid(Rmiss, S)
 expect_true(abs(sd(Zmiss[, 1]) - 1) < 0.05)
+
+# ==========================================================================
+# imputeCellGLoc(): the two reduction claims
+#
+# The cellWise-dependent blocks are wrapped in requireNamespace() rather than
+# exit_file(): exit_file() aborts the WHOLE file, which would silently skip
+# every test below it, including the imputation tests that need no cellWise.
+# ==========================================================================
+
+if (requireNamespace("cellWise", quietly = TRUE)) {
+
+  # --- REDUCTION 1: design = ~1 with binary weights reproduces cellMCD ---
+  set.seed(11)
+  Xr <- MASS::mvrnorm(400, rep(0, 4), 0.5 * diag(4) + 0.5)
+  Xr[1:8, 1] <- Xr[1:8, 1] + 8
+  colnames(Xr) <- paste0("x", 1:4)
+  dr <- as.data.frame(Xr)
+
+  ref <- cellWise::cellMCD(Xr, alpha = 0.75)
+  got <- VIM::imputeCellGLoc(dr, design = ~ 1, weights = "binary", alpha = 0.75)
+
+  expect_true(max(abs(got$Sigma - ref$S)) / max(abs(ref$S)) < 0.05)
+  expect_true(max(abs(as.vector(got$B[1, ]) - ref$mu)) < 0.10)
+  expect_true(mean(got$W == ref$W) > 0.97)          # same cells flagged
+
+  # --- REDUCTION 2: design = ~1, all weights 1, soft corner gives the Gaussian MLE ---
+  got1 <- VIM::imputeCellGLoc(dr, design = ~ 1, weights = "soft",
+                              psi_c = Inf, maxit = 1)
+  expect_true(max(abs(as.vector(got1$B[1, ]) - colMeans(Xr))) < 1e-8)
+  mle <- crossprod(scale(Xr, TRUE, FALSE)) / nrow(Xr)
+  expect_true(max(abs(got1$Sigma - mle)) / max(abs(mle)) < 1e-6)
+}
+
+# --- the mean structure is actually used: a strong group effect is absorbed ---
+set.seed(12)
+n <- 600
+g  <- factor(sample(c("a", "b", "c"), n, TRUE))
+Xg <- MASS::mvrnorm(n, rep(0, 3), diag(3))
+Xg[g == "a", ] <- Xg[g == "a", ] + 4
+Xg[g == "c", ] <- Xg[g == "c", ] - 4
+dg <- data.frame(Xg, g = g); names(dg)[1:3] <- paste0("x", 1:3)
+
+with_g <- VIM::imputeCellGLoc(dg, design = ~ ., weights = "soft")
+no_g   <- VIM::imputeCellGLoc(dg, design = ~ 1, weights = "soft")
+# ignoring the design inflates the scatter; modelling it recovers the identity
+expect_true(mean(diag(with_g$Sigma)) < mean(diag(no_g$Sigma)))
+expect_true(max(abs(diag(with_g$Sigma) - 1)) < 0.35)
