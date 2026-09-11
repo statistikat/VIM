@@ -215,7 +215,16 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   # the same claim at correlated Sigma, where a single scalar kappa over-corrects
   # by +8% at rho = 0.5 and +15% at rho = 0.8. Comparing against the psi_c = Inf
   # fit on the SAME data cancels sampling and isolates the downweighting bias.
-  for (rho in c(0.5, 0.8)) {
+  #
+  # at_home() only. This is four fits at n = 4000 and, measured, 10.2 s of the
+  # file's 18.9 s -- the single most expensive thing in it, and the file is
+  # part of a suite that CRAN gives 10 minutes in total. It is gated rather
+  # than shrunk because the 0.06 tolerance is sized for n = 4000; a smaller n
+  # would keep the assertion's text and lose its meaning. Nothing load-bearing
+  # is gated: both reduction blocks, the contamination-recovery block and the
+  # swamping block all still run on CRAN. devtools::check() and the CI
+  # workflow set NOT_CRAN=true and so run this too.
+  if (at_home()) for (rho in c(0.5, 0.8)) {
     set.seed(19)
     Xk <- MASS::mvrnorm(4000, rep(0, 3), (1 - rho) * diag(3) + rho)
     colnames(Xk) <- paste0("x", 1:3)
@@ -481,9 +490,10 @@ expect_error(VIM::imputeCellGLoc(dg, design = ~ 1, cw_crit = 0))
 expect_warning(VIM::imputeCellGLoc(dg, design = ~ 1, weights = "soft", maxit = 2),
                "raise maxit")
 
-{
+if (at_home()) {
   # A configuration that cycles at the relaxation floor even after the
-  # schedule falls back to the cold start.
+  # schedule falls back to the cold start. 200 iterations of n = 800, p = 4,
+  # so at_home() only.
   set.seed(5)
   Xz <- MASS::mvrnorm(800, rep(0, 4), 0.2 * diag(4) + 0.8)
   inj <- matrix(FALSE, 800, 4)
