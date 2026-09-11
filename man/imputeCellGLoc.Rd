@@ -13,6 +13,7 @@ imputeCellGLoc(
   alpha = 0.75,
   psi_c = 4.685,
   peer_w_min = 0.5,
+  peer_band = .gloc_peer_band,
   damp = NULL,
   cw_crit = 1e-08,
   trace = FALSE
@@ -33,15 +34,23 @@ starting fit. The default is 200 rather than 50 because the relaxed
 iteration needed up to 51 steps across the sweep in \code{.gloc_damp};
 converged fits leave the loop early, so the cap costs nothing. Failing to
 converge within \code{maxit} warns, and the warning says whether the
-limit was merely exhausted or the iteration is cycling.}
+limit was merely exhausted or the iteration is cycling. Note that
+\code{maxit} changes the \emph{trajectory} and not only the stopping
+point, because the fallback in \code{.gloc_damp} fires on a stall counter
+and what is left of the budget then decides whether the restarted run
+finishes: truncating a non-converged fit early is not the same answer
+sooner, and measured deviations are non-monotone in \code{maxit}.}
 
 \item{eps}{convergence tolerance, applied to the scaled change in the
-fitted means and to the cell weights' fixed-point residual
-\eqn{\max|f(W) - W|}. The weight step is divided by \code{damp} before
-the comparison, because the step itself is \code{damp} times that
-residual: without the division a relaxed run would stop at a
-proportionally looser residual than an unrelaxed one, and \code{eps}
-would not mean the same thing at two relaxation factors.}
+fitted means, to the relative change in the scatter, and to the cell
+weights' fixed-point residual \eqn{\max|f(W) - W|}. The weight step is
+divided by \code{damp} before the comparison, because the step itself is
+\code{damp} times that residual: without the division a relaxed run would
+stop at a proportionally looser residual than an unrelaxed one, and
+\code{eps} would not mean the same thing at two relaxation factors. The
+mean and scatter terms are not divided, since neither is exactly
+\code{damp} times a fixed-point residual; the weight term is in practice
+the binding one.}
 
 \item{alpha}{minimum fraction of unflagged cells per column (binary corner).}
 
@@ -50,7 +59,12 @@ would not mean the same thing at two relaxation factors.}
 
 \item{peer_w_min}{a cell is conditioned on only when its weight exceeds
 this, so that a downweighted peer is treated as absent rather than as
-evidence. The default 0.5 is the conventional 1\% flagging rule. Raising
+evidence. The threshold is applied over a narrow band rather than at a
+point -- a peer whose weight is within \code{.gloc_peer_band} of it is
+conditioned on with its information discounted, which is what keeps the
+weight map continuous; see \code{.gloc_cond_resid}. Cells outside the band
+are unaffected, so the meaning of this argument is unchanged.
+The default 0.5 is the conventional 1\% flagging rule. Raising
 it discards more peers. A threshold of 0 does \emph{not} disable peer
 filtering: the damped weight update multiplies a weight by
 \eqn{1 - d} each time the bisquare sends it to zero, so a contaminated
@@ -60,6 +74,15 @@ zero threshold readmits those cells at full influence. Use a negative
 value to condition on every finite peer, which is useful only for
 demonstrating what the filtering buys.}
 
+\item{peer_band}{half-width of the band around \code{peer_w_min} over which
+a peer fades out of the conditioning set instead of leaving it at a step;
+see \code{.gloc_peer_band} for the value and \code{.gloc_cond_resid} for
+the construction. \code{0} restores the hard cut of releases before 7.4.0,
+which is useful only for demonstrating what the band buys: it makes the
+weight map discontinuous again, and with it the limit cycles that made
+\code{converged = FALSE} the usual outcome of a
+\code{design = ~ .} fit.}
+
 \item{damp}{relaxation factor for the soft corner's weight update.
 \code{NULL} (default) runs the adaptive schedule of
 \code{.gloc_damp_start} / \code{.gloc_damp_shrink} / \code{.gloc_damp}:
@@ -68,7 +91,9 @@ falling, and falls back once to the cold start at the floor if it is
 still cycling there. A number in (0, 1] pins the factor instead, with no
 backoff and no fallback; \code{damp = 0.25} is the relaxation factor used
 by releases before 7.4.0 and is what the tests compare the schedule
-against. It is not bit-identical to those releases, because they also
+against, the floor having since risen to 0.5 because the band removed the
+cycling the low floor was there to suppress.
+It is not bit-identical to those releases, because they also
 compared the undivided weight step against \code{eps} and so stopped
 four times earlier than \code{eps} asked; see \code{eps}. Ignored for
 \code{weights = "binary"}, which takes \eqn{W} from
@@ -110,15 +135,29 @@ shrink only the unpredictable part of each cell. See
 and vanishes at \code{psi_c = Inf}. The correlations themselves stay mildly
 biased upward; see that function's note.
 
-Iteration stops when both the fitted means and the cell weights have settled:
-\eqn{\max|U(B - B_{old})| / \sqrt{\max \mathrm{diag}(\Sigma)} < eps} and
-\eqn{\max|W - W_{old}| < eps}. The first term is a change in the fitted
-values measured in units of the scatter, not a change in a coefficient
-measured against a location, so the criterion is invariant to shifting the
-data. The soft corner's weight update is relaxed (see \code{.gloc_damp}),
-because peer inclusion is a discrete decision and cells near the threshold
-would otherwise oscillate forever. The factor is adapted rather than fixed;
-see \code{damp}.
+The estimator is the triple \eqn{(B, \Sigma, W)} and iteration stops only
+when all three have settled:
+\eqn{\max|U(B - B_{old})| / \sqrt{\max \mathrm{diag}(\Sigma)} < eps},
+\eqn{\max|\Sigma - \Sigma_{old}| / \max \mathrm{diag}(\Sigma) < eps} and
+\eqn{\max|W - W_{old}| / damp < eps}. The first term is a change in the
+fitted values measured in units of the scatter, not a change in a
+coefficient measured against a location, so the criterion is invariant to
+shifting the data; the second is relative, so it is invariant to rescaling
+it; the third is the weight map's fixed-point residual, relaxation divided
+out. \code{converged = TRUE} therefore means that nothing this function
+returns is still moving, which is the only reading of convergence a
+detection method can defend: \eqn{W} is not a nuisance quantity here, it is
+the flag set the caller uses.
+
+The soft corner's weight update is relaxed (see \code{.gloc_damp}) to keep
+the fixed-point iteration inside its contraction radius, and the factor is
+adapted rather than fixed; see \code{damp}. Relaxation is \emph{not} what
+makes the criterion attainable. That is the job of the peer band (see
+\code{.gloc_peer_band}): conditioning on a peer only when its weight
+exceeds a threshold makes the weight map discontinuous, and a discontinuous
+self-map of \eqn{[0,1]^{n \times p}} need not have a fixed point at all, so
+before 7.4.0 the iteration could be asked to reach a state that did not
+exist -- and in the \code{design = ~ .} arm it usually was.
 
 Continuous columns that are \code{integer} in \code{data} stay
 \code{integer} in \code{$imputed}; their conditional expectations are

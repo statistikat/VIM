@@ -11,6 +11,30 @@
   MLE under `weights = "soft"`; both reductions are covered by tests.
 
 ## Changes
+- **`imputeCellGLoc()`'s peer-inclusion threshold is now a band, and the `design = ~ .` arm
+  converges.** "Condition on a peer only if its weight exceeds `peer_w_min`" made the weight map
+  discontinuous, and a discontinuous self-map of the weight cube need not have a fixed point at
+  all -- so the stopping rule could be asking for a state that does not exist, and on the
+  categorical-mean-structure arm it usually was. A peer whose weight lies within
+  `peer_band` of the threshold is now conditioned on with its information discounted, as though
+  observed with measurement error, instead of switching in and out at a step. Confidently clean
+  and confidently flagged peers are treated exactly as before, so nothing changes outside the
+  ambiguous fringe. Measured on 40 fits at n = 200 with 6 continuous and 6 categorical variables:
+  `converged` rises from 15/40 to 40/40 and the mean time per fit falls from 15.7 s to 5.6 s;
+  with `design = ~ 1`, from 38/40 to 40/40 and 3.3 s to 1.7 s. `peer_band = 0` restores the old
+  hard cut. The reduction to `cellWise::cellMCD()`, the reduction to the Gaussian MLE, the
+  Fisher-consistency check and the outlier-propagation rates are unchanged to machine precision.
+- **`imputeCellGLoc()` now tests the scatter for convergence as well**, not only the fitted means
+  and the cell weights. `Sigma` was the one returned quantity with no stopping test of its own.
+  Adding a condition can only make convergence harder, never easier.
+- **The relaxation floor `.gloc_damp` rises from 0.25 to 0.5.** The low floor existed to suppress
+  the limit cycles that the band removes; at 0.25 the relaxed iteration is simply slow, and on the
+  mean-structure arm it no longer fits inside `maxit` (35/40 against 40/40 at 0.5). Relaxation
+  moves no fixed point, so this changes speed and not the answer -- verified: with
+  `peer_band = 0` the new code reproduces 7.4.0's previous fits to 1e-7 in scatter and to an
+  identical flagged set.
+- **`imputeCellGLoc()`'s non-convergence warning had its advice backwards.** It suggested widening
+  the conditioning set with a *larger* `peer_w_min`; larger values discard more peers.
 - **`imputeCellGLoc()`'s convergence test is now independent of the relaxation
   factor.** The weight update moves `damp * (f(W) - W)`, so comparing the raw step
   against `eps` compared `damp` times the fixed-point residual, and a relaxed run stopped at a

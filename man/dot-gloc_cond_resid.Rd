@@ -4,7 +4,7 @@
 \alias{.gloc_cond_resid}
 \title{Standardised conditional residuals of each cell given the others in its row}
 \usage{
-.gloc_cond_resid(R, Sigma, W = NULL, w_min = 0.5)
+.gloc_cond_resid(R, Sigma, W = NULL, w_min = 0.5, band = .gloc_peer_band)
 }
 \arguments{
 \item{R}{\eqn{n x p} matrix of residuals from the mean structure.}
@@ -19,6 +19,10 @@ rely on.}
 on. The default 0.5 is the conventional 1\% flagging rule: the Tukey
 bisquare weight at \eqn{|z| = 2.576} is 0.487, so "weight below 0.5" and
 "flagged at the 99\% cut-off" coincide.}
+
+\item{band}{half-width \eqn{h} of the reliability ramp around \code{w_min};
+see the section above. \code{0} is the hard cut. The default
+\code{.gloc_peer_band} is deliberately narrow.}
 }
 \value{
 an \eqn{n x p} matrix of standardised conditional residuals.
@@ -50,4 +54,43 @@ clean-row rate. This also aligns the soft corner with
 \code{cellWise::cellMCD}, which predicts a flagged cell from the clean cells
 in the same row.
 }
+\section{The peer band}{
+
+Taken literally, "usable iff \eqn{w > w_{\min}}" makes the weight map
+\emph{discontinuous}: a cell whose weight sits at the threshold switches its
+row-mates' conditioning set on and off, and their standardised residuals
+jump. A discontinuous self-map of \eqn{[0, 1]^{n \times p}} need not have a
+fixed point at all (Brouwer needs continuity), so an iteration asked to
+drive \eqn{\max|f(W) - W|} below a tolerance can be asked for something that
+does not exist -- and in the categorical-mean-structure arm it routinely was:
+one to twenty cells recrossed the threshold every few iterations forever,
+each crossing kicking the fixed-point residual back up by 0.1 to 0.2 while
+the rest of the system contracted geometrically.
+
+The threshold is therefore a \emph{band}, not a cut. A peer's reliability
+\eqn{r} ramps smoothly (\eqn{3t^2 - 2t^3}) from 0 at \eqn{w_{\min} - h} to 1
+at \eqn{w_{\min} + h}, and a partially reliable peer is conditioned on as
+though it were observed with independent measurement error of variance
+\eqn{\sigma_{kk}(1/r - 1)}: exact at \eqn{r = 1}, infinitely noisy and hence
+absent at \eqn{r = 0}. Both endpoints reproduce the hard rule exactly, so
+nothing changes for a cell that is confidently clean or confidently flagged;
+only the ambiguous fringe is interpolated, and it is interpolated the way
+the rest of the soft corner already treats partial information. The map
+becomes continuous in \eqn{W}, a fixed point exists, and the convergence
+test can stay exactly as strict as it was.
+
+Implementation notes. (i) The noise-inflated system is solved in the scaled
+form \eqn{\Sigma_{jS} D G^{-1} D} with \eqn{D = \mathrm{diag}(\sqrt r)} and
+\eqn{G = D \Sigma_{SS} D + \mathrm{diag}(\sigma_{kk}(1 - r))}, which
+interpolates between \eqn{\mathrm{diag}(\sigma_{kk})} at \eqn{r = 0} and
+\eqn{\Sigma_{SS}} at \eqn{r = 1} and is well conditioned throughout -- the
+unscaled \eqn{\Sigma_{SS} + \mathrm{diag}(\sigma_{kk}(1/r - 1))} blows up as
+\eqn{r \to 0}. (ii) Rows whose peers are all at \eqn{r \in \{0, 1\}} keep
+the pattern grouping and one inversion per pattern; only rows holding a peer
+inside the band pay for an inversion of their own. With \eqn{h} small that
+is a handful of rows, and the whole function is about 1\\% of an iteration.
+(iii) \code{band = 0} restores the hard cut bit-for-bit, which is how the
+tests pin the endpoint behaviour.
+}
+
 \keyword{internal}

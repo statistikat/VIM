@@ -485,32 +485,101 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_true(2 * au$iterations < fu$iterations)
 }
 
-# --- damp and cw_crit are validated rather than silently accepted ---
+# --- damp, cw_crit and peer_band are validated rather than silently accepted ---
 expect_error(VIM::imputeCellGLoc(dg, design = ~ 1, damp = 0))
 expect_error(VIM::imputeCellGLoc(dg, design = ~ 1, damp = 1.5))
 expect_error(VIM::imputeCellGLoc(dg, design = ~ 1, cw_crit = 0))
+expect_error(VIM::imputeCellGLoc(dg, design = ~ 1, peer_band = -0.1))
+expect_error(VIM::imputeCellGLoc(dg, design = ~ 1, peer_band = c(0.05, 0.05)))
 
-# --- the non-convergence warning tells the two failure modes apart. They need
-# different actions: an exhausted limit is cured by raising maxit, a limit
-# cycle is not cured by raising anything, and relaxation does NOT abolish
-# cycling -- configurations exist that cycle forever even at the floor. ---
+# --- the non-convergence warning tells the two failure modes apart: an
+# exhausted limit is cured by raising maxit, a limit cycle is not cured by
+# raising anything. ---
 expect_warning(VIM::imputeCellGLoc(dg, design = ~ 1, weights = "soft", maxit = 2),
                "raise maxit")
 
+# ==========================================================================
+# The peer band
+#
+# "Condition on a peer iff its weight exceeds w_min" makes the weight map
+# DISCONTINUOUS, and a discontinuous self-map of [0,1]^(n x p) need not have a
+# fixed point at all. An iteration told to drive max|f(W) - W| below a
+# tolerance can then be asked for a state that does not exist, and on the
+# design = ~ . arm it usually was: 15 of 40 pilot fits converged. The
+# threshold is therefore a band. Peers that are confidently clean (r = 1) or
+# confidently flagged (r = 0) are treated exactly as before; only the fringe
+# between is interpolated, as a peer observed with measurement error.
+# ==========================================================================
+
+set.seed(51)
+Sb <- 0.5 * diag(4) + 0.5
+colnames(Sb) <- rownames(Sb) <- paste0("x", 1:4)
+Rb <- MASS::mvrnorm(300, rep(0, 4), Sb)
+colnames(Rb) <- paste0("x", 1:4)
+Rb[1:10, 2] <- NA_real_                       # missing peers in the mix too
+
+# (a) THE ENDPOINTS ARE UNCHANGED. The band may not move the estimator for any
+# cell that is not in it, or "the fixed point does not move" is empty talk.
+Wsharp <- matrix(ifelse(runif(300 * 4) < 0.1, 0.05, 0.95), 300, 4)
+Wsharp[is.na(Rb)] <- 0
+expect_equal(VIM:::.gloc_cond_resid(Rb, Sb, W = Wsharp),
+             VIM:::.gloc_cond_resid(Rb, Sb, W = Wsharp, band = 0))
+# ... and the three callers that never had a threshold are untouched
+expect_equal(VIM:::.gloc_cond_resid(Rb, Sb),
+             VIM:::.gloc_cond_resid(Rb, Sb, W = NULL, band = 0))
+expect_equal(VIM:::.gloc_cond_resid(Rb, Sb, W = matrix(1, 300, 4)),
+             VIM:::.gloc_cond_resid(Rb, Sb))
+Wmix <- matrix(runif(300 * 4), 300, 4); Wmix[is.na(Rb)] <- 0
+expect_equal(VIM:::.gloc_cond_resid(Rb, Sb, W = Wmix, w_min = -1),
+             VIM:::.gloc_cond_resid(Rb, Sb, W = Wmix, w_min = -1, band = 0))
+
+# (b) CONTINUITY. Sweep one cell's weight across the threshold and watch a
+# row-mate's standardised residual. The hard cut moves it in a single step;
+# the band spreads the same total excursion over the sweep. Measured: largest
+# one-step change 0.110 hard against 0.0035 banded, a factor of 31.
+Wc <- matrix(0.95, 300, 4); Wc[is.na(Rb)] <- 0
+sweep_z <- function(band) vapply(seq(0.30, 0.70, by = 0.002), function(w) {
+  Wx <- Wc; Wx[20, 3] <- w
+  VIM:::.gloc_cond_resid(Rb, Sb, W = Wx, w_min = 0.5, band = band)[20, 1]
+}, numeric(1))
+z_hard <- sweep_z(0)
+z_band <- sweep_z(VIM:::.gloc_peer_band)
+expect_true(max(abs(diff(z_hard))) > 0.05)            # the discontinuity is real
+expect_true(max(abs(diff(z_band))) < 0.01)            # and the band removes it
+expect_true(max(abs(diff(z_band))) < max(abs(diff(z_hard))) / 10)
+# the two agree wherever the swept cell is outside the band, so the band
+# interpolates between the hard rule's two answers rather than replacing them
+outside <- abs(seq(0.30, 0.70, by = 0.002) - 0.5) > VIM:::.gloc_peer_band
+expect_equal(z_hard[outside], z_band[outside])
+
 if (at_home()) {
-  # A configuration that cycles at the relaxation floor even after the
-  # schedule falls back to the cold start. 200 iterations of n = 800, p = 4,
-  # so at_home() only.
+  # A configuration that used to cycle at the relaxation floor even after the
+  # schedule fell back to the cold start, and warned "cycling". The band is
+  # what fixed it, and peer_band = 0 brings the failure straight back -- which
+  # is the cause-and-effect this block exists to pin. n = 800, p = 4, and the
+  # hard-cut arm runs to maxit, so at_home() only.
   set.seed(5)
   Xz <- MASS::mvrnorm(800, rep(0, 4), 0.2 * diag(4) + 0.8)
   inj <- matrix(FALSE, 800, 4)
   inj[sample.int(800 * 4, 160)] <- TRUE
   Xz[inj] <- Xz[inj] + 8
   colnames(Xz) <- paste0("x", 1:4)
-  expect_warning(zc <- VIM::imputeCellGLoc(as.data.frame(Xz), design = ~ 1,
-                                           weights = "soft", maxit = 200),
+
+  expect_warning(zh <- VIM::imputeCellGLoc(as.data.frame(Xz), design = ~ 1,
+                                           weights = "soft", maxit = 200,
+                                           peer_band = 0),
                  "cycling")
-  expect_false(zc$converged)
+  expect_false(zh$converged)
+
+  zc <- VIM::imputeCellGLoc(as.data.frame(Xz), design = ~ 1, weights = "soft",
+                            maxit = 200)
+  expect_true(zc$converged)
+  expect_true(zc$iterations < 50)
+  # and it converges to what the cycling run was orbiting, not somewhere else:
+  # the fix must remove the oscillation, not relocate the estimate
+  expect_true(max(abs(zc$Sigma - zh$Sigma)) / max(abs(zh$Sigma)) < 0.05)
+  expect_true(max(abs(zc$B - zh$B)) < 0.05)
+  expect_true(mean((zc$W < 0.5) == (zh$W < 0.5)) > 0.98)
 }
 
 # ==========================================================================

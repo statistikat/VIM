@@ -22,15 +22,29 @@
 #' and vanishes at \code{psi_c = Inf}. The correlations themselves stay mildly
 #' biased upward; see that function's note.
 #'
-#' Iteration stops when both the fitted means and the cell weights have settled:
-#' \eqn{\max|U(B - B_{old})| / \sqrt{\max \mathrm{diag}(\Sigma)} < eps} and
-#' \eqn{\max|W - W_{old}| < eps}. The first term is a change in the fitted
-#' values measured in units of the scatter, not a change in a coefficient
-#' measured against a location, so the criterion is invariant to shifting the
-#' data. The soft corner's weight update is relaxed (see \code{.gloc_damp}),
-#' because peer inclusion is a discrete decision and cells near the threshold
-#' would otherwise oscillate forever. The factor is adapted rather than fixed;
-#' see \code{damp}.
+#' The estimator is the triple \eqn{(B, \Sigma, W)} and iteration stops only
+#' when all three have settled:
+#' \eqn{\max|U(B - B_{old})| / \sqrt{\max \mathrm{diag}(\Sigma)} < eps},
+#' \eqn{\max|\Sigma - \Sigma_{old}| / \max \mathrm{diag}(\Sigma) < eps} and
+#' \eqn{\max|W - W_{old}| / damp < eps}. The first term is a change in the
+#' fitted values measured in units of the scatter, not a change in a
+#' coefficient measured against a location, so the criterion is invariant to
+#' shifting the data; the second is relative, so it is invariant to rescaling
+#' it; the third is the weight map's fixed-point residual, relaxation divided
+#' out. \code{converged = TRUE} therefore means that nothing this function
+#' returns is still moving, which is the only reading of convergence a
+#' detection method can defend: \eqn{W} is not a nuisance quantity here, it is
+#' the flag set the caller uses.
+#'
+#' The soft corner's weight update is relaxed (see \code{.gloc_damp}) to keep
+#' the fixed-point iteration inside its contraction radius, and the factor is
+#' adapted rather than fixed; see \code{damp}. Relaxation is \emph{not} what
+#' makes the criterion attainable. That is the job of the peer band (see
+#' \code{.gloc_peer_band}): conditioning on a peer only when its weight
+#' exceeds a threshold makes the weight map discontinuous, and a discontinuous
+#' self-map of \eqn{[0,1]^{n \times p}} need not have a fixed point at all, so
+#' before 7.4.0 the iteration could be asked to reach a state that did not
+#' exist -- and in the \code{design = ~ .} arm it usually was.
 #'
 #' Continuous columns that are \code{integer} in \code{data} stay
 #' \code{integer} in \code{$imputed}; their conditional expectations are
@@ -47,14 +61,22 @@
 #'   iteration needed up to 51 steps across the sweep in \code{.gloc_damp};
 #'   converged fits leave the loop early, so the cap costs nothing. Failing to
 #'   converge within \code{maxit} warns, and the warning says whether the
-#'   limit was merely exhausted or the iteration is cycling.
+#'   limit was merely exhausted or the iteration is cycling. Note that
+#'   \code{maxit} changes the \emph{trajectory} and not only the stopping
+#'   point, because the fallback in \code{.gloc_damp} fires on a stall counter
+#'   and what is left of the budget then decides whether the restarted run
+#'   finishes: truncating a non-converged fit early is not the same answer
+#'   sooner, and measured deviations are non-monotone in \code{maxit}.
 #' @param eps convergence tolerance, applied to the scaled change in the
-#'   fitted means and to the cell weights' fixed-point residual
-#'   \eqn{\max|f(W) - W|}. The weight step is divided by \code{damp} before
-#'   the comparison, because the step itself is \code{damp} times that
-#'   residual: without the division a relaxed run would stop at a
-#'   proportionally looser residual than an unrelaxed one, and \code{eps}
-#'   would not mean the same thing at two relaxation factors.
+#'   fitted means, to the relative change in the scatter, and to the cell
+#'   weights' fixed-point residual \eqn{\max|f(W) - W|}. The weight step is
+#'   divided by \code{damp} before the comparison, because the step itself is
+#'   \code{damp} times that residual: without the division a relaxed run would
+#'   stop at a proportionally looser residual than an unrelaxed one, and
+#'   \code{eps} would not mean the same thing at two relaxation factors. The
+#'   mean and scatter terms are not divided, since neither is exactly
+#'   \code{damp} times a fixed-point residual; the weight term is in practice
+#'   the binding one.
 #' @param alpha minimum fraction of unflagged cells per column (binary corner).
 #' @param psi_c tuning constant of the Tukey bisquare (soft corner).
 #'   \code{Inf} disables downweighting.
@@ -66,7 +88,9 @@
 #'   still cycling there. A number in (0, 1] pins the factor instead, with no
 #'   backoff and no fallback; \code{damp = 0.25} is the relaxation factor used
 #'   by releases before 7.4.0 and is what the tests compare the schedule
-#'   against. It is not bit-identical to those releases, because they also
+#'   against, the floor having since risen to 0.5 because the band removed the
+#'   cycling the low floor was there to suppress.
+#'   It is not bit-identical to those releases, because they also
 #'   compared the undivided weight step against \code{eps} and so stopped
 #'   four times earlier than \code{eps} asked; see \code{eps}. Ignored for
 #'   \code{weights = "binary"}, which takes \eqn{W} from
@@ -78,7 +102,12 @@
 #'   function immediately discards. See \code{.gloc_scatter_soft}.
 #' @param peer_w_min a cell is conditioned on only when its weight exceeds
 #'   this, so that a downweighted peer is treated as absent rather than as
-#'   evidence. The default 0.5 is the conventional 1% flagging rule. Raising
+#'   evidence. The threshold is applied over a narrow band rather than at a
+#'   point -- a peer whose weight is within \code{.gloc_peer_band} of it is
+#'   conditioned on with its information discounted, which is what keeps the
+#'   weight map continuous; see \code{.gloc_cond_resid}. Cells outside the band
+#'   are unaffected, so the meaning of this argument is unchanged.
+#'   The default 0.5 is the conventional 1% flagging rule. Raising
 #'   it discards more peers. A threshold of 0 does \emph{not} disable peer
 #'   filtering: the damped weight update multiplies a weight by
 #'   \eqn{1 - d} each time the bisquare sends it to zero, so a contaminated
@@ -87,6 +116,14 @@
 #'   zero threshold readmits those cells at full influence. Use a negative
 #'   value to condition on every finite peer, which is useful only for
 #'   demonstrating what the filtering buys.
+#' @param peer_band half-width of the band around \code{peer_w_min} over which
+#'   a peer fades out of the conditioning set instead of leaving it at a step;
+#'   see \code{.gloc_peer_band} for the value and \code{.gloc_cond_resid} for
+#'   the construction. \code{0} restores the hard cut of releases before 7.4.0,
+#'   which is useful only for demonstrating what the band buys: it makes the
+#'   weight map discontinuous again, and with it the limit cycles that made
+#'   \code{converged = FALSE} the usual outcome of a
+#'   \code{design = ~ .} fit.
 #' @param trace print progress.
 #' @return a list with \code{B}, \code{Sigma}, \code{W}, \code{U},
 #'   \code{imputed}, \code{converged} and \code{iterations}.
@@ -101,7 +138,8 @@
 #' @export
 imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                            maxit = 200, eps = 5e-3, alpha = 0.75,
-                           psi_c = 4.685, peer_w_min = 0.5, damp = NULL,
+                           psi_c = 4.685, peer_w_min = 0.5,
+                           peer_band = .gloc_peer_band, damp = NULL,
                            cw_crit = 1e-8, trace = FALSE) {
   weights <- match.arg(weights)
   stopifnot(is.data.frame(data))
@@ -114,7 +152,9 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   relax <- identical(weights, "soft")
   stopifnot(is.numeric(damp), length(damp) == 1L, is.finite(damp),
             damp > 0, damp <= 1,
-            is.numeric(cw_crit), length(cw_crit) == 1L, cw_crit > 0)
+            is.numeric(cw_crit), length(cw_crit) == 1L, cw_crit > 0,
+            is.numeric(peer_band), length(peer_band) == 1L,
+            is.finite(peer_band), peer_band >= 0)
   if (!relax) { adaptive <- FALSE; damp <- 1 }
   is_cat <- vapply(data, function(x) is.factor(x) || is.character(x) ||
                      is.logical(x), logical(1))
@@ -169,7 +209,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   withCallingHandlers({
     for (it in seq_len(maxit)) {
       iter_count <- it
-      B_old <- B; W_old <- W
+      B_old <- B; W_old <- W; Sigma_old <- Sigma
       R <- X - U %*% B
 
       if (weights == "binary") {
@@ -196,7 +236,8 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                         "the cellwise MCD and the result is not the published",
                         "cellMCD."), call. = FALSE)
           Sigma <- .gloc_scatter_soft(R, W, M, crit = cw_crit)  # working scatter
-          Z <- .gloc_cond_resid(R, Sigma, W = W, w_min = peer_w_min)
+          Z <- .gloc_cond_resid(R, Sigma, W = W, w_min = peer_w_min,
+                                band = peer_band)
           # recompute W rather than carrying the previous iteration's stale one
           W <- matrix(as.numeric(is.finite(Z) & abs(Z) <= hard_q), n, p,
                       dimnames = dimnames(X))
@@ -214,16 +255,21 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
         # x3 cells in those same rows, against 1.7% in clean rows. cellMCD does
         # not have this problem because a flagged cell leaves the conditioning
         # set, and the reduction claim requires the soft corner to match.
-        Z <- .gloc_cond_resid(R, Sigma, W = W, w_min = peer_w_min)
-        # Relaxed weight update. Peer inclusion is a DISCRETE decision, so the
-        # undamped map is discontinuous and a cell whose weight sits near
-        # w_min flips in and out forever: an exact period-2 limit cycle in
-        # which B was stable to 4e-4 and Sigma to 9e-4, yet 7 cells of 4500
-        # kept swinging |dW| = 0.325 and convergence was never declared.
-        # Relaxation leaves every genuine fixed point untouched (W = f(W)
-        # implies W = (1 - d) W + d f(W)) and collapses the cycle to its
-        # average -- which is why `damp` may be adapted freely from one
-        # iteration to the next without moving where the iteration lands.
+        Z <- .gloc_cond_resid(R, Sigma, W = W, w_min = peer_w_min,
+                              band = peer_band)
+        # Relaxed weight update. Relaxation leaves every genuine fixed point
+        # untouched (W = f(W) implies W = (1 - d) W + d f(W)), which is why
+        # `damp` may be adapted freely from one iteration to the next without
+        # moving where the iteration lands. What it does NOT do is manufacture
+        # a fixed point where none exists: while peer inclusion was a discrete
+        # decision this map was discontinuous, cells near w_min recrossed the
+        # threshold forever, and no relaxation factor made the stopping rule
+        # attainable -- measured on design = ~ . at n = 200, 1 to 21 cells
+        # recrossed every few iterations while the rest of the system
+        # contracted geometrically, each crossing kicking max|f(W) - W| back up
+        # to 0.1-0.2 against a tolerance of 5e-3. The band in
+        # .gloc_cond_resid() is what fixes that; relaxation is here for the
+        # ordinary reason, to keep the iteration inside its contraction radius.
         W <- (1 - damp) * W + damp * .gloc_bisquare(Z, psi_c)
       }
       W[M] <- 0
@@ -252,13 +298,27 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
       # here makes eps mean the same thing at every relaxation factor, and
       # incidentally makes the old fixed-0.25 runs the sloppy ones.
       dW <- max(abs(W - W_old)) / damp
+      # The estimator is the TRIPLE (B, Sigma, W), so all three are tested.
+      # Sigma used to be the one reported quantity with no stopping test of its
+      # own, which left the criterion asserting less than the function returns:
+      # it is perfectly possible for the fitted means and the weights to have
+      # settled while the scatter is still drifting, since Sigma is a different
+      # functional of W (a sum over all cells rather than a per-cell value) and
+      # the relaxation damps the two at different rates. The change is measured
+      # relative to the largest variance, which makes it scale-equivariant and,
+      # because Sigma is a scatter of residuals, shift-invariant. Adding a
+      # condition can only make convergence harder, never easier -- it is a
+      # strengthening of the rule, not a loosening of it.
+      dS <- if (is.null(Sigma_old)) Inf else
+        max(abs(Sigma - Sigma_old)) / max(max(diag(Sigma)), .Machine$double.eps)
       if (trace) message(sprintf(paste("  iter %d: scaled change in fitted",
-                                       "means = %.3g, fixed-point residual",
-                                       "in W = %.3g, damping = %.3g"),
-                                 it, dB, dW, damp))
+                                       "means = %.3g, in scatter = %.3g,",
+                                       "fixed-point residual in W = %.3g,",
+                                       "damping = %.3g"),
+                                 it, dB, dS, dW, damp))
       if (dW < 0.99 * dW_best) { dW_best <- dW; stall <- 0L } else
         stall <- stall + 1L
-      if (dB < eps && dW < eps) { converged <- TRUE; break }
+      if (dB < eps && dS < eps && dW < eps) { converged <- TRUE; break }
 
       # Strengthen the relaxation only when the iteration stops contracting.
       # Cycling is correlation-driven, and at low correlation dropping a peer
@@ -292,6 +352,13 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
       # there), not a structural one, and an earlier version of this comment
       # was wrong to claim otherwise. It is a further reason the default is
       # 200 and not 50.
+      #
+      # It is also why this is worth re-measuring whenever the floor moves. At
+      # the old 0.25 floor the fallback was actively harmful on the
+      # mean-structure arm -- it fired in every non-converged fit, threw away
+      # 30 to 98 iterations, and cost four of forty configurations. At the
+      # current 0.5 floor it does not fire there at all, and still rescues one
+      # of the 36 in the p = 4 sweep. See .gloc_damp_schedule.
       if (adaptive && relax && !restarted && damp <= .gloc_damp &&
           stall >= .gloc_stall_iters) {
         restarted <- TRUE
@@ -316,11 +383,11 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
       cycling <- stall >= .gloc_stall_iters
       diagnosis <- if (cycling)
         sprintf(paste("max |dW| has not improved for %d iteration(s), so the",
-                      "peer-inclusion decision is cycling rather than",
-                      "converging slowly and raising maxit will NOT help.",
-                      "The relaxation factor is %.3g%s. Widen the conditioning",
-                      "set with a larger peer_w_min, or pass a smaller fixed",
-                      "damp."),
+                      "iteration is cycling rather than converging slowly and",
+                      "raising maxit will NOT help. The relaxation factor is",
+                      "%.3g%s. Widen the conditioning set with a SMALLER",
+                      "peer_w_min (larger values discard more peers), or pass",
+                      "a smaller fixed damp."),
                 stall, damp,
                 if (adaptive && damp <= .gloc_damp)
                   sprintf(", already at the schedule's floor of %.3g",
@@ -329,11 +396,11 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
         paste("max |dW| is still improving, so this is the iteration limit",
               "and not a cycle: raise maxit.")
       warning(sprintf(paste("cellGLoc: did not converge in %d iteration(s)",
-                            "(scaled change in fitted means %.3g, max |dW|",
-                            "%.3g, tolerance %.3g). The cell weights are still",
-                            "moving, so B, Sigma and W are only whatever the",
-                            "last iteration produced. %s"),
-                      maxit, dB, dW, eps, diagnosis), call. = FALSE)
+                            "(scaled change in fitted means %.3g, in scatter",
+                            "%.3g, max |dW| %.3g, tolerance %.3g). The",
+                            "estimates are still moving, so B, Sigma and W are",
+                            "only whatever the last iteration produced. %s"),
+                      maxit, dB, dS, dW, eps, diagnosis), call. = FALSE)
     }
 
     if (is.null(Sigma))                                  # maxit = 0
@@ -353,71 +420,92 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 
 #' Relaxation schedule for the soft corner's weight update
 #'
-#' Peer inclusion in \code{.gloc_cond_resid} is a discrete decision, which
-#' makes the undamped weight map discontinuous and lets cells sitting near the
-#' inclusion threshold oscillate indefinitely. Relaxation removes that without
-#' moving any genuine fixed point, since \eqn{W = f(W)} implies
-#' \eqn{W = (1 - d) W + d f(W)}; the same argument licenses changing
-#' \eqn{d} between iterations, so the factor can be adapted freely.
+#' The weight update is relaxed, \eqn{W \mapsto (1 - d) W + d f(W)}. Relaxation
+#' moves no fixed point, since \eqn{W = f(W)} implies
+#' \eqn{W = (1 - d) W + d f(W)}; the same argument licenses changing \eqn{d}
+#' between iterations, so the factor can be adapted freely.
 #'
 #' The update has the same form as the damping in \code{imputeCellEM} and
 #' \code{imputeCellwise}, which ramp \eqn{\lambda} adaptively rather than
-#' holding it fixed. \code{imputeCellGLoc} now does the same: it starts at
+#' holding it fixed. \code{imputeCellGLoc} does the same: it starts at
 #' \code{.gloc_damp_start} (no relaxation at all) and multiplies the factor by
 #' \code{.gloc_damp_shrink} whenever \code{max |dW|} fails to fall from one
 #' iteration to the next, never going below \code{.gloc_damp}. The factor
 #' never rises again, so a spurious trigger costs iterations, never
 #' correctness.
 #'
-#' Because the weight map is discontinuous in the peer-inclusion decision it
-#' has several fixed points, and which one the iteration finds depends on the
-#' path taken to it. Reaching the floor along a weakly relaxed path can
-#' therefore land in a cycle that starting at the floor avoids. When that
-#' happens -- the factor is at the floor and \code{max |dW|} has not improved
-#' for \code{.gloc_stall_iters} iterations -- the iteration falls back once to
-#' the cold start at the floor, which is precisely the fixed-\code{.gloc_damp}
-#' run. Adapting the factor therefore cannot converge on fewer configurations
-#' than fixing it did.
+#' \strong{What relaxation is and is not for.} Until 7.4.0 the peer-inclusion
+#' rule was a hard cut, which made the weight map discontinuous, and the floor
+#' was set low (0.25) to suppress the resulting limit cycles. That was treating
+#' the symptom: a discontinuous self-map need not have a fixed point at all, so
+#' no amount of relaxation could make the stopping rule attainable, and the
+#' documentation said as much -- configurations existed that cycled forever at
+#' the floor. Since the threshold became a band (see
+#' \code{.gloc_peer_band}) the map is continuous, cycling in the
+#' peer-inclusion decision is gone, and relaxation is back to its ordinary job:
+#' keeping the fixed-point iteration inside its contraction radius. The floor
+#' is therefore set by how fast the iteration converges, not by how badly it
+#' cycles, and it rises from 0.25 to 0.50.
 #'
-#' The floor was chosen by sweeping 36 configurations. An earlier version of
-#' this page reported that sweep as 36/36 at 0.25 without recording the
-#' generator, and that figure has not reproduced: two independent
-#' reconstructions both give 34/36. The table below is the re-measurement,
-#' under the current relaxation-invariant convergence rule, from a generator
-#' stated in full so that it can be checked -- 6 seeds, \eqn{\rho \in \{0,
-#' 0.5, 0.8\}}, clean and 5% of cells shifted by +8, \eqn{n = 800},
-#' \eqn{p = 4}, \code{design = ~ 1}, \code{weights = "soft"},
-#' \code{maxit = 200}, data from \code{MASS::mvrnorm} with
-#' \eqn{\Sigma = (1 - \rho) I + \rho}:
+#' The table below is the 36-configuration sweep, re-measured under the band
+#' and under the current convergence rule, from a generator stated in full so
+#' that it can be checked -- 6 seeds, \eqn{\rho \in \{0, 0.5, 0.8\}}, clean and
+#' 5% of cells shifted by +8, \eqn{n = 800}, \eqn{p = 4}, \code{design = ~ 1},
+#' \code{weights = "soft"}, \code{maxit = 200}, data from
+#' \code{MASS::mvrnorm} with \eqn{\Sigma = (1 - \rho) I + \rho}:
 #'
-#' \tabular{lrr}{
-#'   damping \tab converged \tab median iters \cr
-#'   1.00 (none) \tab 20/36 \tab   8 \cr
-#'   0.75        \tab 26/36 \tab  13 \cr
-#'   0.50        \tab 30/36 \tab  21 \cr
-#'   0.25        \tab 34/36 \tab  44 \cr
-#'   0.10        \tab 35/36 \tab 113 \cr
-#'   adaptive    \tab 34/36 \tab  14
+#' \tabular{lrrrr}{
+#'   damping \tab hard cut \tab median iters \tab band \tab median iters \cr
+#'   1.00 (none) \tab 20/36 \tab   8 \tab 19/36 \tab  9 \cr
+#'   0.75        \tab 26/36 \tab  13 \tab 29/36 \tab 11 \cr
+#'   0.50        \tab 30/36 \tab  21 \tab \strong{36/36} \tab 17 \cr
+#'   0.25        \tab 34/36 \tab  44 \tab \strong{36/36} \tab 36 \cr
+#'   0.10        \tab 35/36 \tab 113 \tab \strong{36/36} \tab 92 \cr
+#'   adaptive, floor 0.25 \tab 34/36 \tab 14 \tab \strong{36/36} \tab 12 \cr
+#'   adaptive, floor 0.50 \tab -- \tab -- \tab \strong{36/36} \tab 11.5
 #' }
 #'
-#' The floor buys convergence monotonically down to 0.25 and then stops
-#' buying much: 0.10 adds one configuration for two and a half times the
-#' iterations. The adaptive schedule matches the floor's convergence at a
-#' third of its median iteration count.
+#' Under the hard cut the floor bought convergence monotonically all the way
+#' down and never reached 36/36. Under the band, 0.50 already reaches 36/36 and
+#' everything below it only costs iterations. The floor is set there.
 #'
-#' Every failure, at every damping level, is at \eqn{\rho \ge 0.5}; nothing
-#' ever fails at \eqn{\rho = 0}, even undamped. That is the shape of the
-#' boundary: the cycle is driven by correlation, because when the columns are
-#' strongly correlated dropping one peer moves the conditional variance a long
-#' way, so a cell near the inclusion threshold swings far enough to flip the
-#' discrete decision back. It is also what makes the adaptive schedule pay:
-#' a fixed 0.25 spends several times the iterations it needs on uncorrelated
-#' data, where no relaxation is called for at all.
+#' It is not only the \eqn{p = 4} sweep that prefers 0.50. On the mean-structure
+#' arm this function exists for -- \code{design = ~ .}, \eqn{n = 200},
+#' 6 continuous and 6 categorical variables, so 19 design columns from 200 rows
+#' -- the smooth part of the map has a contraction factor near 0.92, and
+#' relaxing to 0.25 slows that to 0.98 per iteration, which does not fit inside
+#' \code{maxit}. Across 40 such fits: floor 0.25 converges 35/40 in a median
+#' 89 iterations, floor 0.50 converges 40/40 in a median 47. Every floor-0.25
+#' failure there is an exhausted budget, not a cycle.
 #'
-#' Relaxation does not abolish cycling and is not claimed to. One
-#' configuration at \eqn{\rho = 0.5} on clean data cycles permanently even at
-#' 0.25, which is why \code{imputeCellGLoc} warns on non-convergence and tells
-#' the two failure modes apart.
+#' Every failure in the hard-cut column of the table, at every damping level,
+#' is at \eqn{\rho \ge 0.5}; nothing ever fails at \eqn{\rho = 0}, even
+#' undamped. That is the shape of the boundary: threshold crossings are driven
+#' by correlation, because when the columns are strongly correlated dropping
+#' one peer moves the conditional variance a long way. It is also what makes
+#' the adaptive schedule pay: a fixed floor spends several times the iterations
+#' it needs on uncorrelated data, where no relaxation is called for at all.
+#'
+#' \strong{The cold-start fallback.} Because the hard-cut map was
+#' discontinuous it had several fixed points, and which one the iteration found
+#' depended on the path taken to it; reaching the floor along a weakly relaxed
+#' path could land in a cycle that starting at the floor avoided. When the
+#' factor is at the floor and \code{max |dW|} has not improved for
+#' \code{.gloc_stall_iters} iterations, the iteration therefore falls back once
+#' to the cold start at the floor, which is precisely the fixed-\code{.gloc_damp}
+#' run.
+#'
+#' The fallback is kept, but it is worth being precise about what it is now
+#' worth, because at the old floor it was doing real damage. Measured on the
+#' 40 mean-structure fits at floor 0.25 \emph{with} the band, it fires in every
+#' non-converged run, discards between 30 and 98 iterations of progress -- in
+#' one case a state whose fixed-point residual was within 26\% of the tolerance
+#' -- and costs four configurations: 35/40 with it against 39/40 without. At
+#' the 0.50 floor it never fires there at all (40/40 either way, to the
+#' iteration). On the \eqn{p = 4} sweep at floor 0.50 it is still worth exactly
+#' one configuration, 36/36 with against 35/36 without. So it is retained: at
+#' the current floor it is free where it used to be harmful, and it still
+#' rescues a case.
 #'
 #' @format length-one numerics.
 #'
@@ -427,7 +515,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 NULL
 
 #' @rdname dot-gloc_damp_schedule
-.gloc_damp <- 0.25
+.gloc_damp <- 0.5
 
 #' @rdname dot-gloc_damp_schedule
 .gloc_damp_start <- 1
@@ -437,10 +525,14 @@ NULL
 
 #' Iterations without an improvement in max |dW| that count as a stalled cycle
 #'
-#' Used only to phrase the non-convergence warning, which must tell an
-#' exhausted iteration limit (raise \code{maxit}) apart from a limit cycle
-#' (raising \code{maxit} cannot help). A running best is compared rather than
+#' Two uses: it arms the cold-start fallback in \code{.gloc_damp_schedule},
+#' and it phrases the non-convergence warning, which must tell an exhausted
+#' iteration limit (raise \code{maxit}) apart from a limit cycle (raising
+#' \code{maxit} cannot help). A running best is compared rather than
 #' consecutive values, so a cycle of any period is caught, not just period 2.
+#' The warning's two labels are a heuristic and should be read as such: a run
+#' contracting at a rate near 0.999 improves \code{max |dW|} by only 2\% over
+#' 20 iterations and so is reported as cycling although it is merely slow.
 #'
 #' @format a length-one integer.
 #' @keywords internal

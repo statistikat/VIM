@@ -24,72 +24,93 @@ An object of class \code{numeric} of length 1.
 .gloc_damp_shrink
 }
 \description{
-Peer inclusion in \code{.gloc_cond_resid} is a discrete decision, which
-makes the undamped weight map discontinuous and lets cells sitting near the
-inclusion threshold oscillate indefinitely. Relaxation removes that without
-moving any genuine fixed point, since \eqn{W = f(W)} implies
-\eqn{W = (1 - d) W + d f(W)}; the same argument licenses changing
-\eqn{d} between iterations, so the factor can be adapted freely.
+The weight update is relaxed, \eqn{W \mapsto (1 - d) W + d f(W)}. Relaxation
+moves no fixed point, since \eqn{W = f(W)} implies
+\eqn{W = (1 - d) W + d f(W)}; the same argument licenses changing \eqn{d}
+between iterations, so the factor can be adapted freely.
 }
 \details{
 The update has the same form as the damping in \code{imputeCellEM} and
 \code{imputeCellwise}, which ramp \eqn{\lambda} adaptively rather than
-holding it fixed. \code{imputeCellGLoc} now does the same: it starts at
+holding it fixed. \code{imputeCellGLoc} does the same: it starts at
 \code{.gloc_damp_start} (no relaxation at all) and multiplies the factor by
 \code{.gloc_damp_shrink} whenever \code{max |dW|} fails to fall from one
 iteration to the next, never going below \code{.gloc_damp}. The factor
 never rises again, so a spurious trigger costs iterations, never
 correctness.
 
-Because the weight map is discontinuous in the peer-inclusion decision it
-has several fixed points, and which one the iteration finds depends on the
-path taken to it. Reaching the floor along a weakly relaxed path can
-therefore land in a cycle that starting at the floor avoids. When that
-happens -- the factor is at the floor and \code{max |dW|} has not improved
-for \code{.gloc_stall_iters} iterations -- the iteration falls back once to
-the cold start at the floor, which is precisely the fixed-\code{.gloc_damp}
-run. Adapting the factor therefore cannot converge on fewer configurations
-than fixing it did.
+\strong{What relaxation is and is not for.} Until 7.4.0 the peer-inclusion
+rule was a hard cut, which made the weight map discontinuous, and the floor
+was set low (0.25) to suppress the resulting limit cycles. That was treating
+the symptom: a discontinuous self-map need not have a fixed point at all, so
+no amount of relaxation could make the stopping rule attainable, and the
+documentation said as much -- configurations existed that cycled forever at
+the floor. Since the threshold became a band (see
+\code{.gloc_peer_band}) the map is continuous, cycling in the
+peer-inclusion decision is gone, and relaxation is back to its ordinary job:
+keeping the fixed-point iteration inside its contraction radius. The floor
+is therefore set by how fast the iteration converges, not by how badly it
+cycles, and it rises from 0.25 to 0.50.
 
-The floor was chosen by sweeping 36 configurations. An earlier version of
-this page reported that sweep as 36/36 at 0.25 without recording the
-generator, and that figure has not reproduced: two independent
-reconstructions both give 34/36. The table below is the re-measurement,
-under the current relaxation-invariant convergence rule, from a generator
-stated in full so that it can be checked -- 6 seeds, \eqn{\rho \in \{0,
-0.5, 0.8\}}, clean and 5\% of cells shifted by +8, \eqn{n = 800},
-\eqn{p = 4}, \code{design = ~ 1}, \code{weights = "soft"},
-\code{maxit = 200}, data from \code{MASS::mvrnorm} with
-\eqn{\Sigma = (1 - \rho) I + \rho}:
+The table below is the 36-configuration sweep, re-measured under the band
+and under the current convergence rule, from a generator stated in full so
+that it can be checked -- 6 seeds, \eqn{\rho \in \{0, 0.5, 0.8\}}, clean and
+5\% of cells shifted by +8, \eqn{n = 800}, \eqn{p = 4}, \code{design = ~ 1},
+\code{weights = "soft"}, \code{maxit = 200}, data from
+\code{MASS::mvrnorm} with \eqn{\Sigma = (1 - \rho) I + \rho}:
 
-\tabular{lrr}{
-damping \tab converged \tab median iters \cr
-1.00 (none) \tab 20/36 \tab   8 \cr
-0.75        \tab 26/36 \tab  13 \cr
-0.50        \tab 30/36 \tab  21 \cr
-0.25        \tab 34/36 \tab  44 \cr
-0.10        \tab 35/36 \tab 113 \cr
-adaptive    \tab 34/36 \tab  14
+\tabular{lrrrr}{
+damping \tab hard cut \tab median iters \tab band \tab median iters \cr
+1.00 (none) \tab 20/36 \tab   8 \tab 19/36 \tab  9 \cr
+0.75        \tab 26/36 \tab  13 \tab 29/36 \tab 11 \cr
+0.50        \tab 30/36 \tab  21 \tab \strong{36/36} \tab 17 \cr
+0.25        \tab 34/36 \tab  44 \tab \strong{36/36} \tab 36 \cr
+0.10        \tab 35/36 \tab 113 \tab \strong{36/36} \tab 92 \cr
+adaptive, floor 0.25 \tab 34/36 \tab 14 \tab \strong{36/36} \tab 12 \cr
+adaptive, floor 0.50 \tab -- \tab -- \tab \strong{36/36} \tab 11.5
 }
 
-The floor buys convergence monotonically down to 0.25 and then stops
-buying much: 0.10 adds one configuration for two and a half times the
-iterations. The adaptive schedule matches the floor's convergence at a
-third of its median iteration count.
+Under the hard cut the floor bought convergence monotonically all the way
+down and never reached 36/36. Under the band, 0.50 already reaches 36/36 and
+everything below it only costs iterations. The floor is set there.
 
-Every failure, at every damping level, is at \eqn{\rho \ge 0.5}; nothing
-ever fails at \eqn{\rho = 0}, even undamped. That is the shape of the
-boundary: the cycle is driven by correlation, because when the columns are
-strongly correlated dropping one peer moves the conditional variance a long
-way, so a cell near the inclusion threshold swings far enough to flip the
-discrete decision back. It is also what makes the adaptive schedule pay:
-a fixed 0.25 spends several times the iterations it needs on uncorrelated
-data, where no relaxation is called for at all.
+It is not only the \eqn{p = 4} sweep that prefers 0.50. On the mean-structure
+arm this function exists for -- \code{design = ~ .}, \eqn{n = 200},
+6 continuous and 6 categorical variables, so 19 design columns from 200 rows
+-- the smooth part of the map has a contraction factor near 0.92, and
+relaxing to 0.25 slows that to 0.98 per iteration, which does not fit inside
+\code{maxit}. Across 40 such fits: floor 0.25 converges 35/40 in a median
+89 iterations, floor 0.50 converges 40/40 in a median 47. Every floor-0.25
+failure there is an exhausted budget, not a cycle.
 
-Relaxation does not abolish cycling and is not claimed to. One
-configuration at \eqn{\rho = 0.5} on clean data cycles permanently even at
-0.25, which is why \code{imputeCellGLoc} warns on non-convergence and tells
-the two failure modes apart.
+Every failure in the hard-cut column of the table, at every damping level,
+is at \eqn{\rho \ge 0.5}; nothing ever fails at \eqn{\rho = 0}, even
+undamped. That is the shape of the boundary: threshold crossings are driven
+by correlation, because when the columns are strongly correlated dropping
+one peer moves the conditional variance a long way. It is also what makes
+the adaptive schedule pay: a fixed floor spends several times the iterations
+it needs on uncorrelated data, where no relaxation is called for at all.
+
+\strong{The cold-start fallback.} Because the hard-cut map was
+discontinuous it had several fixed points, and which one the iteration found
+depended on the path taken to it; reaching the floor along a weakly relaxed
+path could land in a cycle that starting at the floor avoided. When the
+factor is at the floor and \code{max |dW|} has not improved for
+\code{.gloc_stall_iters} iterations, the iteration therefore falls back once
+to the cold start at the floor, which is precisely the fixed-\code{.gloc_damp}
+run.
+
+The fallback is kept, but it is worth being precise about what it is now
+worth, because at the old floor it was doing real damage. Measured on the
+40 mean-structure fits at floor 0.25 \emph{with} the band, it fires in every
+non-converged run, discards between 30 and 98 iterations of progress -- in
+one case a state whose fixed-point residual was within 26\\% of the tolerance
+-- and costs four configurations: 35/40 with it against 39/40 without. At
+the 0.50 floor it never fires there at all (40/40 either way, to the
+iteration). On the \eqn{p = 4} sweep at floor 0.50 it is still worth exactly
+one configuration, 36/36 with against 35/36 without. So it is retained: at
+the current floor it is free where it used to be harmful, and it still
+rescues a case.
 }
 \keyword{datasets}
 \keyword{internal}
