@@ -39,6 +39,17 @@ Bhat2 <- VIM:::.gloc_update_B(X2, U, W)
 expect_true(max(abs(Bhat2[, 1] - Btrue[, 1])) < 0.05)
 expect_true(max(abs(Bhat2[, 2] - Btrue[, 2])) < 0.05)
 
+# --- a column with no cell of positive weight must warn (naming the column)
+# and fall back deterministically -- never a silent NA ---
+set.seed(5)
+n3 <- 100
+Uc <- matrix(1, n3, 1, dimnames = list(NULL, "(Intercept)"))
+Xc <- matrix(rnorm(n3 * 2), n3, 2, dimnames = list(NULL, c("v1", "v2")))
+Wc <- matrix(1, n3, 2); Wc[, 1] <- 0                 # v1 has no usable weight at all
+expect_warning(Bc <- VIM:::.gloc_update_B(Xc, Uc, Wc), "v1")
+expect_false(anyNA(Bc))
+expect_equal(Bc[1, "v1"], stats::median(Xc[, "v1"]))
+
 # --- .gloc_cond_resid is standardised: unit variance on clean Gaussian data ---
 set.seed(3)
 S <- matrix(c(1, .6, .3, .6, 1, .4, .3, .4, 1), 3, 3)
@@ -47,3 +58,21 @@ Z <- VIM:::.gloc_cond_resid(R, S)
 expect_equal(dim(Z), c(4000L, 3L))
 expect_true(all(abs(apply(Z, 2, sd) - 1) < 0.05))
 expect_true(all(abs(colMeans(Z)) < 0.06))
+
+# has teeth: a marginal-only Z = R / sqrt(diag(Sigma)) would retain the raw
+# correlation with each peer (0.3-0.6 under S above); proper conditioning on
+# the peers must remove it (measured ~0.02-0.04; 0.10 separates the two cleanly)
+maxpeercor <- 0
+for (j in 1:3) for (k in setdiff(1:3, j))
+  maxpeercor <- max(maxpeercor, abs(cor(Z[, j], R[, k])))
+expect_true(maxpeercor < 0.10)
+
+# --- .gloc_cond_resid: when a cell's peers are entirely absent, the standardised
+# residual must fall back to the MARGINAL variance (Sigma[j,j]), not the
+# full-peer-set conditional variance -- the latter understates the true spread
+# and inflates Z (sd ~1.25 under S above, not 1) ---
+set.seed(4)
+Rmiss <- MASS::mvrnorm(4000, rep(0, 3), S)
+Rmiss[, 2:3] <- NA_real_                             # column 1's peers fully absent
+Zmiss <- VIM:::.gloc_cond_resid(Rmiss, S)
+expect_true(abs(sd(Zmiss[, 1]) - 1) < 0.05)
