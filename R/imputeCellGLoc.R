@@ -112,7 +112,7 @@
 #'   \code{weights = "binary"}, which takes \eqn{W} from
 #'   \code{cellWise::cellMCD} and never relaxes it.
 #' @param cw_crit convergence tolerance of the EM inside
-#'   \code{cellWise::cwLocScat}, the scatter step. That step is 98.8\% of an
+#'   \code{cellWise::cwLocScat}, the scatter step. That step is about 95\% of an
 #'   outer iteration, and \code{cwLocScat}'s own default of 1e-12 is seven
 #'   orders of magnitude tighter than \code{eps}, so it refines digits this
 #'   function immediately discards. See \code{.gloc_scatter_soft}.
@@ -249,7 +249,9 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # alone the caller cannot tell a point on a settled cycle -- where the answer
   # depends on which phase maxit stopped in -- from a value still drifting.
   # Measured on the binary corner, 8 of 10 non-converged fits are bit-identical
-  # at a raised maxit and 2 move, by 0.011 and 0.096 relative. The trailing
+  # at a raised maxit and 2 move, by 0.008 and 0.096 relative (the first was
+  # written as 0.011 here until 2026-09-12; the measurement is 0.008, as the
+  # roxygen and NEWS both say). The trailing
   # spread measures that dependence directly and is returned, so it can be
   # tested by a caller rather than only read out of a warning string.
   S_hist <- vector("list", .gloc_stall_iters)
@@ -586,10 +588,26 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 #' the adaptive schedule pay: a fixed floor spends several times the iterations
 #' it needs on uncorrelated data, where no relaxation is called for at all.
 #'
-#' \strong{The cold-start fallback.} Because the hard-cut map was
-#' discontinuous it had several fixed points, and which one the iteration found
-#' depended on the path taken to it; reaching the floor along a weakly relaxed
-#' path could land in a cycle that starting at the floor avoided. When the
+#' \strong{The cold-start fallback.} The hard-cut map was discontinuous, so by
+#' Brouwer it need not have possessed a fixed point at all and the iteration
+#' could sit in a limit cycle indefinitely; which cycle it entered depended on
+#' the path taken, so reaching the floor along a weakly relaxed path could land
+#' in one that starting at the floor avoided.
+#'
+#' \strong{Correction, recorded rather than deleted.} An earlier version of
+#' this paragraph said the discontinuous map "had several fixed points" and
+#' that the iteration selected among them, and gave that as the reason the
+#' relaxed and adaptive schedules disagreed. \strong{That explanation is
+#' false.} It was falsified by tightening \code{eps} from 5e-3 to 1e-5, which
+#' collapsed the relative scatter difference between the two schedules from
+#' 1.28e-2 to 3.3e-6 and the flag disagreement from 4 cells to zero -- distinct
+#' fixed points do not vanish under a tighter tolerance. The real cause was the
+#' convergence rule: it compared a \emph{relaxed} step against \code{eps} and so
+#' stopped at a fixed-point residual \code{1/damp} times looser, which made the
+#' stopping point depend on the relaxation factor. That is fixed (see
+#' \code{eps}), and the fallback is retained for the path effect described
+#' above, which is about which cycle is entered, not about which fixed point is
+#' selected. When the
 #' factor is at the floor and \code{max |dW|} has not improved for
 #' \code{.gloc_stall_iters} iterations, the iteration therefore falls back once
 #' to the cold start at the floor, which is precisely the fixed-\code{.gloc_damp}
@@ -762,8 +780,13 @@ NULL
 #'   \code{.gloc_consistency}.
 #' @param crit convergence tolerance handed to \code{cellWise::cwLocScat}'s
 #'   EM. This is an inner loop inside the outer cellGLoc iteration, and it is
-#'   the whole cost of a cellGLoc step: at \eqn{p = 10} the scatter step was
-#'   98.8\% of an iteration against 1.1\% for the conditional residuals.
+#'   the whole cost of a cellGLoc step: about 95\% of an iteration against
+#'   about 5\% for the conditional residuals. Measured by \code{Rprof} over
+#'   five draws at \eqn{n = 1000}, \eqn{p = 10}, \eqn{\rho = 0.5}, 5\% of cells
+#'   shifted by +8, \code{weights = "soft"}, across \code{design = ~ 1} and
+#'   \code{design = ~ .}: the share runs 94.3 to 95.6\%. Earlier releases
+#'   quoted 98.8\% here and 97.5\% elsewhere for the same quantity; neither
+#'   reproduced, and 95\% replaces both.
 #'   \code{cwLocScat}'s own default is 1e-12, seven orders of magnitude
 #'   tighter than the outer loop's \code{eps} of 5e-3 can resolve, so the EM
 #'   spends most of its steps refining digits the caller discards. The default

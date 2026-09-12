@@ -99,10 +99,26 @@ one peer moves the conditional variance a long way. It is also what makes
 the adaptive schedule pay: a fixed floor spends several times the iterations
 it needs on uncorrelated data, where no relaxation is called for at all.
 
-\strong{The cold-start fallback.} Because the hard-cut map was
-discontinuous it had several fixed points, and which one the iteration found
-depended on the path taken to it; reaching the floor along a weakly relaxed
-path could land in a cycle that starting at the floor avoided. When the
+\strong{The cold-start fallback.} The hard-cut map was discontinuous, so by
+Brouwer it need not have possessed a fixed point at all and the iteration
+could sit in a limit cycle indefinitely; which cycle it entered depended on
+the path taken, so reaching the floor along a weakly relaxed path could land
+in one that starting at the floor avoided.
+
+\strong{Correction, recorded rather than deleted.} An earlier version of
+this paragraph said the discontinuous map "had several fixed points" and
+that the iteration selected among them, and gave that as the reason the
+relaxed and adaptive schedules disagreed. \strong{That explanation is
+false.} It was falsified by tightening \code{eps} from 5e-3 to 1e-5, which
+collapsed the relative scatter difference between the two schedules from
+1.28e-2 to 3.3e-6 and the flag disagreement from 4 cells to zero -- distinct
+fixed points do not vanish under a tighter tolerance. The real cause was the
+convergence rule: it compared a \emph{relaxed} step against \code{eps} and so
+stopped at a fixed-point residual \code{1/damp} times looser, which made the
+stopping point depend on the relaxation factor. That is fixed (see
+\code{eps}), and the fallback is retained for the path effect described
+above, which is about which cycle is entered, not about which fixed point is
+selected. When the
 factor is at the floor and \code{max |dW|} has not improved for
 \code{.gloc_stall_iters} iterations, the iteration therefore falls back once
 to the cold start at the floor, which is precisely the fixed-\code{.gloc_damp}

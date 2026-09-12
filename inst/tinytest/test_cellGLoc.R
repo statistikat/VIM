@@ -450,7 +450,9 @@ expect_equal(Z_all, VIM:::.gloc_cond_resid(Rw3, Sw3, W = matrix(1, 500, 3)))
 # ==========================================================================
 # The two performance levers
 #
-# The scatter step is 97.5% of an iteration (Rprof, n = 1000, p = 10), so both
+# The scatter step is about 95% of an iteration (Rprof, n = 1000, p = 10, five
+# draws spanning 94.3-95.6%; it was quoted as 97.5% here and 98.8% in the
+# roxygen until 2026-09-12, when it was re-measured), so both
 # levers aim there: cw_crit loosens the EM inside it, and the adaptive
 # relaxation schedule needs fewer of them. Neither may move where the
 # iteration lands, which is what these assertions are for.

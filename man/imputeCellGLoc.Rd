@@ -114,7 +114,7 @@ four times earlier than \code{eps} asked; see \code{eps}. Ignored for
 \code{cellWise::cellMCD} and never relaxes it.}
 
 \item{cw_crit}{convergence tolerance of the EM inside
-\code{cellWise::cwLocScat}, the scatter step. That step is 98.8\\% of an
+\code{cellWise::cwLocScat}, the scatter step. That step is about 95\\% of an
 outer iteration, and \code{cwLocScat}'s own default of 1e-12 is seven
 orders of magnitude tighter than \code{eps}, so it refines digits this
 function immediately discards. See \code{.gloc_scatter_soft}.}

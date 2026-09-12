@@ -53,7 +53,7 @@
   `maxit` stopped, which the returned `Sigma` alone cannot show. It matters mainly for
   `weights = "binary"`, where the cell weights come from `cellWise::cellMCD()` and are binary by
   construction, so the band does not apply: of 10 non-converged binary fits, 8 are bit-identical
-  at a raised `maxit` (a settled cycle) and 2 still move, by about 0.01 and 0.096 relative. That
+  at a raised `maxit` (a settled cycle) and 2 still move, by 0.008 and 0.096 relative. That
   is the published estimator's own discreteness and is not fixed here, but it is now detectable
   without parsing a warning string. `scatter_spread` was positive for all 10, which is the
   intended behaviour -- every one of them returns a scatter that depends on the stopping point --
@@ -78,7 +78,9 @@
   lower recall, by up to 0.5 percentage points on average (paired p < 0.001); that systematic
   component is gone.
 - **`imputeCellGLoc()` is faster: about 1.8x at 10 continuous variables and more at 20.** The
-  scatter step is 97.5% of an iteration, so `cwLocScat()`'s EM tolerance is now exposed as
+  scatter step is about 95% of an iteration (`Rprof`, n = 1000, p = 10, five draws; the
+  figure was quoted as 97.5% and as 98.8% before it was re-measured), so `cwLocScat()`'s EM
+  tolerance is now exposed as
   `cw_crit` and defaults to 1e-8 rather than that function's own 1e-12, which is five orders of
   magnitude tighter than `eps` can resolve; and the relaxation factor is adaptive
   (`damp = NULL`), starting unrelaxed and strengthening only when the iteration stops
