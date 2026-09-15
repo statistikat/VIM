@@ -26,6 +26,29 @@ A column left with no cell of positive weight (e.g. every weight is zero)
 cannot be fit at all; rather than silently returning \code{NA} into
 downstream matrices, this case warns (naming the offending column) and
 falls back to the unweighted median of that column's finite values, or to
-\code{0} if none exists.
+\code{0} if none exists. A column with fewer usable cells than design
+columns warns too and uses the median of those cells. Either constant is put
+through the design (\code{.gloc_const_coef}), so every row gets it whether
+or not the design has an intercept column.
+
+A design that is rank deficient on the rows a column is fitted from is
+fitted on a maximal set of linearly independent design columns, chosen by
+the same pivoted QR decomposition \code{qr.solve()} uses; a full-rank design
+takes exactly the arithmetic of \code{qr.solve()}, so its result is
+unchanged bit for bit. A dropped column that duplicates others (two
+identical factors, say) gets coefficient 0, which leaves the fitted means
+of every row whose design pattern occurs among the fitted rows unchanged. A
+dropped column with no fitted row at all (a level for which the variable is
+never observed) gets the coefficient that sets that level's fitted mean to
+the variable's weighted mean over the fitted rows (\code{.gloc_fill_empty}):
+the level's own mean is not identifiable from the data. Both cases warn,
+naming the design columns and the variables.
+
+Correction, recorded rather than deleted: until 7.4.1 a rank-deficient
+design silently kept only a weighted mean in \code{B[1, j]}, assuming column
+1 is the intercept. With a factor duplicated, the x1 group means came back
+flat at 0.39 against 0.17, 3.92 and -3.15, and \code{diag(Sigma)} was 8.5
+against 0.87; with a level that never records x1 they came back flat at
+15.44 under \code{~ f}, and 14.97, 0 and 0 under \code{~ f - 1}.
 }
 \keyword{internal}

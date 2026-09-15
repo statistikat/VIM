@@ -137,23 +137,23 @@ a masked solution, which is why the default changed. Ignored for
 \code{weights = "binary"}, whose first step already calls
 \code{cellWise::cellMCD}.
 
-\code{start} selects the fixed point, not only the path to it. On clean
-data (n = 200, six continuous and six categorical variables, 20\% missing)
-at \code{eps = 1e-8}, the two starts reached different fixed points in 7
-of 10 fits with \code{design = ~ .} (relative scatter difference 0.009 to
-0.032, 2 to 14 cells flagged differently, unchanged as the tolerance
-tightens) and in 4 of 9 converged fits with \code{design = ~ 1}. Over the
-ten \code{~ .} fits 29 cells were flagged only under the robust start, 22
-of them already flagged by the start's cellMCD, which flags 2.3 to 4.6\% of
-clean cells at both \code{alpha = 0.5} and 0.75. Those hard starting flags
-are not the cause: starting from soft bisquare weights on the same
-residuals gave the same differences (7 of 10 with \code{~ .}, 3 of 9 with
-\code{~ 1}). The iteration has more than one fixed point, and the starting
-values select among them. (Corrected: this page gave 2 of 3 for
-\code{design = ~ 1}, from a smaller check, and did not rule out the hard
-flags as the cause.) Under contamination the classical start can mask: with
-20\% of cells shifted by 10 its scatter error was 6.45 against 0.14 for the
-robust start.
+\code{start} selects the fixed point, not only the path to it: the
+iteration can have several fixed points, and the starting values choose
+among them. On clean data (n = 200, six continuous and six categorical
+variables, 20\% missing) at \code{eps = 1e-8}, the two starts reached
+different fixed points in 7 of 10 fits with \code{design = ~ .} (relative
+scatter difference 0.009 to 0.032, 2 to 14 cells flagged differently,
+unchanged as the tolerance tightens) and in 4 of 9 converged fits with
+\code{design = ~ 1}. Which fixed point is reached depends on the starting
+mean and the starting weights together, and on how the weights are built:
+in the 7 differing \code{~ .} fits, the start's hard flags with a
+least-squares starting mean reached the robust start's fixed point in 4;
+soft starting weights on the robust residuals reached it in 6 when computed
+from conditional residuals and in none when computed from marginal ones.
+(Corrected: an earlier version said the hard starting flags were not the
+cause, on the evidence of one construction of soft starting weights.) Under
+contamination the classical start can mask: with 20\% of cells shifted by 10
+its scatter error was 6.45 against 0.14 for the robust start.
 
 With \code{"classical"} the estimates \code{B}, \code{Sigma} and \code{W}
 reproduce VIM 7.4.0; the imputations do not, because since 7.4.1 a missing

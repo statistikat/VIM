@@ -142,23 +142,23 @@
 #'   \code{weights = "binary"}, whose first step already calls
 #'   \code{cellWise::cellMCD}.
 #'
-#'   \code{start} selects the fixed point, not only the path to it. On clean
-#'   data (n = 200, six continuous and six categorical variables, 20% missing)
-#'   at \code{eps = 1e-8}, the two starts reached different fixed points in 7
-#'   of 10 fits with \code{design = ~ .} (relative scatter difference 0.009 to
-#'   0.032, 2 to 14 cells flagged differently, unchanged as the tolerance
-#'   tightens) and in 4 of 9 converged fits with \code{design = ~ 1}. Over the
-#'   ten \code{~ .} fits 29 cells were flagged only under the robust start, 22
-#'   of them already flagged by the start's cellMCD, which flags 2.3 to 4.6% of
-#'   clean cells at both \code{alpha = 0.5} and 0.75. Those hard starting flags
-#'   are not the cause: starting from soft bisquare weights on the same
-#'   residuals gave the same differences (7 of 10 with \code{~ .}, 3 of 9 with
-#'   \code{~ 1}). The iteration has more than one fixed point, and the starting
-#'   values select among them. (Corrected: this page gave 2 of 3 for
-#'   \code{design = ~ 1}, from a smaller check, and did not rule out the hard
-#'   flags as the cause.) Under contamination the classical start can mask: with
-#'   20% of cells shifted by 10 its scatter error was 6.45 against 0.14 for the
-#'   robust start.
+#'   \code{start} selects the fixed point, not only the path to it: the
+#'   iteration can have several fixed points, and the starting values choose
+#'   among them. On clean data (n = 200, six continuous and six categorical
+#'   variables, 20% missing) at \code{eps = 1e-8}, the two starts reached
+#'   different fixed points in 7 of 10 fits with \code{design = ~ .} (relative
+#'   scatter difference 0.009 to 0.032, 2 to 14 cells flagged differently,
+#'   unchanged as the tolerance tightens) and in 4 of 9 converged fits with
+#'   \code{design = ~ 1}. Which fixed point is reached depends on the starting
+#'   mean and the starting weights together, and on how the weights are built:
+#'   in the 7 differing \code{~ .} fits, the start's hard flags with a
+#'   least-squares starting mean reached the robust start's fixed point in 4;
+#'   soft starting weights on the robust residuals reached it in 6 when computed
+#'   from conditional residuals and in none when computed from marginal ones.
+#'   (Corrected: an earlier version said the hard starting flags were not the
+#'   cause, on the evidence of one construction of soft starting weights.) Under
+#'   contamination the classical start can mask: with 20% of cells shifted by 10
+#'   its scatter error was 6.45 against 0.14 for the robust start.
 #'
 #'   With \code{"classical"} the estimates \code{B}, \code{Sigma} and \code{W}
 #'   reproduce VIM 7.4.0; the imputations do not, because since 7.4.1 a missing
@@ -249,7 +249,11 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # cellWise::cellMCD (with DDC and estLocScale inside it) and robustbase's
   # S-estimator create .Random.seed in a session that has none. A session with
   # none must still have none afterwards, or two fresh sessions draw the same
-  # "random" numbers after one call. An existing stream is left alone.
+  # "random" numbers after one call. An existing stream is left alone. The
+  # data promise is forced first: a seed that evaluating the caller's own
+  # argument creates, as in imputeCellGLoc({ set.seed(1); d }), is the
+  # caller's and must survive.
+  force(data)
   if (!exists(".Random.seed", envir = globalenv(), inherits = FALSE))
     on.exit(if (exists(".Random.seed", envir = globalenv(), inherits = FALSE))
               rm(".Random.seed", envir = globalenv()), add = TRUE)
@@ -290,10 +294,22 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
     X[odd] <- NA_real_
   }
 
+  # A degraded path must never be taken silently, but neither should it shout
+  # once per iteration: report each distinct reason exactly once per call. The
+  # mean step warns about a rank-deficient design on every call, from the
+  # classical start below onwards, so the handler is set up before it.
+  seen <- character(0)
+  dedup <- function(w) {
+    m <- conditionMessage(w)
+    if (startsWith(m, "cellGLoc: ")) {
+      if (m %in% seen) invokeRestart("muffleWarning") else seen <<- c(seen, m)
+    }
+  }
+
   M <- !is.finite(X)                       # missing mask
   W <- matrix(1, n, p, dimnames = dimnames(X))
   W[M] <- 0
-  B <- .gloc_update_B(X, U, W)
+  B <- withCallingHandlers(.gloc_update_B(X, U, W), warning = dedup)
   Sigma <- NULL
   converged <- FALSE
   iter_count <- 0L
@@ -319,16 +335,6 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   hard_q     <- sqrt(stats::qchisq(0.99, df = 1))
   kappa_hard <- .gloc_consistency(hard_q, "hard")
 
-  # A degraded scatter path must never be taken silently, but neither should it
-  # shout once per iteration: report each distinct reason exactly once per call.
-  seen <- character(0)
-  dedup <- function(w) {
-    m <- conditionMessage(w)
-    if (startsWith(m, "cellGLoc: ")) {
-      if (m %in% seen) invokeRestart("muffleWarning") else seen <<- c(seen, m)
-    }
-  }
-
   # The robust start replaces the classical one computed above, and it also
   # becomes the cold start the relaxation schedule falls back to. The first
   # iteration recomputes Sigma from (X - U B, W), so no starting scatter is
@@ -339,8 +345,10 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # start = "classical" "reproduces 7.4.0 exactly".)
   # The start's cellMCD runs at .gloc_start_alpha, not at the user's alpha,
   # which governs the binary corner only.
+  # warn_design = FALSE: a rank-deficient design is reported once, by the mean
+  # step, which also says what the returned fit does with it.
   if (relax && start == "robust") {
-    st <- withCallingHandlers(.gloc_start_robust(X, U, M),
+    st <- withCallingHandlers(.gloc_start_robust(X, U, M, warn_design = FALSE),
                               warning = dedup)
     W <- st$W; B <- st$B
     W0 <- W; B0 <- B

@@ -12,17 +12,13 @@
   column (`~ f - 1`) work. The start is deterministic. Degraded paths warn and print nothing to the
   console: too few rows per design column, a rank-deficient design (fitted on its non-aliased
   columns), `lmrob` failing or not converging, `cellMCD()` failing, `cellWise` unavailable.
-- **The start selects the fixed point, not only the path.** On clean data (n = 200, six continuous
-  and six categorical variables, 20% missing) at a convergence tolerance of 1e-8, the two starts
-  reached different fixed points in 7 of 10 fits with `design = ~ .` (relative scatter difference
-  0.009 to 0.032, 2 to 14 cells flagged differently, unchanged as the tolerance tightens) and in 4
-  of 9 converged fits with `design = ~ 1`. Over the ten `~ .` fits 29 cells were flagged only under
-  the robust start, 22 of them already flagged by the start's `cellMCD()`, which flags 2.3 to 4.6%
-  of clean cells at both `alpha = 0.5` and `0.75`. Those hard starting flags are not the cause:
-  starting from soft bisquare weights on the same residuals gave the same differences (7 of 10
-  with `~ .`, 3 of 9 with `~ 1`). The iteration has more than one fixed point, and the starting
-  values select among them. (Corrected: an earlier draft gave 2 of 3 for `design = ~ 1`, from a
-  smaller check, and did not rule out the hard flags as the cause.) Under contamination the
+- **The start selects the fixed point, not only the path.** The iteration can have several fixed
+  points. On clean data (n = 200, 6 continuous and 6 categorical variables, 20% missing, tolerance
+  1e-8) the two starts reached different fixed points in 7 of 10 fits with `design = ~ .` (relative
+  scatter difference 0.009-0.032, 2-14 cells flagged differently) and in 4 of 9 converged fits with
+  `~ 1`. Which one is reached depends on the starting mean and the starting weights together, and
+  on how the weights are built, so no single part of the start is the cause. (Corrected: an
+  earlier draft said the hard starting flags were not the cause.) Under contamination the
   classical start can mask: in the pilot (`design = ~ .`, 20% of cells shifted by 10) its scatter
   error was 6.45 against 0.14.
 - **The start's fit is `lmrob`'s M-S path: the L1 regression followed by an M-step at the L1
@@ -37,7 +33,22 @@
   start "leaves the caller's random-number stream untouched" without qualification. But
   `cellWise::cellMCD()` creates `.Random.seed` when there is none, so the default soft fit and the
   binary corner left one behind, and two fresh sessions then drew identical numbers after one
-  call. `imputeCellGLoc()` now removes a `.Random.seed` that it created.)
+  call. `imputeCellGLoc()` now removes a `.Random.seed` that it created.) A `.Random.seed` that the
+  caller's own `data` argument creates while it is evaluated, as in
+  `imputeCellGLoc({ set.seed(1); d })`, is the caller's and is kept.
+- **A rank-deficient design no longer silently loses its mean structure** (present since 7.4.0).
+  When the design was rank deficient on the rows a variable is fitted from, the mean step silently
+  kept only that variable's weighted mean, assuming the first design column is the intercept. With a
+  factor duplicated, the group means of x1 came back flat at 0.39 against 0.17, 3.92 and -3.15, and
+  its variance at 8.5 against 0.87, in every corner. With a level that never records x1 (a survey
+  skip pattern) the means came back flat at 15.44 under `~ f`, and 14.97, 0 and 0 under `~ f - 1`,
+  where the level b and c cells were imputed near 0 (truth 20 and 30). Now the variable is fitted on
+  a maximal set of independent design columns, as `qr.solve()` would for a full-rank design, whose
+  results are unchanged bit for bit. Duplicated columns get coefficient 0, which leaves the fitted
+  means unchanged, and a warning names them. A design column with no usable value of the variable
+  also warns, once: the variable's mean for that level is not identifiable from the data, and the
+  returned fit sets it to the variable's weighted mean over the rows it was estimated from, under
+  any coding of the factor.
 - **The start runs `cellMCD()` at its own tolerance, `alpha = 0.5`.** cellMCD refuses a column whose
   marginal outliers plus missing values exceed `1 - alpha`. At the default `alpha = 0.75` it did so
   in 74 of the 180 robust-start pilot fits with 20% missing cells, all at 10–20% contamination, 67

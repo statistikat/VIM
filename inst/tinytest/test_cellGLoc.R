@@ -1053,10 +1053,108 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   set.seed(11); before_rng <- .Random.seed
   invisible(suppressWarnings(VIM::imputeCellGLoc(d_rng, design = ~ ., weights = "soft")))
   expect_identical(.Random.seed, before_rng)
+  # a seed that the caller's own argument creates is the caller's, not ours:
+  # the data promise must be evaluated before the existence check
+  if (has_seed()) rm(".Random.seed", envir = globalenv())
+  invisible(suppressWarnings(VIM::imputeCellGLoc({ set.seed(123); d_rng },
+                                                 design = ~ ., weights = "soft")))
+  expect_true(has_seed())
   if (is.null(saved_seed)) {
     if (has_seed()) rm(".Random.seed", envir = globalenv())
   } else {
     assign(".Random.seed", saved_seed, envir = globalenv())
+  }
+}
+
+# ==========================================================================
+# Rank-deficient designs in the mean step (7.4.1 re-review, pre-existing in
+# 7.4.0)
+#
+# .gloc_update_B caught a singular weighted least-squares solve and kept only a
+# weighted mean in B[1, j], silently, assuming column 1 is the intercept. With
+# f2 an exact copy of f1 the x1 group means came back 0.39 / 0.39 / 0.39
+# against 0.17 / 3.92 / -3.15 for the full-rank design, and diag(Sigma) 8.5
+# against 0.87, in all corners. With a level that never records x1 they came
+# back flat at 15.44 under ~ f, and 14.97 / 0 / 0 under ~ f - 1, imputing about
+# 0 for levels whose truth is 20 and 30, without a warning under the classical
+# start. Tolerances fixed before the first run.
+# ==========================================================================
+set.seed(401)
+n_rk <- 300
+f_rk <- factor(sample(c("a", "b", "c"), n_rk, TRUE))
+X_rk <- matrix(rnorm(n_rk * 3), n_rk) %*% chol(0.5 * diag(3) + 0.5) +
+  c(a = 0, b = 4, c = -3)[as.character(f_rk)]
+colnames(X_rk) <- paste0("x", 1:3)
+X_rk[matrix(runif(n_rk * 3) < 0.1, n_rk)] <- NA
+inj_rk <- matrix(runif(n_rk * 3) < 0.05, n_rk) & !is.na(X_rk)
+X_rk[inj_rk] <- X_rk[inj_rk] + 8
+d_fr <- data.frame(X_rk, f1 = f_rk)
+d_al <- data.frame(X_rk, f1 = f_rk, f2 = f_rk)            # f2 aliases f1 exactly
+U_fr <- VIM:::.gloc_design(d_fr, ~ ., "f1")
+U_al <- VIM:::.gloc_design(d_al, ~ ., c("f1", "f2"))
+
+# --- the mean step itself: fitted means do not depend on the parameterisation,
+# and the redundant columns are named ---
+W_rk <- (!is.na(X_rk)) + 0
+B_fr <- VIM:::.gloc_update_B(X_rk, U_fr, W_rk)
+w_al <- collect_warnings(B_al <- VIM:::.gloc_update_B(X_rk, U_al, W_rk))
+expect_equal(unname(U_al %*% B_al), unname(U_fr %*% B_fr), tolerance = 1e-10)
+expect_true(any(grepl("f2b", w_al, fixed = TRUE)))
+expect_silent(VIM:::.gloc_update_B(X_rk, U_fr, W_rk))
+
+# --- end to end, in every corner: the aliased design gives the full-rank fit,
+# and says so exactly once ---
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  for (cs in list(c("soft", "robust"), c("soft", "classical"),
+                  c("binary", "classical"))) {
+    lab <- paste(cs, collapse = "/")
+    f_fr <- suppressWarnings(VIM::imputeCellGLoc(d_fr, design = ~ ., weights = cs[1],
+                                                 start = cs[2]))
+    w_full <- collect_warnings(f_al <- VIM::imputeCellGLoc(d_al, design = ~ .,
+                                                           weights = cs[1],
+                                                           start = cs[2]))
+    expect_equal(sum(grepl("f2b", w_full, fixed = TRUE)), 1L, info = lab)
+    expect_equal(f_al$iterations, f_fr$iterations, info = lab)
+    expect_true(max(abs(f_al$U %*% f_al$B - f_fr$U %*% f_fr$B)) < 1e-6, info = lab)
+    expect_true(max(abs(f_al$Sigma - f_fr$Sigma)) < 1e-6, info = lab)
+    expect_identical(f_al$W < 0.5, f_fr$W < 0.5, info = lab)
+  }
+}
+
+# --- a level that never records x1 (a survey skip pattern): its x1 mean is not
+# identifiable. The fit must say so, once, keep the other levels' means, and
+# return x1's weighted mean over the rows the mean step used for that level,
+# the same under ~ f and ~ f - 1. ---
+set.seed(301)
+n_lv <- 300
+f_lv <- factor(sample(c("a", "b", "c"), n_lv, TRUE))
+mu_lv <- c(a = 10, b = 20, c = 30)
+X_lv <- matrix(rnorm(n_lv * 3), n_lv) %*% chol(0.5 * diag(3) + 0.5) +
+  mu_lv[as.character(f_lv)]
+colnames(X_lv) <- paste0("x", 1:3)
+X_lv[matrix(runif(n_lv * 3) < 0.1, n_lv)] <- NA
+inj_lv <- matrix(runif(n_lv * 3) < 0.05, n_lv) & !is.na(X_lv)
+X_lv[inj_lv] <- X_lv[inj_lv] + 8
+X_lv[f_lv == "c", 1] <- NA
+d_lv <- data.frame(X_lv, f = f_lv)
+first_lv <- match(levels(f_lv), f_lv)
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  for (des in list(~ f, ~ f - 1)) for (sv in c("robust", "classical")) {
+    lab <- paste(deparse(des), sv)
+    w_lv <- collect_warnings(fit_lv <- VIM::imputeCellGLoc(d_lv, design = des,
+                                                           weights = "soft",
+                                                           start = sv))
+    hit_lv <- grepl("not identifiable", w_lv, fixed = TRUE) &
+      grepl("x1", w_lv, fixed = TRUE) & grepl("fc", w_lv, fixed = TRUE)
+    expect_equal(sum(hit_lv), 1L, info = lab)
+    expect_false(any(grepl("too few", w_lv, fixed = TRUE)), info = lab)
+    fm_lv <- fit_lv$U %*% fit_lv$B
+    expect_true(all(abs(fm_lv[first_lv[1:2], 1] - mu_lv[1:2]) < 0.5), info = lab)
+    expect_true(all(abs(fm_lv[first_lv, 2] - mu_lv) < 0.5), info = lab)
+    ok1 <- !is.na(X_lv[, 1]) & fit_lv$W[, 1] > 0
+    expect_equal(unname(fm_lv[first_lv[3], 1]),
+                 stats::weighted.mean(X_lv[ok1, 1], fit_lv$W[ok1, 1]),
+                 tolerance = 1e-8, info = lab)
   }
 }
 

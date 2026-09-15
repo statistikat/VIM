@@ -34,7 +34,30 @@
 #' cannot be fit at all; rather than silently returning \code{NA} into
 #' downstream matrices, this case warns (naming the offending column) and
 #' falls back to the unweighted median of that column's finite values, or to
-#' \code{0} if none exists.
+#' \code{0} if none exists. A column with fewer usable cells than design
+#' columns warns too and uses the median of those cells. Either constant is put
+#' through the design (\code{.gloc_const_coef}), so every row gets it whether
+#' or not the design has an intercept column.
+#'
+#' A design that is rank deficient on the rows a column is fitted from is
+#' fitted on a maximal set of linearly independent design columns, chosen by
+#' the same pivoted QR decomposition \code{qr.solve()} uses; a full-rank design
+#' takes exactly the arithmetic of \code{qr.solve()}, so its result is
+#' unchanged bit for bit. A dropped column that duplicates others (two
+#' identical factors, say) gets coefficient 0, which leaves the fitted means
+#' of every row whose design pattern occurs among the fitted rows unchanged. A
+#' dropped column with no fitted row at all (a level for which the variable is
+#' never observed) gets the coefficient that sets that level's fitted mean to
+#' the variable's weighted mean over the fitted rows (\code{.gloc_fill_empty}):
+#' the level's own mean is not identifiable from the data. Both cases warn,
+#' naming the design columns and the variables.
+#'
+#' Correction, recorded rather than deleted: until 7.4.1 a rank-deficient
+#' design silently kept only a weighted mean in \code{B[1, j]}, assuming column
+#' 1 is the intercept. With a factor duplicated, the x1 group means came back
+#' flat at 0.39 against 0.17, 3.92 and -3.15, and \code{diag(Sigma)} was 8.5
+#' against 0.87; with a level that never records x1 they came back flat at
+#' 15.44 under \code{~ f}, and 14.97, 0 and 0 under \code{~ f - 1}.
 #'
 #' @param X \eqn{n x p} numeric matrix of continuous variables, may contain NA.
 #' @param U \eqn{n x q} design matrix from \code{.gloc_design}.
@@ -44,31 +67,140 @@
 .gloc_update_B <- function(X, U, W) {
   p <- ncol(X); q <- ncol(U)
   B <- matrix(0, q, p, dimnames = list(colnames(U), colnames(X)))
+  vn <- .gloc_names(colnames(X), p)
+  un <- .gloc_names(colnames(U), q)
+  aliased <- empty <- vector("list", p)
+  few <- character(0)
   for (j in seq_len(p)) {
     w  <- W[, j]
     ok <- is.finite(X[, j]) & is.finite(w) & w > 0
     if (sum(ok) <= q) {
       if (sum(ok) == 0L) {
-        cn <- colnames(X)[j]
-        if (is.null(cn) || is.na(cn) || !nzchar(cn)) cn <- as.character(j)
         warning(sprintf(
           "cellGLoc: column '%s' has no cell with positive weight; using the unweighted median as a deterministic fallback (0 if no finite value exists)",
-          cn), call. = FALSE)
+          vn[j]), call. = FALSE)
         finite_x <- X[is.finite(X[, j]), j]
-        B[1L, j] <- if (length(finite_x)) stats::median(finite_x) else 0
+        B[, j] <- .gloc_const_coef(U, if (length(finite_x)) stats::median(finite_x) else 0)
       } else {
-        B[1L, j] <- stats::median(X[ok, j])
+        few <- c(few, sprintf("%s (%d)", vn[j], sum(ok)))
+        B[, j] <- .gloc_const_coef(U, stats::median(X[ok, j]))
       }
       next
     }
     sw <- sqrt(w[ok])
-    fit <- tryCatch(qr.solve(U[ok, , drop = FALSE] * sw, X[ok, j] * sw),
-                    error = function(e) NULL)
-    if (is.null(fit)) {                       # rank-deficient design: intercept only
-      B[1L, j] <- stats::weighted.mean(X[ok, j], w[ok])
-    } else B[, j] <- fit
+    A  <- U[ok, , drop = FALSE] * sw
+    qa <- qr(A, tol = 1e-7)                        # what qr.solve() does
+    b  <- qr.coef(qa, X[ok, j] * sw)
+    if (qa$rank == q) {                            # full rank: qr.solve() exactly
+      B[, j] <- b
+      next
+    }
+    dropped <- which(is.na(b))
+    b[dropped] <- 0
+    no_rows <- dropped[colSums(U[ok, dropped, drop = FALSE] != 0) == 0L]
+    if (length(no_rows))
+      b <- .gloc_fill_empty(b, U, no_rows, stats::weighted.mean(X[ok, j], w[ok]))
+    aliased[[j]] <- setdiff(dropped, no_rows)
+    empty[[j]]   <- no_rows
+    B[, j] <- b
   }
+  if (length(few))
+    warning(sprintf(paste("cellGLoc: fewer cells with positive weight than design",
+                          "columns (%d) for %s; each such variable's fitted mean is",
+                          "the median of those cells for every row, without group",
+                          "effects."), q, paste(few, collapse = ", ")), call. = FALSE)
+  .gloc_warn_design(aliased, empty, vn, un, what = "weighted mean")
   B
+}
+
+#' Name vectors that are never empty
+#'
+#' @param nm a character vector or \code{NULL}.
+#' @param k the length it should have.
+#' @return \code{nm} with missing or empty entries replaced by their position.
+#' @keywords internal
+.gloc_names <- function(nm, k) {
+  if (is.null(nm)) nm <- rep("", k)
+  bad <- is.na(nm) | !nzchar(nm)
+  nm[bad] <- as.character(seq_len(k))[bad]
+  nm
+}
+
+#' Coefficients that put a constant through the design
+#'
+#' Exactly \code{m} in the intercept column when the design has one, leaving
+#' every other coefficient 0; otherwise the least-squares coefficients that
+#' reproduce \code{m} on every row of \code{U}, with aliased columns at 0. For
+#' a factor coded without an intercept the level dummies sum to one, so the
+#' constant is reproduced exactly.
+#'
+#' @param U \eqn{n x q} design matrix.
+#' @param m a number.
+#' @return a length-\eqn{q} numeric vector.
+#' @keywords internal
+.gloc_const_coef <- function(U, m) {
+  q <- ncol(U)
+  b <- numeric(q)
+  icol <- which(colSums(U != 1) == 0L)[1L]
+  if (!is.na(icol)) { b[icol] <- m; return(b) }
+  if (!nrow(U) || m == 0) return(b)
+  b <- qr.coef(qr(U), rep(m, nrow(U)))
+  b[is.na(b)] <- 0
+  b
+}
+
+#' Coefficients for design columns that no fitted row identifies
+#'
+#' For each such column \code{k}, in turn, the coefficient is set so that the
+#' mean fitted value over the rows with \code{U[, k] != 0} equals \code{m}.
+#' Rows of a level that has no observed value of the variable therefore get
+#' \code{m} as their fitted mean, whatever the coding of the factor.
+#'
+#' @param b length-\eqn{q} coefficient vector, 0 in the columns to fill.
+#' @param U \eqn{n x q} design matrix over all rows.
+#' @param cols indices of the columns to fill.
+#' @param m the value to give those rows.
+#' @return \code{b} with \code{cols} filled.
+#' @keywords internal
+.gloc_fill_empty <- function(b, U, cols, m) {
+  for (k in cols) {
+    rows <- which(U[, k] != 0)
+    if (!length(rows)) next
+    rest <- U[rows, , drop = FALSE] %*% replace(b, k, 0)
+    b[k] <- (m - mean(rest)) / mean(U[rows, k])
+  }
+  b
+}
+
+#' One warning per kind of rank deficiency in the mean structure
+#'
+#' @param aliased,empty lists, one element per variable, of design-column
+#'   indices that were dropped as duplicates of other columns or because no
+#'   fitted row has them.
+#' @param vn,un variable and design-column names.
+#' @param what the location the empty columns were filled with, for the text.
+#' @keywords internal
+.gloc_warn_design <- function(aliased, empty, vn, un, what) {
+  keys <- vapply(aliased, function(k) paste(un[sort(k)], collapse = ", "), "")
+  for (key in setdiff(unique(keys), "")) {
+    warning(sprintf(paste("cellGLoc: design column(s) %s duplicate other design",
+                          "columns on the rows used to fit %s, so their",
+                          "coefficients are not identifiable; they are set to 0,",
+                          "which leaves the fitted means unchanged for every row",
+                          "whose design pattern occurs among those rows."),
+                    key, paste(vn[keys == key], collapse = ", ")), call. = FALSE)
+  }
+  for (j in seq_along(empty)) {
+    if (!length(empty[[j]])) next
+    warning(sprintf(paste("cellGLoc: design column(s) %s have no row with a usable",
+                          "value of %s (a level or combination for which %s is",
+                          "never observed), so %s's mean there is not",
+                          "identifiable; the fit sets it to the %s of %s over the",
+                          "rows it was estimated from."),
+                    paste(un[sort(empty[[j]])], collapse = ", "), vn[j], vn[j],
+                    vn[j], what, vn[j]), call. = FALSE)
+  }
+  invisible(NULL)
 }
 
 #' Half-width of the peer-reliability band in \code{.gloc_cond_resid}
@@ -393,13 +525,17 @@
 #'   defaults. An empty seed (the default) is replaced by
 #'   \code{.gloc_start_seed}. Its \code{method} is set to \code{"lM"} for the
 #'   L1-started fit and left as given for the S-started fallback.
+#' @param warn_design whether to warn here about a design that is rank deficient
+#'   on a column's observed rows. \code{imputeCellGLoc} passes \code{FALSE}:
+#'   its mean step (\code{.gloc_update_B}) warns about the same design once, and
+#'   says what the returned fit does.
 #' @return a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
 #'   0 on missing cells).
 #' @keywords internal
 .gloc_start_robust <- function(X, U, M, alpha = .gloc_start_alpha,
                                have_cw = requireNamespace("cellWise",
                                                           quietly = TRUE),
-                               control = NULL) {
+                               control = NULL, warn_design = TRUE) {
   n <- nrow(X); p <- ncol(X); q <- ncol(U)
   cnames <- if (is.null(colnames(X))) as.character(seq_len(p)) else colnames(X)
   B <- matrix(0, q, p, dimnames = list(colnames(U), colnames(X)))
@@ -432,8 +568,14 @@
   for (j in seq_len(p)) {
     ok <- !M[, j] & is.finite(X[, j])
     Uo <- U[ok, , drop = FALSE]
-    thin <- sum(ok) < 2L * q ||
-      (any(dummy) && min(colSums(Uo[, dummy, drop = FALSE] != 0)) < 3L)
+    # A design column with no observed row (a level for which this variable is
+    # never recorded) is not identifiable and is filled below. Only columns
+    # observed in one or two rows make the design too thin to fit; until the
+    # re-review an empty column counted as thin too, and the whole variable
+    # started without group effects.
+    nobs_col <- colSums(Uo[, dummy, drop = FALSE] != 0)
+    thin <- sum(ok) < 2L * q || any(nobs_col > 0L & nobs_col < 3L)
+    empty_j <- which(colSums(Uo != 0) == 0L)
     fit <- NULL
     cols <- seq_len(q)
     if (thin) {
@@ -441,7 +583,7 @@
     } else {
       qr_o <- qr(Uo)
       if (qr_o$rank < q) {
-        rankdef <- c(rankdef, cnames[j])
+        if (warn_design) rankdef <- c(rankdef, cnames[j])
         cols <- sort(qr_o$pivot[seq_len(qr_o$rank)])
       }
       Uf <- Uo[, cols, drop = FALSE]
@@ -477,11 +619,17 @@
       }
     }
     if (is.null(fit)) {
-      B[, j] <- const_coef(Uo, if (any(ok)) stats::median(X[ok, j]) else 0)
+      m0 <- if (any(ok)) stats::median(X[ok, j]) else 0
+      B[, j] <- const_coef(Uo, m0)
     } else {
+      m0 <- mj
       B[cols, j] <- fit$coefficients
       B[, j] <- B[, j] + const_coef(Uo, mj)      # undo the centring
     }
+    # A level with no observed row of this variable starts at the column
+    # median, under any coding of the factor (see .gloc_fill_empty).
+    if (length(empty_j) && any(ok))
+      B[, j] <- .gloc_fill_empty(B[, j], U, empty_j, m0)
   }
   fallback_msg <- "using the column median as the fitted mean, without group effects."
   if (length(few))
@@ -493,9 +641,11 @@
   if (length(rankdef))
     warning(sprintf(paste("cellGLoc: robust start: the design is rank deficient on",
                           "the observed rows of column(s) %s (aliased design",
-                          "columns, such as two identical factors); fitted on the",
-                          "non-aliased columns, and the aliased ones get",
-                          "coefficient 0."),
+                          "columns, such as two identical factors, or a level",
+                          "with no observed row); fitted on the non-aliased",
+                          "columns. Aliased columns get coefficient 0, and a",
+                          "level with no observed row starts at the column",
+                          "median."),
                     paste(rankdef, collapse = ", ")), call. = FALSE)
   if (length(failed))
     warning(sprintf("cellGLoc: robust start: robustbase::lmrob failed for column(s) %s; %s",

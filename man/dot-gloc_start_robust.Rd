@@ -10,7 +10,8 @@
   M,
   alpha = .gloc_start_alpha,
   have_cw = requireNamespace("cellWise", quietly = TRUE),
-  control = NULL
+  control = NULL,
+  warn_design = TRUE
 )
 }
 \arguments{
@@ -29,6 +30,11 @@
 defaults. An empty seed (the default) is replaced by
 \code{.gloc_start_seed}. Its \code{method} is set to \code{"lM"} for the
 L1-started fit and left as given for the S-started fallback.}
+
+\item{warn_design}{whether to warn here about a design that is rank deficient
+on a column's observed rows. \code{imputeCellGLoc} passes \code{FALSE}:
+its mean step (\code{.gloc_update_B}) warns about the same design once, and
+says what the returned fit does.}
 }
 \value{
 a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
