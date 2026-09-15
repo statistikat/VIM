@@ -155,8 +155,11 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_true(max(diag(fit_g$Sigma)) < 2)
 
   # --- REDUCTION 2: design = ~1, all weights 1, soft corner gives the Gaussian MLE ---
+  # start = "classical": the claim is that ONE iteration from all weights at 1
+  # is the Gaussian MLE. The robust start begins from cellMCD's flags instead,
+  # so its first iteration is a different (and deliberately robust) scatter.
   got1 <- VIM::imputeCellGLoc(dr, design = ~ 1, weights = "soft",
-                              psi_c = Inf, maxit = 1)
+                              psi_c = Inf, maxit = 1, start = "classical")
   expect_true(max(abs(as.vector(got1$B[1, ]) - colMeans(Xr))) < 1e-8)
   mle <- crossprod(scale(Xr, TRUE, FALSE)) / nrow(Xr)
   expect_true(max(abs(got1$Sigma - mle)) / max(abs(mle)) < 1e-6)
@@ -229,8 +232,10 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
     Xk <- MASS::mvrnorm(4000, rep(0, 3), (1 - rho) * diag(3) + rho)
     colnames(Xk) <- paste0("x", 1:3)
     rk <- VIM::imputeCellGLoc(as.data.frame(Xk), design = ~ 1, weights = "soft")
+    # the reference is the one-iteration Gaussian MLE, which only the classical
+    # start (all weights at 1) produces; see REDUCTION 2
     mk <- VIM::imputeCellGLoc(as.data.frame(Xk), design = ~ 1, weights = "soft",
-                              psi_c = Inf, maxit = 1)
+                              psi_c = Inf, maxit = 1, start = "classical")
     expect_true(max(abs(diag(rk$Sigma) / diag(mk$Sigma) - 1)) < 0.06)
     # Assert CONVERGENCE, not just the value. High correlation is exactly where
     # the peer-inclusion decision cycles -- every damping failure in the sweep
@@ -628,3 +633,115 @@ do <- data.frame(x1 = rnorm(120), x2 = rnorm(120),
 do$x1[1:10] <- NA
 expect_warning(old <- VIM::imputeCellMCD(do), pattern = "deprecated")
 expect_false(anyNA(old$x1) && anyNA(old$x2))
+
+# ==========================================================================
+# The robust start (7.4.1)
+#
+# Until 7.4.0 the soft corner started from a classical fit: every observed cell
+# at weight 1, B by ordinary least squares, the scatter from cwLocScat at unit
+# weights. A redescending weight function started there can settle on a masked
+# solution. The robust start fits B by MM regression of each continuous column
+# on the categorical design alone, where no predictor cell can be contaminated,
+# and takes the starting flags from cellMCD on those residuals.
+# ==========================================================================
+
+set.seed(61)
+n  <- 450
+g  <- factor(rep(c("a", "b", "c"), each = 150))
+Us <- VIM:::.gloc_design(data.frame(g = g), ~ ., "g")
+Btrue <- rbind(c(1, -1), c(3, -2), c(-2, 4))       # 3 design cols x 2 responses
+Xs0 <- Us %*% Btrue + matrix(rnorm(n * 2), n, 2)
+colnames(Xs0) <- c("x1", "x2")
+bad <- matrix(FALSE, n, 2)
+bad[sample.int(n * 2, round(0.2 * n * 2))] <- TRUE
+Xsb <- Xs0; Xsb[bad] <- Xsb[bad] + 10              # 20% of response cells at +10
+Ms  <- matrix(FALSE, n, 2)
+
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  st <- VIM:::.gloc_start_robust(Xsb, Us, Ms)
+  # Tolerances fixed before the first run. Treatment coding puts the whole +10
+  # shift of 20% of cells into the intercept row, so least squares is off by
+  # about 2 there, while the MM fit should stay within sampling error.
+  expect_true(max(abs(st$B - Btrue)) < 0.4)
+  expect_true(max(abs(VIM:::.gloc_update_B(Xsb, Us, matrix(1, n, 2)) - Btrue)) > 1.5)
+  # the starting flags are cellMCD's: the injected cells, and few others
+  expect_true(mean(st$W[bad] == 0) > 0.90)
+  expect_true(mean(st$W[!bad] == 0) < 0.05)
+
+  # missing cells start at weight 0 and do not break the fit
+  Mm <- matrix(runif(n * 2) < 0.1, n, 2)
+  Xsm <- Xsb; Xsm[Mm] <- NA
+  stm <- VIM:::.gloc_start_robust(Xsm, Us, Mm)
+  expect_true(all(stm$W[Mm] == 0))
+  expect_false(anyNA(stm$B))
+
+  # deterministic, and it does not consume the caller's random numbers: lmrob's
+  # S-step subsamples, and a start that drew from the global stream would
+  # desynchronise paired simulation arms (a lesson from Paper A4)
+  set.seed(7); before <- .Random.seed
+  st2 <- VIM:::.gloc_start_robust(Xsb, Us, Ms)
+  expect_identical(.Random.seed, before)
+  expect_identical(st2, st)
+
+  # --- fallbacks: each degraded path warns, none is silent ---
+  # too few observed rows for a design column -> median intercept, zero contrasts
+  g_rare <- factor(c(rep("a", 100), rep("b", 98), rep("c", 2)))
+  U_rare <- VIM:::.gloc_design(data.frame(g = g_rare), ~ ., "g")
+  X_rare <- cbind(x1 = rnorm(200), x2 = rnorm(200))
+  expect_warning(st_rare <- VIM:::.gloc_start_robust(X_rare, U_rare,
+                                                     matrix(FALSE, 200, 2)),
+                 "too few")
+  expect_true(all(st_rare$B[-1, ] == 0))
+  expect_equal(as.vector(st_rare$B[1, ]), unname(apply(X_rare, 2, stats::median)))
+
+  # lmrob error
+  expect_warning(VIM:::.gloc_start_robust(Xsb, Us, Ms, control = "not a control"),
+                 "failed")
+  # lmrob non-convergence
+  expect_warning(VIM:::.gloc_start_robust(
+    Xsb, Us, Ms, control = robustbase::lmrob.control(max.it = 1, k.max = 1,
+                                                     maxit.scale = 1)),
+    "converge")
+}
+
+# cellWise unavailable -> hard threshold on |residual| / MAD
+expect_warning(st_nocw <- VIM:::.gloc_start_robust(Xsb, Us, Ms, have_cw = FALSE),
+               "cellWise")
+expect_true(mean(st_nocw$W[bad] == 0) > 0.90)
+expect_true(mean(st_nocw$W[!bad] == 0) < 0.05)
+
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  dsb <- data.frame(Xsb, g = g)
+  # the default is the robust start, and it converges on contaminated data
+  expect_equal(eval(formals(VIM::imputeCellGLoc)$start)[1], "robust")
+  fr <- VIM::imputeCellGLoc(dsb, design = ~ ., weights = "soft")
+  expect_true(fr$converged)
+  expect_error(VIM::imputeCellGLoc(dsb, design = ~ ., start = "median"))
+  # start has no effect on the binary corner, which already begins with cellMCD
+  keep_b <- c("B", "Sigma", "W", "converged", "iterations")
+  expect_identical(
+    VIM::imputeCellGLoc(dsb, design = ~ ., weights = "binary", start = "robust")[keep_b],
+    VIM::imputeCellGLoc(dsb, design = ~ ., weights = "binary", start = "classical")[keep_b])
+}
+
+# --- start = "classical" reproduces VIM 7.4.0 bit for bit. The reference was
+# written by 7.4.0 (commit e8f204c) on fixed data. at_home() only: bit-identity
+# is a statement about this code on one platform, and a different BLAS or
+# compiler may legitimately move the last digit. ---
+if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
+  ref740 <- readRDS("gloc_classical_ref_740.rds")
+  keep <- c("B", "Sigma", "W", "U", "imputed", "converged", "iterations",
+            "criterion")
+  expect_identical(
+    suppressWarnings(VIM::imputeCellGLoc(ref740$data, design = ~ .,
+                                         start = "classical"))[keep],
+    ref740$fits$soft_dot[keep])
+  expect_identical(
+    suppressWarnings(VIM::imputeCellGLoc(ref740$data, design = ~ 1,
+                                         start = "classical"))[keep],
+    ref740$fits$soft_one[keep])
+  expect_identical(
+    suppressWarnings(VIM::imputeCellGLoc(ref740$data, design = ~ .,
+                                         weights = "binary"))[keep],
+    ref740$fits$bin_dot[keep])
+}

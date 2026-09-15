@@ -116,6 +116,16 @@
 #'   outer iteration, and \code{cwLocScat}'s own default of 1e-12 is seven
 #'   orders of magnitude tighter than \code{eps}, so it refines digits this
 #'   function immediately discards. See \code{.gloc_scatter_soft}.
+#' @param start starting values for the soft corner. \code{"robust"} (default
+#'   since 7.4.1) fits each continuous column by MM regression
+#'   (\code{robustbase::lmrob}) on the categorical design alone and takes the
+#'   starting flags from \code{cellWise::cellMCD} on those residuals; see
+#'   \code{.gloc_start_robust}. \code{"classical"} starts with every observed
+#'   cell at weight 1 and the mean structure by least squares, and reproduces
+#'   VIM 7.4.0 exactly. A redescending weight function started from a
+#'   non-robust fit can settle on a masked solution, which is why the default
+#'   changed. Ignored for \code{weights = "binary"}, whose first step already
+#'   calls \code{cellWise::cellMCD}.
 #' @param peer_w_min a cell is conditioned on only when its weight exceeds
 #'   this, so that a downweighted peer is treated as absent rather than as
 #'   evidence. The threshold is applied over a narrow band rather than at a
@@ -192,8 +202,10 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                            maxit = 200, eps = 5e-3, alpha = 0.75,
                            psi_c = 4.685, peer_w_min = 0.5,
                            peer_band = .gloc_peer_band, damp = NULL,
-                           cw_crit = 1e-8, trace = FALSE) {
+                           cw_crit = 1e-8, start = c("robust", "classical"),
+                           trace = FALSE) {
   weights <- match.arg(weights)
+  start <- match.arg(start)
   stopifnot(is.data.frame(data))
   adaptive <- is.null(damp)
   if (adaptive) damp <- .gloc_damp_start
@@ -268,6 +280,18 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
     if (startsWith(m, "cellGLoc: ")) {
       if (m %in% seen) invokeRestart("muffleWarning") else seen <<- c(seen, m)
     }
+  }
+
+  # The robust start replaces the classical one computed above, and it also
+  # becomes the cold start the relaxation schedule falls back to. The first
+  # iteration recomputes Sigma from (X - U B, W), so no starting scatter is
+  # needed. The binary corner keeps its start: its first step already calls
+  # cellWise::cellMCD, and start = "classical" reproduces 7.4.0 exactly.
+  if (relax && start == "robust") {
+    st <- withCallingHandlers(.gloc_start_robust(X, U, M, alpha = alpha),
+                              warning = dedup)
+    W <- st$W; B <- st$B
+    W0 <- W; B0 <- B
   }
 
   withCallingHandlers({

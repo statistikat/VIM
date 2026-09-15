@@ -262,3 +262,144 @@
   }
   Z
 }
+
+#' Fixed random-number state for the robust start
+#'
+#' A valid Mersenne-Twister \code{.Random.seed} vector, built by a linear
+#' congruential recursion so that constructing it draws no random numbers.
+#' \code{robustbase::lmrob} installs it for the subsampling in its S-step and
+#' restores the caller's stream afterwards, which makes the robust start
+#' deterministic and keeps it from desynchronising paired simulation arms.
+#' @keywords internal
+.gloc_start_seed <- local({
+  s <- numeric(624L)
+  v <- 20260915
+  for (i in seq_len(624L)) {
+    v <- (v * 69069 + 1) %% 4294967296
+    s[i] <- if (v >= 2147483648) v - 4294967296 else v
+  }
+  s[s == -2147483648] <- 1                  # not representable as an integer
+  c(10403L, 624L, as.integer(s))
+})
+
+#' Robust starting values for the cellGLoc soft corner
+#'
+#' Until 7.4.0 the soft corner started from a classical fit: every observed
+#' cell at weight 1 and \eqn{B} by ordinary least squares. A redescending weight
+#' function started there can settle on a masked solution. This start fits each
+#' continuous column by MM regression (\code{robustbase::lmrob}, default MM with
+#' the bisquare) on the categorical design \emph{alone}. The predictors are
+#' dummies, which cannot carry a contaminated continuous cell, so the casewise
+#' robustness of MM is exactly what is needed: a contaminated cell is an
+#' outlying response. The starting flags are then those of
+#' \code{cellWise::cellMCD} on the residuals \eqn{X - U B}.
+#'
+#' Every degraded path warns, once per reason, naming the columns:
+#' too few observed rows for the design (fewer than \eqn{2q}, or a design column
+#' with fewer than three observed rows), an \code{lmrob} error, or \code{lmrob}
+#' not converging each fall back to the column median as intercept with zero
+#' contrasts; without \code{cellWise}, or if \code{cellMCD} fails, a cell is
+#' flagged when \eqn{|r_{ij}| / \mathrm{MAD}(r_{.j})} exceeds
+#' \eqn{\sqrt{\chi^2_{1,0.99}}}.
+#'
+#' @param X \eqn{n x p} numeric matrix of continuous variables, may contain NA.
+#' @param U \eqn{n x q} design matrix from \code{.gloc_design}.
+#' @param M \eqn{n x p} logical missingness mask.
+#' @param alpha minimum fraction of unflagged cells per column for
+#'   \code{cellWise::cellMCD}.
+#' @param have_cw whether \code{cellWise} is available.
+#' @param control an \code{robustbase::lmrob.control} list; \code{NULL} uses the
+#'   defaults. An empty seed (the default) is replaced by
+#'   \code{.gloc_start_seed}.
+#' @return a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
+#'   0 on missing cells).
+#' @keywords internal
+.gloc_start_robust <- function(X, U, M, alpha = 0.75,
+                               have_cw = requireNamespace("cellWise",
+                                                          quietly = TRUE),
+                               control = NULL) {
+  n <- nrow(X); p <- ncol(X); q <- ncol(U)
+  cnames <- if (is.null(colnames(X))) as.character(seq_len(p)) else colnames(X)
+  B <- matrix(0, q, p, dimnames = list(colnames(U), colnames(X)))
+  if (is.null(control)) control <- robustbase::lmrob.control()
+  # lmrob.control() returns seed = integer(0), not NULL, so test the length.
+  # Testing is.null() left the seed unset and let lmrob draw from, and advance,
+  # the caller's random-number stream.
+  if (is.list(control) && !length(control$seed)) control$seed <- .gloc_start_seed
+
+  few <- failed <- noconv <- character(0)
+  for (j in seq_len(p)) {
+    ok <- !M[, j] & is.finite(X[, j])
+    Uo <- U[ok, , drop = FALSE]
+    thin <- sum(ok) < 2L * q ||
+      (q > 1L && min(colSums(Uo[, -1L, drop = FALSE] != 0)) < 3L)
+    fit <- NULL
+    if (thin) {
+      few <- c(few, cnames[j])
+    } else {
+      fit <- tryCatch(
+        withCallingHandlers(robustbase::lmrob.fit(Uo, X[ok, j], control = control),
+                            warning = function(w) invokeRestart("muffleWarning")),
+        error = function(e) NULL)
+      if (is.null(fit) || anyNA(fit$coefficients)) {
+        failed <- c(failed, cnames[j]); fit <- NULL
+      } else if (!isTRUE(fit$converged)) {
+        noconv <- c(noconv, cnames[j]); fit <- NULL
+      }
+    }
+    if (is.null(fit)) {
+      B[1L, j] <- if (any(ok)) stats::median(X[ok, j]) else 0
+    } else {
+      B[, j] <- fit$coefficients
+    }
+  }
+  fallback_msg <- "using the column median as intercept with zero contrasts."
+  if (length(few))
+    warning(sprintf(paste("cellGLoc: robust start: too few observed rows for",
+                          "the design in column(s) %s (fewer than %d rows, or a",
+                          "design column with fewer than 3); %s"),
+                    paste(few, collapse = ", "), 2L * q, fallback_msg),
+            call. = FALSE)
+  if (length(failed))
+    warning(sprintf("cellGLoc: robust start: robustbase::lmrob failed for column(s) %s; %s",
+                    paste(failed, collapse = ", "), fallback_msg), call. = FALSE)
+  if (length(noconv))
+    warning(sprintf(paste("cellGLoc: robust start: robustbase::lmrob did not",
+                          "converge for column(s) %s; %s"),
+                    paste(noconv, collapse = ", "), fallback_msg), call. = FALSE)
+
+  R <- X - U %*% B
+  R[M | !is.finite(X)] <- NA_real_
+  W <- NULL
+  if (have_cw) {
+    cm_err <- NULL
+    cm <- tryCatch(cellWise::cellMCD(R, alpha = alpha,
+                                     checkPars = list(coreOnly = TRUE,
+                                                      silent = TRUE)),
+                   error = function(e) { cm_err <<- conditionMessage(e); NULL })
+    if (is.null(cm)) {
+      warning(sprintf(paste("cellGLoc: robust start: cellWise::cellMCD() failed",
+                            "(%s); the starting flags use a hard threshold on",
+                            "|residual| / MAD instead."),
+                      gsub("\\s+", " ", trimws(cm_err))), call. = FALSE)
+    } else {
+      W <- matrix(as.numeric(cm$W), n, p)
+    }
+  } else {
+    warning(paste("cellGLoc: robust start: the cellWise package is not",
+                  "installed, so the starting flags use a hard threshold on",
+                  "|residual| / MAD instead of cellMCD."), call. = FALSE)
+  }
+  if (is.null(W)) {
+    thr <- sqrt(stats::qchisq(0.99, df = 1))
+    W <- matrix(1, n, p)
+    for (j in seq_len(p)) {
+      s <- stats::mad(R[, j], na.rm = TRUE)
+      if (is.finite(s) && s > 0)
+        W[, j] <- as.numeric(!(is.finite(R[, j]) & abs(R[, j]) / s > thr))
+    }
+  }
+  W[M | !is.finite(X)] <- 0
+  dimnames(W) <- dimnames(X)
+  list(B = B, W = W)
+}

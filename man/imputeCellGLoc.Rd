@@ -16,6 +16,7 @@ imputeCellGLoc(
   peer_band = .gloc_peer_band,
   damp = NULL,
   cw_crit = 1e-08,
+  start = c("robust", "classical"),
   trace = FALSE
 )
 }
@@ -118,6 +119,17 @@ four times earlier than \code{eps} asked; see \code{eps}. Ignored for
 outer iteration, and \code{cwLocScat}'s own default of 1e-12 is seven
 orders of magnitude tighter than \code{eps}, so it refines digits this
 function immediately discards. See \code{.gloc_scatter_soft}.}
+
+\item{start}{starting values for the soft corner. \code{"robust"} (default
+since 7.4.1) fits each continuous column by MM regression
+(\code{robustbase::lmrob}) on the categorical design alone and takes the
+starting flags from \code{cellWise::cellMCD} on those residuals; see
+\code{.gloc_start_robust}. \code{"classical"} starts with every observed
+cell at weight 1 and the mean structure by least squares, and reproduces
+VIM 7.4.0 exactly. A redescending weight function started from a
+non-robust fit can settle on a masked solution, which is why the default
+changed. Ignored for \code{weights = "binary"}, whose first step already
+calls \code{cellWise::cellMCD}.}
 
 \item{trace}{print progress.}
 }

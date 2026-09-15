@@ -1,3 +1,19 @@
+# VIM 7.4.1
+
+## Changes
+- **`imputeCellGLoc()` now starts the soft corner from a robust fit** (new argument
+  `start = c("robust", "classical")`, default `"robust"`). Until 7.4.0 the iteration began with
+  every observed cell at weight 1 and the mean structure by ordinary least squares, and a
+  redescending weight function started there can settle on a masked solution. The robust start
+  fits each continuous column by MM regression (`robustbase::lmrob`) on the categorical design
+  alone, where no predictor cell can be contaminated, and takes the starting flags from
+  `cellWise::cellMCD()` on those residuals. It uses a fixed random-number state, so it is
+  deterministic and leaves the caller's random-number stream untouched. Degraded paths (too few
+  rows per design column, `lmrob` failing or not converging, `cellWise` unavailable) warn.
+- **Results from 7.4.0 are reproduced bit for bit with `start = "classical"`**, which a test pins
+  against a stored 7.4.0 fit. `start` has no effect with `weights = "binary"`, which already
+  begins with `cellWise::cellMCD()`.
+
 # VIM 7.4.0
 
 ## New features
