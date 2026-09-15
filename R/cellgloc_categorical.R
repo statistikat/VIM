@@ -88,3 +88,101 @@
   if (is.logical(orig)) return(as.logical(as.character(f)))
   as.character(f)
 }
+
+#' Weighted multinomial logistic regression on the other categorical columns
+#'
+#' @param y factor response.
+#' @param Xdf data frame of factor predictors.
+#' @param w nonnegative case weights.
+#' @return an \code{nnet::multinom} fit. \code{multinom} starts from zero
+#'   weights (\code{rang = 0}), so it draws no random numbers.
+#' @keywords internal
+.gloc_multinom <- function(y, Xdf, w) {
+  dd <- cbind(data.frame(.y = y), Xdf)
+  dd$.w <- w
+  # A formula built with "." and then "- .w" leaves .w in the terms object's
+  # predvars (a documented R quirk: the "." expansion collects every data
+  # column into "variables" before the "-" removes it from term.labels), so
+  # predict() on newdata without a .w column then fails with "object '.w' not
+  # found". Naming the predictors explicitly avoids the quirk.
+  form <- stats::reformulate(names(Xdf), ".y")
+  suppressMessages(nnet::multinom(form, data = dd, weights = .w,
+                                  trace = FALSE, maxit = 200, MaxNWts = 100000))
+}
+
+#' Fit the prior model of every categorical column
+#'
+#' Each categorical column gets a multinomial logistic regression on the other
+#' categorical columns, with main effects and case weights \code{wp}. Pseudo-rows
+#' of rows with a missing cell carry their posterior weights, which makes this
+#' the M-step of the categorical part. A column that is the only categorical
+#' one, or whose weighted response has one level, uses its weighted marginal
+#' frequencies. So does a column whose fit fails, with one warning.
+#' @param Fp data frame of factor columns without NA (the pseudo-row table).
+#' @param wp case weights, one per row of \code{Fp}.
+#' @param levels named list of levels.
+#' @param fit the fitting function; exposed so the fallback is testable.
+#' @return a named list of prior models; see \code{.gloc_cat_prior}.
+#' @keywords internal
+.gloc_cat_fit_priors <- function(Fp, wp, levels, fit = .gloc_multinom) {
+  vars <- names(levels)
+  out <- stats::setNames(vector("list", length(vars)), vars)
+  failed <- character(0)
+  for (v in vars) {
+    marg <- vapply(levels[[v]], function(l) sum(wp[Fp[[v]] == l]), numeric(1))
+    marg <- marg / sum(marg)
+    preds <- setdiff(vars, v)
+    y <- droplevels(Fp[[v]])
+    m <- NULL
+    if (length(preds) && nlevels(y) >= 2L) {
+      m <- tryCatch(fit(y, Fp[, preds, drop = FALSE], wp), error = function(e) NULL)
+      if (!is.null(m) && !all(is.finite(stats::fitted(m)))) m <- NULL
+      if (is.null(m)) failed <- c(failed, v)
+    }
+    out[[v]] <- if (is.null(m))
+      list(type = "marginal", probs = unname(marg), levels = levels[[v]])
+    else
+      list(type = "multinom", model = m, preds = preds, levels = levels[[v]],
+           fitted_levels = levels(y), probs = unname(marg))
+  }
+  if (length(failed))
+    warning(sprintf(paste("cellGLoc: nnet::multinom() failed for categorical",
+                          "variable(s) %s; their level probabilities use the",
+                          "weighted marginal frequencies instead."),
+                    paste(failed, collapse = ", ")), call. = FALSE)
+  out
+}
+
+#' Prior level probabilities for new rows
+#'
+#' @param pr one element of \code{.gloc_cat_fit_priors}.
+#' @param Fnew data frame of factor columns; the response column is ignored.
+#' @return an \eqn{m x L} matrix in level order, floored at
+#'   \code{.gloc_cat_floor} and renormalised by row.
+#' @keywords internal
+.gloc_cat_prior <- function(pr, Fnew) {
+  m <- nrow(Fnew); L <- length(pr$levels)
+  if (identical(pr$type, "marginal")) {
+    P <- matrix(pr$probs, m, L, byrow = TRUE)
+  } else {
+    pp <- tryCatch(stats::predict(pr$model, newdata = Fnew[, pr$preds, drop = FALSE],
+                                  type = "probs"),
+                   error = function(e) NULL)   # e.g. a predictor level the fit never saw
+    if (is.null(pp)) {
+      P <- matrix(pr$probs, m, L, byrow = TRUE)
+    } else {
+      if (length(pr$fitted_levels) == 2L) pp <- cbind(1 - pp, pp)
+      pp <- matrix(pp, nrow = m)
+      P <- matrix(0, m, L)
+      P[, match(pr$fitted_levels, pr$levels)] <- pp
+    }
+  }
+  if (!is.null(pr$map)) {                      # priors fitted on another level set
+    Pm <- matrix(0, m, length(pr$new_levels))
+    ok <- !is.na(pr$map)
+    Pm[, pr$map[ok]] <- P[, ok, drop = FALSE]
+    P <- Pm
+  }
+  P <- pmax(P, .gloc_cat_floor)
+  P / rowSums(P)
+}
