@@ -238,3 +238,242 @@
   }
   ll
 }
+
+#' The fixed table of pseudo-rows for the categorical EM
+#'
+#' Complete rows enter once. A row missing one categorical cell enters once per
+#' level of that cell, and a row missing several once per level combination.
+#' Only the weights change between iterations, so the design rows are built
+#' once. A row with more than \code{max_combos} combinations is left out of
+#' the estimation; its missing categorical cells take the most frequent level
+#' among the complete rows, and that is warned about once.
+#' @param catp result of \code{.gloc_cat_prepare}.
+#' @param data the data frame of the fit; unknown categorical cells are NA.
+#' @param design one-sided formula.
+#' @param max_combos see \code{.gloc_cat_max_combos}.
+#' @return a list; see \code{.gloc_cat_estep}.
+#' @keywords internal
+.gloc_cat_candidates <- function(catp, data, design, max_combos = .gloc_cat_max_combos) {
+  F <- catp$F; Mc <- catp$Mc; lev <- catp$levels; vars <- names(lev)
+  n <- nrow(F); nmis <- rowSums(Mc); cc <- which(nmis == 0L)
+  nlev <- vapply(lev, length, integer(1))
+  # A design without categorical variables has no combination table: its design
+  # rows are built directly, and the mean step falls back to its row patterns.
+  no_table <- is.null(design) || identical(all.vars(design), character(0))
+  if (!no_table) {
+    # Completed copy: unknown categorical cells set to an observed level, so the
+    # design, its level combinations and the EM's level sets agree (NA never
+    # becomes a design level).
+    dc <- data
+    for (v in vars) if (any(Mc[, v])) {
+      val <- dc[[v]]; val[Mc[, v]] <- lev[[v]][1L]; dc[[v]] <- val
+    }
+    n_all <- prod(as.numeric(nlev))
+    aux <- .gloc_design_aux(dc, design, vars,
+                            max_patterns = if (n_all <= 1e6) max(n_all, .gloc_max_patterns)
+                                           else .gloc_max_patterns)
+    pats <- aux$patterns
+    Uref <- .gloc_design(dc, design, vars)
+    if (is.null(pats) || !identical(colnames(pats$P), colnames(Uref)))
+      stop(paste("imputeCellGLoc(): categorical = \"em\" could not enumerate the level",
+                 "combinations of this design; use categorical = \"level\"."))
+  }
+  combos <- vapply(seq_len(n), function(i) prod(nlev[Mc[i, ]]), numeric(1))
+  many_rows <- which(nmis >= 2L & combos > max_combos)
+  parts <- list(F[cc, , drop = FALSE]); rows <- list(cc)
+  single <- list(); multi <- list(); N <- length(cc)
+  for (v in vars) {
+    rv <- which(nmis == 1L & Mc[, v]); L <- nlev[[v]]
+    if (!length(rv)) next
+    Fc <- F[rep(rv, each = L), , drop = FALSE]
+    Fc[[v]] <- factor(rep(lev[[v]], times = length(rv)), levels = lev[[v]])
+    parts[[length(parts) + 1L]] <- Fc
+    rows[[length(rows) + 1L]] <- rep(rv, each = L)
+    single[[v]] <- list(rows = rv,
+                        pos = matrix(N + seq_len(length(rv) * L), nrow = length(rv),
+                                     byrow = TRUE))
+    N <- N + length(rv) * L
+  }
+  for (i in setdiff(which(nmis >= 2L), many_rows)) {
+    vs <- vars[Mc[i, ]]
+    g <- unname(as.matrix(expand.grid(lapply(nlev[vs], seq_len))))
+    Fi <- F[rep(i, nrow(g)), , drop = FALSE]
+    for (a in seq_along(vs))
+      Fi[[vs[a]]] <- factor(lev[[vs[a]]][g[, a]], levels = lev[[vs[a]]])
+    parts[[length(parts) + 1L]] <- Fi
+    rows[[length(rows) + 1L]] <- rep(i, nrow(g))
+    multi[[length(multi) + 1L]] <- list(row = i, vars = vs, lvl = g,
+                                        pos = N + seq_len(nrow(g)))
+    N <- N + nrow(g)
+  }
+  Fp <- do.call(rbind, parts); rownames(Fp) <- NULL
+  pr_row <- unlist(rows, use.names = FALSE)
+  pr_c <- Up_main <- pat_pr <- pats_rows <- NULL
+  if (no_table) {
+    Up <- .gloc_design_rows(Fp, design, lev)
+  } else {
+    # Pure rows are matched exactly against the combination table.
+    key <- function(A) apply(A, 1L, function(r) paste(format(r, digits = 15), collapse = "|"))
+    to_combo <- function(Fr) {
+      Ufix <- .gloc_design_rows(Fr, design, lev)
+      if (!identical(colnames(Ufix), colnames(pats$P)))
+        stop("imputeCellGLoc(): candidate design columns do not match the design.")
+      idx <- match(key(Ufix), key(pats$P))
+      if (anyNA(idx))
+        stop(paste("imputeCellGLoc(): a level combination of the categorical EM is",
+                   "missing from the combination table; use categorical = \"level\"."))
+      idx
+    }
+    pr_c <- to_combo(Fp)
+    Up <- pats$P[pr_c, , drop = FALSE]
+    Up_main <- if (is.null(pats$P_main)) NULL else pats$P_main[pr_c, , drop = FALSE]
+    pat_pr <- list(id = pr_c, P = pats$P, P_main = pats$P_main, labels = pats$labels)
+    pats_rows <- pats
+    pats_rows$id[nmis > 0L] <- NA_integer_
+  }
+  many <- list(rows = many_rows, Umode = NULL, Umode_main = NULL, post = list())
+  if (length(many_rows)) {
+    Fm <- F[many_rows, , drop = FALSE]
+    for (v in vars) {
+      freq <- as.vector(table(factor(F[cc, v], levels = lev[[v]])))
+      freq <- freq / sum(freq)
+      miss <- Mc[many_rows, v]
+      if (!any(miss)) next
+      Fm[[v]][miss] <- lev[[v]][which.max(freq)]
+      many$post[[v]] <- matrix(freq, sum(miss), length(freq), byrow = TRUE,
+                               dimnames = list(many_rows[miss], lev[[v]]))
+    }
+    if (no_table) {
+      many$Umode <- .gloc_design_rows(Fm, design, lev)
+    } else {
+      mc <- to_combo(Fm)
+      many$Umode <- pats$P[mc, , drop = FALSE]
+      if (!is.null(pats$P_main)) many$Umode_main <- pats$P_main[mc, , drop = FALSE]
+    }
+    warning(sprintf(paste("cellGLoc: %d row(s) have more than %d combinations of",
+                          "missing categorical levels; they are left out of the",
+                          "estimation, and their missing categorical cells get",
+                          "the most frequent level of the complete rows."),
+                    length(many_rows), max_combos), call. = FALSE)
+  }
+  list(Fp = Fp, Up = Up, Up_main = Up_main, pr_row = pr_row, pr_c = pr_c,
+       pat_pr = pat_pr, pats_rows = pats_rows, single = single, multi = multi,
+       many = many, const1 = colSums(Up != 1) == 0L,
+       need = lapply(stats::setNames(vars, vars), function(v) which(Mc[pr_row, v])))
+}
+
+#' E-step of the categorical EM
+#'
+#' The weight of a pseudo-row with level \eqn{c} of a missing cell is
+#' proportional to the prior of \eqn{c} given the row's other categorical
+#' values times the density of the row's unflagged continuous cells
+#' (\code{.gloc_cat_loglik}). A row missing several cells runs \code{sweeps}
+#' mean-field updates: each cell's log posterior is the expected log prior
+#' plus the expected log density over the other cells' current posteriors;
+#' the pseudo-row weights are then the products of the marginal posteriors.
+#' That is an approximation, because conditional models define no joint
+#' distribution.
+#' @param X,M,W,B,Sigma the continuous data, mask, weights and current fit;
+#'   \code{B = NULL} drops the density (prior-only E-step).
+#' @param catp,cand results of \code{.gloc_cat_prepare} and
+#'   \code{.gloc_cat_candidates}.
+#' @param priors result of \code{.gloc_cat_fit_priors}.
+#' @param w_min,band the peer rule.
+#' @param sweeps see \code{.gloc_cat_sweeps}.
+#' @return \code{list(pr_row, pr_w, Fp, Up, Ubar, post, Umain_bar)}.
+#' @keywords internal
+.gloc_cat_estep <- function(X, M, W, B, Sigma, catp, cand, priors, w_min = 0.5,
+                            band = .gloc_peer_band, sweeps = .gloc_cat_sweeps) {
+  lev <- catp$levels; N <- nrow(cand$Fp)
+  inc <- rowSums(catp$Mc)[cand$pr_row] > 0L
+  w <- rep(1, N)
+  ll <- numeric(N)
+  if (!is.null(B) && any(inc))
+    ll[inc] <- .gloc_cat_loglik(X, M, W, B, Sigma, cand$Up[inc, , drop = FALSE],
+                                cand$pr_row[inc], w_min = w_min, band = band)
+  lp <- list()
+  for (v in names(lev)) {
+    pos <- cand$need[[v]]
+    if (!length(pos)) next
+    P <- .gloc_cat_prior(priors[[v]], cand$Fp[pos, , drop = FALSE])
+    lp[[v]] <- numeric(N)
+    lp[[v]][pos] <- log(P[cbind(seq_along(pos), as.integer(cand$Fp[[v]][pos]))])
+  }
+  parts <- lapply(lev, function(l) list())
+  for (v in names(cand$single)) {
+    s <- cand$single[[v]]
+    A <- matrix(lp[[v]][s$pos] + ll[s$pos], nrow = length(s$rows))
+    A <- exp(A - apply(A, 1L, max))
+    R <- A / rowSums(A)
+    w[s$pos] <- R
+    parts[[v]][[length(parts[[v]]) + 1L]] <-
+      matrix(R, nrow = length(s$rows), dimnames = list(s$rows, lev[[v]]))
+  }
+  for (mr in cand$multi) {
+    nv <- length(mr$vars)
+    q <- lapply(mr$vars, function(v) rep(1 / length(lev[[v]]), length(lev[[v]])))
+    for (sw in seq_len(sweeps)) for (a in seq_len(nv)) {
+      wo <- rep(1, length(mr$pos))
+      for (b in setdiff(seq_len(nv), a)) wo <- wo * q[[b]][mr$lvl[, b]]
+      term <- lp[[mr$vars[a]]][mr$pos] + ll[mr$pos]
+      e <- vapply(seq_along(q[[a]]), function(cl) {
+        k <- mr$lvl[, a] == cl
+        sum(wo[k] * term[k]) / sum(wo[k])
+      }, numeric(1))
+      e <- exp(e - max(e))
+      q[[a]] <- e / sum(e)
+    }
+    wk <- rep(1, length(mr$pos))
+    for (b in seq_len(nv)) wk <- wk * q[[b]][mr$lvl[, b]]
+    w[mr$pos] <- wk
+    for (a in seq_len(nv)) {
+      v <- mr$vars[a]
+      parts[[v]][[length(parts[[v]]) + 1L]] <-
+        matrix(q[[a]], 1L, dimnames = list(mr$row, lev[[v]]))
+    }
+  }
+  for (v in names(cand$many$post))
+    parts[[v]][[length(parts[[v]]) + 1L]] <- cand$many$post[[v]]
+  post <- list()
+  for (v in names(lev)) {
+    if (!length(parts[[v]])) next
+    P <- do.call(rbind, parts[[v]])
+    post[[v]] <- P[order(as.integer(rownames(P))), , drop = FALSE]
+  }
+  rs <- rowsum(cand$Up * w, cand$pr_row, reorder = TRUE)
+  Ubar <- matrix(0, nrow(catp$F), ncol(cand$Up),
+                 dimnames = list(row.names(catp$F), colnames(cand$Up)))
+  Ubar[as.integer(rownames(rs)), ] <- rs
+  if (length(cand$many$rows)) Ubar[cand$many$rows, ] <- cand$many$Umode
+  Ubar[, cand$const1] <- 1
+  Umain_bar <- NULL
+  if (!is.null(cand$Up_main)) {
+    rsm <- rowsum(cand$Up_main * w, cand$pr_row, reorder = TRUE)
+    Umain_bar <- matrix(0, nrow(catp$F), ncol(cand$Up_main),
+                        dimnames = list(row.names(catp$F), colnames(cand$Up_main)))
+    Umain_bar[as.integer(rownames(rsm)), ] <- rsm
+    if (length(cand$many$rows)) Umain_bar[cand$many$rows, ] <- cand$many$Umode_main
+    Umain_bar[, colSums(cand$Up_main != 1) == 0L] <- 1
+  }
+  list(pr_row = cand$pr_row, pr_w = w, Fp = cand$Fp, Up = cand$Up, Ubar = Ubar,
+       post = post, Umain_bar = Umain_bar)
+}
+
+#' The E-step result for data without missing categorical cells
+#' @param catp result of \code{.gloc_cat_prepare}.
+#' @param U the design.
+#' @keywords internal
+.gloc_cat_identity <- function(catp, U) {
+  n <- nrow(catp$F)
+  list(pr_row = seq_len(n), pr_w = rep(1, n), Fp = catp$F, Up = U, Ubar = U,
+       post = list())
+}
+
+#' Largest change in the categorical posteriors between two E-steps
+#' @param post,old two \code{post} lists with the same layout, or \code{old = NULL}.
+#' @keywords internal
+.gloc_cat_change <- function(post, old) {
+  if (is.null(old)) return(Inf)
+  if (!length(post)) return(0)
+  max(abs(unlist(post, use.names = FALSE) - unlist(old, use.names = FALSE)))
+}

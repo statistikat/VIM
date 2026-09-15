@@ -145,3 +145,95 @@ expect_identical(VIM:::.gloc_cat_loglik(X3, M3n, W3, B3, S3, Uc, ro)[3:4], c(0, 
 Ueq <- rbind(c(1, 0), c(1, 0))
 lleq <- VIM:::.gloc_cat_loglik(X3, M3, W3, B3, S3, Ueq, c(1L, 1L))
 expect_identical(lleq[1], lleq[2])
+
+# ==========================================================================
+# Task 4: candidate table and E-step
+# ==========================================================================
+# Spec §12.3 test 3, the M-step's precondition: scaling a row's cell weights
+# is a case weight in cwLocScat (checked 2026-09-15, cellWise 2.5.7).
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  set.seed(4)
+  Xp <- matrix(rnorm(80 * 4), 80) %*% chol(0.5 * diag(4) + 0.5)
+  Xp[sample(length(Xp), 30)] <- NA
+  Wp <- matrix(runif(80 * 4), 80); Wp[is.na(Xp)] <- 0
+  W2 <- Wp; W2[1:15, ] <- 2 * Wp[1:15, ]
+  a <- cellWise::cwLocScat(rbind(Xp, Xp[1:15, ]), rbind(Wp, Wp[1:15, ]), crit = 1e-14, maxiter = 10000, lmin = NULL)
+  b <- cellWise::cwLocScat(Xp, W2, crit = 1e-14, maxiter = 10000, lmin = NULL)
+  expect_equal(a$cwMLEsigma, b$cwMLEsigma, tolerance = 1e-10)
+  expect_equal(a$cwMLEmu, b$cwMLEmu, tolerance = 1e-10)
+}
+
+sim4 <- gen_cat(90, 4, miss_f = 0.2, miss_g = 0.15)
+sim4$d$f[1:3] <- NA; sim4$d$g[1:3] <- NA                  # guarantee rows missing both
+cp4 <- VIM:::.gloc_cat_prepare(sim4$d, c("f", "g"))
+cand4 <- VIM:::.gloc_cat_candidates(cp4, sim4$d, ~ .)
+only_f <- cp4$Mc[, "f"] & !cp4$Mc[, "g"]; only_g <- !cp4$Mc[, "f"] & cp4$Mc[, "g"]
+both <- cp4$Mc[, "f"] & cp4$Mc[, "g"]; none <- !cp4$Mc[, "f"] & !cp4$Mc[, "g"]
+expect_identical(nrow(cand4$Fp),
+                 as.integer(sum(none) + 3 * sum(only_f) + 2 * sum(only_g) + 6 * sum(both)))
+expect_false(anyNA(cand4$Fp$f) || anyNA(cand4$Fp$g))
+expect_identical(cand4$need$f, which(cp4$Mc[cand4$pr_row, "f"]))
+
+# prior-only E-step: posteriors are the priors, weights sum to 1 per row, the
+# expected design is the design on complete rows and 1 in the intercept column
+pri4 <- VIM:::.gloc_cat_fit_priors(cp4$F[none, ], rep(1, sum(none)), cp4$levels)
+X4 <- as.matrix(sim4$d[, 1:3]); M4 <- is.na(X4)
+es0 <- VIM:::.gloc_cat_estep(X4, M4, NULL, NULL, NULL, cp4, cand4, pri4)
+rf <- which(only_f)
+expect_equal(unname(es0$post$f[as.character(rf), ]),
+             VIM:::.gloc_cat_prior(pri4$f, cp4$F[rf, ]), tolerance = 1e-12)
+expect_equal(as.vector(tapply(es0$pr_w, es0$pr_row, sum)), rep(1, 90), tolerance = 1e-12)
+expect_true(all(es0$Ubar[none, ] == VIM:::.gloc_design_rows(cp4$F[none, ], ~ ., cp4$levels)))
+expect_true(all(es0$Ubar[, "(Intercept)"] == 1))
+expect_identical(rownames(es0$post$f), as.character(which(cp4$Mc[, "f"])))
+
+# pseudo-rows come from the fill's combination table, with the design's columns
+expect_identical(colnames(cand4$Up), colnames(VIM:::.gloc_design(sim4$truth, ~ ., c("f", "g"))))
+expect_false(anyNA(cand4$pr_c))
+expect_true(all(cand4$Up == VIM:::.gloc_design_rows(cand4$Fp, ~ ., cp4$levels)))
+inc4 <- rowSums(cp4$Mc) > 0
+expect_true(all(is.na(cand4$pats_rows$id[inc4])))
+expect_false(anyNA(cand4$pats_rows$id[!inc4]))
+# an interaction design carries main-effects rows for the pseudo-rows and the E-step
+cand4i <- VIM:::.gloc_cat_candidates(cp4, sim4$d, ~ f * g)
+expect_false(is.null(cand4i$Up_main))
+es4i <- VIM:::.gloc_cat_estep(X4, M4, NULL, NULL, NULL, cp4, cand4i, pri4)
+expect_identical(dim(es4i$Umain_bar), c(90L, ncol(cand4i$Up_main)))
+expect_true(all(es4i$Umain_bar[, "(Intercept)"] == 1))
+
+# a design without categorical variables needs no combination table
+cand4o <- VIM:::.gloc_cat_candidates(cp4, sim4$d, ~ 1)
+expect_true(is.null(cand4o$pat_pr) && is.null(cand4o$pats_rows) &&
+              is.null(cand4o$Up_main) && is.null(cand4o$pr_c))
+expect_identical(colnames(cand4o$Up), "(Intercept)")
+expect_true(all(cand4o$Up == 1))
+es4o <- VIM:::.gloc_cat_estep(X4, M4, NULL, NULL, NULL, cp4, cand4o, pri4)
+expect_true(all(es4o$Ubar == 1) && is.null(es4o$Umain_bar))
+
+# two missing cells whose evidence factorises (diagonal Sigma, f moves x1 only,
+# g moves x2 only, marginal priors): the mean-field sweeps are exact
+d5 <- data.frame(x1 = c(1.7, 0.1, 2.0, -1.9, 0.3, 2.2, -2.1),
+                 x2 = c(2.4, 0.0, 3.1, 0.2, -0.3, 2.9, 0.1),
+                 f = factor(c(NA, "a", "b", "c", "a", "b", "c"), levels = c("a", "b", "c")),
+                 g = factor(c(NA, "u", "v", "u", "u", "v", "u"), levels = c("u", "v")))
+cp5 <- VIM:::.gloc_cat_prepare(d5, c("f", "g"))
+cand5 <- VIM:::.gloc_cat_candidates(cp5, d5, ~ .)
+pri5 <- list(f = list(type = "marginal", probs = c(0.5, 0.3, 0.2), levels = c("a", "b", "c")),
+             g = list(type = "marginal", probs = c(0.6, 0.4), levels = c("u", "v")))
+B5 <- rbind(c(0, 0), c(2, 0), c(-2, 0), c(0, 3))        # (Intercept), fb, fc, gv
+X5 <- as.matrix(d5[, 1:2]); M5 <- is.na(X5)
+es5 <- VIM:::.gloc_cat_estep(X5, M5, matrix(1, 7, 2), B5, diag(2), cp5, cand5, pri5)
+exact_f <- c(0.5, 0.3, 0.2) * dnorm(1.7, c(0, 2, -2))
+expect_equal(unname(es5$post$f["1", ]), exact_f / sum(exact_f), tolerance = 1e-8)
+exact_g <- c(0.6, 0.4) * dnorm(2.4, c(0, 3))
+expect_equal(unname(es5$post$g["1", ]), exact_g / sum(exact_g), tolerance = 1e-8)
+
+# a row with more combinations than the cap stays out of the table, once warned
+wc <- collect_warnings(cand5c <- VIM:::.gloc_cat_candidates(cp5, d5, ~ ., max_combos = 2L))
+expect_equal(length(wc), 1L)
+expect_true(grepl("^cellGLoc: ", wc))
+expect_false(1L %in% cand5c$pr_row)
+es5c <- VIM:::.gloc_cat_estep(X5, M5, matrix(1, 7, 2), B5, diag(2), cp5, cand5c, pri5)
+expect_equal(unname(es5c$post$f["1", ]), c(2, 2, 2) / 6, tolerance = 1e-12)   # complete-row frequencies
+expect_identical(VIM:::.gloc_cat_change(es5$post, NULL), Inf)
+expect_identical(VIM:::.gloc_cat_change(es5$post, es5$post), 0)
