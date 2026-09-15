@@ -15,12 +15,16 @@
 - **The start selects the fixed point, not only the path.** On clean data (n = 200, six continuous
   and six categorical variables, 20% missing) at a convergence tolerance of 1e-8, the two starts
   reached different fixed points in 7 of 10 fits with `design = ~ .` (relative scatter difference
-  0.009 to 0.032, 2 to 14 cells flagged differently, unchanged as the tolerance tightens) and in 2
-  of 3 converged fits with `design = ~ 1`. Over the ten `~ .` fits 29 cells were flagged only under
+  0.009 to 0.032, 2 to 14 cells flagged differently, unchanged as the tolerance tightens) and in 4
+  of 9 converged fits with `design = ~ 1`. Over the ten `~ .` fits 29 cells were flagged only under
   the robust start, 22 of them already flagged by the start's `cellMCD()`, which flags 2.3 to 4.6%
-  of clean cells at both `alpha = 0.5` and `0.75`. Under contamination the classical start can
-  mask: in the pilot (`design = ~ .`, 20% of cells shifted by 10) its scatter error was 6.45
-  against 0.14.
+  of clean cells at both `alpha = 0.5` and `0.75`. Those hard starting flags are not the cause:
+  starting from soft bisquare weights on the same residuals gave the same differences (7 of 10
+  with `~ .`, 3 of 9 with `~ 1`). The iteration has more than one fixed point, and the starting
+  values select among them. (Corrected: an earlier draft gave 2 of 3 for `design = ~ 1`, from a
+  smaller check, and did not rule out the hard flags as the cause.) Under contamination the
+  classical start can mask: in the pilot (`design = ~ .`, 20% of cells shifted by 10) its scatter
+  error was 6.45 against 0.14.
 - **The start's fit is `lmrob`'s M-S path: the L1 regression followed by an M-step at the L1
   residual scale.** This is what `lmrob(..., init = "M-S")` does when every predictor is
   categorical, and it gives the same coefficients. `lmrob`'s default S-estimator start failed to
