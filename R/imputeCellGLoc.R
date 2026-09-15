@@ -94,6 +94,8 @@
 #'   \code{damp} times a fixed-point residual; the weight term is in practice
 #'   the binding one.
 #' @param alpha minimum fraction of unflagged cells per column (binary corner).
+#'   The robust start of the soft corner runs cellMCD at its own tolerance,
+#'   \code{.gloc_start_alpha} = 0.5, and ignores this argument.
 #' @param psi_c tuning constant of the Tukey bisquare (soft corner).
 #'   \code{Inf} disables downweighting.
 #' @param damp relaxation factor for the soft corner's weight update.
@@ -118,8 +120,9 @@
 #'   function immediately discards. See \code{.gloc_scatter_soft}.
 #' @param start starting values for the soft corner. \code{"robust"} (default
 #'   since 7.4.1) fits each continuous column by MM regression
-#'   (\code{robustbase::lmrob}) on the categorical design alone and takes the
-#'   starting flags from \code{cellWise::cellMCD} on those residuals; see
+#'   (\code{robustbase::lmrob}, started from the L1 fit) on the categorical
+#'   design alone and takes the starting flags from \code{cellWise::cellMCD} on
+#'   those residuals at \code{.gloc_start_alpha}; see
 #'   \code{.gloc_start_robust}. \code{"classical"} starts with every observed
 #'   cell at weight 1 and the mean structure by least squares, and reproduces
 #'   VIM 7.4.0 exactly. A redescending weight function started from a
@@ -287,8 +290,10 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # iteration recomputes Sigma from (X - U B, W), so no starting scatter is
   # needed. The binary corner keeps its start: its first step already calls
   # cellWise::cellMCD, and start = "classical" reproduces 7.4.0 exactly.
+  # The start's cellMCD runs at .gloc_start_alpha, not at the user's alpha,
+  # which governs the binary corner only.
   if (relax && start == "robust") {
-    st <- withCallingHandlers(.gloc_start_robust(X, U, M, alpha = alpha),
+    st <- withCallingHandlers(.gloc_start_robust(X, U, M),
                               warning = dedup)
     W <- st$W; B <- st$B
     W0 <- W; B0 <- B
@@ -827,9 +832,22 @@ NULL
   Rna <- R; Rna[M] <- NA_real_
   if (have_cw) {
     Wc <- W; Wc[!is.finite(Wc)] <- 0
-    fit <- tryCatch(cellWise::cwLocScat(Rna, W = Wc, methods = "all",
-                                        crit = crit),
-                    error = function(e) NULL)
+    # cellWise's internal unpack() drops rows whose weights are all zero and
+    # warns "There were rows with only zero weights, we dropped them from both
+    # X and W". Such a row (every cell missing or flagged) has no weight in the
+    # likelihood, so dropping it leaves the estimate unchanged (checked: the
+    # location and scatter agree exactly with the row removed). Under the
+    # robust start, whose flags are binary, it happens routinely, and the
+    # message gives a user nothing to act on, so it is muffled here and only
+    # here.
+    fit <- tryCatch(
+      withCallingHandlers(
+        cellWise::cwLocScat(Rna, W = Wc, methods = "all", crit = crit),
+        warning = function(w) {
+          if (grepl("only zero weights", conditionMessage(w), fixed = TRUE))
+            invokeRestart("muffleWarning")
+        }),
+      error = function(e) NULL)
     if (!is.null(fit) && all(is.finite(fit$cwMLEsigma)))
       return(.gloc_correct_scatter(fit$cwMLEsigma, kappa))
     warning(paste("cellGLoc: cellWise::cwLocScat() failed or returned a",

@@ -8,7 +8,7 @@
   X,
   U,
   M,
-  alpha = 0.75,
+  alpha = .gloc_start_alpha,
   have_cw = requireNamespace("cellWise", quietly = TRUE),
   control = NULL
 )
@@ -21,13 +21,14 @@
 \item{M}{\eqn{n x p} logical missingness mask.}
 
 \item{alpha}{minimum fraction of unflagged cells per column for
-\code{cellWise::cellMCD}.}
+\code{cellWise::cellMCD}; see \code{.gloc_start_alpha}.}
 
 \item{have_cw}{whether \code{cellWise} is available.}
 
 \item{control}{an \code{robustbase::lmrob.control} list; \code{NULL} uses the
 defaults. An empty seed (the default) is replaced by
-\code{.gloc_start_seed}.}
+\code{.gloc_start_seed}. Its \code{method} is set to \code{"lM"} for the
+L1-started fit and left as given for the S-started fallback.}
 }
 \value{
 a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
@@ -37,20 +38,34 @@ a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
 Until 7.4.0 the soft corner started from a classical fit: every observed
 cell at weight 1 and \eqn{B} by ordinary least squares. A redescending weight
 function started there can settle on a masked solution. This start fits each
-continuous column by MM regression (\code{robustbase::lmrob}, default MM with
-the bisquare) on the categorical design \emph{alone}. The predictors are
-dummies, which cannot carry a contaminated continuous cell, so the casewise
-robustness of MM is exactly what is needed: a contaminated cell is an
-outlying response. The starting flags are then those of
-\code{cellWise::cellMCD} on the residuals \eqn{X - U B}.
+continuous column by MM regression (bisquare) on the categorical design
+\emph{alone}. The predictors are dummies, which cannot carry a contaminated
+continuous cell, so the casewise robustness of MM is exactly what is needed:
+a contaminated cell is an outlying response. The starting flags are then
+those of \code{cellWise::cellMCD} on the residuals \eqn{X - U B}, at
+\code{.gloc_start_alpha}.
 }
 \details{
+The MM fit starts from the L1 regression (\code{robustbase::lmrob.lar})
+followed by the M-step (\code{method = "lM"}). That is exactly what
+\code{robustbase::lmrob(..., init = "M-S")} does for a design with no
+continuous predictor: its coefficients agreed to 0 over 960 column fits.
+\code{lmrob}'s default S-estimator start is not used first because it does
+not converge on many purely categorical designs ("S refinements did not
+converge in k.max steps", "initial estim. 'init' not converged"): in the
+7.4.1 pilot some column failed in 42 of 90 fits with \code{design = ~ .},
+as often at \eqn{\epsilon = 0} as under contamination, and on 960 column
+fits of 200 rows on four factors it failed 54 times, where the L1 start
+converged every time. The two agree in accuracy (median fitted-mean error
+against the truth 0.243 and 0.237) and the L1 start needs no subsampling. The
+S start remains the fallback when the L1-started fit does not converge.
+
 Every degraded path warns, once per reason, naming the columns:
 too few observed rows for the design (fewer than \eqn{2q}, or a design column
 with fewer than three observed rows), an \code{lmrob} error, or \code{lmrob}
-not converging each fall back to the column median as intercept with zero
-contrasts; without \code{cellWise}, or if \code{cellMCD} fails, a cell is
-flagged when \eqn{|r_{ij}| / \mathrm{MAD}(r_{.j})} exceeds
+not converging from either start each fall back to the column median as
+intercept with zero contrasts; without \code{cellWise}, or if \code{cellMCD}
+fails, a cell is flagged when \eqn{|r_{ij}| / \mathrm{MAD}(r_{.j})} exceeds
 \eqn{\sqrt{\chi^2_{1,0.99}}}.
 }
 \keyword{internal}

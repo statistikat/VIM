@@ -53,7 +53,9 @@ mean and scatter terms are not divided, since neither is exactly
 \code{damp} times a fixed-point residual; the weight term is in practice
 the binding one.}
 
-\item{alpha}{minimum fraction of unflagged cells per column (binary corner).}
+\item{alpha}{minimum fraction of unflagged cells per column (binary corner).
+The robust start of the soft corner runs cellMCD at its own tolerance,
+\code{.gloc_start_alpha} = 0.5, and ignores this argument.}
 
 \item{psi_c}{tuning constant of the Tukey bisquare (soft corner).
 \code{Inf} disables downweighting.}
@@ -122,8 +124,9 @@ function immediately discards. See \code{.gloc_scatter_soft}.}
 
 \item{start}{starting values for the soft corner. \code{"robust"} (default
 since 7.4.1) fits each continuous column by MM regression
-(\code{robustbase::lmrob}) on the categorical design alone and takes the
-starting flags from \code{cellWise::cellMCD} on those residuals; see
+(\code{robustbase::lmrob}, started from the L1 fit) on the categorical
+design alone and takes the starting flags from \code{cellWise::cellMCD} on
+those residuals at \code{.gloc_start_alpha}; see
 \code{.gloc_start_robust}. \code{"classical"} starts with every observed
 cell at weight 1 and the mean structure by least squares, and reproduces
 VIM 7.4.0 exactly. A redescending weight function started from a

@@ -7,9 +7,22 @@
   redescending weight function started there can settle on a masked solution. The robust start
   fits each continuous column by MM regression (`robustbase::lmrob`) on the categorical design
   alone, where no predictor cell can be contaminated, and takes the starting flags from
-  `cellWise::cellMCD()` on those residuals. It uses a fixed random-number state, so it is
-  deterministic and leaves the caller's random-number stream untouched. Degraded paths (too few
-  rows per design column, `lmrob` failing or not converging, `cellWise` unavailable) warn.
+  `cellWise::cellMCD()` on those residuals. It is deterministic and leaves the caller's
+  random-number stream untouched. Degraded paths (too few rows per design column, `lmrob` failing
+  or not converging, `cellWise` unavailable) warn.
+- **The MM fit of the start begins from the L1 regression, not from an S-estimator.** This is what
+  `lmrob(..., init = "M-S")` does when every predictor is categorical, and it gives the same
+  coefficients. `lmrob`'s default S start failed to converge for some column in 42 of 90 pilot fits
+  with `design = ~ .`, as often on clean data as under contamination, and each such column then
+  started without its group means. It remains the fallback.
+- **The start runs `cellMCD()` at its own tolerance, `alpha = 0.5`.** cellMCD refuses a column whose
+  marginal outliers plus missing values exceed `1 - alpha`; at the default `alpha = 0.75` it did so
+  in 74 of 360 pilot fits with 20% missing cells, all of them at 10–20% contamination with shifts
+  of 6 or 10, and the start fell back to cruder MAD flags exactly where it mattered. The `alpha`
+  argument keeps governing the binary corner.
+- **`cellWise::cwLocScat()`'s warning "There were rows with only zero weights, we dropped them" no
+  longer reaches users.** A row whose cells are all missing or flagged carries no weight, so dropping
+  it leaves the estimate unchanged (verified: identical location and scatter).
 - **Results from 7.4.0 are reproduced bit for bit with `start = "classical"`**, which a test pins
   against a stored 7.4.0 fit. `start` has no effect with `weights = "binary"`, which already
   begins with `cellWise::cellMCD()`.

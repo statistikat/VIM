@@ -616,9 +616,12 @@ if (at_home()) {
   Xz[inj] <- Xz[inj] + 8
   colnames(Xz) <- paste0("x", 1:4)
 
+  # Both fits use start = "classical": this block pins a property of the peer
+  # rule, and the robust start (7.4.1) avoids this cycle on its own, a separate
+  # finding that would otherwise mask what the band does.
   expect_warning(zh <- VIM::imputeCellGLoc(as.data.frame(Xz), design = ~ 1,
                                            weights = "soft", maxit = 200,
-                                           peer_band = 0),
+                                           peer_band = 0, start = "classical"),
                  "cycling")
   expect_false(zh$converged)
 
@@ -628,7 +631,7 @@ if (at_home()) {
   expect_true(zh$criterion[["scatter_spread"]] > 0)
 
   zc <- VIM::imputeCellGLoc(as.data.frame(Xz), design = ~ 1, weights = "soft",
-                            maxit = 200)
+                            maxit = 200, start = "classical")
   expect_true(zc$converged)
   expect_true(zc$iterations < 50)
   expect_true(is.na(zc$criterion[["scatter_spread"]]))
@@ -761,4 +764,96 @@ if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
     suppressWarnings(VIM::imputeCellGLoc(ref740$data, design = ~ .,
                                          weights = "binary"))[keep],
     ref740$fits$bin_dot[keep])
+}
+
+# ==========================================================================
+# The robust start's own cellMCD tolerance, and warnings that must not leak
+# ==========================================================================
+
+# cellMCD refuses any column whose marginal outliers plus NAs exceed 1 - alpha.
+# At the user-facing default alpha = 0.75 that is 25%, which 20% missingness
+# plus a few percent of shifted cells already exceeds, so in the 7.4.1 pilot the
+# robust start fell back to MAD flags in 74 of 360 fits, all of them where it
+# mattered most. The start therefore runs cellMCD at its own alpha, and the
+# binary corner keeps the user's.
+set.seed(62)
+n_a <- 400
+Xa <- matrix(rnorm(n_a * 4), n_a) %*% chol(0.5 * diag(4) + 0.5)
+colnames(Xa) <- paste0("x", 1:4)
+out_a <- matrix(runif(n_a * 4) < 0.10, n_a)
+Xa[out_a] <- Xa[out_a] + 10
+Xa[matrix(runif(n_a * 4) < 0.20, n_a)] <- NA
+da <- as.data.frame(Xa)
+
+collect_warnings <- function(expr) {
+  w <- character(0)
+  withCallingHandlers(expr, warning = function(cond) {
+    w <<- c(w, conditionMessage(cond)); invokeRestart("muffleWarning")
+  })
+  w
+}
+
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  expect_true(exists(".gloc_start_alpha", envir = asNamespace("VIM"), inherits = FALSE) &&
+                identical(get(".gloc_start_alpha", envir = asNamespace("VIM")), 0.5))
+  w_soft <- collect_warnings(VIM::imputeCellGLoc(da, design = ~ 1, weights = "soft",
+                                                 alpha = 0.75))
+  expect_false(any(grepl("robust start: cellWise::cellMCD", w_soft)))
+  # the user's alpha still governs the binary corner, which refuses these data
+  w_bin <- collect_warnings(VIM::imputeCellGLoc(da, design = ~ 1, weights = "binary",
+                                                alpha = 0.75))
+  expect_true(any(grepl("cellMCD\\(\\) failed", w_bin)))
+
+  # cellWise's cwLocScat drops rows whose weights are all zero and warns that it
+  # did. A row of missing or flagged cells carries no weight in the likelihood,
+  # so dropping it changes nothing, and the message must not reach users.
+  dz <- da; dz[1:3, ] <- NA
+  for (st in c("robust", "classical")) {
+    w_z <- collect_warnings(VIM::imputeCellGLoc(dz, design = ~ 1, weights = "soft",
+                                                start = st))
+    expect_false(any(grepl("only zero weights", w_z)), info = st)
+  }
+
+  # cellWise::cellMCD() stops with "mean(): object has no elements" as soon as
+  # one row has no observed cell, at any alpha, which silently sent the robust
+  # start to its MAD fallback. Such a row carries no flag information, so the
+  # start hands cellMCD only rows with an observed cell.
+  Xna <- Xa[!apply(is.na(Xa), 1, all), ]
+  Xna[1, ] <- NA
+  w_na <- collect_warnings(st_na <- VIM:::.gloc_start_robust(
+    Xna, matrix(1, nrow(Xna), 1, dimnames = list(NULL, "(Intercept)")), is.na(Xna)))
+  expect_false(any(grepl("cellMCD", w_na)))
+  expect_true(all(st_na$W[1, ] == 0))
+}
+
+# --- lmrob's default S-estimator start does not converge on many purely
+# categorical designs (S refinements run out of k.max, or "initial estim. not
+# converged"), and each such column used to start from the median with zero
+# contrasts, i.e. without its group structure. It happened in 42 of 90 pilot
+# fits with design = ~ ., at eps = 0 as often as under contamination, and for
+# 54 of 960 column fits on data generated as below. These seeds are ones where
+# it did. Data use Z %*% chol(S), so they are the same on every platform.
+make_start_data <- function(seed, eps, n = 200, p = 6) {
+  set.seed(seed)
+  f <- data.frame(f1 = factor(sample(letters[1:3], n, TRUE)),
+                  f2 = factor(sample(letters[1:3], n, TRUE)),
+                  f3 = factor(sample(letters[1:2], n, TRUE)),
+                  f4 = factor(sample(letters[1:4], n, TRUE)))
+  U <- model.matrix(~ ., f)
+  Bt <- matrix(rnorm(ncol(U) * p, sd = 1.5), ncol(U), p)
+  X <- U %*% Bt + matrix(rnorm(n * p), n) %*% chol(0.5 * diag(p) + 0.5)
+  if (eps > 0) { k <- matrix(runif(n * p) < eps, n); X[k] <- X[k] + 10 }
+  X[matrix(runif(n * p) < 0.2, n)] <- NA
+  colnames(X) <- paste0("x", 1:p)
+  list(X = X, U = U)
+}
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  for (cs in list(c(9, 0), c(11, 0), c(18, 0), c(2, 0.1), c(3, 0.1), c(11, 0.1))) {
+    dd <- make_start_data(cs[1], cs[2])
+    w_l <- collect_warnings(st_l <- VIM:::.gloc_start_robust(dd$X, dd$U, is.na(dd$X)))
+    lab <- sprintf("seed %d, eps %.1f", cs[1], cs[2])
+    expect_false(any(grepl("lmrob", w_l)), info = lab)
+    # no column fell back to zero contrasts
+    expect_true(all(colSums(abs(st_l$B[-1, , drop = FALSE])) > 0), info = lab)
+  }
 }

@@ -282,39 +282,69 @@
   c(10403L, 624L, as.integer(s))
 })
 
+#' cellMCD tolerance used by the robust start
+#'
+#' \code{cellWise::cellMCD} refuses any column whose marginal outliers plus
+#' missing values exceed \eqn{1 - \alpha} of its cells. At the user-facing
+#' default \eqn{\alpha = 0.75} that is 25\%, which 20\% missingness plus a few
+#' percent of shifted cells already exceeds: in the 7.4.1 pilot (n = 200, six
+#' continuous columns, 20\% missing) the robust start fell back to its
+#' MAD-threshold flags in 74 of 360 fits, all of them at \eqn{\epsilon \ge 0.10}
+#' with shifts of 6 or 10, where the start matters most, and in none at
+#' \eqn{\alpha = 0.5}. The start therefore runs cellMCD at this value, and the
+#' \code{alpha} argument of \code{imputeCellGLoc} keeps governing the binary
+#' corner only.
+#' @keywords internal
+.gloc_start_alpha <- 0.5
+
 #' Robust starting values for the cellGLoc soft corner
 #'
 #' Until 7.4.0 the soft corner started from a classical fit: every observed
 #' cell at weight 1 and \eqn{B} by ordinary least squares. A redescending weight
 #' function started there can settle on a masked solution. This start fits each
-#' continuous column by MM regression (\code{robustbase::lmrob}, default MM with
-#' the bisquare) on the categorical design \emph{alone}. The predictors are
-#' dummies, which cannot carry a contaminated continuous cell, so the casewise
-#' robustness of MM is exactly what is needed: a contaminated cell is an
-#' outlying response. The starting flags are then those of
-#' \code{cellWise::cellMCD} on the residuals \eqn{X - U B}.
+#' continuous column by MM regression (bisquare) on the categorical design
+#' \emph{alone}. The predictors are dummies, which cannot carry a contaminated
+#' continuous cell, so the casewise robustness of MM is exactly what is needed:
+#' a contaminated cell is an outlying response. The starting flags are then
+#' those of \code{cellWise::cellMCD} on the residuals \eqn{X - U B}, at
+#' \code{.gloc_start_alpha}.
+#'
+#' The MM fit starts from the L1 regression (\code{robustbase::lmrob.lar})
+#' followed by the M-step (\code{method = "lM"}). That is exactly what
+#' \code{robustbase::lmrob(..., init = "M-S")} does for a design with no
+#' continuous predictor: its coefficients agreed to 0 over 960 column fits.
+#' \code{lmrob}'s default S-estimator start is not used first because it does
+#' not converge on many purely categorical designs ("S refinements did not
+#' converge in k.max steps", "initial estim. 'init' not converged"): in the
+#' 7.4.1 pilot some column failed in 42 of 90 fits with \code{design = ~ .},
+#' as often at \eqn{\epsilon = 0} as under contamination, and on 960 column
+#' fits of 200 rows on four factors it failed 54 times, where the L1 start
+#' converged every time. The two agree in accuracy (median fitted-mean error
+#' against the truth 0.243 and 0.237) and the L1 start needs no subsampling. The
+#' S start remains the fallback when the L1-started fit does not converge.
 #'
 #' Every degraded path warns, once per reason, naming the columns:
 #' too few observed rows for the design (fewer than \eqn{2q}, or a design column
 #' with fewer than three observed rows), an \code{lmrob} error, or \code{lmrob}
-#' not converging each fall back to the column median as intercept with zero
-#' contrasts; without \code{cellWise}, or if \code{cellMCD} fails, a cell is
-#' flagged when \eqn{|r_{ij}| / \mathrm{MAD}(r_{.j})} exceeds
+#' not converging from either start each fall back to the column median as
+#' intercept with zero contrasts; without \code{cellWise}, or if \code{cellMCD}
+#' fails, a cell is flagged when \eqn{|r_{ij}| / \mathrm{MAD}(r_{.j})} exceeds
 #' \eqn{\sqrt{\chi^2_{1,0.99}}}.
 #'
 #' @param X \eqn{n x p} numeric matrix of continuous variables, may contain NA.
 #' @param U \eqn{n x q} design matrix from \code{.gloc_design}.
 #' @param M \eqn{n x p} logical missingness mask.
 #' @param alpha minimum fraction of unflagged cells per column for
-#'   \code{cellWise::cellMCD}.
+#'   \code{cellWise::cellMCD}; see \code{.gloc_start_alpha}.
 #' @param have_cw whether \code{cellWise} is available.
 #' @param control an \code{robustbase::lmrob.control} list; \code{NULL} uses the
 #'   defaults. An empty seed (the default) is replaced by
-#'   \code{.gloc_start_seed}.
+#'   \code{.gloc_start_seed}. Its \code{method} is set to \code{"lM"} for the
+#'   L1-started fit and left as given for the S-started fallback.
 #' @return a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
 #'   0 on missing cells).
 #' @keywords internal
-.gloc_start_robust <- function(X, U, M, alpha = 0.75,
+.gloc_start_robust <- function(X, U, M, alpha = .gloc_start_alpha,
                                have_cw = requireNamespace("cellWise",
                                                           quietly = TRUE),
                                control = NULL) {
@@ -326,6 +356,11 @@
   # Testing is.null() left the seed unset and let lmrob draw from, and advance,
   # the caller's random-number stream.
   if (is.list(control) && !length(control$seed)) control$seed <- .gloc_start_seed
+  quiet <- function(expr)
+    tryCatch(withCallingHandlers(expr,
+                                 warning = function(w) invokeRestart("muffleWarning")),
+             error = function(e) NULL)
+  usable <- function(f) !is.null(f) && !anyNA(f$coefficients)
 
   few <- failed <- noconv <- character(0)
   for (j in seq_len(p)) {
@@ -337,20 +372,42 @@
     if (thin) {
       few <- c(few, cnames[j])
     } else {
-      fit <- tryCatch(
-        withCallingHandlers(robustbase::lmrob.fit(Uo, X[ok, j], control = control),
-                            warning = function(w) invokeRestart("muffleWarning")),
-        error = function(e) NULL)
-      if (is.null(fit) || anyNA(fit$coefficients)) {
-        failed <- c(failed, cnames[j]); fit <- NULL
-      } else if (!isTRUE(fit$converged)) {
-        noconv <- c(noconv, cnames[j]); fit <- NULL
+      # Centre the response by its median first and put the median back into
+      # the intercept afterwards (column 1 of U). lmrob's stopping rules are
+      # relative to the size of the coefficients, so on data shifted by +1000
+      # the uncentred fit stopped earlier: its intercept moved by up to 3.3e-4
+      # and the final weights by 8e-6, breaking the shift equivariance the
+      # convergence test pins at 1e-6.
+      yj <- X[ok, j]
+      mj <- stats::median(yj)
+      yc <- yj - mj
+      # L1 start, then the M-step: robustbase's own M-S path for a design with
+      # no continuous predictor. bare.only skips the covariance, which is not
+      # used here and whose computation only warns after a non-S start.
+      fit <- quiet({
+        ctrl_l <- control; ctrl_l$method <- "lM"
+        robustbase::lmrob.fit(Uo, yc, control = ctrl_l, bare.only = TRUE,
+                              init = robustbase::lmrob.lar(Uo, yc,
+                                                           control = ctrl_l))
+      })
+      if (!(usable(fit) && isTRUE(fit$converged))) {
+        # fallback: lmrob's default S-estimator start
+        fit_s <- quiet(robustbase::lmrob.fit(Uo, yc, control = control,
+                                             bare.only = TRUE))
+        if (usable(fit_s) && isTRUE(fit_s$converged)) {
+          fit <- fit_s
+        } else if (usable(fit) || usable(fit_s)) {
+          noconv <- c(noconv, cnames[j]); fit <- NULL
+        } else {
+          failed <- c(failed, cnames[j]); fit <- NULL
+        }
       }
     }
     if (is.null(fit)) {
       B[1L, j] <- if (any(ok)) stats::median(X[ok, j]) else 0
     } else {
       B[, j] <- fit$coefficients
+      B[1L, j] <- B[1L, j] + mj          # undo the centring
     }
   }
   fallback_msg <- "using the column median as intercept with zero contrasts."
@@ -373,7 +430,11 @@
   W <- NULL
   if (have_cw) {
     cm_err <- NULL
-    cm <- tryCatch(cellWise::cellMCD(R, alpha = alpha,
+    # cellMCD stops with "mean(): object has no elements" when any row has no
+    # observed cell, at every alpha. Such a row has nothing to flag (its cells
+    # get weight 0 below), so it is left out of the call.
+    has_obs <- rowSums(is.finite(R)) > 0
+    cm <- tryCatch(cellWise::cellMCD(R[has_obs, , drop = FALSE], alpha = alpha,
                                      checkPars = list(coreOnly = TRUE,
                                                       silent = TRUE)),
                    error = function(e) { cm_err <<- conditionMessage(e); NULL })
@@ -383,7 +444,8 @@
                             "|residual| / MAD instead."),
                       gsub("\\s+", " ", trimws(cm_err))), call. = FALSE)
     } else {
-      W <- matrix(as.numeric(cm$W), n, p)
+      W <- matrix(1, n, p)
+      W[has_obs, ] <- as.numeric(cm$W)
     }
   } else {
     warning(paste("cellGLoc: robust start: the cellWise package is not",
