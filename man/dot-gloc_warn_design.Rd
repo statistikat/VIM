@@ -4,16 +4,18 @@
 \alias{.gloc_warn_design}
 \title{One warning per kind of rank deficiency in the mean structure}
 \usage{
-.gloc_warn_design(aliased, empty, vn, un, what)
+.gloc_warn_design(aliased, nonid, vn, un)
 }
 \arguments{
-\item{aliased, empty}{lists, one element per variable, of design-column
-indices that were dropped as duplicates of other columns or because no
-fitted row has them.}
+\item{aliased}{list, one element per variable, of aliased design columns
+that change no fitted mean.}
+
+\item{nonid}{list, one element per variable, \code{NULL} or a list with the
+unidentified level combinations filled from the main-effects fit
+(\code{main}), those filled towards the weighted mean (\code{mean}) and
+the aliased design columns (\code{cols}).}
 
 \item{vn, un}{variable and design-column names.}
-
-\item{what}{the location the empty columns were filled with, for the text.}
 }
 \description{
 One warning per kind of rank deficiency in the mean structure

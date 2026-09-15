@@ -1197,3 +1197,250 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
 
 # --- start comes after trace, so positional calls that pass trace keep working ---
 expect_identical(tail(names(formals(VIM::imputeCellGLoc)), 2), c("trace", "start"))
+
+# ==========================================================================
+# Level combinations that no fitted row identifies, under any coding (7.4.1
+# fix round)
+#
+# bfc9962 recognised such a level only as an all-zero design column. Under
+# treatment coding the reference level has no column of its own, so the QR
+# dropped a real column as a "duplicate" and the reference level silently took
+# another level's mean: with level a never recording x1 (truth 10 / 20 / 30), a
+# came back 30.72 and was imputed near 30. Under sum contrasts the
+# column-by-column fill divided by zero (fitted x1 -Inf / NaN / NaN / Inf), and
+# an interaction-only gap went to the grand mean (14.03 against 30). The fill is
+# now one least-squares step in the null space of the fitted rows' design.
+# Calls that use the new U_main argument are wrapped, so that a build without
+# it fails these expectations instead of aborting the file. Tolerances fixed
+# before the first run: 1e-8 for the deterministic mean step; 1e-6 for
+# end-to-end fits compared across codings of one design; 1e-4 wherever the
+# robust start's lmrob fit enters, whose stopping rule is relative to the
+# coefficients and therefore depends on the coding.
+# ==========================================================================
+ub <- function(...) tryCatch(VIM:::.gloc_update_B(...), error = function(e) NULL)
+sr <- function(...) tryCatch(suppressWarnings(VIM:::.gloc_start_robust(...)),
+                             error = function(e) NULL)
+fit_at <- function(U, B, rows) {        # fitted means at rows; NA if the call failed
+  if (is.null(B)) return(matrix(NA_real_, length(rows), 3))
+  unname((U %*% B)[rows, , drop = FALSE])
+}
+all_finite <- function(x) !is.null(x) && all(is.finite(x))
+
+# --- T1: the REFERENCE level never records x1 (the seed-301 data above, with
+# level a missing x1 instead of c) ---
+make_lv <- function(level) {
+  set.seed(301)
+  n <- 300
+  f <- factor(sample(c("a", "b", "c"), n, TRUE))
+  X <- matrix(rnorm(n * 3), n) %*% chol(0.5 * diag(3) + 0.5) +
+    c(a = 10, b = 20, c = 30)[as.character(f)]
+  colnames(X) <- paste0("x", 1:3)
+  X[matrix(runif(n * 3) < 0.1, n)] <- NA
+  inj <- matrix(runif(n * 3) < 0.05, n) & !is.na(X)
+  X[inj] <- X[inj] + 8
+  X[f == level, 1] <- NA
+  list(X = X, f = f, d = data.frame(X, f = f))
+}
+lv_a <- make_lv("a")
+first_a <- match(c("a", "b", "c"), lv_a$f)
+W_a <- (!is.na(lv_a$X)) + 0
+ok_a <- W_a[, 1] > 0
+m_a <- mean(lv_a$X[ok_a, 1])
+lvmean_a <- tapply(lv_a$X[ok_a, 1], droplevels(lv_a$f[ok_a]), mean)
+fm_des <- list()
+for (des in c("~ f", "~ f - 1")) {
+  U_a <- VIM:::.gloc_design(lv_a$d, as.formula(des), "f")
+  w_a <- collect_warnings(B_a <- ub(lv_a$X, U_a, W_a))
+  fm <- fit_at(U_a, B_a, first_a)[, 1]
+  expect_true(abs(fm[1] - m_a) < 1e-8, info = des)
+  expect_true(max(abs(fm[2:3] - lvmean_a[c("b", "c")])) < 1e-8, info = des)
+  expect_equal(sum(grepl("not identifiable", w_a, fixed = TRUE)), 1L, info = des)
+  expect_false(any(grepl("duplicate", w_a, fixed = TRUE)), info = des)
+  fm_des[[des]] <- fm
+  # T6: the robust start fills by the same rule, with the column median
+  st_a <- sr(lv_a$X, U_a, is.na(lv_a$X))
+  fs <- fit_at(U_a, st_a$B, first_a)[, 1]
+  expect_true(all_finite(st_a$B), info = des)
+  expect_true(abs(fs[1] - stats::median(lv_a$X[ok_a, 1])) < 1e-8, info = des)
+  expect_true(all(abs(fs[2:3] - c(20, 30)) < 0.5), info = des)
+}
+expect_true(max(abs(fm_des[["~ f"]] - fm_des[["~ f - 1"]])) < 1e-8)
+
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  e2e_a <- list()
+  for (des in c("~ f", "~ f - 1")) for (sv in c("robust", "classical")) {
+    lab <- paste(des, sv)
+    w_e <- collect_warnings(f_e <- VIM::imputeCellGLoc(lv_a$d, design = as.formula(des),
+                                                        weights = "soft", start = sv))
+    fm <- unname((f_e$U %*% f_e$B)[first_a, 1])
+    ok_e <- !is.na(lv_a$X[, 1]) & f_e$W[, 1] > 0
+    expect_true(abs(fm[1] - stats::weighted.mean(lv_a$X[ok_e, 1], f_e$W[ok_e, 1])) < 1e-8,
+                info = lab)
+    expect_true(all(abs(fm[2:3] - c(20, 30)) < 0.5), info = lab)
+    hit <- grepl("not identifiable", w_e, fixed = TRUE) & grepl("x1", w_e, fixed = TRUE)
+    expect_equal(sum(hit), 1L, info = lab)
+    expect_true(any(hit & grepl("f=a", w_e, fixed = TRUE)), info = lab)
+    expect_true(abs(mean(f_e$imputed$x1[lv_a$f == "a"]) - fm[1]) < 2, info = lab)
+    e2e_a[[lab]] <- fm
+  }
+  expect_true(max(abs(e2e_a[["~ f robust"]] - e2e_a[["~ f - 1 robust"]])) < 1e-4)
+  expect_true(max(abs(e2e_a[["~ f classical"]] - e2e_a[["~ f - 1 classical"]])) < 1e-6)
+}
+
+# --- T2: sum contrasts, x1 not collected in levels a and d. bfc9962 divided
+# by zero here: B held Inf and 108 imputed cells were not finite ---
+with_sum <- function(expr) {
+  op <- options(contrasts = c("contr.sum", "contr.poly"))
+  on.exit(options(op))
+  expr
+}
+set.seed(8)
+f8 <- factor(rep(c("a", "b", "c", "d"), each = 50))
+X8 <- matrix(rnorm(200 * 3), 200) %*% chol(0.5 * diag(3) + 0.5) +
+  c(a = 0, b = 5, c = 10, d = 15)[as.character(f8)]
+colnames(X8) <- paste0("x", 1:3)
+X8[matrix(runif(200 * 3) < 0.1, 200)] <- NA
+X8[f8 %in% c("a", "d"), 1] <- NA
+d8 <- data.frame(X8, f = f8)
+first8 <- match(levels(f8), f8)
+W8 <- (!is.na(X8)) + 0
+ok8 <- W8[, 1] > 0
+U8t <- VIM:::.gloc_design(d8, ~ f, "f")
+U8s <- with_sum(VIM:::.gloc_design(d8, ~ f, "f"))
+expect_true(any(U8s < 0))                                   # really sum-coded
+expect_identical(unname(getOption("contrasts")[1]), "contr.treatment")  # restored
+B8t <- ub(X8, U8t, W8)
+B8s <- ub(X8, U8s, W8)
+F8t <- fit_at(U8t, B8t, first8)
+F8s <- fit_at(U8s, B8s, first8)
+expect_true(all_finite(B8s))
+expect_true(max(abs(F8s[2:3, 1] - F8t[2:3, 1])) < 1e-8)      # estimable levels
+expect_true(max(abs(F8s[, 2:3] - F8t[, 2:3])) < 1e-8)        # full-rank columns
+m8 <- mean(X8[ok8, 1])
+expect_true(max(abs(F8s[c(1, 4), 1] - m8)) < 1e-8)
+expect_true(max(abs(F8t[c(1, 4), 1] - m8)) < 1e-8)
+# T6: the robust start
+st8t <- sr(X8, U8t, is.na(X8))
+st8s <- sr(X8, U8s, is.na(X8))
+S8t <- fit_at(U8t, st8t$B, first8)
+S8s <- fit_at(U8s, st8s$B, first8)
+expect_true(all_finite(st8s$B))
+md8 <- stats::median(X8[ok8, 1])
+expect_true(max(abs(S8s[c(1, 4), 1] - md8)) < 1e-8)
+expect_true(max(abs(S8t[c(1, 4), 1] - md8)) < 1e-8)
+# x1 only. The full-rank columns x2 and x3 never reach the fill; they go
+# through lmrob's M-S path, whose stopping rule is relative to the
+# coefficients, and there the two codings differ by up to 3.4e-4 (7.7e-4 in T3
+# below) with or without this fix. Found on the first run, which compared all
+# three columns; the tolerance is unchanged.
+expect_true(max(abs(S8s[, 1] - S8t[, 1])) < 1e-4)
+
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  for (cs in list(c("soft", "robust"), c("soft", "classical"),
+                  c("binary", "classical"))) {
+    lab <- paste(cs, collapse = "/")
+    e8s <- with_sum(suppressWarnings(VIM::imputeCellGLoc(d8, design = ~ f,
+                                                         weights = cs[1],
+                                                         start = cs[2])))
+    e8t <- suppressWarnings(VIM::imputeCellGLoc(d8, design = ~ f, weights = cs[1],
+                                                start = cs[2]))
+    expect_true(all_finite(e8s$B) && all_finite(e8s$Sigma) &&
+                  all_finite(as.matrix(e8s$imputed[, 1:3])), info = lab)
+    tol8 <- if (identical(cs, c("soft", "robust"))) 1e-4 else 1e-6
+    expect_true(max(abs(e8s$U %*% e8s$B - e8t$U %*% e8t$B)) < tol8, info = lab)
+  }
+}
+
+# --- T3 / T4: two factors with an additive truth, so the main-effects fit is
+# the right answer for a combination the interaction design cannot see ---
+set.seed(301)
+n9 <- 900
+g1 <- factor(sample(c("a", "b", "c"), n9, TRUE))
+g2 <- factor(sample(c("A", "B", "C"), n9, TRUE, prob = c(.2, .3, .5)))
+tr9 <- c(a = 0, b = 10, c = 20)[as.character(g1)] +
+  c(A = 0, B = 5, C = 10)[as.character(g2)]
+X9 <- cbind(x1 = tr9 + rnorm(n9), x2 = tr9 + rnorm(n9), x3 = tr9 + rnorm(n9))
+d9 <- data.frame(X9, g1 = g1, g2 = g2)
+cell9 <- interaction(g1, g2)
+first9 <- match(levels(cell9), cell9)              # a.A, b.A, c.A, a.B, ...
+des9 <- function(form) VIM:::.gloc_design(d9, form, c("g1", "g2"))
+U9x <- des9(~ g1 * g2)
+U9y <- des9(~ g2 * g1)
+U9c <- des9(~ g1:g2 - 1)
+U9m <- des9(~ g1 + g2)
+U9m2 <- des9(~ g2 + g1)
+
+# T3: level c of g1 never records x1 (a nested gap). The c.* fitted means may
+# not depend on how the same column space is coded.
+X9n <- X9; X9n[g1 == "c", 1] <- NA
+W9n <- (!is.na(X9n)) + 0
+cc9 <- which(levels(cell9) %in% c("c.A", "c.B", "c.C"))
+Fx <- fit_at(U9x, ub(X9n, U9x, W9n, U_main = U9m), first9)
+Fy <- fit_at(U9y, ub(X9n, U9y, W9n, U_main = U9m2), first9)
+Fc <- fit_at(U9c, ub(X9n, U9c, W9n, U_main = U9m), first9)
+expect_true(max(abs(Fx[cc9, 1] - Fc[cc9, 1])) < 1e-8)
+expect_true(max(abs(Fy[cc9, 1] - Fc[cc9, 1])) < 1e-8)
+expect_true(max(abs(Fx - Fc)) < 1e-8)
+# T6: through the robust start, where the column median is the value
+md9 <- stats::median(X9n[!is.na(X9n[, 1]), 1])
+Sx <- fit_at(U9x, sr(X9n, U9x, is.na(X9n), U_main = U9m)$B, first9)
+Sc <- fit_at(U9c, sr(X9n, U9c, is.na(X9n), U_main = U9m)$B, first9)
+expect_true(all(is.finite(Sx)) && all(is.finite(Sc)))
+expect_true(max(abs(Sx[cc9, 1] - md9)) < 1e-8)
+expect_true(max(abs(Sc[cc9, 1] - md9)) < 1e-8)
+expect_true(max(abs(Sx[, 1] - Sc[, 1])) < 1e-4)     # x1 only; see T2
+
+# T4: only the combination (c, C) never records x1. bfc9962 sent it to the
+# grand mean, 14.03 against a truth of 30, while its identified neighbours
+# (c, B) and (b, C) were fitted at about 25 and 20.
+X9i <- X9; X9i[g1 == "c" & g2 == "C", 1] <- NA
+W9i <- (!is.na(X9i)) + 0
+cC9 <- which(levels(cell9) == "c.C")
+Fi <- fit_at(U9x, ub(X9i, U9x, W9i, U_main = U9m), first9)
+Fm <- fit_at(U9m, ub(X9i, U9m, W9i), first9)
+expect_true(abs(Fi[cC9, 1] - Fm[cC9, 1]) < 0.5)
+ok9 <- W9i[, 1] > 0
+cm9 <- tapply(X9i[ok9, 1], cell9[ok9], mean)       # the saturated cell means
+expect_true(max(abs(Fi[-cC9, 1] - cm9[-cC9])) < 1e-8)
+# T6
+Si <- fit_at(U9x, sr(X9i, U9x, is.na(X9i), U_main = U9m)$B, first9)
+Sm <- fit_at(U9m, sr(X9i, U9m, is.na(X9i))$B, first9)
+expect_true(all(is.finite(Si)))
+expect_true(abs(Si[cC9, 1] - Sm[cC9, 1]) < 0.5)
+
+if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
+  d9i <- data.frame(X9i, g1 = g1, g2 = g2)
+  w9 <- collect_warnings(e9x <- VIM::imputeCellGLoc(d9i, design = ~ g1 * g2,
+                                                    weights = "soft"))
+  e9m <- suppressWarnings(VIM::imputeCellGLoc(d9i, design = ~ g1 + g2,
+                                              weights = "soft"))
+  fx9 <- unname((e9x$U %*% e9x$B)[first9, 1])
+  fm9 <- unname((e9m$U %*% e9m$B)[first9, 1])
+  expect_true(abs(fx9[cC9] - fm9[cC9]) < 0.5)
+  hit9 <- grepl("not identifiable", w9, fixed = TRUE)
+  expect_equal(sum(hit9), 1L)
+  expect_true(any(hit9 & grepl("g1=c, g2=C", w9, fixed = TRUE) &
+                    grepl("main-effects", w9, fixed = TRUE)))
+}
+
+# --- T5: partial aliasing. f2 equals f1 on the rows x1 is fitted from and
+# differs on 25 rows where x1 is missing. bfc9962's fitted x1 on those rows
+# moved by about 7 when the two factors swapped places in the data. ---
+ok_rk <- W_rk[, 1] > 0
+set.seed(9)
+chg_rk <- sample(which(!ok_rk), 25)
+f2p <- f_rk
+f2p[chg_rk] <- levels(f_rk)[(as.integer(f_rk[chg_rk]) %% 3) + 1]
+U12 <- VIM:::.gloc_design(data.frame(f1 = f_rk, f2 = f2p), ~ ., c("f1", "f2"))
+U21 <- VIM:::.gloc_design(data.frame(f2 = f2p, f1 = f_rk), ~ ., c("f2", "f1"))
+all_rk <- seq_len(nrow(X_rk))
+F12 <- fit_at(U12, ub(X_rk, U12, W_rk), all_rk)
+F21 <- fit_at(U21, ub(X_rk, U21, W_rk), all_rk)
+expect_true(max(abs(F12[chg_rk, 1] - F21[chg_rk, 1])) < 1e-8)
+expect_true(max(abs(F12 - F21)) < 1e-8)
+expect_true(max(abs(F12[-chg_rk, 1] - (U_fr %*% B_fr)[-chg_rk, 1])) < 1e-8)
+# T6
+G12 <- fit_at(U12, sr(X_rk, U12, is.na(X_rk))$B, all_rk)
+G21 <- fit_at(U21, sr(X_rk, U21, is.na(X_rk))$B, all_rk)
+expect_true(all(is.finite(G12)) && all(is.finite(G21)))
+expect_true(max(abs(G12[chg_rk, 1] - G21[chg_rk, 1])) < 1e-4)

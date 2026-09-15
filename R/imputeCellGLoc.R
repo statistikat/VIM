@@ -155,6 +155,9 @@
 #'   least-squares starting mean reached the robust start's fixed point in 4;
 #'   soft starting weights on the robust residuals reached it in 6 when computed
 #'   from conditional residuals and in none when computed from marginal ones.
+#'   The conditional construction used the start's hard flags twice: as the
+#'   cell weights of the scatter it conditioned with, and as the set of peers
+#'   it conditioned on.
 #'   (Corrected: an earlier version said the hard starting flags were not the
 #'   cause, on the evidence of one construction of soft starting weights.) Under
 #'   contamination the classical start can mask: with 20% of cells shifted by 10
@@ -281,6 +284,10 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   X <- as.matrix(data[, cont_vars, drop = FALSE])
   storage.mode(X) <- "double"
   U <- .gloc_design(data, design, cat_vars)
+  # The main-effects design and per-row level labels, used only for level
+  # combinations that the rows a variable is fitted from do not identify.
+  aux <- .gloc_design_aux(data, design, cat_vars)
+  U_main <- if (is.null(aux$U_main)) U else aux$U_main
   n <- nrow(X); p <- ncol(X)
 
   # Inf / NaN are treated as missing and imputed, which is a real decision
@@ -309,7 +316,8 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   M <- !is.finite(X)                       # missing mask
   W <- matrix(1, n, p, dimnames = dimnames(X))
   W[M] <- 0
-  B <- withCallingHandlers(.gloc_update_B(X, U, W), warning = dedup)
+  B <- withCallingHandlers(.gloc_update_B(X, U, W, U_main, aux$labels),
+                           warning = dedup)
   Sigma <- NULL
   converged <- FALSE
   iter_count <- 0L
@@ -348,7 +356,8 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # warn_design = FALSE: a rank-deficient design is reported once, by the mean
   # step, which also says what the returned fit does with it.
   if (relax && start == "robust") {
-    st <- withCallingHandlers(.gloc_start_robust(X, U, M, warn_design = FALSE),
+    st <- withCallingHandlers(.gloc_start_robust(X, U, M, warn_design = FALSE,
+                                                 U_main = U_main),
                               warning = dedup)
     W <- st$W; B <- st$B
     W0 <- W; B0 <- B
@@ -425,7 +434,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
         W <- (1 - damp) * W + damp * .gloc_bisquare(Z, psi_c)
       }
       W[M] <- 0
-      B <- .gloc_update_B(X, U, W)
+      B <- .gloc_update_B(X, U, W, U_main, aux$labels)
 
       # Scale the change in the FITTED MEANS by the scatter. Normalising a
       # coefficient change by a location (max|B_old|) would make the tolerance

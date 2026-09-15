@@ -14,7 +14,10 @@
 \item{cat_vars}{character vector naming the categorical columns.}
 }
 \value{
-an \code{n x q} numeric matrix whose first column is the intercept.
+an \code{n x q} numeric matrix from \code{model.matrix}. Its first
+column is the intercept only when the design has one; under
+\code{~ f - 1} it is the first level's indicator. (Corrected: this page
+said the first column is always the intercept.)
 }
 \description{
 Missing factor values become an explicit level rather than dropped rows, so

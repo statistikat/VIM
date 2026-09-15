@@ -4,7 +4,7 @@
 \alias{.gloc_update_B}
 \title{Weighted least-squares update of the cellGLoc mean structure}
 \usage{
-.gloc_update_B(X, U, W)
+.gloc_update_B(X, U, W, U_main = U, labels = NULL)
 }
 \arguments{
 \item{X}{\eqn{n x p} numeric matrix of continuous variables, may contain NA.}
@@ -12,6 +12,13 @@
 \item{U}{\eqn{n x q} design matrix from \code{.gloc_design}.}
 
 \item{W}{\eqn{n x p} matrix of cell weights in [0, 1].}
+
+\item{U_main}{the main-effects version of \code{U}, from
+\code{.gloc_design_aux}; the default, \code{U} itself, stands for a design
+without interaction terms.}
+
+\item{labels}{optional level labels per row for the warnings, from
+\code{.gloc_design_aux}; \code{NULL} names a row by its design columns.}
 }
 \value{
 a \eqn{q x p} matrix of coefficients.
@@ -35,20 +42,35 @@ A design that is rank deficient on the rows a column is fitted from is
 fitted on a maximal set of linearly independent design columns, chosen by
 the same pivoted QR decomposition \code{qr.solve()} uses; a full-rank design
 takes exactly the arithmetic of \code{qr.solve()}, so its result is
-unchanged bit for bit. A dropped column that duplicates others (two
-identical factors, say) gets coefficient 0, which leaves the fitted means
-of every row whose design pattern occurs among the fitted rows unchanged. A
-dropped column with no fitted row at all (a level for which the variable is
-never observed) gets the coefficient that sets that level's fitted mean to
-the variable's weighted mean over the fitted rows (\code{.gloc_fill_empty}):
-the level's own mean is not identifiable from the data. Both cases warn,
-naming the design columns and the variables.
+unchanged bit for bit. The data then determine the fitted mean only of rows
+whose design row lies in the row space of the fitted rows, and those keep
+it exactly. Every other level combination -- a level for which the variable
+has no cell with positive weight, under any coding of the factors, or an
+unseen combination of partly aliased factors -- is filled by one
+least-squares step in the null space of the fitted rows' design
+(\code{.gloc_estimable}, \code{.gloc_fill_null}). The target is the
+variable's weighted mean over the fitted rows, except that under a design
+with interaction terms a combination that the main-effects design
+\code{U_main} identifies on the same rows takes that design's fitted mean.
+Where several combinations share one unidentified direction, it is their
+average over the distinct combinations that meets the target: under
+\code{~ g1 + g2} with a level of \code{g1} never observed, that level's
+rows keep the \code{g2} effects between them. The fitted means this gives
+do not depend on how the factors are coded or ordered. Aliased columns that
+change no row's fitted mean (two identical factors) warn as duplicates;
+unidentified combinations warn once per reason, naming the variables, the
+level combinations and what the fit does with them.
 
 Correction, recorded rather than deleted: until 7.4.1 a rank-deficient
 design silently kept only a weighted mean in \code{B[1, j]}, assuming column
 1 is the intercept. With a factor duplicated, the x1 group means came back
 flat at 0.39 against 0.17, 3.92 and -3.15, and \code{diag(Sigma)} was 8.5
 against 0.87; with a level that never records x1 they came back flat at
-15.44 under \code{~ f}, and 14.97, 0 and 0 under \code{~ f - 1}.
+15.44 under \code{~ f}, and 14.97, 0 and 0 under \code{~ f - 1}. The first
+7.4.1 fix filled design columns one at a time and recognised an unobserved
+level only as an all-zero column. It missed a never-observed reference level
+under treatment coding (level a came back 30.72 against a truth of 10),
+divided by zero under sum contrasts, and sent a combination missing only
+from an interaction to the grand mean (14.03 against 30).
 }
 \keyword{internal}

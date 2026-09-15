@@ -150,6 +150,9 @@ in the 7 differing \code{~ .} fits, the start's hard flags with a
 least-squares starting mean reached the robust start's fixed point in 4;
 soft starting weights on the robust residuals reached it in 6 when computed
 from conditional residuals and in none when computed from marginal ones.
+The conditional construction used the start's hard flags twice: as the
+cell weights of the scatter it conditioned with, and as the set of peers
+it conditioned on.
 (Corrected: an earlier version said the hard starting flags were not the
 cause, on the evidence of one construction of soft starting weights.) Under
 contamination the classical start can mask: with 20\% of cells shifted by 10

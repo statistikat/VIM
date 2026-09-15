@@ -11,7 +11,8 @@
   alpha = .gloc_start_alpha,
   have_cw = requireNamespace("cellWise", quietly = TRUE),
   control = NULL,
-  warn_design = TRUE
+  warn_design = TRUE,
+  U_main = U
 )
 }
 \arguments{
@@ -35,6 +36,10 @@ L1-started fit and left as given for the S-started fallback.}
 on a column's observed rows. \code{imputeCellGLoc} passes \code{FALSE}:
 its mean step (\code{.gloc_update_B}) warns about the same design once, and
 says what the returned fit does.}
+
+\item{U_main}{the main-effects version of \code{U} (see
+\code{.gloc_update_B}); the default, \code{U} itself, stands for a design
+without interaction terms.}
 }
 \value{
 a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
@@ -83,7 +88,13 @@ clean, without a warning.)
 A design that is rank deficient on a column's observed rows, an aliased
 factor say, is fitted on its non-aliased columns as chosen by \code{qr()}'s
 pivoting, and the aliased columns get coefficient 0. (Corrected: this used to
-surface as "robustbase::lmrob did not converge", naming the symptom.)
+surface as "robustbase::lmrob did not converge", naming the symptom.) Level
+combinations that no observed row identifies are then filled by the rule of
+the mean step (\code{.gloc_update_B}): towards the column median, or, under a
+design with interaction terms, towards the robust main-effects start
+wherever that identifies the combination. (Corrected: the first 7.4.1 fix
+filled design columns one at a time, which missed a never-observed reference
+level under treatment coding and divided by zero under sum contrasts.)
 
 Every degraded path warns, once per reason, naming the columns: too few
 observed rows for the design (fewer than \eqn{2q}, or a non-constant design

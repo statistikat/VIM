@@ -17,7 +17,10 @@
   1e-8) the two starts reached different fixed points in 7 of 10 fits with `design = ~ .` (relative
   scatter difference 0.009-0.032, 2-14 cells flagged differently) and in 4 of 9 converged fits with
   `~ 1`. Which one is reached depends on the starting mean and the starting weights together, and
-  on how the weights are built, so no single part of the start is the cause. (Corrected: an
+  on how the weights are built, so no single part of the start is the cause. (The soft starting
+  weights that reached the robust start's fixed point in 6 of the 7 differing `~ .` fits were
+  computed from conditional residuals that used the start's hard flags twice: as the cell weights
+  of the scatter and as the set of peers conditioned on.) (Corrected: an
   earlier draft said the hard starting flags were not the cause.) Under contamination the
   classical start can mask: in the pilot (`design = ~ .`, 20% of cells shifted by 10) its scatter
   error was 6.45 against 0.14.
@@ -45,10 +48,21 @@
   where the level b and c cells were imputed near 0 (truth 20 and 30). Now the variable is fitted on
   a maximal set of independent design columns, as `qr.solve()` would for a full-rank design, whose
   results are unchanged bit for bit. Duplicated columns get coefficient 0, which leaves the fitted
-  means unchanged, and a warning names them. A design column with no usable value of the variable
-  also warns, once: the variable's mean for that level is not identifiable from the data, and the
-  returned fit sets it to the variable's weighted mean over the rows it was estimated from, under
-  any coding of the factor.
+  means unchanged, and a warning names them. A level combination that no fitted row identifies
+  also warns, once per reason, naming the variable and the level combinations: the variable's mean
+  there is not identifiable from the data. The fit fills such combinations by one least-squares
+  step in the null space of the fitted rows' design. That leaves every identified fitted mean as it
+  is and gives the same fitted means under any coding and order of the factors. The target is the
+  variable's weighted mean over the rows it was estimated from (several such combinations meet it
+  on average, with the identified effects kept between them), or, under a design with interaction
+  terms, the main-effects fit wherever that identifies the combination. The robust start fills by
+  the same rule, towards the column median. (Corrected: the first version of this fix filled design
+  columns one at a time and recognised an unobserved level only as an all-zero column, and this
+  entry said its result held "under any coding of the factor". It did not. It missed a
+  never-observed reference level under treatment coding, where level a came back 30.72 against a
+  truth of 10 with only a warning about duplicate columns; it divided by zero under sum contrasts,
+  returning non-finite fitted means and imputations; and it sent a combination missing only from
+  an interaction to the grand mean, 14.03 against a truth of 30.)
 - **The start runs `cellMCD()` at its own tolerance, `alpha = 0.5`.** cellMCD refuses a column whose
   marginal outliers plus missing values exceed `1 - alpha`. At the default `alpha = 0.75` it did so
   in 74 of the 180 robust-start pilot fits with 20% missing cells, all at 10–20% contamination, 67
