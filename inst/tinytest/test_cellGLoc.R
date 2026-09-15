@@ -543,7 +543,13 @@ expect_warning(VIM::imputeCellGLoc(dg, design = ~ 1, weights = "soft", maxit = 2
 set.seed(51)
 Sb <- 0.5 * diag(4) + 0.5
 colnames(Sb) <- rownames(Sb) <- paste0("x", 1:4)
-Rb <- MASS::mvrnorm(300, rep(0, 4), Sb)
+# Z %*% chol(Sb), not MASS::mvrnorm. Sb has a triple eigenvalue, so the
+# eigenbasis mvrnorm uses is not unique and depends on the BLAS: the same seed
+# gave different data on different platforms, and the discontinuity check
+# below failed on 3 of 6 GitHub check platforms until 2026-09-15. The Cholesky
+# factor is unique. Both draw 300 * 4 normals, so the runif() stream after
+# this line is unchanged.
+Rb <- matrix(rnorm(300 * 4), 300) %*% chol(Sb)
 colnames(Rb) <- paste0("x", 1:4)
 Rb[1:10, 2] <- NA_real_                       # missing peers in the mix too
 
@@ -564,8 +570,10 @@ expect_equal(VIM:::.gloc_cond_resid(Rb, Sb, W = Wmix, w_min = -1),
 
 # (b) CONTINUITY. Sweep one cell's weight across the threshold and watch a
 # row-mate's standardised residual. The hard cut moves it in a single step;
-# the band spreads the same total excursion over the sweep. Measured: largest
-# one-step change 0.110 hard against 0.0035 banded, a factor of 31.
+# the band spreads the same total excursion over the sweep. Measured on these
+# data: largest one-step change 0.225 hard against 0.0071 banded, a factor of
+# 32. (The 0.110 and 0.0035 recorded here before 2026-09-15 matched neither
+# the old data nor these.)
 Wc <- matrix(0.95, 300, 4); Wc[is.na(Rb)] <- 0
 sweep_z <- function(band) vapply(seq(0.30, 0.70, by = 0.002), function(w) {
   Wx <- Wc; Wx[20, 3] <- w
@@ -577,18 +585,27 @@ expect_true(max(abs(diff(z_hard))) > 0.05)            # the discontinuity is rea
 expect_true(max(abs(diff(z_band))) < 0.01)            # and the band removes it
 expect_true(max(abs(diff(z_band))) < max(abs(diff(z_hard))) / 10)
 # the two agree wherever the swept cell is outside the band, so the band
-# interpolates between the hard rule's two answers rather than replacing them
-outside <- abs(seq(0.30, 0.70, by = 0.002) - 0.5) > VIM:::.gloc_peer_band
+# interpolates between the hard rule's two answers rather than replacing them.
+# Two grid points lie on the band edges to within 4e-17, where rounding alone
+# decides the side; the 1e-8 margin keeps them out of the comparison.
+outside <- abs(seq(0.30, 0.70, by = 0.002) - 0.5) > VIM:::.gloc_peer_band + 1e-8
 expect_equal(z_hard[outside], z_band[outside])
 
 if (at_home()) {
-  # A configuration that used to cycle at the relaxation floor even after the
-  # schedule fell back to the cold start, and warned "cycling". The band is
-  # what fixed it, and peer_band = 0 brings the failure straight back -- which
-  # is the cause-and-effect this block exists to pin. n = 800, p = 4, and the
+  # A configuration where the hard cut (peer_band = 0) cycles and warns
+  # "cycling" while the band converges to what that cycle orbits, which is the
+  # cause-and-effect this block exists to pin. n = 800, p = 4, and the
   # hard-cut arm runs to maxit, so at_home() only.
-  set.seed(5)
-  Xz <- MASS::mvrnorm(800, rep(0, 4), 0.2 * diag(4) + 0.8)
+  #
+  # The hard cut does not cycle on every draw. At this configuration it cycled
+  # for 3 of the first 12 seeds, and seed 4 is used because its cycling
+  # survived three relative jitters of 1e-9 on the data. Until 2026-09-15 the
+  # block used set.seed(5) with MASS::mvrnorm. That draw cycled only on the
+  # author's machine: the matrix has a triple eigenvalue, mvrnorm's eigenbasis
+  # depends on the BLAS, and on all 6 GitHub check platforms the hard cut
+  # converged. The Cholesky factor below is unique.
+  set.seed(4)
+  Xz <- matrix(rnorm(800 * 4), 800) %*% chol(0.2 * diag(4) + 0.8)
   inj <- matrix(FALSE, 800, 4)
   inj[sample.int(800 * 4, 160)] <- TRUE
   Xz[inj] <- Xz[inj] + 8
