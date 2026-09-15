@@ -18,13 +18,27 @@ reference:
   - medianSamp
   - imputeCellMM
   - imputeCellReg
+  - imputeCellGLoc
 - title: Multiple imputation objects
   desc: Helpers for working with vimmi multiple-imputation objects
   contents:
-  - complete
-  - complete.vimmi
+  - vim_complete
   - with.vimmi
   - as.mids.vimmi
+  - plot.vimmi
+- title: vimpute configuration
+  desc: Specifying, tuning and extending the methods behind vimpute()
+  contents:
+  - vimpute_spec
+  - vimpute_methods
+  - vimpute_search_space
+  - vimpute_tune_control
+  - register_vimpute_method
+  - unregister_vimpute_method
+- title: Simulation and diagnostics
+  contents:
+  - makeMissing
+  - overimpute
 - title: Plotting functions
   desc: Functions to visualize missing and imputed values. See [the visualization vignette](http://statistikat.github.io/VIM/articles/VisualImp.html) for an overview.
   contents:
