@@ -689,7 +689,13 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
     }
     cat_post  <- if (em) es$post else list()
     cat_multi <- mean(rowSums(catp$Mc) >= 2L)
-    if (em) cat_pri <- priors
+    cat_pobs <- withCallingHandlers({
+      if (!em) priors <- .gloc_cat_fit_priors(catp$F, rep(1, n), catp$levels)
+      .gloc_cat_prob_observed(X, M, W, B, Sigma, catp, priors, design,
+                              if (em) es else .gloc_cat_identity(catp, U),
+                              w_min = peer_w_min, band = peer_band)
+    }, warning = dedup)
+    cat_pri <- priors
   }
 
   # Impute from the unflagged cells only, by the peer rule detection uses. Both

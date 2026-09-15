@@ -388,3 +388,54 @@ if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
     expect_true(is.null(fit$cat_posterior), info = nm)
   }
 }
+
+# ==========================================================================
+# Task 6: cat_prob_observed
+# ==========================================================================
+# with an intercept-only design the continuous cells carry no level
+# information, so the diagnostic is the prior of the observed level
+d6s <- d5[-1, ]; rownames(d6s) <- NULL
+cp6 <- VIM:::.gloc_cat_prepare(d6s, c("f", "g"))
+X6 <- as.matrix(d6s[, 1:2])
+U1 <- matrix(1, 6, 1, dimnames = list(NULL, "(Intercept)"))
+po1 <- VIM:::.gloc_cat_prob_observed(X6, is.na(X6), matrix(1, 6, 2), matrix(0.5, 1, 2),
+                                     diag(2), cp6, pri5, ~ 1, VIM:::.gloc_cat_identity(cp6, U1))
+expect_equal(unname(po1[, "f"]), c(0.5, 0.3, 0.2)[as.integer(cp6$F$f)], tolerance = 1e-12)
+expect_equal(unname(po1[, "g"]), c(0.6, 0.4)[as.integer(cp6$F$g)], tolerance = 1e-12)
+
+# a B without matching design column names stops with a clear error (R19)
+Bbad <- matrix(0.5, 1, 2, dimnames = list("wrong", NULL))
+expect_error(VIM:::.gloc_cat_prob_observed(X6, is.na(X6), matrix(1, 6, 2), Bbad, diag(2), cp6,
+                                           pri5, ~ 1, VIM:::.gloc_cat_identity(cp6, U1)),
+             "do not match B")
+
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  # spec test 6 -- 5% of f miscoded to the level whose group mean is farthest
+  s6 <- gen_cat(400, 6, miss_f = 0)
+  d6 <- s6$truth
+  set.seed(66)
+  mis6 <- sample(400, 20)
+  far <- c(a = "b", b = "c", c = "b")               # shifts 0, 4, -3
+  d6$f[mis6] <- far[as.character(d6$f[mis6])]
+  fit6 <- suppressWarnings(VIM::imputeCellGLoc(d6))
+  po <- fit6$cat_prob_observed[, "f"]
+  expect_identical(dim(fit6$cat_prob_observed), c(400L, 2L))
+  expect_false(anyNA(po))
+  expect_identical(names(fit6$cat_priors), c("f", "g"))
+  expect_true(mean(po[mis6]) < 0.2)
+  expect_true(mean(po[-mis6]) > 0.7)
+
+  # missing cells are NA in the diagnostic; the posterior carries them instead
+  s6m <- gen_cat(200, 8, miss_f = 0.2)
+  fit6m <- suppressWarnings(VIM::imputeCellGLoc(s6m$d))
+  expect_true(all(is.na(fit6m$cat_prob_observed[is.na(s6m$d$f), "f"])))
+  expect_false(anyNA(fit6m$cat_prob_observed[!is.na(s6m$d$f), "f"]))
+
+  # an ordered factor with missing cells runs through the EM and the diagnostic (R23)
+  d6o <- s6m$d
+  d6o$f <- factor(d6o$f, levels = c("a", "b", "c"), ordered = TRUE)
+  fit6o <- suppressWarnings(VIM::imputeCellGLoc(d6o))
+  expect_true(is.ordered(fit6o$imputed$f))
+  expect_false(anyNA(fit6o$imputed$f))
+  expect_false(anyNA(fit6o$cat_prob_observed[!is.na(d6o$f), "f"]))
+}

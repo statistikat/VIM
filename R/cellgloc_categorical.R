@@ -498,3 +498,50 @@
   if (!length(post)) return(0)
   max(abs(unlist(post, use.names = FALSE) - unlist(old, use.names = FALSE)))
 }
+
+#' Posterior probability of each observed categorical cell's own level
+#'
+#' For every observed categorical cell: the probability of the level it holds,
+#' computed as if the cell were missing, at the returned fit and without a
+#' refit. A miscoded cell whose continuous cells point elsewhere gets a small
+#' value. Other missing categorical cells of the row enter through the row's
+#' pseudo-rows. The estimation does not use this value.
+#' @param X,M,W,B,Sigma the continuous data, mask, weights and returned fit.
+#' @param catp result of \code{.gloc_cat_prepare}.
+#' @param priors result of \code{.gloc_cat_fit_priors}.
+#' @param design one-sided formula.
+#' @param es the last E-step (or \code{.gloc_cat_identity}).
+#' @param w_min,band the peer rule.
+#' @return an \eqn{n x k} matrix, \code{NA} where the cell is missing.
+#' @keywords internal
+.gloc_cat_prob_observed <- function(X, M, W, B, Sigma, catp, priors, design, es,
+                                    w_min = 0.5, band = .gloc_peer_band) {
+  lev <- catp$levels; vars <- names(lev)
+  out <- matrix(NA_real_, nrow(catp$F), length(vars), dimnames = list(NULL, vars))
+  for (v in vars) {
+    L <- length(lev[[v]])
+    obs_rows <- which(!catp$Mc[, v])
+    if (!length(obs_rows)) next
+    if (L < 2L) { out[obs_rows, v] <- 1; next }
+    keep <- which(!catp$Mc[es$pr_row, v])
+    Fq <- es$Fp[keep, , drop = FALSE]; wq <- es$pr_w[keep]; rq <- es$pr_row[keep]
+    P0 <- .gloc_cat_prior(priors[[v]], Fq)
+    Fc <- Fq[rep(seq_len(nrow(Fq)), each = L), , drop = FALSE]
+    Fc[[v]] <- factor(rep(lev[[v]], times = nrow(Fq)), levels = lev[[v]],
+                      ordered = is.ordered(Fq[[v]]))
+    Uc <- .gloc_design_rows(Fc, design, lev)
+    if (!is.null(rownames(B)) && !identical(colnames(Uc), rownames(B)))
+      stop("imputeCellGLoc(): the design columns of cat_prob_observed do not match B.")
+    key <- rep(rq, each = L) * (L + 1) + rep(seq_len(L), times = nrow(Fq))
+    Ubar <- rowsum(Uc * rep(wq, each = L), key, reorder = TRUE)
+    pri <- rowsum(P0 * wq, rq, reorder = TRUE)
+    rows <- as.integer(rownames(pri))
+    ll <- .gloc_cat_loglik(X, M, W, B, Sigma, Ubar, rep(rows, each = L),
+                           w_min = w_min, band = band)
+    A <- log(pri) + matrix(ll, ncol = L, byrow = TRUE)
+    A <- exp(A - apply(A, 1L, max))
+    A <- A / rowSums(A)
+    out[rows, v] <- A[cbind(seq_along(rows), as.integer(catp$F[[v]][rows]))]
+  }
+  out
+}
