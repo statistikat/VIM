@@ -186,3 +186,55 @@
   P <- pmax(P, .gloc_cat_floor)
   P / rowSums(P)
 }
+
+#' Log-likelihood of candidate design rows from a row's unflagged cells
+#'
+#' The level assignment of a row with a missing categorical cell conditions on
+#' exactly the continuous cells detection and imputation condition on: the
+#' peer reliabilities of \code{.gloc_peer_rel}, with the noise-inflated
+#' covariance \eqn{G = D \Sigma_{kk} D + \mathrm{diag}(\sigma_{kk}(1 - r))} of
+#' \code{.gloc_cond_resid} and \code{.gloc_impute}. A fully reliable cell enters
+#' as observed and a flagged one drops out, so a contaminated cell cannot
+#' steer the level. \eqn{G} does not depend on the candidate, so candidates of
+#' one row differ only through the quadratic form. Rows whose peers are all
+#' fully in or out share one inversion per peer pattern.
+#' @param X \eqn{n x p} continuous matrix.
+#' @param M \eqn{n x p} missing mask.
+#' @param W \eqn{n x p} cell weights, or \code{NULL} for every observed cell.
+#' @param B \eqn{q x p} coefficients.
+#' @param Sigma \eqn{p x p} scatter.
+#' @param Ucand candidate design rows, one per candidate.
+#' @param row_of the data row of each candidate.
+#' @param w_min,band the peer rule.
+#' @return one log-likelihood per candidate, constant dropped.
+#' @keywords internal
+.gloc_cat_loglik <- function(X, M, W, B, Sigma, Ucand, row_of, w_min = 0.5,
+                             band = .gloc_peer_band) {
+  ll <- numeric(nrow(Ucand))
+  if (!length(ll)) return(ll)
+  rows <- unique(row_of)
+  Rel <- .gloc_peer_rel(!M[rows, , drop = FALSE],
+                        if (is.null(W)) NULL else W[rows, , drop = FALSE],
+                        w_min = w_min, band = band)
+  Mu <- Ucand %*% B
+  sdiag <- diag(Sigma)
+  key <- apply(Rel, 1L, function(r)
+    if (any(r > 0 & r < 1)) NA_character_ else paste0(as.integer(r > 0), collapse = ""))
+  inband <- is.na(key)
+  key[inband] <- paste0("b", seq_len(sum(inband)))
+  cand <- split(seq_along(row_of), factor(match(row_of, rows), levels = seq_along(rows)))
+  for (g in split(seq_along(rows), key)) {
+    r  <- Rel[g[1L], ]
+    kk <- which(r > 0)
+    if (!length(kk)) next
+    rk <- r[kk]; dd <- sqrt(rk)
+    G  <- outer(dd, dd) * Sigma[kk, kk, drop = FALSE] +
+            diag(sdiag[kk] * (1 - rk), length(kk))
+    Gi <- tryCatch(chol2inv(chol(G)), error = function(e) MASS::ginv(G))
+    idx <- unlist(cand[g], use.names = FALSE)
+    Z <- (X[row_of[idx], kk, drop = FALSE] - Mu[idx, kk, drop = FALSE]) *
+           rep(dd, each = length(idx))
+    ll[idx] <- -0.5 * rowSums((Z %*% Gi) * Z)
+  }
+  ll
+}

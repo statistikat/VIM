@@ -105,3 +105,43 @@ expect_true(grepl("^cellGLoc: ", wb) && grepl("f, g", wb, fixed = TRUE))
 expect_identical(prb$f$type, "marginal")
 expect_equal(unname(prb$f$probs),
              as.vector(tapply(w2, cpb$F$f, sum)) / sum(w2), tolerance = 1e-12)
+
+# ==========================================================================
+# Task 3: level log-likelihood
+# ==========================================================================
+S3 <- 0.5 * diag(3) + 0.5
+B3 <- rbind(c(0, 0, 0), c(4, 4, 2))               # intercept, one dummy
+X3 <- rbind(c(3.5, 4.2, 1.1), c(0.2, -0.1, 0.3))
+M3 <- matrix(FALSE, 2, 3)
+W3 <- matrix(1, 2, 3)
+Uc <- rbind(c(1, 0), c(1, 1), c(1, 0), c(1, 1))   # two candidates per row
+ro <- c(1L, 1L, 2L, 2L)
+ll <- VIM:::.gloc_cat_loglik(X3, M3, W3, B3, S3, Uc, ro)
+q <- function(x, mu, S) -0.5 * drop(t(x - mu) %*% solve(S) %*% (x - mu))
+expect_equal(ll[2] - ll[1], q(X3[1, ], B3[2, ] + B3[1, ], S3) - q(X3[1, ], B3[1, ], S3),
+             tolerance = 1e-10)
+
+# a flagged peer drops out: its value no longer matters
+W3f <- W3; W3f[1, 1] <- 0
+X3f <- X3; X3f[1, 1] <- 99
+expect_identical(VIM:::.gloc_cat_loglik(X3, M3, W3f, B3, S3, Uc, ro),
+                 VIM:::.gloc_cat_loglik(X3f, M3, W3f, B3, S3, Uc, ro))
+expect_equal(VIM:::.gloc_cat_loglik(X3, M3, W3f, B3, S3, Uc, ro)[1:2],
+             c(q(X3[1, 2:3], B3[1, 2:3], S3[2:3, 2:3]),
+               q(X3[1, 2:3], colSums(B3)[2:3], S3[2:3, 2:3])), tolerance = 1e-10)
+
+# a peer inside the band enters with the noise-inflated covariance
+W3b <- W3; W3b[1, 2] <- 0.5                        # reliability 0.5 at the band centre
+rel <- VIM:::.gloc_peer_rel(!M3, W3b)[1, ]
+dd <- sqrt(rel)
+G <- outer(dd, dd) * S3 + diag(diag(S3) * (1 - rel))
+z <- dd * (X3[1, ] - B3[1, ])
+expect_equal(VIM:::.gloc_cat_loglik(X3, M3, W3b, B3, S3, Uc, ro)[1],
+             -0.5 * drop(t(z) %*% solve(G) %*% z), tolerance = 1e-10)
+
+# no peer at all: 0; identical candidate rows: identical values
+M3n <- M3; M3n[2, ] <- TRUE
+expect_identical(VIM:::.gloc_cat_loglik(X3, M3n, W3, B3, S3, Uc, ro)[3:4], c(0, 0))
+Ueq <- rbind(c(1, 0), c(1, 0))
+lleq <- VIM:::.gloc_cat_loglik(X3, M3, W3, B3, S3, Ueq, c(1L, 1L))
+expect_identical(lleq[1], lleq[2])
