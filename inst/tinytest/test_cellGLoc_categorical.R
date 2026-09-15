@@ -239,6 +239,25 @@ expect_equal(unname(es5$post$f["1", ]), exact_f / sum(exact_f), tolerance = 1e-8
 exact_g <- c(0.6, 0.4) * dnorm(2.4, c(0, 3))
 expect_equal(unname(es5$post$g["1", ]), exact_g / sum(exact_g), tolerance = 1e-8)
 
+# capped rows take their mode rows in both expected designs (R24)
+cand5ci <- suppressWarnings(VIM:::.gloc_cat_candidates(cp5, d5, ~ f * g, max_combos = 2L))
+es5ci <- VIM:::.gloc_cat_estep(X5, M5, NULL, NULL, NULL, cp5, cand5ci, pri5)
+expect_true(all(es5ci$Ubar[1, ] == cand5ci$many$Umode[1, ]))
+expect_true(all(es5ci$Umain_bar[1, ] == cand5ci$many$Umode_main[1, ]))
+# a double-missing row's pseudo-row weights are the products of its marginal posteriors (R24)
+mr5 <- cand5$multi[[1]]
+expect_equal(es5$pr_w[mr5$pos],
+             unname(es5$post$f["1", mr5$lvl[, 1]] * es5$post$g["1", mr5$lvl[, 2]]),
+             tolerance = 1e-12)
+# a combination is present only when a row with known categories has it (R25)
+expect_identical(which(cand5$pat_pr$present),
+                 sort(unique(cand5$pats_rows$id[!is.na(cand5$pats_rows$id)])))
+expect_false(all(cand5$pat_pr$present[cand5$pr_c[cand5$pr_row == 1L]]))
+# a factor with its own contrasts attribute stops with the hint (R26)
+d5s <- d5; contrasts(d5s$f) <- contr.sum(3)
+expect_error(VIM:::.gloc_cat_candidates(VIM:::.gloc_cat_prepare(d5s, c("f", "g")), d5s, ~ .),
+             "categorical = \"level\"")
+
 # a row with more combinations than the cap stays out of the table, once warned
 wc <- collect_warnings(cand5c <- VIM:::.gloc_cat_candidates(cp5, d5, ~ ., max_combos = 2L))
 expect_equal(length(wc), 1L)

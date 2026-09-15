@@ -247,6 +247,9 @@
 #' once. A row with more than \code{max_combos} combinations is left out of
 #' the estimation; its missing categorical cells take the most frequent level
 #' among the complete rows, and that is warned about once.
+#' In \code{pat_pr}, a level combination is present only when a row whose
+#' categorical values are all known has it (\code{.gloc_present} on
+#' \code{pats_rows}).
 #' @param catp result of \code{.gloc_cat_prepare}.
 #' @param data the data frame of the fit; unknown categorical cells are NA.
 #' @param design one-sided formula.
@@ -319,7 +322,8 @@
     to_combo <- function(Fr) {
       Ufix <- .gloc_design_rows(Fr, design, lev)
       if (!identical(colnames(Ufix), colnames(pats$P)))
-        stop("imputeCellGLoc(): candidate design columns do not match the design.")
+        stop(paste("imputeCellGLoc(): candidate design columns do not match the design;",
+                   "use categorical = \"level\"."))
       idx <- match(key(Ufix), key(pats$P))
       if (anyNA(idx))
         stop(paste("imputeCellGLoc(): a level combination of the categorical EM is",
@@ -332,6 +336,7 @@
     pat_pr <- list(id = pr_c, P = pats$P, P_main = pats$P_main, labels = pats$labels)
     pats_rows <- pats
     pats_rows$id[nmis > 0L] <- NA_integer_
+    pat_pr$present <- .gloc_present(pats_rows)
   }
   many <- list(rows = many_rows, Umode = NULL, Umode_main = NULL, post = list())
   if (length(many_rows)) {
@@ -361,7 +366,30 @@
   list(Fp = Fp, Up = Up, Up_main = Up_main, pr_row = pr_row, pr_c = pr_c,
        pat_pr = pat_pr, pats_rows = pats_rows, single = single, multi = multi,
        many = many, const1 = colSums(Up != 1) == 0L,
+       const1_main = if (is.null(Up_main)) NULL else colSums(Up_main != 1) == 0L,
        need = lapply(stats::setNames(vars, vars), function(v) which(Mc[pr_row, v])))
+}
+
+#' Expected design rows from the pseudo-row weights
+#'
+#' Sums the weighted pseudo-rows of each data row, gives the capped rows their
+#' mode rows, and sets the columns that are 1 in every pseudo-row to 1.
+#' @param Up pseudo-row design rows.
+#' @param w pseudo-row weights.
+#' @param pr_row data row of each pseudo-row.
+#' @param rn row names of the data.
+#' @param many_rows rows left out of the table (\code{cand$many$rows}).
+#' @param Umode design rows of those rows, or \code{NULL}.
+#' @param const logical, the columns set to 1.
+#' @return a \code{length(rn) x ncol(Up)} matrix.
+#' @keywords internal
+.gloc_cat_expected_rows <- function(Up, w, pr_row, rn, many_rows, Umode, const) {
+  rs <- rowsum(Up * w, pr_row, reorder = TRUE)
+  Ub <- matrix(0, length(rn), ncol(Up), dimnames = list(rn, colnames(Up)))
+  Ub[as.integer(rownames(rs)), ] <- rs
+  if (length(many_rows)) Ub[many_rows, ] <- Umode
+  Ub[, const] <- 1
+  Ub
 }
 
 #' E-step of the categorical EM
@@ -442,21 +470,12 @@
     P <- do.call(rbind, parts[[v]])
     post[[v]] <- P[order(as.integer(rownames(P))), , drop = FALSE]
   }
-  rs <- rowsum(cand$Up * w, cand$pr_row, reorder = TRUE)
-  Ubar <- matrix(0, nrow(catp$F), ncol(cand$Up),
-                 dimnames = list(row.names(catp$F), colnames(cand$Up)))
-  Ubar[as.integer(rownames(rs)), ] <- rs
-  if (length(cand$many$rows)) Ubar[cand$many$rows, ] <- cand$many$Umode
-  Ubar[, cand$const1] <- 1
-  Umain_bar <- NULL
-  if (!is.null(cand$Up_main)) {
-    rsm <- rowsum(cand$Up_main * w, cand$pr_row, reorder = TRUE)
-    Umain_bar <- matrix(0, nrow(catp$F), ncol(cand$Up_main),
-                        dimnames = list(row.names(catp$F), colnames(cand$Up_main)))
-    Umain_bar[as.integer(rownames(rsm)), ] <- rsm
-    if (length(cand$many$rows)) Umain_bar[cand$many$rows, ] <- cand$many$Umode_main
-    Umain_bar[, colSums(cand$Up_main != 1) == 0L] <- 1
-  }
+  rn <- row.names(catp$F)
+  Ubar <- .gloc_cat_expected_rows(cand$Up, w, cand$pr_row, rn, cand$many$rows,
+                                  cand$many$Umode, cand$const1)
+  Umain_bar <- if (is.null(cand$Up_main)) NULL else
+    .gloc_cat_expected_rows(cand$Up_main, w, cand$pr_row, rn, cand$many$rows,
+                            cand$many$Umode_main, cand$const1_main)
   list(pr_row = cand$pr_row, pr_w = w, Fp = cand$Fp, Up = cand$Up, Ubar = Ubar,
        post = post, Umain_bar = Umain_bar)
 }

@@ -25,5 +25,8 @@ Only the weights change between iterations, so the design rows are built
 once. A row with more than \code{max_combos} combinations is left out of
 the estimation; its missing categorical cells take the most frequent level
 among the complete rows, and that is warned about once.
+In \code{pat_pr}, a level combination is present only when a row whose
+categorical values are all known has it (\code{.gloc_present} on
+\code{pats_rows}).
 }
 \keyword{internal}
