@@ -283,9 +283,11 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
     stop("imputeCellGLoc() needs at least one continuous variable.")
   # The categorical EM runs only when a categorical cell is missing. Without
   # one this function takes the 7.4.1 path unchanged, which is what keeps
-  # categorical = "em" and "level" bit-identical there.
-  catp <- .gloc_cat_prepare(data, cat_vars)
-  em <- identical(categorical, "em") && any(catp$Mc)
+  # categorical = "em" and "level" bit-identical there. Under "level" the
+  # preparation does not run at all, so that path does no work the EM added:
+  # every later read of catp is under categorical = "em", directly or through em.
+  catp <- if (identical(categorical, "em")) .gloc_cat_prepare(data, cat_vars) else NULL
+  em <- !is.null(catp) && any(catp$Mc)
 
   X <- as.matrix(data[, cont_vars, drop = FALSE])
   storage.mode(X) <- "double"
@@ -489,7 +491,6 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
         dR <- .gloc_cat_change(es$post, post_old)
         post_old <- es$post
         U <- es$Ubar
-        U_main <- if (is.null(es$Umain_bar)) U else es$Umain_bar
         B <- .gloc_update_B(X[es$pr_row, , drop = FALSE], cand$Up,
                             W[es$pr_row, , drop = FALSE] * es$pr_w,
                             if (is.null(cand$Up_main)) cand$Up else cand$Up_main,
@@ -592,7 +593,6 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
         W <- W0; B <- B0
         if (em) {
           es <- es0; U <- es0$Ubar
-          U_main <- if (is.null(es0$Umain_bar)) U else es0$Umain_bar
           priors <- priors0; post_old <- NULL
         }
         dW_prev <- Inf; dW_best <- Inf; stall <- 0L
@@ -686,7 +686,6 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                         w_min = peer_w_min, band = peer_band),
         warning = dedup)
       U <- es$Ubar
-      U_main <- if (is.null(es$Umain_bar)) U else es$Umain_bar
     }
     cat_post  <- if (em) es$post else list()
     cat_multi <- mean(rowSums(catp$Mc) >= 2L)
