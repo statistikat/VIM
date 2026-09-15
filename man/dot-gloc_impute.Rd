@@ -4,7 +4,17 @@
 \alias{.gloc_impute}
 \title{Fill missing continuous cells by their conditional expectation}
 \usage{
-.gloc_impute(X, U, B, Sigma, M)
+.gloc_impute(
+  X,
+  U,
+  B,
+  Sigma,
+  M,
+  W = NULL,
+  w_min = 0.5,
+  band = .gloc_peer_band,
+  cov = FALSE
+)
 }
 \arguments{
 \item{X}{\eqn{n x p} numeric matrix of continuous variables.}
@@ -16,14 +26,36 @@
 \item{Sigma}{\eqn{p x p} scatter matrix.}
 
 \item{M}{\eqn{n x p} logical mask of missing cells.}
+
+\item{W}{optional \eqn{n x p} matrix of cell weights. \code{NULL} conditions
+on every observed peer, the 7.4.0 rule.}
+
+\item{w_min, band}{the peer rule; see \code{.gloc_peer_rel}.}
+
+\item{cov}{if \code{TRUE}, also return the conditional covariance of the
+missing cells given the same peers, which is what imputation noise must be
+drawn from.}
 }
 \value{
-\code{X} with its missing cells replaced.
+\code{X} with its missing cells replaced. With \code{cov = TRUE}, a
+list with that matrix as \code{X} and \code{cond_cov}, a list named by row
+index that holds, for each row with a missing cell, the conditional
+covariance matrix of its missing cells.
 }
 \description{
-Rows are grouped by their missingness pattern, so one matrix inversion is
-done per distinct pattern rather than one per row, matching
-\code{.gloc_cond_resid}. A row with no observed continuous cell falls back
-to its fitted mean.
+A missing cell is imputed by its conditional expectation given the
+\emph{usable} peers in its row: the observed cells that pass the detection
+peer rule (\code{.gloc_peer_rel}, i.e. \code{peer_w_min} with the peer
+band). A flagged cell is therefore treated exactly like a missing one, and a
+peer inside the band is conditioned on with its information discounted, as
+in \code{.gloc_cond_resid}. Until 7.4.0 every observed peer was used,
+flagged ones included, so a grossly contaminated cell was carried into the
+imputation of its row-mates; \code{W = NULL} still gives that rule.
+}
+\details{
+Rows whose peers are all fully in or fully out are grouped by pattern, one
+matrix inversion per pattern; a row holding a peer inside the band gets a
+solve of its own. A row with no usable peer falls back to its fitted mean,
+with the marginal covariance given the design.
 }
 \keyword{internal}

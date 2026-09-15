@@ -100,6 +100,34 @@
 #' @keywords internal
 .gloc_peer_band <- 0.05
 
+#' Reliability of each cell as a peer to condition on
+#'
+#' The peer rule shared by detection (\code{.gloc_cond_resid}) and imputation
+#' (\code{.gloc_impute}), kept in one place so the two cannot drift apart.
+#' Without weights every observed cell is fully reliable. With weights, a
+#' cell's reliability ramps smoothly (\eqn{3t^2 - 2t^3}) from 0 at
+#' \code{w_min - band} to 1 at \code{w_min + band}; \code{band = 0} is the hard
+#' cut \eqn{w > w_{\min}}. Unobserved cells are 0. See the "peer band" section
+#' of \code{.gloc_cond_resid} for why the rule is a band.
+#'
+#' @param obs \eqn{n x p} logical matrix, \code{TRUE} where a cell is observed.
+#' @param W optional \eqn{n x p} matrix of cell weights.
+#' @param w_min,band the peer threshold and the half-width of its band.
+#' @return an \eqn{n x p} numeric matrix with values in \[0, 1\].
+#' @keywords internal
+.gloc_peer_rel <- function(obs, W = NULL, w_min = 0.5, band = .gloc_peer_band) {
+  if (is.null(W)) return(obs + 0)
+  Wf <- W
+  Wf[!is.finite(Wf)] <- 0
+  Rel <- if (!is.finite(band) || band <= 0) (Wf > w_min) + 0 else {
+    tt <- pmin(pmax((Wf - (w_min - band)) / (2 * band), 0), 1)
+    tt * tt * (3 - 2 * tt)
+  }
+  Rel[!obs] <- 0
+  dim(Rel) <- dim(W)
+  Rel
+}
+
 #' Standardised conditional residuals of each cell given the others in its row
 #'
 #' For each target column \code{j}, rows are grouped by which peer columns are
@@ -201,18 +229,7 @@
   Z <- matrix(NA_real_, n, p, dimnames = dimnames(R))
   if (p == 1L) return(R / sqrt(Sigma[1L, 1L]))
   obs <- is.finite(R)
-  if (is.null(W)) {
-    Rel <- obs + 0
-  } else {
-    Wf <- W
-    Wf[!is.finite(Wf)] <- 0
-    Rel <- if (!is.finite(band) || band <= 0) (Wf > w_min) + 0 else {
-      tt <- pmin(pmax((Wf - (w_min - band)) / (2 * band), 0), 1)
-      tt * tt * (3 - 2 * tt)
-    }
-    Rel[!obs] <- 0
-    dim(Rel) <- dim(W)
-  }
+  Rel <- .gloc_peer_rel(obs, W, w_min = w_min, band = band)
   sdiag <- diag(Sigma)
   for (j in seq_len(p)) {
     mj   <- setdiff(seq_len(p), j)

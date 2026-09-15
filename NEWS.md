@@ -23,9 +23,16 @@
 - **`cellWise::cwLocScat()`'s warning "There were rows with only zero weights, we dropped them" no
   longer reaches users.** A row whose cells are all missing or flagged carries no weight, so dropping
   it leaves the estimate unchanged (verified: identical location and scatter).
-- **Results from 7.4.0 are reproduced bit for bit with `start = "classical"`**, which a test pins
-  against a stored 7.4.0 fit. `start` has no effect with `weights = "binary"`, which already
-  begins with `cellWise::cellMCD()`.
+- **Imputation now conditions on unflagged cells only.** In 7.4.0 a missing continuous cell was
+  imputed by its conditional expectation given every observed cell in its row, flagged cells
+  included, so a grossly contaminated cell was carried into the imputation of its row-mates. It is
+  now imputed from the cells that pass the same peer rule detection uses (`peer_w_min` with the
+  peer band), in both weight corners. `B`, `Sigma` and `W` do not depend on this step and are
+  unchanged; imputed values in rows with a flagged cell are not.
+- **With `start = "classical"`, `B`, `Sigma` and `W` reproduce 7.4.0 bit for bit**, which a test pins
+  against a stored 7.4.0 fit. Imputed values differ from 7.4.0 in the rows with a flagged cell, and
+  the test asserts that split. `start` has no effect with `weights = "binary"`, which already begins
+  with `cellWise::cellMCD()`.
 
 # VIM 7.4.0
 

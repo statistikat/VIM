@@ -66,6 +66,14 @@
 #' \code{integer} in \code{$imputed}; their conditional expectations are
 #' rounded.
 #'
+#' A missing continuous cell is imputed by its conditional expectation given
+#' the unflagged cells in its row, selected by the same peer rule detection
+#' uses (\code{peer_w_min} with the peer band), in both weight corners. Until
+#' 7.4.0 the imputation conditioned on every observed cell, flagged ones
+#' included, so a grossly contaminated cell was carried into the imputation of
+#' its row-mates; \code{B}, \code{Sigma} and \code{W} were not affected. See
+#' \code{.gloc_impute}.
+#'
 #' @param data a \code{data.frame} with continuous and categorical columns.
 #' @param design one-sided formula for the categorical mean structure.
 #'   \code{~ .} (default) is main effects over all categorical columns,
@@ -144,7 +152,8 @@
 #'   (measured around 4e-6 at convergence, with no cell exactly 0), and a
 #'   zero threshold readmits those cells at full influence. Use a negative
 #'   value to condition on every finite peer, which is useful only for
-#'   demonstrating what the filtering buys.
+#'   demonstrating what the filtering buys. The same rule selects the cells a
+#'   missing cell is imputed from (since 7.4.1).
 #' @param peer_band half-width of the band around \code{peer_w_min} over which
 #'   a peer fades out of the conditioning set instead of leaving it at a step;
 #'   see \code{.gloc_peer_band} for the value and \code{.gloc_cond_resid} for
@@ -531,7 +540,10 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                                   crit = cw_crit)
   }, warning = dedup)
 
-  Ximp <- .gloc_impute(X, U, B, Sigma, M)
+  # Impute from the unflagged cells only, by the peer rule detection uses. Both
+  # corners: a binary flag is a weight of exactly 0 or 1, where the band is inert.
+  Ximp <- .gloc_impute(X, U, B, Sigma, M, W = W, w_min = peer_w_min,
+                       band = peer_band)
   out <- data
   for (v in cont_vars) out[[v]] <- .gloc_restore_class(Ximp[, v], data[[v]], v)
 
@@ -919,37 +931,90 @@ NULL
 
 #' Fill missing continuous cells by their conditional expectation
 #'
-#' Rows are grouped by their missingness pattern, so one matrix inversion is
-#' done per distinct pattern rather than one per row, matching
-#' \code{.gloc_cond_resid}. A row with no observed continuous cell falls back
-#' to its fitted mean.
+#' A missing cell is imputed by its conditional expectation given the
+#' \emph{usable} peers in its row: the observed cells that pass the detection
+#' peer rule (\code{.gloc_peer_rel}, i.e. \code{peer_w_min} with the peer
+#' band). A flagged cell is therefore treated exactly like a missing one, and a
+#' peer inside the band is conditioned on with its information discounted, as
+#' in \code{.gloc_cond_resid}. Until 7.4.0 every observed peer was used,
+#' flagged ones included, so a grossly contaminated cell was carried into the
+#' imputation of its row-mates; \code{W = NULL} still gives that rule.
+#'
+#' Rows whose peers are all fully in or fully out are grouped by pattern, one
+#' matrix inversion per pattern; a row holding a peer inside the band gets a
+#' solve of its own. A row with no usable peer falls back to its fitted mean,
+#' with the marginal covariance given the design.
 #'
 #' @param X \eqn{n x p} numeric matrix of continuous variables.
 #' @param U \eqn{n x q} design matrix from \code{.gloc_design}.
 #' @param B \eqn{q x p} matrix of mean-structure coefficients.
 #' @param Sigma \eqn{p x p} scatter matrix.
 #' @param M \eqn{n x p} logical mask of missing cells.
-#' @return \code{X} with its missing cells replaced.
+#' @param W optional \eqn{n x p} matrix of cell weights. \code{NULL} conditions
+#'   on every observed peer, the 7.4.0 rule.
+#' @param w_min,band the peer rule; see \code{.gloc_peer_rel}.
+#' @param cov if \code{TRUE}, also return the conditional covariance of the
+#'   missing cells given the same peers, which is what imputation noise must be
+#'   drawn from.
+#' @return \code{X} with its missing cells replaced. With \code{cov = TRUE}, a
+#'   list with that matrix as \code{X} and \code{cond_cov}, a list named by row
+#'   index that holds, for each row with a missing cell, the conditional
+#'   covariance matrix of its missing cells.
 #' @keywords internal
-.gloc_impute <- function(X, U, B, Sigma, M) {
-  if (!any(M)) return(X)
-  Mu <- U %*% B
-  R  <- X - Mu
+.gloc_impute <- function(X, U, B, Sigma, M, W = NULL, w_min = 0.5,
+                         band = .gloc_peer_band, cov = FALSE) {
   Xi <- X
-  rows <- which(rowSums(M) > 0)
-  patcode <- apply(M[rows, , drop = FALSE], 1L,
-                   function(r) paste0(as.integer(r), collapse = ""))
-  for (idx in split(rows, patcode)) {
-    i0   <- idx[1L]
-    miss <- which(M[i0, ]); obs <- which(!M[i0, ])
-    if (!length(obs)) { Xi[idx, miss] <- Mu[idx, miss, drop = FALSE]; next }
-    Soo  <- Sigma[obs, obs, drop = FALSE]
-    Sinv <- tryCatch(chol2inv(chol(Soo)), error = function(e) MASS::ginv(Soo))
-    Beta <- Sigma[miss, obs, drop = FALSE] %*% Sinv          # |miss| x |obs|
-    Xi[idx, miss] <- Mu[idx, miss, drop = FALSE] +
-      R[idx, obs, drop = FALSE] %*% t(Beta)
+  cc <- list()
+  done <- function() if (cov) list(X = Xi, cond_cov = cc) else Xi
+  if (!any(M)) return(done())
+  Mu  <- U %*% B
+  R   <- X - Mu
+  Rel <- .gloc_peer_rel(!M, W, w_min = w_min, band = band)
+  sdiag <- diag(Sigma)
+  rows  <- which(rowSums(M) > 0)
+  Rr    <- Rel[rows, , drop = FALSE]
+  sharp <- rowSums(Rr > 0 & Rr < 1) == 0L
+  bits  <- function(A) apply(A, 1L, function(r) paste0(as.integer(r), collapse = ""))
+
+  # ---- every peer fully in or fully out: one inversion per pattern. Without
+  # weights the key partitions rows exactly as the 7.4.0 code did.
+  idx <- rows[sharp]
+  if (length(idx)) {
+    key <- paste(bits(M[idx, , drop = FALSE]), bits(Rel[idx, , drop = FALSE] > 0))
+    for (g in split(idx, key)) {
+      i0   <- g[1L]
+      miss <- which(M[i0, ]); obs <- which(Rel[i0, ] > 0)
+      if (!length(obs)) {
+        Xi[g, miss] <- Mu[g, miss, drop = FALSE]
+        if (cov) C <- Sigma[miss, miss, drop = FALSE]
+      } else {
+        Soo  <- Sigma[obs, obs, drop = FALSE]
+        Sinv <- tryCatch(chol2inv(chol(Soo)), error = function(e) MASS::ginv(Soo))
+        Beta <- Sigma[miss, obs, drop = FALSE] %*% Sinv          # |miss| x |obs|
+        Xi[g, miss] <- Mu[g, miss, drop = FALSE] +
+          R[g, obs, drop = FALSE] %*% t(Beta)
+        if (cov)
+          C <- Sigma[miss, miss, drop = FALSE] - Beta %*% Sigma[obs, miss, drop = FALSE]
+      }
+      if (cov) for (i in g) cc[[as.character(i)]] <- C
+    }
   }
-  Xi
+
+  # ---- a peer inside the band: one solve for that row, with the same
+  # noise-inflated construction as .gloc_cond_resid
+  for (i in rows[!sharp]) {
+    miss <- which(M[i, ])
+    kk <- which(Rel[i, ] > 0); rk <- Rel[i, kk]; dd <- sqrt(rk)
+    G  <- outer(dd, dd) * Sigma[kk, kk, drop = FALSE] +
+            diag(sdiag[kk] * (1 - rk), length(kk))
+    Gi <- tryCatch(chol2inv(chol(G)), error = function(e) MASS::ginv(G))
+    Bt <- (Sigma[miss, kk, drop = FALSE] %*% diag(dd, length(kk))) %*% Gi
+    Xi[i, miss] <- Mu[i, miss] + as.vector(Bt %*% (dd * R[i, kk]))
+    if (cov)
+      cc[[as.character(i)]] <- Sigma[miss, miss, drop = FALSE] -
+        Bt %*% (dd * Sigma[kk, miss, drop = FALSE])
+  }
+  done()
 }
 
 #' Give an imputed column back the class of the column it came from

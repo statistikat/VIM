@@ -75,7 +75,8 @@ weight decays geometrically towards zero without ever attaining it
 (measured around 4e-6 at convergence, with no cell exactly 0), and a
 zero threshold readmits those cells at full influence. Use a negative
 value to condition on every finite peer, which is useful only for
-demonstrating what the filtering buys.}
+demonstrating what the filtering buys. The same rule selects the cells a
+missing cell is imputed from (since 7.4.1).}
 
 \item{peer_band}{half-width of the band around \code{peer_w_min} over which
 a peer fades out of the conditioning set instead of leaving it at a step;
@@ -229,6 +230,14 @@ and above combined with 20\\% of cells contaminated.
 Continuous columns that are \code{integer} in \code{data} stay
 \code{integer} in \code{$imputed}; their conditional expectations are
 rounded.
+
+A missing continuous cell is imputed by its conditional expectation given
+the unflagged cells in its row, selected by the same peer rule detection
+uses (\code{peer_w_min} with the peer band), in both weight corners. Until
+7.4.0 the imputation conditioned on every observed cell, flagged ones
+included, so a grossly contaminated cell was carried into the imputation of
+its row-mates; \code{B}, \code{Sigma} and \code{W} were not affected. See
+\code{.gloc_impute}.
 }
 \references{
 Raymaekers, J. and Rousseeuw, P. J. (2024). The cellwise minimum covariance

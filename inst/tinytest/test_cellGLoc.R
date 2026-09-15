@@ -744,26 +744,44 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
     VIM::imputeCellGLoc(dsb, design = ~ ., weights = "binary", start = "classical")[keep_b])
 }
 
-# --- start = "classical" reproduces VIM 7.4.0 bit for bit. The reference was
-# written by 7.4.0 (commit e8f204c) on fixed data. at_home() only: bit-identity
-# is a statement about this code on one platform, and a different BLAS or
-# compiler may legitimately move the last digit. ---
+# --- start = "classical" reproduces VIM 7.4.0's ESTIMATES bit for bit. The
+# reference was written by 7.4.0 (commit e8f204c) on fixed data. at_home()
+# only: bit-identity is a statement about this code on one platform, and a
+# different BLAS or compiler may legitimately move the last digit.
+# Since 7.4.1 a missing cell is imputed from the unflagged peers in its row
+# only, by the detection peer rule. B, Sigma and W do not depend on the
+# imputation, so they must still match exactly. $imputed must NOT match in the
+# rows where a peer is flagged. The 7.4.0 imputations are asserted to be the
+# all-peers rule applied to the same estimates, so the whole difference is
+# attributable to the peer rule. ---
 if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
   ref740 <- readRDS("gloc_classical_ref_740.rds")
-  keep <- c("B", "Sigma", "W", "U", "imputed", "converged", "iterations",
-            "criterion")
-  expect_identical(
-    suppressWarnings(VIM::imputeCellGLoc(ref740$data, design = ~ .,
-                                         start = "classical"))[keep],
-    ref740$fits$soft_dot[keep])
-  expect_identical(
-    suppressWarnings(VIM::imputeCellGLoc(ref740$data, design = ~ 1,
-                                         start = "classical"))[keep],
-    ref740$fits$soft_one[keep])
-  expect_identical(
-    suppressWarnings(VIM::imputeCellGLoc(ref740$data, design = ~ .,
-                                         weights = "binary"))[keep],
-    ref740$fits$bin_dot[keep])
+  keep <- c("B", "Sigma", "W", "U", "converged", "iterations", "criterion")
+  cases <- list(soft_dot = list(design = ~ ., weights = "soft"),
+                soft_one = list(design = ~ 1, weights = "soft"),
+                bin_dot  = list(design = ~ ., weights = "binary"))
+  for (nm in names(cases)) {
+    ref <- ref740$fits[[nm]]
+    fit <- suppressWarnings(VIM::imputeCellGLoc(ref740$data,
+                                                design = cases[[nm]]$design,
+                                                weights = cases[[nm]]$weights,
+                                                start = "classical"))
+    expect_identical(fit[keep], ref[keep], info = nm)
+    cont <- colnames(fit$W)
+    Xr <- as.matrix(ref740$data[, cont]); Mr <- is.na(Xr)
+    old_imp <- as.matrix(ref$imputed[, cont])
+    new_imp <- as.matrix(fit$imputed[, cont])
+    expect_identical(unname(VIM:::.gloc_impute(Xr, fit$U, fit$B, fit$Sigma, Mr)[Mr]),
+                     unname(old_imp[Mr]), info = nm)
+    rel <- VIM:::.gloc_peer_rel(!Mr, fit$W)
+    hit <- rowSums(Mr) > 0 & rowSums(!Mr & rel < 1) > 0
+    cells_hit  <- Mr & hit
+    cells_same <- Mr & !hit
+    expect_true(sum(cells_hit) > 0, info = nm)
+    expect_true(max(abs(new_imp[cells_hit] - old_imp[cells_hit])) > 1e-6, info = nm)
+    expect_equal(new_imp[cells_same], old_imp[cells_same], tolerance = 1e-12, info = nm)
+    expect_identical(new_imp[!Mr], old_imp[!Mr], info = nm)
+  }
 }
 
 # ==========================================================================
@@ -855,5 +873,100 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
     expect_false(any(grepl("lmrob", w_l)), info = lab)
     # no column fell back to zero contrasts
     expect_true(all(colSums(abs(st_l$B[-1, , drop = FALSE])) > 0), info = lab)
+  }
+}
+
+# ==========================================================================
+# Imputation conditions on unflagged peers only (7.4.1)
+#
+# Until 7.4.0 a missing cell was imputed from every observed cell in its row,
+# flagged ones included, so a grossly contaminated peer went straight into the
+# imputation. In the 7.4.1 pilot this made the robust start look worse on
+# imputation MSE (design = ~ 1, eps = 0.20, delta = 10: +2.91 over the
+# classical start, 10 of 10 reps) although its estimates were better; imputed
+# from unflagged peers only, it was better (3.61 against 4.34). Imputation now
+# uses the detection peer rule: peer_w_min with the peer band.
+# ==========================================================================
+
+set.seed(71)
+S4 <- 0.5 * diag(4) + 0.5
+colnames(S4) <- rownames(S4) <- paste0("x", 1:4)
+n4 <- 200
+X4 <- matrix(rnorm(n4 * 4), n4) %*% chol(S4)
+colnames(X4) <- paste0("x", 1:4)
+X4[1, 1] <- NA; X4[1, 2] <- X4[1, 2] + 50    # row 1: x1 missing, x2 grossly contaminated
+X4[2, 1] <- NA                                # row 2: x1 missing, clean peers
+X4[3, 3] <- NA                                # row 3: x3 missing, every peer flagged below
+X4[sample(4:n4, 30), 2] <- NA                 # other missingness in the mix
+M4 <- is.na(X4)
+U4 <- matrix(1, n4, 1, dimnames = list(NULL, "(Intercept)"))
+B4 <- matrix(0, 1, 4, dimnames = list("(Intercept)", colnames(X4)))
+W4 <- matrix(1, n4, 4); W4[M4] <- 0
+W4[1, 2] <- 0                                  # the contaminated peer is flagged
+W4[3, c(1, 2, 4)] <- 0                         # every peer of row 3 is flagged
+
+# (a) a flagged peer is exactly an absent one
+X4na <- X4; X4na[1, 2] <- NA
+imp_flag <- VIM:::.gloc_impute(X4, U4, B4, S4, M4, W = W4)
+imp_na   <- VIM:::.gloc_impute(X4na, U4, B4, S4, is.na(X4na))
+expect_equal(imp_flag[1, 1], imp_na[1, 1], tolerance = 1e-12)
+# the 7.4.0 rule pulled that imputation towards the +50 cell, by about 12
+expect_true(abs(VIM:::.gloc_impute(X4, U4, B4, S4, M4)[1, 1] - imp_na[1, 1]) > 5)
+
+# (b) no flagged peer: exactly the 7.4.0 answer
+W4c <- matrix(1, n4, 4); W4c[M4] <- 0
+expect_identical(VIM:::.gloc_impute(X4, U4, B4, S4, M4, W = W4c),
+                 VIM:::.gloc_impute(X4, U4, B4, S4, M4))
+# ... and with flagged peers elsewhere, the rows without one are unchanged
+clean_rows <- rowSums(M4) > 0 & rowSums(!M4 & W4 < 1) == 0
+old4 <- VIM:::.gloc_impute(X4, U4, B4, S4, M4)
+expect_true(sum(clean_rows) > 20)
+expect_equal(imp_flag[clean_rows, ][M4[clean_rows, ]],
+             old4[clean_rows, ][M4[clean_rows, ]], tolerance = 1e-12)
+
+# (c) the band: sweeping one peer's weight across peer_w_min moves the
+# imputation continuously where the hard cut jumps. Row 5: x1 missing, x2 = 5.
+X5 <- X4; X5[5, 1] <- NA; X5[5, 2] <- 5
+M5 <- is.na(X5)
+W5 <- matrix(1, n4, 4); W5[M5] <- 0
+grid5 <- seq(0.30, 0.70, by = 0.002)
+sweep_imp <- function(band) vapply(grid5, function(w) {
+  Wx <- W5; Wx[5, 2] <- w
+  VIM:::.gloc_impute(X5, U4, B4, S4, M5, W = Wx, w_min = 0.5, band = band)[5, 1]
+}, numeric(1))
+i_hard <- sweep_imp(0)
+i_band <- sweep_imp(VIM:::.gloc_peer_band)
+expect_true(max(abs(diff(i_hard))) > 0.5)          # the hard cut jumps, by about 1.2
+expect_true(max(abs(diff(i_band))) < max(abs(diff(i_hard))) / 10)
+outside5 <- abs(grid5 - 0.5) > VIM:::.gloc_peer_band + 1e-8
+expect_equal(i_hard[outside5], i_band[outside5])
+
+# (d) the conditional covariance returned for draws uses the same peers.
+# Analytic values for Sigma = 0.5 I + 0.5: Var(x1 | x2, x3, x4) = 0.625,
+# Var(x1 | x3, x4) = 2/3, and with no usable peer the marginal variance 1.
+ic <- VIM:::.gloc_impute(X4, U4, B4, S4, M4, W = W4, cov = TRUE)
+expect_identical(ic$X, imp_flag)
+expect_equal(ic$cond_cov[["2"]][1, 1], 0.625, tolerance = 1e-12)
+expect_equal(ic$cond_cov[["1"]][1, 1], 2 / 3, tolerance = 1e-12)
+icna <- VIM:::.gloc_impute(X4na, U4, B4, S4, is.na(X4na), cov = TRUE)
+expect_equal(ic$cond_cov[["1"]][1, 1], icna$cond_cov[["1"]]["x1", "x1"],
+             tolerance = 1e-12)
+expect_equal(ic$cond_cov[["3"]], S4[3, 3, drop = FALSE])  # every peer flagged
+# ... and the fitted mean. unname(): a single cell of a matrix with column
+# names comes back as a named scalar, which is not what is being compared.
+expect_equal(unname(ic$X[3, 3]), 0)
+
+# (e) end to end, for both corners and both starts: the fit passes its own
+# weights, so the +50 cell is not used to impute its row-mate
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  d4 <- as.data.frame(X4)
+  for (cs in list(c("soft", "robust"), c("soft", "classical"),
+                  c("binary", "classical"))) {
+    lab <- paste(cs, collapse = "/")
+    f4 <- suppressWarnings(VIM::imputeCellGLoc(d4, design = ~ 1, weights = cs[1],
+                                               start = cs[2]))
+    expect_true(f4$W[1, 2] < 0.5 - VIM:::.gloc_peer_band, info = lab)
+    ref_na <- VIM:::.gloc_impute(X4na, f4$U, f4$B, f4$Sigma, is.na(X4na), W = f4$W)
+    expect_equal(f4$imputed$x1[1], unname(ref_na[1, 1]), tolerance = 1e-10, info = lab)
   }
 }
