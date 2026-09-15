@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
       </span>
     </div>
 
@@ -45,6 +45,18 @@
     </li>
     <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
     </li>
     <li>
       <a href="../articles/vimpute.html">Imputation Method vimpute</a>
@@ -86,6 +98,7 @@
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">vimpute</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
+<span>  <span class="va">...</span>,</span>
 <span>  considered_variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">as.list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"ranger"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">considered_variables</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    <span class="va">considered_variables</span><span class="op">)</span>,</span>
@@ -100,13 +113,20 @@
 <span>  nseq <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  eps <span class="op">=</span> <span class="fl">0.005</span>,</span>
 <span>  imp_var <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  keep_all_columns <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  pred_history <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  tune <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  boot <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  boot <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  robustboot <span class="op">=</span> <span class="st">"stratified"</span>,</span>
-<span>  uncert <span class="op">=</span> <span class="st">"none"</span>,</span>
-<span>  m <span class="op">=</span> <span class="fl">1L</span></span>
+<span>  uncert <span class="op">=</span> <span class="st">"pmm"</span>,</span>
+<span>  m <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tuned_params <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tune_control <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  predictors <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  visit_sequence <span class="op">=</span> <span class="st">"asis"</span>,</span>
+<span>  spec <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -118,21 +138,39 @@
 <dd><p>Dataset with missing values. Provide as a data.table.</p></dd>
 
 
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>Optional bare <strong>grammar formulas</strong>, one per variable:
+<code>target ~ predictors | method(...)</code> – e.g.
+<code>Sleep ~ Dream + Span | ranger(tune = TRUE)</code> or
+<code>NonD ~ . | robust(donorcond = "&gt;= 0")</code> – plus an optional
+<code>.default = </code> spec for unlisted variables. A plain-column
+right-hand side restricts the <code>predictors</code> (works for every
+method); a right-hand side with transformations (<code>s(x)</code>,
+<code>log(x)</code>, <code>I(x^2)</code>, interactions) becomes a model
+<code>formula</code> (formula-capable methods only); <code>.</code> means all other
+variables. Grammar formulas compile to <code>spec</code> objects and cannot be
+combined with <code>spec = </code> or the flat per-variable arguments.</p></dd>
+
+
 <dt id="arg-considered-variables">considered_variables<a class="anchor" aria-label="anchor" href="#arg-considered-variables"></a></dt>
-<dd><p>A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process.</p></dd>
+<dd><p>A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process. Excluded columns are still returned unchanged by default (see <code>keep_all_columns</code>).</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>Specifies the imputation method for each variable.
 Can be provided either:</p><ul><li><p>as a <strong>single global method</strong> (e.g. "ranger"), applied to all variables, or</p></li>
-<li><p>as a <strong>named list</strong> (e.g. as.list(var1 = "xgboost", var2="robust")), assigning a method to each variable individually.
-Supported methods:</p></li>
+<li><p>as a <strong>named list</strong> (e.g. list(var1 = "xgboost", var2 = "robust")), assigning a method to each variable individually.
+Built-in methods:</p></li>
 <li><p>ranger (Random Forest)</p></li>
 <li><p>xgboost (Gradient Boosting)</p></li>
 <li><p>regularized (glmnet regression/classification)</p></li>
 <li><p>robust (robustbase::lmrob / glmrob)</p></li>
 <li><p>gam (Generalized Additive Model via mgcv::gam)</p></li>
 <li><p>robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)</p></li>
+<li><p>restricted (ECOSolveR least-squares regression with validate rules)
+Additional methods backed by any mlr3 learner pair can be added with
+<code><a href="register_vimpute_method.html">register_vimpute_method()</a></code>; <code><a href="vimpute_methods.html">vimpute_methods()</a></code>
+lists everything currently registered.</p></li>
 </ul></dd>
 
 
@@ -172,14 +210,21 @@ Semantics:</p></li>
 <dd><p>Hyperparameters for the chosen methods.
 Can be provided in <strong>three ways</strong>:</p><ul><li><p><strong>Per variable</strong>  (e.g. list(mpg = list(num.trees = 500)))</p></li>
 <li><p><strong>Per method</strong>    (e.g. list(ranger = list(num.trees = 600)))</p></li>
-<li><p><strong>Global</strong>, applied to all variables using the same method</p></li>
+<li><p><strong>Global</strong>, applied to all variables using the same method
+For <code>restricted</code>, set <code>save_optimization_problem = TRUE</code> to attach the
+exact ECOS problem arguments to the returned object under the
+<code>restricted_optimization_problems</code> attribute.
+Set <code>robust = TRUE</code> to replace least squares with Huber loss; <code>huber_k</code>
+controls its tuning constant and defaults to <code>1.345</code>.</p></li>
 </ul></dd>
 
 
 <dt id="arg-formula">formula<a class="anchor" aria-label="anchor" href="#arg-formula"></a></dt>
 <dd><p>Optional modeling formula to restrict or transform predictor variables.
-Only supported for <strong>regularized</strong> (glmnet), <strong>robust</strong> (lmrob/glmrob),
-<strong>gam</strong> (mgcv::gam), and <strong>robgam</strong> (robust GAM) methods
+Only supported for methods whose registry entry declares formula support:
+among the built-ins <strong>regularized</strong> (glmnet), <strong>robust</strong> (lmrob/glmrob),
+<strong>gam</strong> (mgcv::gam), <strong>robgam</strong> (robust GAM), and <strong>restricted</strong>
+(ECOSolveR least-squares with validate rules)
 Provide as a named list, e.g.:</p><ul><li><p>list(mpg = mpg ~ hp + drat)</p></li>
 <li><p>list(hp  = log(hp) ~ wt + cyl)
 For X: follows the rules of model.matrix
@@ -209,11 +254,25 @@ donor pool for model fitting for that variable.</p></dd>
 
 
 <dt id="arg-eps">eps<a class="anchor" aria-label="anchor" href="#arg-eps"></a></dt>
-<dd><p>Convergence threshold: the imputation process stops early if predictions change less than this amount across iterations.</p></dd>
+<dd><p>Convergence threshold on the per-variable <em>relative</em> change between
+iterations: for numeric variables the mean squared change of the imputed
+values divided by the variance of the observed values, for factors the
+share of imputed cells whose category changed. The sequential process
+stops early once the largest per-variable change stays below <code>eps</code>
+for two consecutive iterations. The full iterations-by-variables change
+matrix is returned as <code>attr(result, "convergence")</code>.</p></dd>
 
 
 <dt id="arg-imp-var">imp_var<a class="anchor" aria-label="anchor" href="#arg-imp-var"></a></dt>
 <dd><p>If TRUE, additional columns indicating imputed values (VAR_imp) are added.</p></dd>
+
+
+<dt id="arg-keep-all-columns">keep_all_columns<a class="anchor" aria-label="anchor" href="#arg-keep-all-columns"></a></dt>
+<dd><p>If TRUE (default), the full input is returned: columns excluded via
+<code>considered_variables</code> are passed through unchanged (original column
+order, with any <code>VAR_imp</code> indicators appended), matching <code><a href="kNN.html">kNN()</a></code>,
+<code><a href="hotdeck.html">hotdeck()</a></code> and <code><a href="irmi.html">irmi()</a></code>. Set FALSE to return only the considered
+columns (plus their indicators), dropping the rest.</p></dd>
 
 
 <dt id="arg-pred-history">pred_history<a class="anchor" aria-label="anchor" href="#arg-pred-history"></a></dt>
@@ -223,7 +282,11 @@ donor pool for model fitting for that variable.</p></dd>
 <dt id="arg-tune">tune<a class="anchor" aria-label="anchor" href="#arg-tune"></a></dt>
 <dd><p>Hyperparameter tuning flag. Can be:</p><ul><li><p>TRUE/FALSE globally</p></li>
 <li><p>or a list specifying tuning per variable, e.g. list(var1 = TRUE)
-Tuning is performed halfway through nseq iterations.</p></li>
+Tuning runs once per variable, early in the iteration sequence. With
+<code>m &gt; 1</code>, tuning runs once in the first imputation and the chosen
+parameters are shared by all <code>m</code> imputations (as in <span class="pkg">mice</span>);
+the resulting <code>vimmi</code> object carries the tuning report in its
+<code>tuning_log</code> element.</p></li>
 </ul></dd>
 
 
@@ -233,7 +296,11 @@ Tuning is performed halfway through nseq iterations.</p></li>
 
 <dt id="arg-boot">boot<a class="anchor" aria-label="anchor" href="#arg-boot"></a></dt>
 <dd><p>If TRUE, bootstrap resampling is applied before model fitting to account
-for model uncertainty. The bootstrap strategy is controlled by <code>robustboot</code>.
+for model uncertainty. Defaults to <code>TRUE</code> when <code>m &gt; 1</code> (each
+imputation then refits on a bootstrap sample, giving approximately proper
+multiple-imputation draws) and to <code>FALSE</code> for single imputation
+(<code>m = 1</code>); set explicitly to override. The bootstrap strategy is
+controlled by <code>robustboot</code>.
 Most effective with method = "robust". Default: FALSE</p></dd>
 
 
@@ -245,28 +312,122 @@ Most effective with method = "robust". Default: FALSE</p></dd>
 
 
 <dt id="arg-uncert">uncert<a class="anchor" aria-label="anchor" href="#arg-uncert"></a></dt>
-<dd><p>Imputation uncertainty method applied to predictions:
-<code>"none"</code> (point prediction, default),
+<dd><p>Imputation uncertainty method applied to numeric predictions:
+<code>"pmm"</code> (default since 7.3.0: predictive mean matching, Little 1988
+– a random draw among the 5 donors whose <em>predicted</em> values are
+nearest the missing cell's prediction, so imputed values are observed
+values; for a no-bootstrap ranger fit the donors are scored by their
+out-of-bag predictions),
+<code>"none"</code> (deterministic point prediction; the pre-7.3.0 default),
 <code>"normalerror"</code> (add N(0, sigma_hat)),
 <code>"resid"</code> (add sampled residual),
-<code>"pmm"</code> (predictive mean matching),
 <code>"midastouch"</code> (covariate-distance-weighted PMM, Siddique &amp; Belin 2008).
-If <code>pmm = TRUE</code> is set, it takes precedence over <code>uncert</code>.</p></dd>
+Factor targets draw from the predicted class probabilities whenever
+<code>uncert != "none"</code> (and are imputed by the most probable class
+otherwise). If <code>pmm = TRUE</code> is set, it takes precedence over
+<code>uncert</code>.
+Variables imputed by <code>method = "restricted"</code> always use
+<code>uncert = "none"</code>: a value-level draw on top of the constrained
+solution would break the validation rules the solver just enforced. The
+default is overridden silently, an explicitly requested draw mechanism
+warns.</p></dd>
 
 
 <dt id="arg-m">m<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
 <dd><p>Number of multiple imputations. Default: 1 (single imputation).
 When <code>m &gt; 1</code>, returns a <code><a href="vimmi.html">vimmi</a></code> object storing the original
-data and imputed values efficiently. Use <code><a href="complete.vimmi.html">complete.vimmi</a></code> to
+data and imputed values efficiently. Use <code><a href="vim_complete.html">vim_complete</a></code> to
 extract completed datasets.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Optional single number for reproducibility. Applied once via
+<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></code> at the start of the call (as in <span class="pkg">mice</span>), so the
+whole run – including all <code>m</code> imputations – is reproducible while the
+<code>m</code> imputations still differ from each other. Default <code>NULL</code>
+leaves the random-number stream untouched.</p></dd>
+
+
+<dt id="arg-tuned-params">tuned_params<a class="anchor" aria-label="anchor" href="#arg-tuned-params"></a></dt>
+<dd><p>Optional named list mapping variable names to learner parameter lists
+(e.g. <code>list(Sleep = list(num.trees = 300L))</code>). The parameters are
+applied to the variable's learner without running the tuner – use this to
+reuse tuning results across calls (each entry of a previous run's
+<code>tuning_log</code> carries its chosen parameters in <code>$params</code>).
+Used internally by <code>m &gt; 1</code> to share the first imputation's tuned
+parameters across all imputations.</p></dd>
+
+
+<dt id="arg-tune-control">tune_control<a class="anchor" aria-label="anchor" href="#arg-tune-control"></a></dt>
+<dd><p><code>NULL</code> (default) or a <code><a href="vimpute_tune_control.html">vimpute_tune_control</a></code> object
+controlling the tuning of <code>tune = TRUE</code>: evaluation budget, CV folds
+of the tuning resampling, tuner and batch size. <code>NULL</code> keeps the
+built-in data-size heuristics. With <code>m &gt; 1</code> it applies to the single
+tuning run whose parameters all imputations share. The <code>tuning_log</code>
+records the budget and folds used per variable.</p></dd>
+
+
+<dt id="arg-predictors">predictors<a class="anchor" aria-label="anchor" href="#arg-predictors"></a></dt>
+<dd><p>Optional per-variable predictor control, the equivalent of <span class="pkg">mice</span>'s
+<code>predictorMatrix</code> – and unlike <code>formula</code> it works for EVERY
+method, including <code>ranger</code> and <code>xgboost</code>. Either a named list
+mapping a target variable to the character vector of its predictors
+(e.g. <code>list(Sleep = c("Dream", "Span"))</code>), or a 0/1 (or logical)
+matrix with targets in rows and predictors in columns (compatible with
+<code><a href="https://amices.org/mice/reference/make.predictorMatrix.html" class="external-link">mice::make.predictorMatrix</a></code>). Variables without an entry use all
+other considered variables. A <code>formula</code> supplied for a variable takes
+precedence over its <code>predictors</code> entry (as in <span class="pkg">mice</span>).</p></dd>
+
+
+<dt id="arg-visit-sequence">visit_sequence<a class="anchor" aria-label="anchor" href="#arg-visit-sequence"></a></dt>
+<dd><p>Order in which the variables with missings are imputed:
+<code>"asis"</code> (default; column order), <code>"increasing.na"</code> (fewest
+missings first), <code>"decreasing.na"</code>, or a character vector giving an
+explicit permutation of the NA-variables.</p></dd>
+
+
+<dt id="arg-spec">spec<a class="anchor" aria-label="anchor" href="#arg-spec"></a></dt>
+<dd><p><code>NULL</code> or a named list of <code><a href="vimpute_spec.html">vimpute_spec</a></code> objects – one
+per variable, e.g. <code>spec = list(Sleep = vs_ranger(num.trees = 300,
+ tune = TRUE), NonD = vs_robust(donorcond = "&gt;= 0"), .default =
+ vs_ranger())</code>. Each spec bundles the variable's method, learner
+parameters (validated eagerly), <code>formula</code>/<code>predictors</code>,
+<code>tune</code>, PMM settings, <code>makeNA</code> and <code>donorcond</code>; the
+reserved name <code>".default"</code> covers unlisted variables. Compiles to
+the flat per-variable arguments, which therefore cannot be given in the
+same call.</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>Either:</p><ul><li><p>the imputed dataset (default, when <code>m = 1</code>), or</p></li>
-<li><p>a list containing the imputed dataset and prediction history (when <code>pred_history = TRUE</code> or <code>tune = TRUE</code>), or</p></li>
-<li><p>a <code><a href="vimmi.html">vimmi</a></code> object (when <code>m &gt; 1</code>).</p></li>
-</ul></div>
+    <p>For <code>m = 1</code>: the imputed dataset, classed like the input
+(data.frame in, data.frame out; data.table in, data.table out). When
+<code>tune = TRUE</code> the tuning report is attached as
+<code>attr(result, "tuning_log")</code>; when <code>pred_history = TRUE</code> the
+prediction history is attached as <code>attr(result, "pred_history")</code>;
+sequential runs attach the per-variable convergence matrix as
+<code>attr(result, "convergence")</code> and the chain statistics as
+<code>attr(result, "chain")</code>; the per-variable model quality (NRMSE/PFC,
+out-of-bag for ranger, in-sample otherwise) is attached as
+<code>attr(result, "model_error")</code> – the return is always the data
+itself, never a wrapper list.
+For <code>m &gt; 1</code>: a <code><a href="vimmi.html">vimmi</a></code> object.</p>
+    </div>
+    <div id="details">
+    <h2>Details</h2>
+    <p><strong>Missingness assumptions.</strong> Like all conditional (fully
+conditional specification) imputation, <code>vimpute()</code> assumes the data
+are <strong>MAR</strong> (missing at random: the probability of missingness may
+depend on <em>observed</em> values) – which includes <strong>MCAR</strong>
+(missing completely at random) as a special case. Under <strong>MNAR</strong>
+(missingness depending on the unobserved values themselves) imputations
+and downstream estimates can be biased, and no imputation method can fix
+this from the observed data alone; sensitivity analyses are advisable.
+<code><a href="makeMissing.html">makeMissing</a></code> generates MCAR/MAR/MNAR missingness in complete
+data for exactly such simulation-based checks, and
+<code><a href="overimpute.html">overimpute</a></code> diagnoses the calibration of the imputation
+model on the observed cells.</p>
+    </div>
     <div id="see-also">
     <h2>See also</h2>
     <div class="dont-index"><p>Other imputation methods:
@@ -314,9 +475,9 @@ extract completed datasets.</p></dd>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Extract completed datasets</span></span></span>
-<span class="r-in"><span><span class="va">d1</span> <span class="op">&lt;-</span> <span class="fu"><a href="complete.html">complete</a></span><span class="op">(</span><span class="va">result</span>, <span class="fl">1</span><span class="op">)</span>         <span class="co"># first imputed dataset</span></span></span>
-<span class="r-in"><span><span class="va">all_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="complete.html">complete</a></span><span class="op">(</span><span class="va">result</span>, <span class="st">"all"</span><span class="op">)</span>  <span class="co"># list of 5 datasets</span></span></span>
-<span class="r-in"><span><span class="va">long_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="complete.html">complete</a></span><span class="op">(</span><span class="va">result</span>, <span class="st">"long"</span><span class="op">)</span> <span class="co"># long format with .imp column</span></span></span>
+<span class="r-in"><span><span class="va">d1</span> <span class="op">&lt;-</span> <span class="fu"><a href="vim_complete.html">vim_complete</a></span><span class="op">(</span><span class="va">result</span>, <span class="fl">1</span><span class="op">)</span>         <span class="co"># first imputed dataset</span></span></span>
+<span class="r-in"><span><span class="va">all_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="vim_complete.html">vim_complete</a></span><span class="op">(</span><span class="va">result</span>, <span class="st">"all"</span><span class="op">)</span>  <span class="co"># list of 5 datasets</span></span></span>
+<span class="r-in"><span><span class="va">long_d</span> <span class="op">&lt;-</span> <span class="fu"><a href="vim_complete.html">vim_complete</a></span><span class="op">(</span><span class="va">result</span>, <span class="st">"long"</span><span class="op">)</span> <span class="co"># long format with .imp column</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Fit a model on each imputed dataset</span></span></span>
 <span class="r-in"><span><span class="va">fits</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">result</span>, <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">Sleep</span> <span class="op">~</span> <span class="va">Dream</span> <span class="op">+</span> <span class="va">Span</span><span class="op">)</span><span class="op">)</span></span></span>
@@ -340,7 +501,7 @@ extract completed datasets.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer></div>

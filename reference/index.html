@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
       </span>
     </div>
 
@@ -45,6 +45,18 @@
     </li>
     <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
     </li>
     <li>
       <a href="../articles/vimpute.html">Imputation Method vimpute</a>
@@ -173,16 +185,16 @@
           <p><code><a href="imputeCellReg.html">imputeCellReg()</a></code> </p>
         </td>
         <td><p>Cellwise-robust regression imputation for mixed data</p></td>
+      </tr><tr><td>
+          <p><code><a href="imputeCellGLoc.html">imputeCellGLoc()</a></code> </p>
+        </td>
+        <td><p>Cellwise-robust estimation on a categorical mean structure</p></td>
       </tr></tbody><tbody><tr><th colspan="2">
           <h2 id="multiple-imputation-objects">Multiple imputation objects <a href="#multiple-imputation-objects" class="anchor" aria-hidden="true"></a></h2>
           <p class="section-desc"></p><p>Helpers for working with vimmi multiple-imputation objects</p>
         </th>
       </tr></tbody><tbody><tr><td>
-          <p><code><a href="complete.html">complete()</a></code> </p>
-        </td>
-        <td><p>Extract completed datasets</p></td>
-      </tr><tr><td>
-          <p><code><a href="complete.vimmi.html">complete(<i>&lt;vimmi&gt;</i>)</a></code> </p>
+          <p><code><a href="vim_complete.html">vim_complete()</a></code> <code><a href="vim_complete.html">complete(<i>&lt;vimmi&gt;</i>)</a></code> </p>
         </td>
         <td><p>Extract completed datasets from a vimmi object</p></td>
       </tr><tr><td>
@@ -190,9 +202,53 @@
         </td>
         <td><p>Evaluate an expression across all imputations</p></td>
       </tr><tr><td>
-          <p><code><a href="as.mids.vimmi.html">as.mids.vimmi()</a></code> </p>
+          <p><code><a href="vim_as_mids.html">vim_as_mids()</a></code> <code><a href="vim_as_mids.html">as.mids.vimmi()</a></code> </p>
         </td>
         <td><p>Convert a vimmi object to a mice mids object</p></td>
+      </tr><tr><td>
+          <p><code><a href="plot.vimmi.html">plot(<i>&lt;vimmi&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Diagnostic plots for a vimmi object</p></td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h2 id="vimpute-configuration">vimpute configuration <a href="#vimpute-configuration" class="anchor" aria-hidden="true"></a></h2>
+          <p class="section-desc"></p><p>Specifying, tuning and extending the methods behind vimpute()</p>
+        </th>
+      </tr></tbody><tbody><tr><td>
+          <p><code><a href="vimpute_spec.html">vimpute_spec()</a></code> <code><a href="vimpute_spec.html">vs_ranger()</a></code> <code><a href="vimpute_spec.html">vs_xgboost()</a></code> <code><a href="vimpute_spec.html">vs_regularized()</a></code> <code><a href="vimpute_spec.html">vs_robust()</a></code> <code><a href="vimpute_spec.html">vs_gam()</a></code> <code><a href="vimpute_spec.html">vs_robgam()</a></code> <code><a href="vimpute_spec.html">print(<i>&lt;vimpute_spec&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Per-variable imputation specification for <code><a href="../reference/vimpute.html">vimpute()</a></code></p></td>
+      </tr><tr><td>
+          <p><code><a href="vimpute_methods.html">vimpute_methods()</a></code> </p>
+        </td>
+        <td><p>List the imputation methods registered for <code><a href="../reference/vimpute.html">vimpute()</a></code></p></td>
+      </tr><tr><td>
+          <p><code><a href="vimpute_search_space.html">vimpute_search_space()</a></code> </p>
+        </td>
+        <td><p>The built-in tuning search space of a learner</p></td>
+      </tr><tr><td>
+          <p><code><a href="vimpute_tune_control.html">vimpute_tune_control()</a></code> </p>
+        </td>
+        <td><p>Control the hyperparameter tuning of <code><a href="../reference/vimpute.html">vimpute()</a></code></p></td>
+      </tr><tr><td>
+          <p><code><a href="register_vimpute_method.html">register_vimpute_method()</a></code> </p>
+        </td>
+        <td><p>Register an imputation method for <code><a href="../reference/vimpute.html">vimpute()</a></code></p></td>
+      </tr><tr><td>
+          <p><code><a href="unregister_vimpute_method.html">unregister_vimpute_method()</a></code> </p>
+        </td>
+        <td><p>Remove a user-registered <code><a href="../reference/vimpute.html">vimpute()</a></code> method</p></td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h2 id="simulation-and-diagnostics">Simulation and diagnostics <a href="#simulation-and-diagnostics" class="anchor" aria-hidden="true"></a></h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr></tbody><tbody><tr><td>
+          <p><code><a href="makeMissing.html">makeMissing()</a></code> </p>
+        </td>
+        <td><p>Generate MCAR/MAR/MNAR missingness in complete data</p></td>
+      </tr><tr><td>
+          <p><code><a href="overimpute.html">overimpute()</a></code> <code><a href="overimpute.html">print(<i>&lt;vimpute_overimpute&gt;</i>)</a></code> <code><a href="overimpute.html">plot(<i>&lt;vimpute_overimpute&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Overimputation: calibration diagnostic for an imputation model</p></td>
       </tr></tbody><tbody><tr><th colspan="2">
           <h2 id="plotting-functions">Plotting functions <a href="#plotting-functions" class="anchor" aria-hidden="true"></a></h2>
           <p class="section-desc"></p><p>Functions to visualize missing and imputed values. See <a href="http://statistikat.github.io/VIM/articles/VisualImp.html" class="external-link">the visualization vignette</a> for an overview.</p>
@@ -320,7 +376,11 @@
       </tr><tr><td>
           <p><code><a href="diabetes.html">diabetes</a></code> </p>
         </td>
-        <td><p>Indian Prime Diabetes Data</p></td>
+        <td><p>Synthetic Pima Indians Diabetes Data</p></td>
+      </tr><tr><td>
+          <p><code><a href="dot-gloc_damp_schedule.html">.gloc_damp</a></code> <code><a href="dot-gloc_damp_schedule.html">.gloc_damp_start</a></code> <code><a href="dot-gloc_damp_schedule.html">.gloc_damp_shrink</a></code> </p>
+        </td>
+        <td><p>Relaxation schedule for the soft corner's weight update</p></td>
       </tr><tr><td>
           <p><code><a href="food.html">food</a></code> </p>
         </td>
@@ -329,6 +389,14 @@
           <p><code><a href="kola.background.html">kola.background</a></code> </p>
         </td>
         <td><p>Background map for the Kola project data</p></td>
+      </tr><tr><td>
+          <p><code><a href="lse_synthetic.html">lse_synthetic</a></code> </p>
+        </td>
+        <td><p>Synthetic Austrian Structural Business Survey data</p></td>
+      </tr><tr><td>
+          <p><code><a href="lse_synthetic_rules.html">lse_synthetic_rules</a></code> </p>
+        </td>
+        <td><p>Validation rules for the synthetic LSE data</p></td>
       </tr><tr><td>
           <p><code><a href="pulplignin.html">pulplignin</a></code> </p>
         </td>
@@ -402,7 +470,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer></div>

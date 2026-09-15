@@ -22,7 +22,7 @@ expectations (continuous) and weighted multinomial regression
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
       </span>
     </div>
 
@@ -50,6 +50,18 @@ expectations (continuous) and weighted multinomial regression
     </li>
     <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
     </li>
     <li>
       <a href="../articles/vimpute.html">Imputation Method vimpute</a>
@@ -174,8 +186,14 @@ a list of imputed datasets is returned.</p></dd>
 
 
 <dt id="arg-boot">boot<a class="anchor" aria-label="anchor" href="#arg-boot"></a></dt>
-<dd><p>logical; if <code>TRUE</code>, bootstrap resampling propagates
-parameter uncertainty across the <code>m</code> imputations.</p></dd>
+<dd><p>logical; intended to add bootstrap parameter uncertainty across
+the <code>m</code> imputations. <strong>Currently ineffective</strong>: the imputation
+step is a per-variable robust regression (<code>cellIRWLS</code>), so resampling
+the location/covariance estimate leaves the imputations essentially
+unchanged (measured between-imputation variance is not inflated relative to
+<code>boot = FALSE</code>). Proper parameter-uncertainty propagation requires
+bootstrapping the per-variable regression coefficients and is not yet
+implemented; see the note below. Default <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-trace">trace<a class="anchor" aria-label="anchor" href="#arg-trace"></a></dt>
@@ -207,11 +225,20 @@ is only applied to continuous variables).</p></dd>
 <dd><p>number of iterations performed.</p></dd>
 
 </dl></div>
+    <div id="note">
+    <h2>Note</h2>
+    <p>Multiple imputation with proper parameter-uncertainty propagation is
+not yet implemented for this method (see <code>boot</code>). <code>m &gt; 1</code> returns
+repeated imputations whose between-imputation variability comes only from
+the stochastic uncertainty step (<code>uncert</code>) and estimator randomness,
+so downstream Rubin pooling understates total variance. Treat the current
+<code>m &gt; 1</code> output as approximate.</p>
+    </div>
     <div id="references">
     <h2>References</h2>
-    <p>Raymaekers, C. and Rousseeuw, P.J. (2024).  The cellwise minimum
+    <p>Raymaekers, J. and Rousseeuw, P.J. (2024).  The cellwise minimum
 covariance determinant estimator.  <em>Journal of the American
-Statistical Association</em>, <strong>119</strong>(545), 576–588.</p>
+Statistical Association</em>, <strong>119</strong>(548), 2610–2621.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>
@@ -270,7 +297,7 @@ Statistical Association</em>, <strong>119</strong>(545), 576–588.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer></div>

@@ -1,5 +1,5 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   donorImp: donorImp.html
@@ -7,10 +7,14 @@ articles:
   irmi: irmi.html
   modelImp: modelImp.html
   VIM: VIM.html
+  vimpute-benchmark: vimpute-benchmark.html
+  vimpute-coverage: vimpute-coverage.html
+  vimpute-mi: vimpute-mi.html
+  vimpute-restricted: vimpute-restricted.html
   vimpute: vimpute.html
   VisualImp: VisualImp.html
   xgboostImpute: xgboostImpute.html
-last_built: 2026-07-02T07:49Z
+last_built: 2026-09-15T08:44Z
 urls:
   reference: https://statistikat.github.io/VIM/reference
   article: https://statistikat.github.io/VIM/articles

@@ -19,7 +19,7 @@ or imputeCellEM."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
       </span>
     </div>
 
@@ -47,6 +47,18 @@ or imputeCellEM."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax
     </li>
     <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
     </li>
     <li>
       <a href="../articles/vimpute.html">Imputation Method vimpute</a>
@@ -155,364 +167,14 @@ repeatedly with different seeds and combine using Rubin's rules.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span>, package <span class="op">=</span> <span class="st">"VIM"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">imputeCellwise</span><span class="op">(</span><span class="va">sleep</span>, method <span class="op">=</span> <span class="st">"cellIRMI"</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S refinements did not converge (to refine.tol=1e-07) in 200 (= k.max) steps</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>find_scale() did not converge in 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in coefficient 'Overall'.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Detected possible local breakdown of S-estimate in 2 coefficients 'Overall', ''.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Use lmrob argument 'setting="KS2014"' to avoid this problem.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>S-estimated scale == 0:  Probably exact fit; check your data</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">data_imputed</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   BodyWgt BrainWgt NonD Dream Sleep Span Gest Pred Exp Danger</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  55.500    157.0 10.0   0.5   2.9 20.0  645    4   1      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1   1.000      8.1  9.1   1.4  10.7 38.6   90    3   3      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2   1.000      6.6  6.3   2.0   8.3  4.5   42    3   1      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3   3.385     44.5 15.8   2.8  13.3 14.0   60    1   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4   0.920     11.4 15.2   0.9  17.0 27.0  115    2   2      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  14.830    115.0  2.1   0.5   2.9 20.0   33    5   5      4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6  10.550    179.5  9.1   0.7   9.8 27.0  180    4   4      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   3.385     44.5  8.6   1.8  10.3 14.0   60    1   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   0.920      5.7  8.3   2.0  10.7 19.0   25    5   2      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   2.500     12.3  2.1   1.8   3.9 24.0   31    3   1      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6   1.040     12.5  9.1   0.7   9.8 27.0  180    4   4      4</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
@@ -529,7 +191,7 @@ repeatedly with different seeds and combine using Rubin's rules.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer></div>

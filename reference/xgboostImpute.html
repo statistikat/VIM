@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
       </span>
     </div>
 
@@ -45,6 +45,18 @@
     </li>
     <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
     </li>
     <li>
       <a href="../articles/vimpute.html">Imputation Method vimpute</a>
@@ -167,392 +179,33 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgboost.html" 
     <div id="ref-examples">
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">xgboostImpute</span><span class="op">(</span><span class="va">Dream</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger Dream_imp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00   NA   1.7   3.3  38.6 645.0    3   5      3      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.3   2.0   8.3   4.5  42.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50   NA   2.9  12.5  14.0  60.0    1   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70   NA   1.2  16.5    NA  25.0    5   2      3      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  2547.000  4603.00  2.1   1.8   3.9  69.0 624.0    3   5      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6    10.550   179.50  9.1   0.7   9.8  27.0 180.0    4   4      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7     0.023     0.30 15.8   3.9  19.7  19.0  35.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8   160.000   169.00  5.2   1.0   6.2  30.4 392.0    4   5      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9     3.300    25.60 10.9   3.6  14.5  28.0  63.0    1   2      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10   52.160   440.00  8.3   1.4   9.7  50.0 230.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11    0.425     6.40 11.0   1.5  12.5   7.0 112.0    5   4      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12  465.000   423.00  3.2   0.7   3.9  30.0 281.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13    0.550     2.40  7.6   2.7  10.3    NA    NA    2   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14  187.100   419.00   NA   1.5   3.1  40.0 365.0    5   5      5      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15    0.075     1.20  6.3   2.1   8.4   3.5  42.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16    3.000    25.00  8.6   0.0   8.6  50.0  28.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17    0.785     3.50  6.6   4.1  10.7   6.0  42.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18    0.200     5.00  9.5   1.2  10.7  10.4 120.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19    1.410    17.50  4.8   1.3   6.1  34.0    NA    1   2      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20   60.000    81.00 12.0   6.1  18.1   7.0    NA    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21  529.000   680.00   NA   0.3    NA  28.0 400.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22   27.660   115.00  3.3   0.5   3.8  20.0 148.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23    0.120     1.00 11.0   3.4  14.4   3.9  16.0    3   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24  207.000   406.00   NA   1.5  12.0  39.3 252.0    1   4      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 25   85.000   325.00  4.7   1.5   6.2  41.0 310.0    1   3      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26   36.330   119.50   NA   0.8  13.0  16.2  63.0    1   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 27    0.101     4.00 10.4   3.4  13.8   9.0  28.0    5   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 28    1.040     5.50  7.4   0.8   8.2   7.6  68.0    5   3      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 29  521.000   655.00  2.1   0.8   2.9  46.0 336.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30  100.000   157.00   NA   1.3  10.8  22.4 100.0    1   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 31   35.000    56.00   NA   2.9    NA  16.3  33.0    3   5      4      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    0.005     0.14  7.7   1.4   9.1   2.6  21.5    5   2      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 33    0.010     0.25 17.9   2.0  19.9  24.0  50.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 34   62.000  1320.00  6.1   1.9   8.0 100.0 267.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 35    0.122     3.00  8.2   2.4  10.6    NA  30.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 36    1.350     8.10  8.4   2.8  11.2    NA  45.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 37    0.023     0.40 11.9   1.3  13.2   3.2  19.0    4   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 38    0.048     0.33 10.8   2.0  12.8   2.0  30.0    4   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 39    1.700     6.30 13.8   5.6  19.4   5.0  12.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 40    3.500    10.80 14.3   3.1  17.4   6.5 120.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 41  250.000   490.00   NA   1.0    NA  23.6 440.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 42    0.480    15.50 15.2   1.8  17.0  12.0 140.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 43   10.000   115.00 10.0   0.9  10.9  20.2 170.0    4   4      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 44    1.620    11.40 11.9   1.8  13.7  13.0  17.0    2   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 45  192.000   180.00  6.5   1.9   8.4  27.0 115.0    4   4      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 46    2.500    12.10  7.5   0.9   8.4  18.0  31.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 47    4.288    39.20   NA   2.2  12.5  13.7  63.0    2   2      2      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 48    0.280     1.90 10.6   2.6  13.2   4.7  21.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 49    4.235    50.40  7.4   2.4   9.8   9.8  52.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 50    6.800   179.00  8.4   1.2   9.6  29.0 164.0    2   3      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 51    0.750    12.30  5.7   0.9   6.6   7.0 225.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 52    3.600    21.00  4.9   0.5   5.4   6.0 225.0    3   2      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 53   14.830    98.20   NA   2.5   2.6  17.0 150.0    5   5      5      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 54   55.500   175.00  3.2   0.6   3.8  20.0 151.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 55    1.400    12.50   NA   1.4  11.0  12.7  90.0    2   2      2      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 56    0.060     1.00  8.1   2.2  10.3   3.5    NA    3   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 57    0.900     2.60 11.0   2.3  13.3   4.5  60.0    2   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 58    2.000    12.30  4.9   0.5   5.4   7.5 200.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 59    0.104     2.50 13.2   2.6  15.8   2.3  46.0    3   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 60    4.190    58.00  9.7   0.6  10.3  24.0 210.0    4   3      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 61    3.500     3.90 12.8   6.6  19.4   3.0  14.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 62    4.050    17.00   NA   0.7    NA  13.0  38.0    3   1      1      TRUE</span>
-<span class="r-in"><span><span class="fu">xgboostImpute</span><span class="op">(</span><span class="va">Dream</span><span class="op">+</span><span class="va">NonD</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger Dream_imp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  2.4   1.7   3.3  38.6 645.0    3   5      3      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.3   2.0   8.3   4.5  42.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50  9.6   2.9  12.5  14.0  60.0    1   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70  7.6   1.2  16.5    NA  25.0    5   2      3      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  2547.000  4603.00  2.1   1.8   3.9  69.0 624.0    3   5      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6    10.550   179.50  9.1   0.7   9.8  27.0 180.0    4   4      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7     0.023     0.30 15.8   3.9  19.7  19.0  35.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8   160.000   169.00  5.2   1.0   6.2  30.4 392.0    4   5      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9     3.300    25.60 10.9   3.6  14.5  28.0  63.0    1   2      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10   52.160   440.00  8.3   1.4   9.7  50.0 230.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11    0.425     6.40 11.0   1.5  12.5   7.0 112.0    5   4      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12  465.000   423.00  3.2   0.7   3.9  30.0 281.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13    0.550     2.40  7.6   2.7  10.3    NA    NA    2   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14  187.100   419.00  5.4   1.5   3.1  40.0 365.0    5   5      5      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15    0.075     1.20  6.3   2.1   8.4   3.5  42.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16    3.000    25.00  8.6   0.0   8.6  50.0  28.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17    0.785     3.50  6.6   4.1  10.7   6.0  42.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18    0.200     5.00  9.5   1.2  10.7  10.4 120.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19    1.410    17.50  4.8   1.3   6.1  34.0    NA    1   2      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20   60.000    81.00 12.0   6.1  18.1   7.0    NA    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21  529.000   680.00  2.4   0.3    NA  28.0 400.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22   27.660   115.00  3.3   0.5   3.8  20.0 148.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23    0.120     1.00 11.0   3.4  14.4   3.9  16.0    3   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24  207.000   406.00  5.4   1.5  12.0  39.3 252.0    1   4      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 25   85.000   325.00  4.7   1.5   6.2  41.0 310.0    1   3      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26   36.330   119.50  4.9   0.8  13.0  16.2  63.0    1   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 27    0.101     4.00 10.4   3.4  13.8   9.0  28.0    5   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 28    1.040     5.50  7.4   0.8   8.2   7.6  68.0    5   3      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 29  521.000   655.00  2.1   0.8   2.9  46.0 336.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30  100.000   157.00  4.8   1.3  10.8  22.4 100.0    1   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 31   35.000    56.00  9.5   2.9    NA  16.3  33.0    3   5      4      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    0.005     0.14  7.7   1.4   9.1   2.6  21.5    5   2      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 33    0.010     0.25 17.9   2.0  19.9  24.0  50.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 34   62.000  1320.00  6.1   1.9   8.0 100.0 267.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 35    0.122     3.00  8.2   2.4  10.6    NA  30.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 36    1.350     8.10  8.4   2.8  11.2    NA  45.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 37    0.023     0.40 11.9   1.3  13.2   3.2  19.0    4   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 38    0.048     0.33 10.8   2.0  12.8   2.0  30.0    4   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 39    1.700     6.30 13.8   5.6  19.4   5.0  12.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 40    3.500    10.80 14.3   3.1  17.4   6.5 120.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 41  250.000   490.00  5.6   1.0    NA  23.6 440.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 42    0.480    15.50 15.2   1.8  17.0  12.0 140.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 43   10.000   115.00 10.0   0.9  10.9  20.2 170.0    4   4      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 44    1.620    11.40 11.9   1.8  13.7  13.0  17.0    2   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 45  192.000   180.00  6.5   1.9   8.4  27.0 115.0    4   4      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 46    2.500    12.10  7.5   0.9   8.4  18.0  31.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 47    4.288    39.20  8.2   2.2  12.5  13.7  63.0    2   2      2      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 48    0.280     1.90 10.6   2.6  13.2   4.7  21.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 49    4.235    50.40  7.4   2.4   9.8   9.8  52.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 50    6.800   179.00  8.4   1.2   9.6  29.0 164.0    2   3      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 51    0.750    12.30  5.7   0.9   6.6   7.0 225.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 52    3.600    21.00  4.9   0.5   5.4   6.0 225.0    3   2      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 53   14.830    98.20  9.4   2.5   2.6  17.0 150.0    5   5      5      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 54   55.500   175.00  3.2   0.6   3.8  20.0 151.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 55    1.400    12.50  5.8   1.4  11.0  12.7  90.0    2   2      2      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 56    0.060     1.00  8.1   2.2  10.3   3.5    NA    3   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 57    0.900     2.60 11.0   2.3  13.3   4.5  60.0    2   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 58    2.000    12.30  4.9   0.5   5.4   7.5 200.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 59    0.104     2.50 13.2   2.6  15.8   2.3  46.0    3   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 60    4.190    58.00  9.7   0.6  10.3  24.0 210.0    4   3      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 61    3.500     3.90 12.8   6.6  19.4   3.0  14.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 62    4.050    17.00  6.6   0.7    NA  13.0  38.0    3   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    NonD_imp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 25    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 27    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 28    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 29    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 31     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 33    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 34    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 35    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 36    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 37    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 38    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 39    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 40    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 41     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 42    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 43    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 44    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 45    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 46    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 47     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 48    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 49    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 50    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 51    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 52    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 53     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 54    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 55     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 56    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 57    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 58    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 59    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 60    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 61    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 62     TRUE</span>
-<span class="r-in"><span><span class="fu">xgboostImpute</span><span class="op">(</span><span class="va">Dream</span><span class="op">+</span><span class="va">NonD</span><span class="op">+</span><span class="va">Gest</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleep</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger Dream_imp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00  2.4   1.7   3.3  38.6 645.0    3   5      3      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.3   2.0   8.3   4.5  42.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50  9.6   2.9  12.5  14.0  60.0    1   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70  7.6   1.2  16.5    NA  25.0    5   2      3      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  2547.000  4603.00  2.1   1.8   3.9  69.0 624.0    3   5      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6    10.550   179.50  9.1   0.7   9.8  27.0 180.0    4   4      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7     0.023     0.30 15.8   3.9  19.7  19.0  35.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8   160.000   169.00  5.2   1.0   6.2  30.4 392.0    4   5      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9     3.300    25.60 10.9   3.6  14.5  28.0  63.0    1   2      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10   52.160   440.00  8.3   1.4   9.7  50.0 230.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11    0.425     6.40 11.0   1.5  12.5   7.0 112.0    5   4      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12  465.000   423.00  3.2   0.7   3.9  30.0 281.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13    0.550     2.40  7.6   2.7  10.3    NA  34.7    2   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14  187.100   419.00  5.4   1.5   3.1  40.0 365.0    5   5      5      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15    0.075     1.20  6.3   2.1   8.4   3.5  42.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16    3.000    25.00  8.6   0.0   8.6  50.0  28.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17    0.785     3.50  6.6   4.1  10.7   6.0  42.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18    0.200     5.00  9.5   1.2  10.7  10.4 120.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19    1.410    17.50  4.8   1.3   6.1  34.0  83.8    1   2      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20   60.000    81.00 12.0   6.1  18.1   7.0 101.7    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21  529.000   680.00  2.4   0.3    NA  28.0 400.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22   27.660   115.00  3.3   0.5   3.8  20.0 148.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23    0.120     1.00 11.0   3.4  14.4   3.9  16.0    3   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24  207.000   406.00  5.4   1.5  12.0  39.3 252.0    1   4      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 25   85.000   325.00  4.7   1.5   6.2  41.0 310.0    1   3      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26   36.330   119.50  4.9   0.8  13.0  16.2  63.0    1   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 27    0.101     4.00 10.4   3.4  13.8   9.0  28.0    5   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 28    1.040     5.50  7.4   0.8   8.2   7.6  68.0    5   3      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 29  521.000   655.00  2.1   0.8   2.9  46.0 336.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30  100.000   157.00  4.8   1.3  10.8  22.4 100.0    1   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 31   35.000    56.00  9.5   2.9    NA  16.3  33.0    3   5      4      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    0.005     0.14  7.7   1.4   9.1   2.6  21.5    5   2      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 33    0.010     0.25 17.9   2.0  19.9  24.0  50.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 34   62.000  1320.00  6.1   1.9   8.0 100.0 267.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 35    0.122     3.00  8.2   2.4  10.6    NA  30.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 36    1.350     8.10  8.4   2.8  11.2    NA  45.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 37    0.023     0.40 11.9   1.3  13.2   3.2  19.0    4   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 38    0.048     0.33 10.8   2.0  12.8   2.0  30.0    4   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 39    1.700     6.30 13.8   5.6  19.4   5.0  12.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 40    3.500    10.80 14.3   3.1  17.4   6.5 120.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 41  250.000   490.00  5.6   1.0    NA  23.6 440.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 42    0.480    15.50 15.2   1.8  17.0  12.0 140.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 43   10.000   115.00 10.0   0.9  10.9  20.2 170.0    4   4      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 44    1.620    11.40 11.9   1.8  13.7  13.0  17.0    2   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 45  192.000   180.00  6.5   1.9   8.4  27.0 115.0    4   4      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 46    2.500    12.10  7.5   0.9   8.4  18.0  31.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 47    4.288    39.20  8.2   2.2  12.5  13.7  63.0    2   2      2      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 48    0.280     1.90 10.6   2.6  13.2   4.7  21.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 49    4.235    50.40  7.4   2.4   9.8   9.8  52.0    1   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 50    6.800   179.00  8.4   1.2   9.6  29.0 164.0    2   3      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 51    0.750    12.30  5.7   0.9   6.6   7.0 225.0    2   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 52    3.600    21.00  4.9   0.5   5.4   6.0 225.0    3   2      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 53   14.830    98.20  9.4   2.5   2.6  17.0 150.0    5   5      5      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 54   55.500   175.00  3.2   0.6   3.8  20.0 151.0    5   5      5     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 55    1.400    12.50  5.8   1.4  11.0  12.7  90.0    2   2      2      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 56    0.060     1.00  8.1   2.2  10.3   3.5  31.2    3   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 57    0.900     2.60 11.0   2.3  13.3   4.5  60.0    2   1      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 58    2.000    12.30  4.9   0.5   5.4   7.5 200.0    3   1      3     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 59    0.104     2.50 13.2   2.6  15.8   2.3  46.0    3   2      2     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 60    4.190    58.00  9.7   0.6  10.3  24.0 210.0    4   3      4     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 61    3.500     3.90 12.8   6.6  19.4   3.0  14.0    2   1      1     FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 62    4.050    17.00  6.6   0.7    NA  13.0  38.0    3   1      1      TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    NonD_imp Gest_imp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1      TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2     FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3      TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4      TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5     FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6     FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7     FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8     FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9     FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13    FALSE     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14     TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19    FALSE     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20    FALSE     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21     TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24     TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 25    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26     TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 27    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 28    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 29    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30     TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 31     TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 33    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 34    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 35    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 36    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 37    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 38    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 39    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 40    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 41     TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 42    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 43    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 44    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 45    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 46    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 47     TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 48    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 49    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 50    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 51    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 52    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 53     TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 54    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 55     TRUE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 56    FALSE     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 57    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 58    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 59    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 60    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 61    FALSE    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 62     TRUE    FALSE</span>
-<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">sleepx</span> <span class="op">&lt;-</span> <span class="va">sleep</span></span></span>
 <span class="r-in"><span><span class="va">sleepx</span><span class="op">$</span><span class="va">Pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">LETTERS</span><span class="op">[</span><span class="va">sleepx</span><span class="op">$</span><span class="va">Pred</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">sleepx</span><span class="op">$</span><span class="va">Pred</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
-<span class="r-in"><span><span class="fu">xgboostImpute</span><span class="op">(</span><span class="va">Pred</span><span class="op">~</span><span class="va">BodyWgt</span><span class="op">+</span><span class="va">BrainWgt</span>,data<span class="op">=</span><span class="va">sleepx</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     BodyWgt BrainWgt NonD Dream Sleep  Span  Gest Pred Exp Danger Pred_imp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6654.000  5712.00   NA    NA   3.3  38.6 645.0    E   5      3     TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2     1.000     6.60  6.3   2.0   8.3   4.5  42.0    C   1      3    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3.385    44.50   NA    NA  12.5  14.0  60.0    A   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4     0.920     5.70   NA    NA  16.5    NA  25.0    E   2      3    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  2547.000  4603.00  2.1   1.8   3.9  69.0 624.0    C   5      4    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6    10.550   179.50  9.1   0.7   9.8  27.0 180.0    D   4      4    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7     0.023     0.30 15.8   3.9  19.7  19.0  35.0    A   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8   160.000   169.00  5.2   1.0   6.2  30.4 392.0    D   5      4    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9     3.300    25.60 10.9   3.6  14.5  28.0  63.0    A   2      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10   52.160   440.00  8.3   1.4   9.7  50.0 230.0    A   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11    0.425     6.40 11.0   1.5  12.5   7.0 112.0    E   4      4    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12  465.000   423.00  3.2   0.7   3.9  30.0 281.0    E   5      5    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13    0.550     2.40  7.6   2.7  10.3    NA    NA    B   1      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14  187.100   419.00   NA    NA   3.1  40.0 365.0    E   5      5    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15    0.075     1.20  6.3   2.1   8.4   3.5  42.0    A   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16    3.000    25.00  8.6   0.0   8.6  50.0  28.0    B   2      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17    0.785     3.50  6.6   4.1  10.7   6.0  42.0    B   2      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18    0.200     5.00  9.5   1.2  10.7  10.4 120.0    B   2      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19    1.410    17.50  4.8   1.3   6.1  34.0    NA    A   2      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20   60.000    81.00 12.0   6.1  18.1   7.0    NA    A   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21  529.000   680.00   NA   0.3    NA  28.0 400.0    E   5      5    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22   27.660   115.00  3.3   0.5   3.8  20.0 148.0    E   5      5    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23    0.120     1.00 11.0   3.4  14.4   3.9  16.0    C   1      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24  207.000   406.00   NA    NA  12.0  39.3 252.0    A   4      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 25   85.000   325.00  4.7   1.5   6.2  41.0 310.0    A   3      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26   36.330   119.50   NA    NA  13.0  16.2  63.0    A   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 27    0.101     4.00 10.4   3.4  13.8   9.0  28.0    E   1      3    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 28    1.040     5.50  7.4   0.8   8.2   7.6  68.0    E   3      4    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 29  521.000   655.00  2.1   0.8   2.9  46.0 336.0    E   5      5    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30  100.000   157.00   NA    NA  10.8  22.4 100.0    A   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 31   35.000    56.00   NA    NA    NA  16.3  33.0    C   5      4    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    0.005     0.14  7.7   1.4   9.1   2.6  21.5    E   2      4    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 33    0.010     0.25 17.9   2.0  19.9  24.0  50.0    A   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 34   62.000  1320.00  6.1   1.9   8.0 100.0 267.0    A   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 35    0.122     3.00  8.2   2.4  10.6    NA  30.0    B   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 36    1.350     8.10  8.4   2.8  11.2    NA  45.0    C   1      3    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 37    0.023     0.40 11.9   1.3  13.2   3.2  19.0    D   1      3    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 38    0.048     0.33 10.8   2.0  12.8   2.0  30.0    D   1      3    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 39    1.700     6.30 13.8   5.6  19.4   5.0  12.0    B   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 40    3.500    10.80 14.3   3.1  17.4   6.5 120.0    B   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 41  250.000   490.00   NA   1.0    NA  23.6 440.0    E   5      5    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 42    0.480    15.50 15.2   1.8  17.0  12.0 140.0    B   2      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 43   10.000   115.00 10.0   0.9  10.9  20.2 170.0    D   4      4    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 44    1.620    11.40 11.9   1.8  13.7  13.0  17.0    B   1      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 45  192.000   180.00  6.5   1.9   8.4  27.0 115.0    D   4      4    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 46    2.500    12.10  7.5   0.9   8.4  18.0  31.0    E   5      5    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 47    4.288    39.20   NA    NA  12.5  13.7  63.0    B   2      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 48    0.280     1.90 10.6   2.6  13.2   4.7  21.0    C   1      3    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 49    4.235    50.40  7.4   2.4   9.8   9.8  52.0    A   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 50    6.800   179.00  8.4   1.2   9.6  29.0 164.0    B   3      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 51    0.750    12.30  5.7   0.9   6.6   7.0 225.0    B   2      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 52    3.600    21.00  4.9   0.5   5.4   6.0 225.0    C   2      3    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 53   14.830    98.20   NA    NA   2.6  17.0 150.0    E   5      5    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 54   55.500   175.00  3.2   0.6   3.8  20.0 151.0    E   5      5    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 55    1.400    12.50   NA    NA  11.0  12.7  90.0    B   2      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 56    0.060     1.00  8.1   2.2  10.3   3.5    NA    C   1      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 57    0.900     2.60 11.0   2.3  13.3   4.5  60.0    B   1      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 58    2.000    12.30  4.9   0.5   5.4   7.5 200.0    C   1      3    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 59    0.104     2.50 13.2   2.6  15.8   2.3  46.0    C   2      2    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 60    4.190    58.00  9.7   0.6  10.3  24.0 210.0    D   3      4    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 61    3.500     3.90 12.8   6.6  19.4   3.0  14.0    B   1      1    FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 62    4.050    17.00   NA    NA    NA  13.0  38.0    C   1      1    FALSE</span>
+<span class="r-in"><span><span class="co"># a numeric and a factor target imputed at once; nrounds = 30 keeps the</span></span></span>
+<span class="r-in"><span><span class="co"># example fast (the default is 100 boosting rounds)</span></span></span>
+<span class="r-in"><span><span class="co"># xgboostImpute() runs on vimpute(), which VIM backs with the suggested</span></span></span>
+<span class="r-in"><span><span class="co"># mlr3 stack -- skip the example where that stack is not installed.</span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"mlr3"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">&amp;&amp;</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"mlr3learners"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">&amp;&amp;</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"mlr3pipelines"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="va">imp</span> <span class="op">&lt;-</span> <span class="fu">xgboostImpute</span><span class="op">(</span><span class="va">Dream</span> <span class="op">+</span> <span class="va">Pred</span> <span class="op">~</span> <span class="va">BodyWgt</span> <span class="op">+</span> <span class="va">BrainWgt</span>, data <span class="op">=</span> <span class="va">sleepx</span>, nrounds <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">imp</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    BodyWgt BrainWgt NonD Dream Sleep Span Gest Pred Exp Danger Dream_imp</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 6654.000   5712.0   NA   1.6   3.3 38.6  645    E   5      3      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2    1.000      6.6  6.3   2.0   8.3  4.5   42    C   1      3     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3    3.385     44.5   NA   2.2  12.5 14.0   60    A   1      1      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4    0.920      5.7   NA   1.6  16.5   NA   25    E   2      3      TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 2547.000   4603.0  2.1   1.8   3.9 69.0  624    C   5      4     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6   10.550    179.5  9.1   0.7   9.8 27.0  180    D   4      4     FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Pred_imp</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6    FALSE</span>
 </code></pre></div>
     </div>
   </div>
@@ -567,7 +220,7 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgboost.html" 
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer></div>

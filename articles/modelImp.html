@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
       </span>
     </div>
 
@@ -63,6 +63,18 @@
     </li>
     <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
     </li>
     <li>
       <a href="../articles/vimpute.html">Imputation Method vimpute</a>
@@ -147,30 +159,6 @@ be used as regressors. We will start by imputing <code>NonD</code> based
 in <code>BodyWgt</code> and <code>Span</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_regression</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">NonD</span> <span class="op">~</span> <span class="va">BodyWgt</span> <span class="op">+</span> <span class="va">Span</span>, <span class="va">dataset</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see parameter 's').</span></span>
-<span><span class="co">#&gt; This happened in PipeOp regr.glmnet's $predict()</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see parameter 's').</span></span>
-<span><span class="co">#&gt; This happened in PipeOp regr.glmnet's $predict()</span></span>
 <span><span class="va">imp_ranger</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rangerImpute.html">rangerImpute</a></span><span class="op">(</span><span class="va">NonD</span> <span class="op">~</span> <span class="va">BodyWgt</span> <span class="op">+</span> <span class="va">Span</span>, <span class="va">dataset</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_regression</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="modelImp_files/figure-html/unnamed-chunk-2-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
@@ -211,52 +199,6 @@ played an important role in the generation of the imputed values.</p>
 specified with more than one column name in the left hand side.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp_regression</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regressionImp.html">regressionImp</a></span><span class="op">(</span><span class="va">Dream</span> <span class="op">+</span> <span class="va">NonD</span> <span class="op">~</span> <span class="va">BodyWgt</span> <span class="op">+</span> <span class="va">Span</span>, <span class="va">dataset</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see parameter 's').</span></span>
-<span><span class="co">#&gt; This happened in PipeOp regr.glmnet's $predict()</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see parameter 's').</span></span>
-<span><span class="co">#&gt; This happened in PipeOp regr.glmnet's $predict()</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see</span></span>
-<span><span class="co">#&gt; parameter 's').</span></span>
-<span><span class="co">#&gt; Warning: Multiple lambdas have been fit. Lambda will be set to 0.01 (see parameter 's').</span></span>
-<span><span class="co">#&gt; This happened in PipeOp regr.glmnet's $predict()</span></span>
 <span><span class="va">imp_ranger</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rangerImpute.html">rangerImpute</a></span><span class="op">(</span><span class="va">Dream</span> <span class="op">+</span> <span class="va">NonD</span> <span class="op">~</span> <span class="va">BodyWgt</span> <span class="op">+</span> <span class="va">Span</span>, <span class="va">dataset</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/aggr.html">aggr</a></span><span class="op">(</span><span class="va">imp_regression</span>, delimiter <span class="op">=</span> <span class="st">"_imp"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="modelImp_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
@@ -320,7 +262,7 @@ rounded first five results of the imputation for all variables.</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer>

@@ -18,7 +18,7 @@ for numerical, categorical, ordered and semi-continous variables."><!-- mathjax 
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
       </span>
     </div>
 
@@ -46,6 +46,18 @@ for numerical, categorical, ordered and semi-continous variables."><!-- mathjax 
     </li>
     <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
     </li>
     <li>
       <a href="../articles/vimpute.html">Imputation Method vimpute</a>
@@ -226,6 +238,24 @@ of a ordered factor variable</p></dd>
     <div id="value">
     <h2>Value</h2>
     <p>the imputed data set.</p>
+    </div>
+    <div id="details">
+    <h2>Details</h2>
+    <p>Numerical and semi-continuous (mixed) distance variables are standardised by
+their range (or IQR, see <code>methodStand</code>) so that each variable contributes on
+a comparable scale; for mixed variables the point mass (<code>mixed.constant</code>) is
+excluded from the range estimate.</p>
+<p>Missing values in the distance variables (<code>dist_var</code>) are handled with a
+sentinel: after standardisation an <code>NA</code> is replaced by the maximum of the
+pooled column plus one. As a consequence two records that are both missing
+the same distance variable have distance 0 on that variable (they are treated
+as identical there), while a record missing the variable and one observing it
+contribute up to about twice a normal variable's share. In effect kNN is
+drawn towards donors that share the recipient's pattern of missingness in the
+distance variables; under a MAR mechanism this can select unrepresentative
+donors. This departs from Gower's (1971) convention of omitting
+non-comparable variables and renormalising the remaining weights. To limit
+the effect, prefer <code>dist_var</code> variables with few or no missing values.</p>
     </div>
     <div id="references">
     <h2>References</h2>
@@ -660,7 +690,7 @@ Statistical Software</em>, 74(7), 1-16.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer></div>

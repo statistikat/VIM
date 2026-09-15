@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
       </span>
     </div>
 
@@ -45,6 +45,18 @@
     </li>
     <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
     </li>
     <li>
       <a href="../articles/vimpute.html">Imputation Method vimpute</a>
@@ -84,7 +96,7 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">evaluation</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">m</span>, vartypes <span class="op">=</span> <span class="st">"guess"</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">evaluation</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">m</span>, vartypes <span class="op">=</span> <span class="st">"guess"</span>, where <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">nrmse</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">m</span><span class="op">)</span></span>
 <span></span>
@@ -108,11 +120,22 @@
 
 
 <dt id="arg-m">m<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
-<dd><p>the indicator matrix for missing cells</p></dd>
+<dd><p>the indicator matrix for missing cells (kept for backward
+compatibility; <code>where</code> is the documented name)</p></dd>
 
 
 <dt id="arg-vartypes">vartypes<a class="anchor" aria-label="anchor" href="#arg-vartypes"></a></dt>
-<dd><p>a vector of length ncol(x) specifying the variables types, like factor or numeric</p></dd>
+<dd><p>a vector of length ncol(x) specifying the variable types
+(<code>"numeric"</code> or <code>"factor"</code>). The default <code>"guess"</code> infers the
+types from the columns of <code>x</code> (numeric columns become <code>"numeric"</code>,
+everything else <code>"factor"</code>).</p></dd>
+
+
+<dt id="arg-where">where<a class="anchor" aria-label="anchor" href="#arg-where"></a></dt>
+<dd><p>the indicator matrix for missing cells under its documented
+name – the amputed-cell mask as returned in <code><a href="makeMissing.html">makeMissing()</a></code>'s
+<code>"where"</code> attribute. Supply either <code>m</code> or <code>where</code>, not
+both.</p></dd>
 
 </dl></div>
     <div id="value">
@@ -128,8 +151,8 @@ used for expressing the number of rounded zeros.</p>
     <div id="references">
     <h2>References</h2>
     <p>M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
-regression imputation using standard and robust methods.  <em>Journal of
-Computational Statistics and Data Analysis</em>, Vol. 55, pp. 2793-2806.</p>
+regression imputation using standard and robust methods.  <em>Computational
+Statistics &amp; Data Analysis</em>, Vol. 55, pp. 2793-2806.</p>
     </div>
     <div id="author">
     <h2>Author</h2>
@@ -171,7 +194,7 @@ Computational Statistics and Data Analysis</em>, Vol. 55, pp. 2793-2806.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer></div>

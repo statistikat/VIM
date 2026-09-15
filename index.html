@@ -13,7 +13,7 @@
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
 <meta property="og:title" content="Visualization and Imputation of Missing Values">
-<meta property="og:description" content="Provides methods for imputation and visualization of missing values. It includes graphical tools to explore the amount, structure and patterns of missing and/or imputed values, supporting exploratory data analysis and helping to investigate potential missingness mechanisms (details in Alfons, Templ and Filzmoser, &lt;doi:10.1007/s11634-011-0102-y&gt;. The quality of imputations can be assessed visually using a wide range of univariate, bivariate and multivariate plots. The package further provides several imputation methods, including efficient implementations of k-nearest neighbour and hot-deck imputation (Kowarik and Templ 2013, &lt;doi:10.18637/jss.v074.i07&gt;, iterative robust model-based multiple imputation (Templ 2011, &lt;doi:10.1016/j.csda.2011.04.012&gt;; Templ 2023, &lt;doi:10.3390/math11122729&gt;), and machine learning–based approaches such as robust GAM-based multiple imputation (Templ 2024, &lt;doi:10.1007/s11222-024-10429-1&gt;) as well as gradient boosting (XGBoost) and transformer-based methods (Niederhametner et al., &lt;doi:10.1177/18747655251339401&gt;). General background and practical guidance on imputation are provided in the Springer book by Templ (2023) &lt;doi:10.1007/978-3-031-30073-8&gt;.">
+<meta property="og:description" content="Provides methods for imputation and visualization of missing values. It includes graphical tools to explore the amount, structure and patterns of missing and/or imputed values, supporting exploratory data analysis and helping to investigate potential missingness mechanisms (details in Alfons, Templ and Filzmoser, &lt;doi:10.1007/s11634-011-0102-y&gt;). The quality of imputations can be assessed visually using a wide range of univariate, bivariate and multivariate plots. The package further provides several imputation methods, including efficient implementations of k-nearest neighbour and hot-deck imputation (Kowarik and Templ 2013, &lt;doi:10.18637/jss.v074.i07&gt;), iterative robust model-based multiple imputation (Templ 2011, &lt;doi:10.1016/j.csda.2011.04.012&gt;; Templ 2023, &lt;doi:10.3390/math11122729&gt;), and machine learning–based approaches such as robust GAM-based multiple imputation (Templ 2024, &lt;doi:10.1007/s11222-024-10429-1&gt;) as well as random forest and gradient boosting (XGBoost) imputation (Niederhametner et al., &lt;doi:10.1177/18747655251339401&gt;). General background and practical guidance on imputation are provided in the Springer book by Templ (2023) &lt;doi:10.1007/978-3-031-30073-8&gt;.">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -34,7 +34,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
       </span>
     </div>
 
@@ -64,6 +64,18 @@
     </li>
     <li>
       <a href="articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
+    </li>
+    <li>
+      <a href="articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
+    </li>
+    <li>
+      <a href="articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
+    </li>
+    <li>
+      <a href="articles/vimpute-restricted.html">Restricted regression with vimpute</a>
     </li>
     <li>
       <a href="articles/vimpute.html">Imputation Method vimpute</a>
@@ -104,7 +116,7 @@
 <a class="anchor" aria-label="anchor" href="#vim-"></a>
 </h1></div>
 <p><a href="https://github.com/statistikat/VIM/actions" class="external-link"><img src="https://github.com/statistikat/VIM/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a> <a href="https://app.codecov.io/gh/statistikat/VIM?branch=master" class="external-link"><img src="https://codecov.io/gh/statistikat/VIM/branch/master/graph/badge.svg" alt="Codecov test coverage"></a> <a href="https://CRAN.R-project.org/package=VIM" class="external-link"><img src="https://www.r-pkg.org/badges/version/VIM" alt="CRAN status"></a> <a href="http://www.awesomeofficialstatistics.org" class="external-link"><img src="https://awesome.re/mentioned-badge.svg" alt="Mentioned in Awesome Official Statistics"></a></p>
-<p>This package introduces new tools for the visualization of missing and/or imputed values, which can be used for exploring the data and the structure of the missing and/or imputed values. Depending on this structure of the missing values, the corresponding methods may help to identify the mechanism generating the missings and allows to explore the data including missing values. In addition, the quality of imputation can be visually explored using various univariate, bivariate, multiple and multivariate plot methods.</p>
+<p>This package introduces new tools for the visualization of missing and/or imputed values, which can be used for exploring the data and the structure of the missing and/or imputed values. Depending on this structure of the missing values, the corresponding methods may help to identify the mechanism generating the missings and allow exploration of the data including missing values. In addition, the quality of imputation can be visually explored using various univariate, bivariate, multiple and multivariate plot methods.</p>
 <div class="section level3">
 <h3 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h3>
@@ -120,28 +132,28 @@
 </h3>
 <p>The core functionality of VIM can be categorized into two groups</p>
 <ol style="list-style-type: decimal">
-<li>Imputation functions such as <code><a href="reference/kNN.html">kNN()</a></code> and <code><a href="reference/hotdeck.html">hotdeck()</a></code> implement techniques to replace missing values with imputed values.</li>
-<li>Visualization functions such as <code><a href="reference/histMiss.html">histMiss()</a></code> or <code><a href="reference/barMiss.html">barMiss()</a></code> provide extensions of common base graphics which use a special way of highlighting missing and imputed values. For more details, see the <a href="http://statistikat.github.io/VIM/articles/VisualImp.html" class="external-link">visualization vignette</a>.</li>
+<li>Imputation functions: <code><a href="reference/vimpute.html">vimpute()</a></code> provides unified single and multiple imputation over exchangeable machine-learning and robust methods (random forest, XGBoost, regularized, robust regression, GAM/robust GAM — and any registered mlr3 learner via <code><a href="reference/register_vimpute_method.html">register_vimpute_method()</a></code>), with per-variable specs, hyperparameter tuning, mice-compatible pooling (<code>vimmi</code>, <code><a href="reference/vim_as_mids.html">vim_as_mids()</a></code>), and diagnostics (<code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> chains/density, <code><a href="reference/overimpute.html">overimpute()</a></code>, per-variable model quality). Classic workhorses such as <code><a href="reference/kNN.html">kNN()</a></code>, <code><a href="reference/hotdeck.html">hotdeck()</a></code> and <code><a href="reference/irmi.html">irmi()</a></code> as well as the cellwise-robust family (<code><a href="reference/imputeCellwise.html">imputeCellwise()</a></code> and friends) complement it, and <code><a href="reference/makeMissing.html">makeMissing()</a></code> generates MCAR/MAR/MNAR missingness for simulation studies.</li>
+<li>Visualization functions such as <code><a href="reference/histMiss.html">histMiss()</a></code> or <code><a href="reference/barMiss.html">barMiss()</a></code> provide extensions of common base graphics which use a special way of highlighting missing and imputed values. For more details, see the <a href="https://statistikat.github.io/VIM/articles/VisualImp.html">visualization vignette</a>.</li>
 </ol>
-<p>Additionaly, datasets are included to showcase the functions mentioned above. Other functions provide tabular aggregations of missings and visualization of spatial data.</p>
+<p>Additionally, datasets are included to showcase the functions mentioned above. Other functions provide tabular aggregations of missings and visualization of spatial data.</p>
 </div>
 <div class="section level3">
 <h3 id="further-reading">Further reading<a class="anchor" aria-label="anchor" href="#further-reading"></a>
 </h3>
 <ul>
-<li>A hands-on guide for VIM can be found in the <a href="http://statistikat.github.io/VIM/articles/VIM.html" class="external-link">get started vignette</a>. Additional vignettes can be found in the <a href="http://statistikat.github.io/VIM/articles/" class="external-link">articles section</a>.</li>
-<li>The <a href="http://statistikat.github.io/VIM/reference" class="external-link">reference documentation</a> provides detailed documentation about all exposed functons from the package.</li>
+<li>A hands-on guide for VIM can be found in the <a href="https://statistikat.github.io/VIM/articles/VIM.html">get started vignette</a>. Additional vignettes can be found in the <a href="https://statistikat.github.io/VIM/articles/">articles section</a>.</li>
+<li>The <a href="https://statistikat.github.io/VIM/reference">reference documentation</a> provides detailed documentation about all exposed functions from the package.</li>
 </ul>
 </div>
 <div class="section level3">
 <h3 id="publications">Publications<a class="anchor" aria-label="anchor" href="#publications"></a>
 </h3>
 <ul>
-<li>Journal of Statistical Software, 2016: <a href="https://www.researchgate.net/publication/309336197_Imputation_with_the_R_package_VIM" class="external-link">Imputation with the R Package VIM</a>
+<li>Journal of Statistical Software, 2016: <a href="https://doi.org/10.18637/jss.v074.i07" class="external-link">Imputation with the R Package VIM</a>
 </li>
-<li>Advances in Data Analysis and Classification, 2012: <a href="https://www.researchgate.net/publication/226283718_Exploring_incomplete_data_using_visualization_techniques" class="external-link">Exploring incomplete data using visualization techniques</a>
+<li>Advances in Data Analysis and Classification, 2012: <a href="https://doi.org/10.1007/s11634-011-0102-y" class="external-link">Exploring incomplete data using visualization techniques</a>
 </li>
-<li>Computational Statistics &amp; Data Analysis, 2011: <a href="http://file.statistik.tuwien.ac.at/filz/papers/CSDA11TKF.pdf" class="external-link">Iterative stepwise regression imputation using standard and robust methods</a>
+<li>Computational Statistics &amp; Data Analysis, 2011: <a href="https://doi.org/10.1016/j.csda.2011.04.012" class="external-link">Iterative stepwise regression imputation using standard and robust methods</a>
 </li>
 </ul>
 </div>
@@ -154,6 +166,7 @@
 <ul class="list-unstyled">
 <li><a href="https://cloud.r-project.org/package=VIM" class="external-link">View on CRAN</a></li>
 <li><a href="https://github.com/statistikat/VIM/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/statistikat/VIM/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
@@ -200,7 +213,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer>

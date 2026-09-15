@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
       </span>
     </div>
 
@@ -45,6 +45,18 @@
     </li>
     <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
     </li>
     <li>
       <a href="../articles/vimpute.html">Imputation Method vimpute</a>
@@ -84,7 +96,21 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">new_vimmi</span><span class="op">(</span><span class="va">data</span>, <span class="va">imp</span>, <span class="va">where</span>, <span class="va">m</span>, <span class="va">nmis</span>, <span class="va">method</span>, <span class="va">boot</span>, <span class="va">uncert</span>, <span class="va">call</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">new_vimmi</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  <span class="va">imp</span>,</span>
+<span>  <span class="va">where</span>,</span>
+<span>  <span class="va">m</span>,</span>
+<span>  <span class="va">nmis</span>,</span>
+<span>  <span class="va">method</span>,</span>
+<span>  <span class="va">boot</span>,</span>
+<span>  <span class="va">uncert</span>,</span>
+<span>  <span class="va">call</span>,</span>
+<span>  tuning_log <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  chain <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  model_error <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -127,6 +153,30 @@ nmis rows and m columns of imputed values</p></dd>
 <dt id="arg-call">call<a class="anchor" aria-label="anchor" href="#arg-call"></a></dt>
 <dd><p>The original function call</p></dd>
 
+
+<dt id="arg-tuning-log">tuning_log<a class="anchor" aria-label="anchor" href="#arg-tuning-log"></a></dt>
+<dd><p>Optional tuning report from the (single) tuning run,
+shared by all m imputations; NULL when tuning was not requested</p></dd>
+
+
+<dt id="arg-chain">chain<a class="anchor" aria-label="anchor" href="#arg-chain"></a></dt>
+<dd><p>Optional per-iteration chain statistics:
+<code>list(mean = , var = )</code> of arrays with dimensions
+<code>[variable, iteration, imputation]</code> holding the mean and variance of
+the imputed values of each numeric variable after each sequential
+iteration (the basis of <code><a href="plot.vimmi.html">plot.vimmi</a></code> trace plots)</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>The seed applied at entry of the <code><a href="vimpute.html">vimpute()</a></code> call
+(NULL when none was set)</p></dd>
+
+
+<dt id="arg-model-error">model_error<a class="anchor" aria-label="anchor" href="#arg-model-error"></a></dt>
+<dd><p>Optional per-variable model-quality list (NRMSE/PFC,
+from the first imputation run), as in <code>attr(result, "model_error")</code>
+of single runs</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
@@ -145,7 +195,7 @@ nmis rows and m columns of imputed values</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer></div>

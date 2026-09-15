@@ -18,7 +18,7 @@ factor ordered and semi-continous variables."><!-- mathjax --><script src="https
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
       </span>
     </div>
 
@@ -46,6 +46,18 @@ factor ordered and semi-continous variables."><!-- mathjax --><script src="https
     </li>
     <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
     </li>
     <li>
       <a href="../articles/vimpute.html">Imputation Method vimpute</a>
@@ -161,7 +173,24 @@ factor ordered and semi-continous variables.</p>
 </dl></div>
     <div id="details">
     <h2>Details</h2>
-    <p>returnIndex=FALSE: a numerical matrix n x m with the computed distances
+    <p>Numerical and semi-continuous (mixed) variables are standardised by
+their range (or IQR, see <code>methodStand</code>) before the distance is computed; for
+mixed variables the point mass (<code>mixed.constant</code>) is excluded from the range
+estimate and scaled along with the data.</p>
+<p>Missing values in a distance variable are replaced by a sentinel (the pooled
+column maximum plus one) after standardisation. Two records both missing the
+same variable therefore have distance 0 on it, and a missing-vs-observed pair
+contributes up to about 2 (rather than a variable's nominal maximum of 1).
+This sentinel convention departs from Gower's (1971) omit-and-renormalise
+rule and biases nearest-neighbour selection towards records that share the
+same missingness pattern.</p>
+<p>The distance computation is parallelised with OpenMP where R was built with
+OpenMP support. The number of threads is <code>getOption("VIM.ncores")</code>; if the
+option is unset, at most 2 threads are used while the package is checked
+(<code>R CMD check</code> sets <code>_R_CHECK_LIMIT_CORES_</code>; CRAN policy allows at most two
+cores) and OpenMP's default – typically all cores, or <code>OMP_NUM_THREADS</code> –
+otherwise. Results do not depend on the number of threads.</p>
+<p>returnIndex=FALSE: a numerical matrix n x m with the computed distances
 returnIndex=TRUE: a named list with "ind" containing the requested indices and "mins" the computed distances</p>
     </div>
 
@@ -1467,7 +1496,7 @@ returnIndex=TRUE: a named list with "ind" containing the requested indices and "
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer></div>

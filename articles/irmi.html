@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.1.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
       </span>
     </div>
 
@@ -63,6 +63,18 @@
     </li>
     <li>
       <a href="../articles/modelImp.html">Model based Imputation Methods</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
+    </li>
+    <li>
+      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
     </li>
     <li>
       <a href="../articles/vimpute.html">Imputation Method vimpute</a>
@@ -124,16 +136,16 @@ presents an iterative imputation method.</p>
 <strong>R</strong>obust <strong>M</strong>odel-based
 <strong>I</strong>mputation. This method can be used to generate
 imputations for several variables in a dataset.</p>
-<p>Basically <code><a href="../reference/irmi.html">irmi()</a></code> mimics the functionality of IVEWARE <a href="https://www150.statcan.gc.ca/n1/pub/12-001-x/2001001/article/5857-eng.pdf" class="external-link">(Raghunathan
-et al., 2001)</a>, but there are several improvements with respect to
-the stability of the initialized values, or the robustness of the
-imputed values. In contrast to other imputation methods, the IRMI
+<p>Basically <code><a href="../reference/irmi.html">irmi()</a></code> mimics the functionality of IVEWARE
+(Raghunathan et al., 2001), but there are several improvements with
+respect to the stability of the initialized values, or the robustness of
+the imputed values. In contrast to other imputation methods, the IRMI
 algorithm does not require at least one fully observed variable. In each
 step of the iteration, one variable is used as a response variable and
 the remaining variables serve as the regressors. Thus the “whole”
 multivariate information will be used for imputation in the response
-variable. For more details, please see <a href="http://file.statistik.tuwien.ac.at/filz/papers/CSDA11TKF.pdf" class="external-link">IRMI
-Imputation</a>.</p>
+variable. For more details, please see Templ, Kowarik and Filzmoser
+(2011).</p>
 </div>
 <div class="section level2">
 <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
@@ -227,6 +239,18 @@ results of the imputation for all variables.</p>
 <div class="reactable html-widget html-fill-item" id="htmlwidget-ac96cb3ee4656e2e9ec3" style="width:auto;height:auto;"></div>
 <script type="application/json" data-for="htmlwidget-ac96cb3ee4656e2e9ec3">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"TRUE1":["6.4","7","5.4","6.5","7.6"],"IMPUTED1":["6.95","6.41","6.27","6.55","7.77"],"TRUE2":["4.1","2.7","2.8","3.8","3.5"],"IMPUTED2":["3.04","2.7","2.53","3.62","3.35"],"TRUE3":["4.1","4.1","3.9","5.1","4.7"],"IMPUTED3":["4.17","4.42","4.52","5.27","4.87"],"TRUE4":["0.2","0.2","0.3","1.5","0.2"],"IMPUTED4":["0.16","0.15","0.5","1.38","0.15"],"TRUE5":["setosa","virginica","versicolor","versicolor","virginica"],"IMPUTED5":["setosa","virginica","versicolor","versicolor","virginica"]},"columns":[{"id":"TRUE1","name":"True","type":"character"},{"id":"IMPUTED1","name":"Imputed","type":"character"},{"id":"TRUE2","name":"True","type":"character"},{"id":"IMPUTED2","name":"Imputed","type":"character"},{"id":"TRUE3","name":"True","type":"character"},{"id":"IMPUTED3","name":"Imputed","type":"character"},{"id":"TRUE4","name":"True","type":"character"},{"id":"IMPUTED4","name":"Imputed","type":"character"},{"id":"TRUE5","name":"True","type":"character"},{"id":"IMPUTED5","name":"Imputed","type":"character"}],"columnGroups":[{"name":"S.Length","columns":["TRUE1","IMPUTED1"]},{"name":"S.Width","columns":["TRUE2","IMPUTED2"]},{"name":"P.Length","columns":["TRUE3","IMPUTED3"]},{"name":"P.Width","columns":["TRUE4","IMPUTED4"]},{"name":"Species","columns":["TRUE5","IMPUTED5"]}],"highlight":true,"bordered":true,"striped":true,"dataKey":"b025179563bc6770dffd4dfe4ebae857"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<p>Raghunathan, T. E., Lepkowski, J. M., Van Hoewyk, J., and
+Solenberger, P. (2001). A multivariate technique for multiply imputing
+missing values using a sequence of regression models. <em>Survey
+Methodology</em>, 27(1), 85–95.</p>
+<p>Templ, M., Kowarik, A., and Filzmoser, P. (2011). Iterative stepwise
+regression imputation using standard and robust methods.
+<em>Computational Statistics &amp; Data Analysis</em>, 55(10),
+2793–2806. <a href="doi:10.1016/j.csda.2011.04.012" class="uri">doi:10.1016/j.csda.2011.04.012</a></p>
+</div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -244,7 +268,7 @@ results of the imputation for all variables.</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer>
