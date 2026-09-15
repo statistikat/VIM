@@ -36,32 +36,109 @@
                      drop.unused.levels = TRUE)
 }
 
-#' Main-effects design and row labels for a cellGLoc design
+#' Main-effects design and level combinations for a cellGLoc design
 #'
-#' What the mean step needs when a level combination has no fitted row (see
-#' \code{.gloc_update_B}): the design with its terms of order greater than one
-#' dropped, and a label naming each row's levels for the warning.
+#' What the mean step and the robust start need when a level combination has
+#' no fitted row (see \code{.gloc_update_B}).
+#'
+#' The main-effects design has the variables of \code{design} and none of its
+#' terms of order greater than one. The variables are read from the terms
+#' object with \code{deparse1}, so a term such as \code{relevel(g2, ref = "B")}
+#' or \code{C(g1, contr.sum)} is kept as written, and the matrix is built on
+#' the model frame that \code{.gloc_design} evaluates. If that fails for any
+#' reason, \code{U_main} is \code{NULL} and the fill uses the weighted mean
+#' only. (Corrected: the first 7.4.1 fix rebuilt the formula from backticked
+#' model-frame names, and a function call in an interaction term made
+#' \code{imputeCellGLoc} stop with "object not found".)
+#'
+#' The level combinations are all combinations of the levels of the design's
+#' variables when there are at most \code{.gloc_max_patterns} of them, and
+#' otherwise those that occur in the data.
 #'
 #' @inheritParams .gloc_design
-#' @return a list with \code{U_main}, the main-effects design over the
-#'   variables \code{design} uses, or \code{NULL} when \code{design} has no
-#'   interaction term; and \code{labels}, one string such as
-#'   \code{"g1=c, g2=C"} per row, or \code{NULL} when \code{design} uses no
-#'   categorical variable.
+#' @return a list with \code{U_main}, the main-effects design matrix, or
+#'   \code{NULL} when \code{design} has no interaction term, and
+#'   \code{patterns}, or \code{NULL} when \code{design} uses no categorical
+#'   variable or a variable of the model frame is not a factor.
+#'   \code{patterns} is a list: \code{id}, the index of each row's level
+#'   combination, where a caller marks a row whose categorical values are
+#'   unknown with \code{NA}; \code{P}, the pure design row of each combination,
+#'   with the columns of the design; \code{P_main}, the same for \code{U_main}
+#'   (or \code{NULL}); and \code{labels}, such as \code{"g1=c, g2=C"}.
 #' @keywords internal
 .gloc_design_aux <- function(data, design, cat_vars) {
   if (is.null(design)) design <- ~ 1
-  none <- list(U_main = NULL, labels = NULL)
+  none <- list(U_main = NULL, patterns = NULL)
   if (!length(cat_vars) || identical(all.vars(design), character(0))) return(none)
   mf <- .gloc_model_frame(data, design, cat_vars)
-  vars <- names(mf)
+  tt <- attr(mf, "terms")
+  vars <- vapply(as.list(attr(tt, "variables"))[-1L], deparse1, "")
   if (!length(vars)) return(none)
-  labels <- do.call(paste, c(unname(lapply(vars, function(v)
-    paste0(v, "=", as.character(mf[[v]])))), sep = ", "))
-  U_main <- NULL
-  if (any(attr(attr(mf, "terms"), "order") > 1L))
-    U_main <- .gloc_design(data, stats::reformulate(sprintf("`%s`", vars)), cat_vars)
-  list(U_main = U_main, labels = labels)
+  main_tt <- U_main <- NULL
+  if (any(attr(tt, "order") > 1L)) {
+    main_tt <- tryCatch(stats::terms(stats::reformulate(vars)),
+                        error = function(e) NULL)
+    U_main <- tryCatch({
+      mfm <- mf
+      attr(mfm, "terms") <- main_tt
+      stats::model.matrix(main_tt, mfm)
+    }, error = function(e) NULL)
+    if (is.null(U_main)) main_tt <- NULL
+  }
+  list(U_main = U_main,
+       patterns = tryCatch(.gloc_patterns(mf, tt, main_tt, vars),
+                           error = function(e) NULL))
+}
+
+#' Largest number of level combinations enumerated in full
+#'
+#' Up to this many, \code{.gloc_design_aux} enumerates every combination of the
+#' design's levels, so that a combination absent from the data is filled like
+#' any other; above it, only the combinations that occur in the data.
+#' @format a length-one integer.
+#' @keywords internal
+.gloc_max_patterns <- 4096L
+
+#' Level combinations, their pure design rows and each row's combination
+#'
+#' @param mf the model frame of the design.
+#' @param tt,main_tt the terms of the design and of its main-effects version
+#'   (\code{NULL} if none).
+#' @param vars the deparsed variables of \code{tt}.
+#' @return the \code{patterns} list described in \code{.gloc_design_aux}, or
+#'   \code{NULL} when a variable is not a factor.
+#' @keywords internal
+.gloc_patterns <- function(mf, tt, main_tt, vars) {
+  if (!all(vapply(mf, is.factor, TRUE))) return(NULL)
+  k <- length(vars)
+  nl <- vapply(mf, nlevels, 1L)
+  codes <- matrix(unlist(lapply(mf, as.integer), use.names = FALSE), nrow(mf), k)
+  if (prod(as.numeric(nl)) <= .gloc_max_patterns) {
+    grid <- as.matrix(expand.grid(lapply(nl, seq_len), KEEP.OUT.ATTRS = FALSE))
+    id <- as.integer(drop((codes - 1L) %*% cumprod(c(1, nl[-k]))) + 1L)
+    rep_row <- lapply(seq_len(k), function(v) match(seq_len(nl[v]), codes[, v]))
+    cols <- lapply(seq_len(k), function(v) mf[[v]][rep_row[[v]][grid[, v]]])
+  } else {
+    key <- do.call(paste, c(unname(split(codes, col(codes))), sep = "\r"))
+    id <- match(key, unique(key))
+    first <- which(!duplicated(key))
+    grid <- codes[first, , drop = FALSE]
+    cols <- lapply(seq_len(k), function(v) mf[[v]][first])
+  }
+  combos <- structure(cols, names = names(mf), class = "data.frame",
+                      row.names = seq_len(nrow(grid)))
+  attr(combos, "terms") <- tt
+  P <- stats::model.matrix(tt, combos)
+  P_main <- NULL
+  if (!is.null(main_tt)) {
+    attr(combos, "terms") <- main_tt
+    P_main <- stats::model.matrix(main_tt, combos)
+    rownames(P_main) <- NULL
+  }
+  rownames(P) <- NULL
+  labels <- do.call(paste, c(lapply(seq_len(k), function(v)
+    paste0(vars[v], "=", levels(mf[[v]])[grid[, v]])), sep = ", "))
+  list(id = id, P = P, P_main = P_main, labels = labels)
 }
 
 #' Weighted least-squares update of the cellGLoc mean structure
@@ -83,24 +160,38 @@
 #' fitted on a maximal set of linearly independent design columns, chosen by
 #' the same pivoted QR decomposition \code{qr.solve()} uses; a full-rank design
 #' takes exactly the arithmetic of \code{qr.solve()}, so its result is
-#' unchanged bit for bit. The data then determine the fitted mean only of rows
-#' whose design row lies in the row space of the fitted rows, and those keep
-#' it exactly. Every other level combination -- a level for which the variable
-#' has no cell with positive weight, under any coding of the factors, or an
-#' unseen combination of partly aliased factors -- is filled by one
-#' least-squares step in the null space of the fitted rows' design
-#' (\code{.gloc_estimable}, \code{.gloc_fill_null}). The target is the
-#' variable's weighted mean over the fitted rows, except that under a design
-#' with interaction terms a combination that the main-effects design
-#' \code{U_main} identifies on the same rows takes that design's fitted mean.
-#' Where several combinations share one unidentified direction, it is their
-#' average over the distinct combinations that meets the target: under
+#' unchanged bit for bit. A rank-deficient fit first leaves out the cells
+#' whose weight is at most \code{.gloc_w_floor} times the column's largest.
+#' The data then determine the fitted mean only of the level combinations that
+#' a fitted row has or whose pure design row lies in the row space of the
+#' fitted rows, and those keep it exactly. Every other combination -- a level
+#' for which the variable has no cell with positive weight, under any coding
+#' of the factors, an unseen combination of partly aliased factors, or a
+#' combination absent from the data -- is filled by one least-squares step in
+#' the null space of the fitted rows' design (\code{.gloc_estimable},
+#' \code{.gloc_fill_null}). Identification and targets are decided on level
+#' combinations (\code{patterns}), not on rows: a probability-weighted row
+#' whose combination is unknown (an \code{NA} id) is never a combination
+#' itself, and its fitted mean follows from the filled coefficients. The
+#' target is the variable's weighted mean over the fitted rows, except that
+#' under a design with interaction terms a combination that the main-effects
+#' design \code{U_main} identifies on the same rows takes that design's fitted
+#' mean. Where several combinations share one unidentified direction, it is
+#' their average over the combinations that meets the target: under
 #' \code{~ g1 + g2} with a level of \code{g1} never observed, that level's
-#' rows keep the \code{g2} effects between them. The fitted means this gives
-#' do not depend on how the factors are coded or ordered. Aliased columns that
-#' change no row's fitted mean (two identical factors) warn as duplicates;
-#' unidentified combinations warn once per reason, naming the variables, the
-#' level combinations and what the fit does with them.
+#' combinations keep the \code{g2} effects between them. The fitted means this
+#' gives do not depend on how the factors are coded or ordered, with one
+#' exception: when every level is observed but one only at weights that are
+#' numerically zero, a coding under which the fit stays full rank fits that
+#' level from the tiny weights, while a coding that sees the rank deficiency
+#' fills it (see \code{.gloc_w_floor}). Aliased columns that change no fitted
+#' mean (two identical factors) warn as duplicates, naming neither a column
+#' that is zero on every fitted row nor one of an unidentified combination.
+#' Unidentified combinations that occur in the data (all of them, when some
+#' row's combination is unknown) warn once per reason, naming the variables,
+#' the combinations and what the fit does with them. With \code{warn = FALSE}
+#' the diagnostics are returned instead, and \code{imputeCellGLoc} raises them
+#' once, from its final iterate.
 #'
 #' Correction, recorded rather than deleted: until 7.4.1 a rank-deficient
 #' design silently kept only a weighted mean in \code{B[1, j]}, assuming column
@@ -120,11 +211,18 @@
 #' @param U_main the main-effects version of \code{U}, from
 #'   \code{.gloc_design_aux}; the default, \code{U} itself, stands for a design
 #'   without interaction terms.
-#' @param labels optional level labels per row for the warnings, from
-#'   \code{.gloc_design_aux}; \code{NULL} names a row by its design columns.
+#' @param patterns the level combinations, from \code{.gloc_design_aux}: each
+#'   row's combination (\code{id}, \code{NA} where a row's categories are
+#'   unknown), the pure design row of each combination (\code{P}, and
+#'   \code{P_main} for \code{U_main}) and its \code{labels}. \code{NULL} takes
+#'   every distinct row of \code{U} as a combination
+#'   (\code{.gloc_row_patterns}).
+#' @param warn \code{TRUE} raises the design warnings here; \code{FALSE}
+#'   attaches them to the result as the attribute \code{"gloc_design"}, when
+#'   there is anything to report, for \code{.gloc_warn_design}.
 #' @return a \eqn{q x p} matrix of coefficients.
 #' @keywords internal
-.gloc_update_B <- function(X, U, W, U_main = U, labels = NULL) {
+.gloc_update_B <- function(X, U, W, U_main = U, patterns = NULL, warn = TRUE) {
   p <- ncol(X); q <- ncol(U); n <- nrow(U)
   B <- matrix(0, q, p, dimnames = list(colnames(U), colnames(X)))
   vn <- .gloc_names(colnames(X), p)
@@ -159,31 +257,57 @@
       B[, j] <- b
       next
     }
+    # Rank deficient. A cell whose weight is numerically zero next to the
+    # column's largest takes no part in the fit that decides what is
+    # identified: at 1e-16 the rank decision counted such cells under
+    # treatment coding and not under sum or Helmert coding (.gloc_w_floor).
+    live <- ok & w > .gloc_w_floor * max(w[ok])
+    if (!all(live == ok)) {
+      ok <- live
+      sw <- sqrt(w[ok])
+      qa <- qr(U[ok, , drop = FALSE] * sw, tol = 1e-7)
+      b  <- qr.coef(qa, X[ok, j] * sw)
+    }
+    # level combinations, computed once per call (.gloc_row_patterns)
+    if (is.null(patterns)) patterns <- .gloc_row_patterns(U, if (use_main) U_main)
+    if (is.null(patterns$shown)) patterns$shown <- .gloc_shown(patterns)
     dropped <- which(is.na(b))
     b[dropped] <- 0
-    est <- .gloc_estimable(qa, U, ok)
-    if (any(est$nonest)) {
-      target <- rep(stats::weighted.mean(X[ok, j], w[ok]), n)
-      from_main <- logical(n)
-      if (use_main && sum(ok) > ncol(U_main)) {
+    est <- .gloc_estimable(qa, patterns, ok)
+    if (length(est$first)) {
+      k <- nrow(patterns$P)
+      target <- rep(stats::weighted.mean(X[ok, j], w[ok]), k)
+      from_main <- logical(k)
+      if (use_main && !is.null(patterns$P_main) && sum(ok) > ncol(U_main)) {
         # the main-effects fit on the same rows and weights; where it does not
         # identify a combination either, the target stays the weighted mean
         am <- qr(U_main[ok, , drop = FALSE] * sw, tol = 1e-7)
         bm <- qr.coef(am, X[ok, j] * sw)
         bm[is.na(bm)] <- 0
         from_main <- if (am$rank < ncol(U_main))
-          !.gloc_estimable(am, U_main, ok)$nonest else rep(TRUE, n)
-        target[from_main] <- drop(U_main[from_main, , drop = FALSE] %*% bm)
+          !.gloc_estimable(am, list(id = patterns$id, P = patterns$P_main), ok)$nonest
+          else rep(TRUE, k)
+        target[from_main] <- drop(patterns$P_main[from_main, , drop = FALSE] %*% bm)
       }
-      b <- .gloc_fill_null(b, U, est, target)
-      rows <- which(est$nonest)
-      lab <- if (is.null(labels)) .gloc_pattern_names(U[rows, , drop = FALSE], un)
-             else labels[rows]
-      nonid[[j]] <- list(main = sort(unique(lab[from_main[rows]])),
-                         mean = sort(unique(lab[!from_main[rows]])),
-                         cols = un[dropped])
+      b <- .gloc_fill_null(b, patterns$P, est, target)
+      shown <- est$nonest & patterns$shown
+      if (any(shown))
+        nonid[[j]] <- list(main = sort(patterns$labels[shown & from_main]),
+                           mean = sort(patterns$labels[shown & !from_main]))
     }
-    if (est$pure) aliased[[j]] <- dropped
+    # Duplicate columns. Never one that is zero on every fitted row. When every
+    # unidentified combination is absent from the data (two identical factors,
+    # say), the rank deficiency the data show is pure aliasing. Otherwise the
+    # not-identifiable warning covers it, and a duplicate is reported only for
+    # a null direction that no combination shows, and never as a column of an
+    # unidentified combination that occurs in the data.
+    shown_ne <- est$nonest & patterns$shown
+    cand <- dropped[colSums(U[ok, dropped, drop = FALSE] != 0) > 0]
+    if (any(shown_ne)) {
+      cand <- if (est$pure)
+        cand[colSums(abs(patterns$P[shown_ne, cand, drop = FALSE])) == 0] else integer(0)
+    }
+    if (length(cand)) aliased[[j]] <- cand
     B[, j] <- b
   }
   if (length(few))
@@ -191,7 +315,12 @@
                           "columns (%d) for %s; each such variable's fitted mean is",
                           "the median of those cells for every row, without group",
                           "effects."), q, paste(few, collapse = ", ")), call. = FALSE)
-  .gloc_warn_design(aliased, nonid, vn, un)
+  diag <- list(aliased = aliased, nonid = nonid, vn = vn, un = un)
+  if (warn) {
+    .gloc_warn_design(diag)
+  } else if (!all(vapply(c(aliased, nonid), is.null, TRUE))) {
+    attr(B, "gloc_design") <- diag
+  }
   B
 }
 
@@ -273,29 +402,79 @@
   qr.Q(qr(N))
 }
 
-#' Which design rows the fitted rows identify
+#' Level combinations taken from the distinct rows of a design
 #'
-#' @param qa the \code{qr()} of the (weighted) design rows a fit used.
-#' @param U \eqn{n x q} design matrix over all rows.
-#' @param fitted logical, the rows the fit used. A row whose design pattern
-#'   occurs among them is identified by definition.
-#' @return a list: \code{N}, the null-space basis; \code{nonest}, logical, the
-#'   rows not identified; \code{first}, one such row per distinct design
-#'   pattern; \code{sv} and \code{keep}, the singular value decomposition of
-#'   those rows' null-space components and which singular values count (see
-#'   \code{.gloc_est_tol}); and \code{pure}, whether some null direction is
-#'   invisible on every row, i.e. aliased columns that change no fitted mean.
+#' The fallback when a caller passes no \code{patterns} (direct calls of the
+#' internal functions): every distinct row of \code{U} counts as a level
+#' combination. A probability-weighted row would then count as a combination
+#' of its own, so a caller with such rows must pass \code{patterns} with an
+#' \code{NA} id for them. The row keys are built once per call, not once per
+#' column.
+#' @param U \eqn{n x q} design matrix.
+#' @param U_main the main-effects design, or \code{NULL}.
+#' @return a \code{patterns} list as described in \code{.gloc_design_aux}.
 #' @keywords internal
-.gloc_estimable <- function(qa, U, fitted) {
-  N  <- .gloc_null_basis(qa, ncol(U))
-  UN <- U %*% N
-  rn <- sqrt(rowSums(U^2))
-  far <- sqrt(rowSums(UN^2)) > .gloc_est_tol * pmax(1, rn)
+.gloc_row_patterns <- function(U, U_main = NULL) {
   key <- do.call(paste, c(unname(split(U, col(U))), sep = "\r"))
-  nonest <- far & !(key %in% key[fitted])
-  rows <- which(nonest)
-  first <- rows[!duplicated(key[rows])]
-  sv <- if (length(first)) svd(UN[first, , drop = FALSE]) else NULL
+  first <- which(!duplicated(key))
+  P <- U[first, , drop = FALSE]
+  rownames(P) <- NULL
+  P_main <- NULL
+  if (!is.null(U_main)) {
+    P_main <- U_main[first, , drop = FALSE]
+    rownames(P_main) <- NULL
+  }
+  list(id = match(key, key[first]), P = P, P_main = P_main,
+       labels = .gloc_pattern_names(P, .gloc_names(colnames(U), ncol(U))),
+       shown = rep(TRUE, length(first)))
+}
+
+#' Which level combinations a warning may name
+#'
+#' Those that occur in the data, or all of them when some row's categories
+#' are unknown (an \code{NA} id), since such a row may belong to any. A
+#' combination absent from the data is filled like any other but not named.
+#' @param pat a \code{patterns} list.
+#' @return a logical vector, one element per combination.
+#' @keywords internal
+.gloc_shown <- function(pat) {
+  k <- nrow(pat$P)
+  if (anyNA(pat$id)) return(rep(TRUE, k))
+  tabulate(pat$id, nbins = k) > 0L
+}
+
+#' Which level combinations the fitted rows identify
+#'
+#' A combination is identified when a fitted row has it, or when its pure
+#' design row lies in the row space of the fitted rows (see
+#' \code{.gloc_est_tol}). This is decided on combinations, not on rows: a
+#' probability-weighted row with an \code{NA} id adds to the row space when it
+#' is fitted, but is never a combination itself. (Corrected: the first 7.4.1
+#' fix decided on the rows of the design, so 50 rows (0.1, 0.9, 0) sent the
+#' unobserved level a to 71.02 against a target of 25.11, and rows
+#' (5e-7, 0.5, 0.5) counted as identified.)
+#' @param qa the \code{qr()} of the (weighted) design rows a fit used.
+#' @param pat a list with \code{id}, each row's combination (\code{NA} if
+#'   unknown), and \code{P}, the pure design row of each combination.
+#' @param fitted logical, the rows the fit used.
+#' @return a list: \code{N}, the null-space basis; \code{nonest}, logical, the
+#'   combinations not identified; \code{first}, their indices; \code{sv} and
+#'   \code{keep}, the singular value decomposition of their null-space
+#'   components and which singular values count; and \code{pure}, whether some
+#'   null direction is invisible on every such combination.
+#' @keywords internal
+.gloc_estimable <- function(qa, pat, fitted) {
+  P  <- pat$P
+  N  <- .gloc_null_basis(qa, ncol(P))
+  PN <- P %*% N
+  rn <- sqrt(rowSums(P^2))
+  far <- sqrt(rowSums(PN^2)) > .gloc_est_tol * pmax(1, rn)
+  seen <- logical(nrow(P))
+  ids <- pat$id[fitted]
+  seen[ids[!is.na(ids)]] <- TRUE
+  nonest <- far & !seen
+  first <- which(nonest)
+  sv <- if (length(first)) svd(PN[first, , drop = FALSE]) else NULL
   keep <- if (is.null(sv)) logical(0) else
     sv$d > .gloc_est_tol * max(1, rn[first])
   list(N = N, nonest = nonest, first = first, sv = sv, keep = keep,
@@ -305,25 +484,26 @@
 #' Fill the level combinations that the fitted rows do not identify
 #'
 #' Returns \eqn{b = b_0 + N c}, where \eqn{c} is the minimum-norm
-#' least-squares solution of \eqn{u (b_0 + N c) = t_u} over the distinct design
-#' patterns \eqn{u} of the unidentified rows. Identified rows keep their fitted
-#' means, because \eqn{u N = 0} there. The solution goes through the singular
-#' values that \code{.gloc_estimable} keeps, all above a fixed positive
-#' threshold, so no quantity that can be 0 is divided by and finite input
-#' gives finite coefficients under any contrasts. The fitted means it produces
-#' do not depend on the coding or order of the factors. With no unidentified
-#' row, \eqn{b_0} is returned as it is.
+#' least-squares solution of \eqn{p (b_0 + N c) = t_p} over the pure design
+#' rows \eqn{p} of the unidentified combinations. Identified combinations keep
+#' their fitted means, because \eqn{p N = 0} there; a row whose categories are
+#' unknown gets whatever its design row gives with the filled coefficients.
+#' The solution goes through the singular values that \code{.gloc_estimable}
+#' keeps, all above a fixed positive threshold, so no quantity that can be 0
+#' is divided by and finite input gives finite coefficients under any
+#' contrasts. With no unidentified combination, \eqn{b_0} is returned as it is.
 #' @param b0 length-\eqn{q} coefficients of the fit, 0 in the aliased columns.
-#' @param U \eqn{n x q} design matrix over all rows.
+#' @param P the pure design rows of the combinations.
 #' @param est the result of \code{.gloc_estimable}.
-#' @param target length-\eqn{n} target values; only unidentified rows are read.
+#' @param target one target value per combination; only unidentified ones are
+#'   read.
 #' @return length-\eqn{q} coefficients.
 #' @keywords internal
-.gloc_fill_null <- function(b0, U, est, target) {
+.gloc_fill_null <- function(b0, P, est, target) {
   f <- est$first
   if (!length(f)) return(b0)
   k <- est$keep
-  rhs <- target[f] - drop(U[f, , drop = FALSE] %*% b0)
+  rhs <- target[f] - drop(P[f, , drop = FALSE] %*% b0)
   cc <- est$sv$v[, k, drop = FALSE] %*%
     (crossprod(est$sv$u[, k, drop = FALSE], rhs) / est$sv$d[k])
   b0 + drop(est$N %*% cc)
@@ -345,15 +525,17 @@
 
 #' One warning per kind of rank deficiency in the mean structure
 #'
-#' @param aliased list, one element per variable, of aliased design columns
-#'   that change no fitted mean.
-#' @param nonid list, one element per variable, \code{NULL} or a list with the
-#'   unidentified level combinations filled from the main-effects fit
-#'   (\code{main}), those filled towards the weighted mean (\code{mean}) and
-#'   the aliased design columns (\code{cols}).
-#' @param vn,un variable and design-column names.
+#' @param d the diagnostics of \code{.gloc_update_B}: \code{aliased}, one
+#'   element per variable, the aliased design columns that are duplicates
+#'   (neither all-zero on the fitted rows nor part of an unidentified
+#'   combination); \code{nonid}, one element per variable, \code{NULL} or a
+#'   list with the unidentified level combinations filled from the
+#'   main-effects fit (\code{main}) and those filled towards the weighted mean
+#'   (\code{mean}); and \code{vn}, \code{un}, the variable and design-column
+#'   names. \code{imputeCellGLoc} raises them once, from the final iterate.
 #' @keywords internal
-.gloc_warn_design <- function(aliased, nonid, vn, un) {
+.gloc_warn_design <- function(d) {
+  aliased <- d$aliased; nonid <- d$nonid; vn <- d$vn; un <- d$un
   keys <- vapply(aliased, function(k) paste(un[sort(k)], collapse = ", "), "")
   for (key in setdiff(unique(keys), "")) {
     warning(sprintf(paste("cellGLoc: design column(s) %s duplicate other design",
@@ -369,7 +551,7 @@
     paste(s, collapse = "; ")
   }
   nk <- vapply(nonid, function(z) if (is.null(z)) "" else
-    paste(c(z$main, "\n", z$mean, "\n", z$cols), collapse = "\r"), "")
+    paste(c(z$main, "\n", z$mean), collapse = "\r"), "")
   for (key in setdiff(unique(nk), "")) {
     z <- nonid[[which(nk == key)[1L]]]
     what <- c(
@@ -382,14 +564,28 @@
                       "the rows it was estimated from, with the identified",
                       "effects kept between them"), combos(z$mean)))
     warning(sprintf(paste("cellGLoc: the mean of %s is not identifiable in level",
-                          "combination(s) with no cell of positive weight (aliased",
-                          "design column(s) %s): %s."),
-                    paste(vn[nk == key], collapse = ", "),
-                    paste(z$cols, collapse = ", "), paste(what, collapse = "; ")),
+                          "combination(s) with no cell of positive weight: %s."),
+                    paste(vn[nk == key], collapse = ", "), paste(what, collapse = "; ")),
             call. = FALSE)
   }
   invisible(NULL)
 }
+
+#' Relative weight below which a cell does not decide identification
+#'
+#' In a design that is rank deficient on a variable's fitted rows,
+#' \code{.gloc_update_B} refits on the cells whose weight exceeds this
+#' fraction of the column's largest weight before it decides which level
+#' combinations are identified. With level b at weight 1e-16, the pivoted QR
+#' kept b under treatment coding and dropped it under sum and Helmert coding,
+#' and the three codings returned 20.07, 39.52 and 80.27 for b. A full-rank
+#' fit is not refitted, so it stays bit for bit what it was; in that case (all
+#' levels observed, b at 1e-16) the coding can still change b, because a
+#' coding that sees the rank deficiency fills b while one that does not fits
+#' it from the tiny weights.
+#' @format a length-one numeric.
+#' @keywords internal
+.gloc_w_floor <- 1e-8
 
 #' Half-width of the peer-reliability band in \code{.gloc_cond_resid}
 #'
@@ -726,13 +922,15 @@
 #' @param U_main the main-effects version of \code{U} (see
 #'   \code{.gloc_update_B}); the default, \code{U} itself, stands for a design
 #'   without interaction terms.
+#' @param patterns the level combinations; see \code{.gloc_update_B}.
 #' @return a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
 #'   0 on missing cells).
 #' @keywords internal
 .gloc_start_robust <- function(X, U, M, alpha = .gloc_start_alpha,
                                have_cw = requireNamespace("cellWise",
                                                           quietly = TRUE),
-                               control = NULL, warn_design = TRUE, U_main = U) {
+                               control = NULL, warn_design = TRUE, U_main = U,
+                               patterns = NULL) {
   n <- nrow(X); p <- ncol(X); q <- ncol(U)
   use_main <- !is.null(U_main) && !identical(U_main, U)
   cnames <- if (is.null(colnames(X))) as.character(seq_len(p)) else colnames(X)
@@ -846,18 +1044,26 @@
     # identifies the combination.
     qr_o <- if (!any(ok)) NULL else if (is.null(cf$qr)) qr(U[ok, , drop = FALSE]) else cf$qr
     if (!is.null(qr_o) && qr_o$rank < q) {
-      est <- .gloc_estimable(qr_o, U, ok)
-      if (any(est$nonest)) {
-        target <- rep(cf$m0, n)
-        if (use_main) {
+      if (is.null(patterns)) patterns <- .gloc_row_patterns(U, if (use_main) U_main)
+      est <- .gloc_estimable(qr_o, patterns, ok)
+      if (length(est$first)) {
+        k <- nrow(patterns$P)
+        target <- rep(cf$m0, k)
+        # Main-effects targets only for a start that fitted its group effects:
+        # a thin, failed or non-converged fit falls back to the median without
+        # group effects, as its warning says. (Corrected: the first 7.4.1 fix
+        # applied them anyway, and a thin start gave (c, C) 29.96 against the
+        # median 10.87 everywhere else.)
+        if (use_main && !nzchar(cf$status) && !is.null(patterns$P_main)) {
           cm <- col_fit(U_main, ok, X[, j])
           if (!nzchar(cm$status)) {
-            from_main <- if (cm$rankdef) !.gloc_estimable(cm$qr, U_main, ok)$nonest
-                         else rep(TRUE, n)
-            target[from_main] <- drop(U_main[from_main, , drop = FALSE] %*% cm$b)
+            from_main <- if (cm$rankdef)
+              !.gloc_estimable(cm$qr, list(id = patterns$id, P = patterns$P_main),
+                               ok)$nonest else rep(TRUE, k)
+            target[from_main] <- drop(patterns$P_main[from_main, , drop = FALSE] %*% cm$b)
           }
         }
-        b <- .gloc_fill_null(b, U, est, target)
+        b <- .gloc_fill_null(b, patterns$P, est, target)
       }
     }
     B[, j] <- b

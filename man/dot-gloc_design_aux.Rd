@@ -2,7 +2,7 @@
 % Please edit documentation in R/cellgloc_utils.R
 \name{.gloc_design_aux}
 \alias{.gloc_design_aux}
-\title{Main-effects design and row labels for a cellGLoc design}
+\title{Main-effects design and level combinations for a cellGLoc design}
 \usage{
 .gloc_design_aux(data, design, cat_vars)
 }
@@ -14,15 +14,33 @@
 \item{cat_vars}{character vector naming the categorical columns.}
 }
 \value{
-a list with \code{U_main}, the main-effects design over the
-variables \code{design} uses, or \code{NULL} when \code{design} has no
-interaction term; and \code{labels}, one string such as
-\code{"g1=c, g2=C"} per row, or \code{NULL} when \code{design} uses no
-categorical variable.
+a list with \code{U_main}, the main-effects design matrix, or
+\code{NULL} when \code{design} has no interaction term, and
+\code{patterns}, or \code{NULL} when \code{design} uses no categorical
+variable or a variable of the model frame is not a factor.
+\code{patterns} is a list: \code{id}, the index of each row's level
+combination, where a caller marks a row whose categorical values are
+unknown with \code{NA}; \code{P}, the pure design row of each combination,
+with the columns of the design; \code{P_main}, the same for \code{U_main}
+(or \code{NULL}); and \code{labels}, such as \code{"g1=c, g2=C"}.
 }
 \description{
-What the mean step needs when a level combination has no fitted row (see
-\code{.gloc_update_B}): the design with its terms of order greater than one
-dropped, and a label naming each row's levels for the warning.
+What the mean step and the robust start need when a level combination has
+no fitted row (see \code{.gloc_update_B}).
+}
+\details{
+The main-effects design has the variables of \code{design} and none of its
+terms of order greater than one. The variables are read from the terms
+object with \code{deparse1}, so a term such as \code{relevel(g2, ref = "B")}
+or \code{C(g1, contr.sum)} is kept as written, and the matrix is built on
+the model frame that \code{.gloc_design} evaluates. If that fails for any
+reason, \code{U_main} is \code{NULL} and the fill uses the weighted mean
+only. (Corrected: the first 7.4.1 fix rebuilt the formula from backticked
+model-frame names, and a function call in an interaction term made
+\code{imputeCellGLoc} stop with "object not found".)
+
+The level combinations are all combinations of the levels of the design's
+variables when there are at most \code{.gloc_max_patterns} of them, and
+otherwise those that occur in the data.
 }
 \keyword{internal}

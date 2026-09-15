@@ -1145,7 +1145,10 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
                                                            weights = "soft",
                                                            start = sv))
     hit_lv <- grepl("not identifiable", w_lv, fixed = TRUE) &
-      grepl("x1", w_lv, fixed = TRUE) & grepl("fc", w_lv, fixed = TRUE)
+      grepl("x1", w_lv, fixed = TRUE) & grepl("f=c", w_lv, fixed = TRUE)
+    # (the warning names the level combination; since the second 7.4.1 fix
+    # round it no longer names aliased design columns, which depended on the
+    # coding and could name a column of an identified level)
     expect_equal(sum(hit_lv), 1L, info = lab)
     expect_false(any(grepl("too few", w_lv, fixed = TRUE)), info = lab)
     fm_lv <- fit_lv$U %*% fit_lv$B
@@ -1214,8 +1217,9 @@ expect_identical(tail(names(formals(VIM::imputeCellGLoc)), 2), c("trace", "start
 # it fails these expectations instead of aborting the file. Tolerances fixed
 # before the first run: 1e-8 for the deterministic mean step; 1e-6 for
 # end-to-end fits compared across codings of one design; 1e-4 wherever the
-# robust start's lmrob fit enters, whose stopping rule is relative to the
-# coefficients and therefore depends on the coding.
+# robust start's fit of a full-rank column enters, because robustbase's L1
+# start depends on the coding (see T2). (Corrected: this header first blamed
+# lmrob's relative stopping rule.)
 # ==========================================================================
 ub <- function(...) tryCatch(VIM:::.gloc_update_B(...), error = function(e) NULL)
 sr <- function(...) tryCatch(suppressWarnings(VIM:::.gloc_start_robust(...)),
@@ -1328,12 +1332,16 @@ expect_true(all_finite(st8s$B))
 md8 <- stats::median(X8[ok8, 1])
 expect_true(max(abs(S8s[c(1, 4), 1] - md8)) < 1e-8)
 expect_true(max(abs(S8t[c(1, 4), 1] - md8)) < 1e-8)
-# x1 only. The full-rank columns x2 and x3 never reach the fill; they go
-# through lmrob's M-S path, whose stopping rule is relative to the
-# coefficients, and there the two codings differ by up to 3.4e-4 (7.7e-4 in T3
-# below) with or without this fix. Found on the first run, which compared all
-# three columns; the tolerance is unchanged.
-expect_true(max(abs(S8s[, 1] - S8t[, 1])) < 1e-4)
+# x1 only. The full-rank columns x2 and x3 never reach the fill, and there the
+# two codings differ by up to 3.4e-4 (7.7e-4 in T3 below) because the robust
+# start's L1 fit (robustbase::lmrob.lar) depends on the coding: on T3's x2 its
+# fitted values differ by 8.1e-2 and its scale is 0.939376 against 0.935851,
+# while the M-step started from one and the same L1 fit agrees across the
+# codings to 4e-13. The gaps are identical at bfc9962 and do not shrink under
+# rel.tol = 1e-13. (Corrected: this comment first blamed lmrob's relative
+# stopping rule. The x1 check was tightened from 1e-4 to 1e-8 at the same time;
+# measured 3.6e-15.)
+expect_true(max(abs(S8s[, 1] - S8t[, 1])) < 1e-8)
 
 if (requireNamespace("cellWise", quietly = TRUE)) {
   for (cs in list(c("soft", "robust"), c("soft", "classical"),
@@ -1444,3 +1452,145 @@ G12 <- fit_at(U12, sr(X_rk, U12, is.na(X_rk))$B, all_rk)
 G21 <- fit_at(U21, sr(X_rk, U21, is.na(X_rk))$B, all_rk)
 expect_true(all(is.finite(G12)) && all(is.finite(G21)))
 expect_true(max(abs(G12[chg_rk, 1] - G21[chg_rk, 1])) < 1e-4)
+
+# ==========================================================================
+# Second fix round on the fill (re-review of 433a8be). R1: a function call in
+# an interaction term errored, because the main-effects formula was rebuilt
+# from backticked model-frame names. R2: identification was decided on design
+# rows, so probability-weighted rows (0.1, 0.9, 0) sent the unobserved level a
+# to 71.02 (m 25.11), and rows (5e-7, .5, .5) counted as identified. It is now
+# decided on pure level combinations; rows whose categories are unknown carry
+# an NA id. R3: a level at weight 1e-16 gave coding-dependent means. R4: the
+# robust start used the main-effects target after its own fit had failed. R5:
+# warnings named stale sets, aliased columns and absent combinations.
+# Tolerances fixed before the first run.
+# ==========================================================================
+
+# --- R1: function calls inside an interaction design ---
+set.seed(11)
+g1r <- factor(sample(c("a", "b", "c"), 240, TRUE))
+g2r <- factor(sample(c("A", "B"), 240, TRUE))
+X_r1 <- matrix(rnorm(240 * 3), 240) %*% chol(0.5 * diag(3) + 0.5) +
+  c(a = 0, b = 10, c = 20)[as.character(g1r)] + c(A = 0, B = 5)[as.character(g2r)]
+colnames(X_r1) <- paste0("x", 1:3)
+X_r1[matrix(runif(240 * 3) < 0.1, 240)] <- NA
+d_r1 <- data.frame(X_r1, g1 = g1r, g2 = g2r)
+ax_r1 <- tryCatch(VIM:::.gloc_design_aux(d_r1, ~ g1 * relevel(g2, ref = "B"),
+                                         c("g1", "g2")), error = function(e) NULL)
+expect_false(is.null(ax_r1))
+expect_equal(ncol(ax_r1$U_main), 4L)
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  ref_r1 <- suppressWarnings(VIM::imputeCellGLoc(d_r1, design = ~ g1 * g2,
+                                                 weights = "soft", start = "classical"))
+  for (form in c('~ g1 * relevel(g2, ref = "B")', "~ C(g1, contr.sum) * g2")) {
+    f_r1 <- tryCatch(suppressWarnings(VIM::imputeCellGLoc(d_r1, design = as.formula(form),
+                                                          weights = "soft",
+                                                          start = "classical")),
+                     error = function(e) NULL)
+    expect_false(is.null(f_r1), info = form)
+    if (!is.null(f_r1))
+      expect_true(max(abs(f_r1$U %*% f_r1$B - ref_r1$U %*% ref_r1$B)) < 1e-6, info = form)
+  }
+}
+
+# --- R2: probability-weighted design rows, level a never observed; the rows
+# with unknown categories are marked by an NA id ---
+set.seed(6)
+f6 <- factor(sample(c("b", "c"), 200, TRUE), levels = c("a", "b", "c"))
+x6 <- c(a = 10, b = 20, c = 30)[as.character(f6)] + rnorm(200)
+Up6 <- stats::model.matrix(~ f, data.frame(f = f6))
+pat6 <- list(id = c(as.integer(f6), rep(NA_integer_, 50)),
+             P = rbind(c(1, 0, 0), c(1, 1, 0), c(1, 0, 1)),
+             labels = c("f=a", "f=b", "f=c"))
+colnames(pat6$P) <- colnames(Up6)
+for (mix in list(c(0.1, 0.9, 0), c(5e-7, 0.5, 0.5 - 5e-7))) {
+  lab <- paste(signif(mix, 2), collapse = ",")
+  U6 <- rbind(Up6, matrix(c(1, mix[2], mix[3]), 50, 3, byrow = TRUE))
+  X6 <- cbind(x1 = c(x6, rep(NA, 50)))
+  w6 <- collect_warnings(B6 <- ub(X6, U6, (!is.na(X6)) + 0, patterns = pat6))
+  a6 <- if (is.null(B6)) NA_real_ else sum(c(1, 0, 0) * B6[, 1])
+  expect_true(abs(a6 - mean(x6)) < 1e-8, info = lab)
+  expect_equal(sum(grepl("not identifiable", w6, fixed = TRUE)), 1L, info = lab)
+  expect_true(any(grepl("f=a", w6, fixed = TRUE)), info = lab)
+  expect_false(any(grepl("duplicate", w6, fixed = TRUE)), info = lab)
+}
+
+# --- R3: level b of x1 at weight 1e-16 and level a never recording x1. The
+# three codings used to disagree (a / b: 35.17 / 20.07 treatment, 35.17 /
+# 35.02 sum). ---
+set.seed(1)
+f_z <- factor(sample(c("a", "b", "c", "d"), 240, TRUE))
+X_z <- cbind(x1 = c(a = 10, b = 20, c = 30, d = 40)[as.character(f_z)] + rnorm(240),
+             x2 = rnorm(240))
+X_z[f_z == "a", 1] <- NA
+W_z <- matrix(runif(240 * 2, 0.05, 1), 240)
+W_z[is.na(X_z)] <- 0
+W_z[f_z == "b", 1] <- 1e-16
+first_z <- match(levels(f_z), f_z)
+fz <- lapply(list(treatment = NULL, sum = c("contr.sum", "contr.poly"),
+                  helmert = c("contr.helmert", "contr.poly")), function(ct) {
+  if (!is.null(ct)) { op <- options(contrasts = ct); on.exit(options(op)) }
+  U <- VIM:::.gloc_design(data.frame(f = f_z), ~ f, "f")
+  fit_at(U, suppressWarnings(ub(X_z, U, W_z)), first_z)[, 1]
+})
+expect_true(max(abs(fz$sum - fz$treatment)) < 1e-8)
+expect_true(max(abs(fz$helmert - fz$treatment)) < 1e-8)
+
+# --- R4: a robust start whose own fit is thin stays without group effects.
+# (b, B) has two x1 cells, (c, C) none; 433a8be gave (c, C) the main-effects
+# target, 29.96, against the column median 10.87 everywhere else. ---
+set.seed(16)
+m1 <- factor(sample(c("a", "b", "c"), 300, TRUE))
+m2 <- factor(sample(c("A", "B", "C"), 300, TRUE))
+tr_m <- c(a = 0, b = 10, c = 20)[as.character(m1)] + c(A = 0, B = 5, C = 10)[as.character(m2)]
+X_m <- cbind(x1 = tr_m + rnorm(300), x2 = tr_m + rnorm(300))
+X_m[m1 == "c" & m2 == "C", 1] <- NA
+bB_m <- which(m1 == "b" & m2 == "B")
+X_m[bB_m[-(1:2)], 1] <- NA
+d_m <- data.frame(m1 = m1, m2 = m2)
+U_m <- VIM:::.gloc_design(d_m, ~ m1 * m2, c("m1", "m2"))
+st_m <- sr(X_m, U_m, is.na(X_m), U_main = VIM:::.gloc_design(d_m, ~ m1 + m2, c("m1", "m2")))
+expect_true(max(abs(fit_at(U_m, st_m$B, seq_len(300))[, 1] -
+                      stats::median(X_m[, 1], na.rm = TRUE))) < 1e-8)
+
+# --- R5: warnings. (a) The binary corner's unidentified set grew between
+# iterations, and it warned twice, first with the stale set. (b) A combination
+# absent from the whole data set made every variable warn about duplicate
+# columns. (c) No warning names an aliased design column. ---
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  set.seed(15)
+  f5 <- factor(c(rep("a", 20), rep("b", 3), rep("c", 90), rep("d", 90)))
+  X5 <- matrix(rnorm(203 * 3), 203) %*% chol(0.5 * diag(3) + 0.5) +
+    c(a = 20, b = 0, c = 20, d = 22)[as.character(f5)]
+  colnames(X5) <- paste0("x", 1:3)
+  X5[matrix(runif(203 * 3) < 0.1, 203)] <- NA
+  X5[f5 == "a", 1] <- NA
+  X5[f5 == "b", 1] <- c(0, 0, 30)
+  w5 <- character(0)
+  junk5 <- utils::capture.output(
+    w5 <- collect_warnings(VIM::imputeCellGLoc(data.frame(X5, f = f5), design = ~ f,
+                                               weights = "binary")))
+  hit5 <- grepl("not identifiable", w5, fixed = TRUE) & grepl("x1", w5, fixed = TRUE)
+  expect_equal(sum(hit5), 1L)
+  expect_true(any(hit5 & grepl("(f=a); (f=b)", w5, fixed = TRUE)))
+  expect_false(any(grepl("aliased design column", w5, fixed = TRUE)))
+
+  set.seed(13)
+  h1 <- factor(sample(c("a", "b", "c"), 300, TRUE))
+  h2 <- factor(sample(c("A", "B"), 300, TRUE))
+  keep_h <- !(h1 == "c" & h2 == "B")
+  h1 <- h1[keep_h]; h2 <- h2[keep_h]
+  set.seed(13)
+  X3h <- matrix(rnorm(sum(keep_h) * 3), sum(keep_h)) %*% chol(0.5 * diag(3) + 0.5) +
+    c(a = 0, b = 10, c = 20)[as.character(h1)] + c(A = 0, B = 5)[as.character(h2)]
+  colnames(X3h) <- paste0("x", 1:3)
+  X3h[matrix(runif(sum(keep_h) * 3) < 0.1, sum(keep_h))] <- NA
+  X3h[h1 == "b" & h2 == "A", 1] <- NA
+  w3h <- collect_warnings(VIM::imputeCellGLoc(data.frame(X3h, h1 = h1, h2 = h2),
+                                              design = ~ h1 * h2, weights = "soft",
+                                              start = "classical"))
+  expect_false(any(grepl("duplicate", w3h, fixed = TRUE)))
+  expect_equal(sum(grepl("not identifiable", w3h, fixed = TRUE) &
+                     grepl("x1", w3h, fixed = TRUE)), 1L)
+  expect_false(any(grepl("aliased design column", w3h, fixed = TRUE)))
+}

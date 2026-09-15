@@ -4,29 +4,30 @@
 \alias{.gloc_fill_null}
 \title{Fill the level combinations that the fitted rows do not identify}
 \usage{
-.gloc_fill_null(b0, U, est, target)
+.gloc_fill_null(b0, P, est, target)
 }
 \arguments{
 \item{b0}{length-\eqn{q} coefficients of the fit, 0 in the aliased columns.}
 
-\item{U}{\eqn{n x q} design matrix over all rows.}
+\item{P}{the pure design rows of the combinations.}
 
 \item{est}{the result of \code{.gloc_estimable}.}
 
-\item{target}{length-\eqn{n} target values; only unidentified rows are read.}
+\item{target}{one target value per combination; only unidentified ones are
+read.}
 }
 \value{
 length-\eqn{q} coefficients.
 }
 \description{
 Returns \eqn{b = b_0 + N c}, where \eqn{c} is the minimum-norm
-least-squares solution of \eqn{u (b_0 + N c) = t_u} over the distinct design
-patterns \eqn{u} of the unidentified rows. Identified rows keep their fitted
-means, because \eqn{u N = 0} there. The solution goes through the singular
-values that \code{.gloc_estimable} keeps, all above a fixed positive
-threshold, so no quantity that can be 0 is divided by and finite input
-gives finite coefficients under any contrasts. The fitted means it produces
-do not depend on the coding or order of the factors. With no unidentified
-row, \eqn{b_0} is returned as it is.
+least-squares solution of \eqn{p (b_0 + N c) = t_p} over the pure design
+rows \eqn{p} of the unidentified combinations. Identified combinations keep
+their fitted means, because \eqn{p N = 0} there; a row whose categories are
+unknown gets whatever its design row gives with the filled coefficients.
+The solution goes through the singular values that \code{.gloc_estimable}
+keeps, all above a fixed positive threshold, so no quantity that can be 0
+is divided by and finite input gives finite coefficients under any
+contrasts. With no unidentified combination, \eqn{b_0} is returned as it is.
 }
 \keyword{internal}

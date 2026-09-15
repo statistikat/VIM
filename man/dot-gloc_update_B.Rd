@@ -4,7 +4,7 @@
 \alias{.gloc_update_B}
 \title{Weighted least-squares update of the cellGLoc mean structure}
 \usage{
-.gloc_update_B(X, U, W, U_main = U, labels = NULL)
+.gloc_update_B(X, U, W, U_main = U, patterns = NULL, warn = TRUE)
 }
 \arguments{
 \item{X}{\eqn{n x p} numeric matrix of continuous variables, may contain NA.}
@@ -17,8 +17,16 @@
 \code{.gloc_design_aux}; the default, \code{U} itself, stands for a design
 without interaction terms.}
 
-\item{labels}{optional level labels per row for the warnings, from
-\code{.gloc_design_aux}; \code{NULL} names a row by its design columns.}
+\item{patterns}{the level combinations, from \code{.gloc_design_aux}: each
+row's combination (\code{id}, \code{NA} where a row's categories are
+unknown), the pure design row of each combination (\code{P}, and
+\code{P_main} for \code{U_main}) and its \code{labels}. \code{NULL} takes
+every distinct row of \code{U} as a combination
+(\code{.gloc_row_patterns}).}
+
+\item{warn}{\code{TRUE} raises the design warnings here; \code{FALSE}
+attaches them to the result as the attribute \code{"gloc_design"}, when
+there is anything to report, for \code{.gloc_warn_design}.}
 }
 \value{
 a \eqn{q x p} matrix of coefficients.
@@ -42,24 +50,38 @@ A design that is rank deficient on the rows a column is fitted from is
 fitted on a maximal set of linearly independent design columns, chosen by
 the same pivoted QR decomposition \code{qr.solve()} uses; a full-rank design
 takes exactly the arithmetic of \code{qr.solve()}, so its result is
-unchanged bit for bit. The data then determine the fitted mean only of rows
-whose design row lies in the row space of the fitted rows, and those keep
-it exactly. Every other level combination -- a level for which the variable
-has no cell with positive weight, under any coding of the factors, or an
-unseen combination of partly aliased factors -- is filled by one
-least-squares step in the null space of the fitted rows' design
-(\code{.gloc_estimable}, \code{.gloc_fill_null}). The target is the
-variable's weighted mean over the fitted rows, except that under a design
-with interaction terms a combination that the main-effects design
-\code{U_main} identifies on the same rows takes that design's fitted mean.
-Where several combinations share one unidentified direction, it is their
-average over the distinct combinations that meets the target: under
+unchanged bit for bit. A rank-deficient fit first leaves out the cells
+whose weight is at most \code{.gloc_w_floor} times the column's largest.
+The data then determine the fitted mean only of the level combinations that
+a fitted row has or whose pure design row lies in the row space of the
+fitted rows, and those keep it exactly. Every other combination -- a level
+for which the variable has no cell with positive weight, under any coding
+of the factors, an unseen combination of partly aliased factors, or a
+combination absent from the data -- is filled by one least-squares step in
+the null space of the fitted rows' design (\code{.gloc_estimable},
+\code{.gloc_fill_null}). Identification and targets are decided on level
+combinations (\code{patterns}), not on rows: a probability-weighted row
+whose combination is unknown (an \code{NA} id) is never a combination
+itself, and its fitted mean follows from the filled coefficients. The
+target is the variable's weighted mean over the fitted rows, except that
+under a design with interaction terms a combination that the main-effects
+design \code{U_main} identifies on the same rows takes that design's fitted
+mean. Where several combinations share one unidentified direction, it is
+their average over the combinations that meets the target: under
 \code{~ g1 + g2} with a level of \code{g1} never observed, that level's
-rows keep the \code{g2} effects between them. The fitted means this gives
-do not depend on how the factors are coded or ordered. Aliased columns that
-change no row's fitted mean (two identical factors) warn as duplicates;
-unidentified combinations warn once per reason, naming the variables, the
-level combinations and what the fit does with them.
+combinations keep the \code{g2} effects between them. The fitted means this
+gives do not depend on how the factors are coded or ordered, with one
+exception: when every level is observed but one only at weights that are
+numerically zero, a coding under which the fit stays full rank fits that
+level from the tiny weights, while a coding that sees the rank deficiency
+fills it (see \code{.gloc_w_floor}). Aliased columns that change no fitted
+mean (two identical factors) warn as duplicates, naming neither a column
+that is zero on every fitted row nor one of an unidentified combination.
+Unidentified combinations that occur in the data (all of them, when some
+row's combination is unknown) warn once per reason, naming the variables,
+the combinations and what the fit does with them. With \code{warn = FALSE}
+the diagnostics are returned instead, and \code{imputeCellGLoc} raises them
+once, from its final iterate.
 
 Correction, recorded rather than deleted: until 7.4.1 a rank-deficient
 design silently kept only a weighted mean in \code{B[1, j]}, assuming column

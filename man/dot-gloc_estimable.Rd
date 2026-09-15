@@ -2,27 +2,33 @@
 % Please edit documentation in R/cellgloc_utils.R
 \name{.gloc_estimable}
 \alias{.gloc_estimable}
-\title{Which design rows the fitted rows identify}
+\title{Which level combinations the fitted rows identify}
 \usage{
-.gloc_estimable(qa, U, fitted)
+.gloc_estimable(qa, pat, fitted)
 }
 \arguments{
 \item{qa}{the \code{qr()} of the (weighted) design rows a fit used.}
 
-\item{U}{\eqn{n x q} design matrix over all rows.}
+\item{pat}{a list with \code{id}, each row's combination (\code{NA} if
+unknown), and \code{P}, the pure design row of each combination.}
 
-\item{fitted}{logical, the rows the fit used. A row whose design pattern
-occurs among them is identified by definition.}
+\item{fitted}{logical, the rows the fit used.}
 }
 \value{
 a list: \code{N}, the null-space basis; \code{nonest}, logical, the
-rows not identified; \code{first}, one such row per distinct design
-pattern; \code{sv} and \code{keep}, the singular value decomposition of
-those rows' null-space components and which singular values count (see
-\code{.gloc_est_tol}); and \code{pure}, whether some null direction is
-invisible on every row, i.e. aliased columns that change no fitted mean.
+combinations not identified; \code{first}, their indices; \code{sv} and
+\code{keep}, the singular value decomposition of their null-space
+components and which singular values count; and \code{pure}, whether some
+null direction is invisible on every such combination.
 }
 \description{
-Which design rows the fitted rows identify
+A combination is identified when a fitted row has it, or when its pure
+design row lies in the row space of the fitted rows (see
+\code{.gloc_est_tol}). This is decided on combinations, not on rows: a
+probability-weighted row with an \code{NA} id adds to the row space when it
+is fitted, but is never a combination itself. (Corrected: the first 7.4.1
+fix decided on the rows of the design, so 50 rows (0.1, 0.9, 0) sent the
+unobserved level a to 71.02 against a target of 25.11, and rows
+(5e-7, 0.5, 0.5) counted as identified.)
 }
 \keyword{internal}

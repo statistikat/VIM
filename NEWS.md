@@ -48,21 +48,40 @@
   where the level b and c cells were imputed near 0 (truth 20 and 30). Now the variable is fitted on
   a maximal set of independent design columns, as `qr.solve()` would for a full-rank design, whose
   results are unchanged bit for bit. Duplicated columns get coefficient 0, which leaves the fitted
-  means unchanged, and a warning names them. A level combination that no fitted row identifies
-  also warns, once per reason, naming the variable and the level combinations: the variable's mean
-  there is not identifiable from the data. The fit fills such combinations by one least-squares
-  step in the null space of the fitted rows' design. That leaves every identified fitted mean as it
-  is and gives the same fitted means under any coding and order of the factors. The target is the
-  variable's weighted mean over the rows it was estimated from (several such combinations meet it
-  on average, with the identified effects kept between them), or, under a design with interaction
-  terms, the main-effects fit wherever that identifies the combination. The robust start fills by
-  the same rule, towards the column median. (Corrected: the first version of this fix filled design
-  columns one at a time and recognised an unobserved level only as an all-zero column, and this
-  entry said its result held "under any coding of the factor". It did not. It missed a
-  never-observed reference level under treatment coding, where level a came back 30.72 against a
-  truth of 10 with only a warning about duplicate columns; it divided by zero under sum contrasts,
-  returning non-finite fitted means and imputations; and it sent a combination missing only from
-  an interaction to the grand mean, 14.03 against a truth of 30.)
+  means unchanged, and a warning names them when every combination the data hold is identified. A
+  level combination that the fitted rows do not identify warns once per variable, from the final
+  iterate, naming the variables and the combinations (not the aliased design columns): the
+  variable's mean there is not identifiable from the data. The fit fills such combinations by one
+  least-squares step in the null space of the fitted rows' design, which leaves every identified
+  fitted mean as it is. Identification and targets are decided on level combinations, not on
+  design rows: every combination of the design's levels (up to 4096, otherwise those in the data)
+  with its pure design row, where a row whose categories are unknown can be marked so that it never
+  counts as a combination. A combination absent from the data is filled in the same way, without a
+  warning. The target is the variable's weighted mean over the rows it was estimated from (several
+  such combinations meet it on average, with the identified effects kept between them), or, under
+  a design with interaction terms, the main-effects fit wherever that identifies the combination.
+  The fitted means do not depend on the coding or order of the factors, with one exception: when
+  every level is observed but one only at weights that are numerically zero (at most 1e-8 of the
+  largest, which a rank-deficient fit leaves out), a coding under which the fit stays full rank
+  fits that level from those weights, while a coding that sees the rank deficiency fills it. The
+  robust start fills by the same rule, towards the column median, and takes main-effects targets
+  only when its own fit of the column succeeded.
+
+  (Corrected, twice. The first version of this fix filled design columns one at a time,
+  recognised an unobserved level only as an all-zero column, and was described here as holding
+  "under any coding of the factor". It missed a never-observed reference level under treatment
+  coding, where level a came back 30.72 against a truth of 10 with only a warning about duplicate
+  columns; it divided by zero under sum contrasts, returning non-finite fitted means and
+  imputations; and it sent a combination missing only from an interaction to the grand mean, 14.03
+  against a truth of 30. The second version fixed those, but a function call in an interaction
+  term, as in `~ g1 * relevel(g2, ref = "B")` or `~ C(g1, contr.sum) * g2`, made the fit stop
+  with "object not found", where the release before had fitted both. It also decided
+  identification on design rows, so that 50 probability-weighted rows (0.1, 0.9, 0) sent an
+  unobserved level to 71.02 against a target of 25.11. With a level at weight 1e-16 its means
+  depended on the coding (20.07, 39.52 and 80.27 for that level under treatment, sum and Helmert
+  coding). It let a robust start whose own fit had failed take main-effects targets, and it warned
+  again whenever the unidentified set changed between iterations, the first time with a stale
+  set.)
 - **The start runs `cellMCD()` at its own tolerance, `alpha = 0.5`.** cellMCD refuses a column whose
   marginal outliers plus missing values exceed `1 - alpha`. At the default `alpha = 0.75` it did so
   in 74 of the 180 robust-start pilot fits with 20% missing cells, all at 10–20% contamination, 67

@@ -12,7 +12,8 @@
   have_cw = requireNamespace("cellWise", quietly = TRUE),
   control = NULL,
   warn_design = TRUE,
-  U_main = U
+  U_main = U,
+  patterns = NULL
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ says what the returned fit does.}
 \item{U_main}{the main-effects version of \code{U} (see
 \code{.gloc_update_B}); the default, \code{U} itself, stands for a design
 without interaction terms.}
+
+\item{patterns}{the level combinations; see \code{.gloc_update_B}.}
 }
 \value{
 a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,

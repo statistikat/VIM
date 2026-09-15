@@ -284,10 +284,14 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   X <- as.matrix(data[, cont_vars, drop = FALSE])
   storage.mode(X) <- "double"
   U <- .gloc_design(data, design, cat_vars)
-  # The main-effects design and per-row level labels, used only for level
+  # The main-effects design and the level combinations, used only for
   # combinations that the rows a variable is fitted from do not identify.
   aux <- .gloc_design_aux(data, design, cat_vars)
   U_main <- if (is.null(aux$U_main)) U else aux$U_main
+  pats <- aux$patterns
+  if (!is.null(pats) && !identical(colnames(pats$P), colnames(U))) pats <- NULL
+  if (!is.null(pats$P_main) && !identical(colnames(pats$P_main), colnames(U_main)))
+    pats$P_main <- NULL
   n <- nrow(X); p <- ncol(X)
 
   # Inf / NaN are treated as missing and imputed, which is a real decision
@@ -316,8 +320,12 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   M <- !is.finite(X)                       # missing mask
   W <- matrix(1, n, p, dimnames = dimnames(X))
   W[M] <- 0
-  B <- withCallingHandlers(.gloc_update_B(X, U, W, U_main, aux$labels),
+  # Design warnings are collected rather than raised, and reported once from
+  # the final iterate: the unidentified set can change between iterations.
+  B <- withCallingHandlers(.gloc_update_B(X, U, W, U_main, pats, warn = FALSE),
                            warning = dedup)
+  design_diag <- attr(B, "gloc_design")
+  attr(B, "gloc_design") <- NULL
   Sigma <- NULL
   converged <- FALSE
   iter_count <- 0L
@@ -357,7 +365,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # step, which also says what the returned fit does with it.
   if (relax && start == "robust") {
     st <- withCallingHandlers(.gloc_start_robust(X, U, M, warn_design = FALSE,
-                                                 U_main = U_main),
+                                                 U_main = U_main, patterns = pats),
                               warning = dedup)
     W <- st$W; B <- st$B
     W0 <- W; B0 <- B
@@ -434,7 +442,9 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
         W <- (1 - damp) * W + damp * .gloc_bisquare(Z, psi_c)
       }
       W[M] <- 0
-      B <- .gloc_update_B(X, U, W, U_main, aux$labels)
+      B <- .gloc_update_B(X, U, W, U_main, pats, warn = FALSE)
+      design_diag <- attr(B, "gloc_design")
+      attr(B, "gloc_design") <- NULL
 
       # Scale the change in the FITTED MEANS by the scatter. Normalising a
       # coefficient change by a location (max|B_old|) would make the tolerance
@@ -532,6 +542,11 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                                    it, damp))
       }
     }
+
+    # The design warnings of the final iterate, once. (Corrected: they used to
+    # be raised on every mean step, so a set of unidentified combinations that
+    # grew between iterations warned twice, the first time with a stale set.)
+    if (!is.null(design_diag)) .gloc_warn_design(design_diag)
 
     # Non-convergence is now the likeliest degraded path, and it was the only
     # silent one: every other degraded path in this function warns. The two

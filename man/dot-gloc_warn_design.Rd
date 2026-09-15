@@ -4,18 +4,17 @@
 \alias{.gloc_warn_design}
 \title{One warning per kind of rank deficiency in the mean structure}
 \usage{
-.gloc_warn_design(aliased, nonid, vn, un)
+.gloc_warn_design(d)
 }
 \arguments{
-\item{aliased}{list, one element per variable, of aliased design columns
-that change no fitted mean.}
-
-\item{nonid}{list, one element per variable, \code{NULL} or a list with the
-unidentified level combinations filled from the main-effects fit
-(\code{main}), those filled towards the weighted mean (\code{mean}) and
-the aliased design columns (\code{cols}).}
-
-\item{vn, un}{variable and design-column names.}
+\item{d}{the diagnostics of \code{.gloc_update_B}: \code{aliased}, one
+element per variable, the aliased design columns that are duplicates
+(neither all-zero on the fitted rows nor part of an unidentified
+combination); \code{nonid}, one element per variable, \code{NULL} or a
+list with the unidentified level combinations filled from the
+main-effects fit (\code{main}) and those filled towards the weighted mean
+(\code{mean}); and \code{vn}, \code{un}, the variable and design-column
+names. \code{imputeCellGLoc} raises them once, from the final iterate.}
 }
 \description{
 One warning per kind of rank deficiency in the mean structure
