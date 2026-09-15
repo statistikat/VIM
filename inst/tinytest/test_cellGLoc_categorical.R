@@ -267,3 +267,124 @@ es5c <- VIM:::.gloc_cat_estep(X5, M5, matrix(1, 7, 2), B5, diag(2), cp5, cand5c,
 expect_equal(unname(es5c$post$f["1", ]), c(2, 2, 2) / 6, tolerance = 1e-12)   # complete-row frequencies
 expect_identical(VIM:::.gloc_cat_change(es5$post, NULL), Inf)
 expect_identical(VIM:::.gloc_cat_change(es5$post, es5$post), 0)
+
+# ==========================================================================
+# Task 5: the EM inside imputeCellGLoc()
+# ==========================================================================
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  # spec test 1 -- no missing categorical cell: "em" is "level", bit for bit
+  s1 <- gen_cat(150, 11, miss_f = 0)
+  d1c <- s1$truth; d1c$x2[c(3, 9, 40)] <- NA            # continuous gaps only
+  for (cs in list(c("soft", "robust"), c("soft", "classical"), c("binary", "classical"))) {
+    lab <- paste(cs, collapse = "/")
+    fe <- suppressWarnings(VIM::imputeCellGLoc(d1c, weights = cs[1], start = cs[2]))
+    fl <- suppressWarnings(VIM::imputeCellGLoc(d1c, weights = cs[1], start = cs[2],
+                                               categorical = "level"))
+    keep <- c("B", "Sigma", "W", "U", "imputed", "converged", "iterations", "criterion")
+    expect_identical(fe[keep], fl[keep], info = lab)
+    expect_identical(fe$cat_posterior, list(), info = lab)
+    expect_identical(fe$cat_multi_missing, 0, info = lab)
+    expect_true(is.null(fl$cat_posterior) && is.null(fl$cat_multi_missing) &&
+                  is.null(fl$cat_priors), info = lab)
+  }
+
+  # no categorical column at all: "em" is "level", bit for bit
+  d0 <- s1$truth[, c("x1", "x2", "x3")]; d0$x2[c(3, 9, 40)] <- NA
+  f0e <- suppressWarnings(VIM::imputeCellGLoc(d0))
+  f0l <- suppressWarnings(VIM::imputeCellGLoc(d0, categorical = "level"))
+  expect_identical(f0e[keep], f0l[keep])
+  expect_true(is.null(f0e$cat_posterior) && is.null(f0e$cat_priors))
+
+  # spec test 4 -- recovery on data from the model, 20% of f missing
+  s5 <- gen_cat(400, 5, miss_f = 0.2)
+  miss5 <- is.na(s5$d$f)
+  fit5 <- suppressWarnings(VIM::imputeCellGLoc(s5$d))
+  expect_true(fit5$converged)
+  expect_identical(names(fit5$criterion),
+                   c("means", "scatter", "weights", "scatter_spread", "categorical"))
+  expect_true(fit5$criterion[["categorical"]] < 5e-3)
+  expect_false(anyNA(fit5$imputed$f))
+  expect_identical(levels(fit5$imputed$f), levels(s5$d$f))
+  expect_equal(unname(rowSums(fit5$cat_posterior$f)), rep(1, sum(miss5)), tolerance = 1e-12)
+  hit_em <- mean(fit5$imputed$f[miss5] == s5$truth$f[miss5])
+  cp5b <- VIM:::.gloc_cat_prepare(s5$d, c("f", "g"))
+  pr5 <- VIM:::.gloc_cat_fit_priors(cp5b$F[!miss5, ], rep(1, sum(!miss5)), cp5b$levels)
+  P5 <- VIM:::.gloc_cat_prior(pr5$f, cp5b$F[miss5, ])
+  hit_prior <- mean(cp5b$levels$f[max.col(P5, ties.method = "first")] ==
+                      as.character(s5$truth$f[miss5]))
+  expect_true(hit_em >= 0.85)
+  expect_true(hit_em >= hit_prior + 0.2)
+  full5 <- suppressWarnings(VIM::imputeCellGLoc(s5$truth))
+  expect_true(max(abs(fit5$U %*% fit5$B - full5$U %*% full5$B)[!miss5, ]) < 0.3)
+
+  # spec test 5 -- a gross continuous value in a row with a missing category
+  # barely moves that row's posterior, compared with the same cell set to NA
+  r0 <- which(miss5)[1]
+  dA <- s5$d; dA$x1[r0] <- s5$truth$x1[r0] + 40
+  dB <- s5$d; dB$x1[r0] <- NA
+  fA <- suppressWarnings(VIM::imputeCellGLoc(dA))
+  fB <- suppressWarnings(VIM::imputeCellGLoc(dB))
+  expect_true(fA$W[r0, "x1"] < 0.5)
+  expect_true(max(abs(fA$cat_posterior$f[as.character(r0), ] -
+                        fB$cat_posterior$f[as.character(r0), ])) < 0.05)
+
+  # spec test 7 -- rows with two missing categorical cells
+  s7 <- gen_cat(300, 7, miss_f = 0.2, miss_g = 0.2)
+  fit7 <- suppressWarnings(VIM::imputeCellGLoc(s7$d))
+  both7 <- is.na(s7$d$f) & is.na(s7$d$g)
+  expect_true(sum(both7) > 0)
+  expect_true(fit7$converged)
+  expect_identical(fit7$cat_multi_missing, mean(both7))
+  for (v in c("f", "g"))
+    expect_equal(unname(rowSums(fit7$cat_posterior[[v]])), rep(1, sum(is.na(s7$d[[v]]))),
+                 tolerance = 1e-12, info = v)
+  expect_false(anyNA(fit7$imputed$f) || anyNA(fit7$imputed$g))
+  expect_true(all(is.finite(fit7$U %*% fit7$B)))
+
+  # design = ~ 1: the categorical step cannot move the continuous fit much
+  one_em <- suppressWarnings(VIM::imputeCellGLoc(s5$d, design = ~ 1, start = "classical"))
+  one_lv <- suppressWarnings(VIM::imputeCellGLoc(s5$d, design = ~ 1, start = "classical",
+                                                 categorical = "level"))
+  expect_true(norm(one_em$Sigma - one_lv$Sigma, "F") / norm(one_lv$Sigma, "F") < 0.02)
+  expect_true(mean((one_em$W < 0.5) == (one_lv$W < 0.5)) >= 0.99)
+
+  # the caller's random-number stream is untouched on the EM path too
+  set.seed(99); before <- .Random.seed
+  invisible(suppressWarnings(VIM::imputeCellGLoc(s7$d)))
+  expect_identical(.Random.seed, before)
+
+  # an interaction design with a missing category runs and gives finite fitted means
+  fit_i <- suppressWarnings(VIM::imputeCellGLoc(s7$d, design = ~ f * g))
+  expect_true(all(is.finite(fit_i$U %*% fit_i$B)))
+  expect_false(anyNA(fit_i$imputed$f))
+
+  # a fit stopped by maxit names the categorical change in its warning
+  w7 <- collect_warnings(VIM::imputeCellGLoc(s7$d, maxit = 1))
+  expect_true(any(grepl("largest change in a categorical posterior", w7)))
+}
+
+# spec test 2 -- categorical = "level" reproduces VIM 7.4.1
+if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
+  ref741 <- readRDS("gloc_level_ref_741.rds")
+  bitref <- identical(Sys.getenv("VIM_BITREF"), "true")
+  cases <- list(soft_dot = list(design = ~ ., weights = "soft"),
+                soft_one = list(design = ~ 1, weights = "soft"),
+                bin_dot  = list(design = ~ ., weights = "binary"))
+  for (nm in names(cases)) {
+    ref <- ref741$fits[[nm]]
+    fit <- suppressWarnings(VIM::imputeCellGLoc(ref741$data, design = cases[[nm]]$design,
+                                                weights = cases[[nm]]$weights,
+                                                categorical = "level"))
+    expect_identical(fit[c("U", "converged", "iterations")],
+                     ref[c("U", "converged", "iterations")], info = nm)
+    for (k in c("B", "Sigma", "W"))
+      expect_equal(fit[[k]], ref[[k]], tolerance = 1e-10, info = paste(nm, k))
+    expect_equal(fit$imputed, ref$imputed, tolerance = 1e-10, info = nm)
+    if (bitref)
+      expect_identical(c(fit[c("B", "Sigma", "W", "imputed")],
+                         list(criterion = fit$criterion[names(ref$criterion)])),
+                       c(ref[c("B", "Sigma", "W", "imputed")],
+                         list(criterion = ref$criterion)), info = nm)
+    expect_true(is.null(fit$cat_posterior), info = nm)
+  }
+}

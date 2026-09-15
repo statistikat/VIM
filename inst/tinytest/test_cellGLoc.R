@@ -341,7 +341,7 @@ expect_false(z0$converged)
 expect_true(all(is.finite(z0$Sigma)))
 expect_false(anyNA(z0$imputed))
 expect_equal(names(z0$criterion),
-             c("means", "scatter", "weights", "scatter_spread"))
+             c("means", "scatter", "weights", "scatter_spread", "categorical"))
 expect_true(all(is.na(z0$criterion)))          # nothing was computed at all
 
 # --- $criterion reports the stopping residuals, so a caller can test them
@@ -355,7 +355,7 @@ expect_true(all(is.na(z0$criterion)))          # nothing was computed at all
 zk <- VIM::imputeCellGLoc(dg, design = ~ 1, weights = "soft")
 expect_true(zk$converged)
 expect_equal(names(zk$criterion),
-             c("means", "scatter", "weights", "scatter_spread"))
+             c("means", "scatter", "weights", "scatter_spread", "categorical"))
 expect_true(all(zk$criterion[c("means", "scatter", "weights")] < 5e-3))
 expect_true(is.na(zk$criterion[["scatter_spread"]]))
 
@@ -785,8 +785,8 @@ if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
     for (k in keep_num)
       expect_equal(fit[[k]], ref[[k]], tolerance = 1e-10, info = paste(nm, k))
     if (bitref)
-      expect_identical(fit[c(keep_num, "criterion")], ref[c(keep_num, "criterion")],
-                       info = nm)
+      expect_identical(c(fit[keep_num], list(criterion = fit$criterion[names(ref$criterion)])),
+                       ref[c(keep_num, "criterion")], info = nm)
     cont <- colnames(fit$W)
     Xr <- as.matrix(ref740$data[, cont]); Mr <- is.na(Xr)
     old_imp <- as.matrix(ref$imputed[, cont])
@@ -1198,8 +1198,10 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_false(anyNA(st_rd$B))
 }
 
-# --- start comes after trace, so positional calls that pass trace keep working ---
-expect_identical(tail(names(formals(VIM::imputeCellGLoc)), 2), c("trace", "start"))
+# --- start comes after trace, and categorical after start, so positional calls
+# that pass trace or start keep working ---
+expect_identical(tail(names(formals(VIM::imputeCellGLoc)), 3),
+                 c("trace", "start", "categorical"))
 
 # ==========================================================================
 # Level combinations that no fitted row identifies, under any coding (7.4.1

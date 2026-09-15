@@ -993,6 +993,10 @@
 #'   \code{.gloc_update_B}); the default, \code{U} itself, stands for a design
 #'   without interaction terms.
 #' @param patterns the level combinations; see \code{.gloc_update_B}.
+#' @param fit_rows optional logical vector over the rows: the per-column fits
+#'   use only these rows, while the residuals flagged afterwards cover every
+#'   row. \code{imputeCellGLoc} passes the rows without a missing categorical
+#'   cell when \code{categorical = "em"}.
 #' @return a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
 #'   0 on missing cells).
 #' @keywords internal
@@ -1000,7 +1004,7 @@
                                have_cw = requireNamespace("cellWise",
                                                           quietly = TRUE),
                                control = NULL, warn_design = TRUE, U_main = U,
-                               patterns = NULL) {
+                               patterns = NULL, fit_rows = NULL) {
   n <- nrow(X); p <- ncol(X); q <- ncol(U)
   use_main <- !is.null(U_main) && !identical(U_main, U)
   cnames <- if (is.null(colnames(X))) as.character(seq_len(p)) else colnames(X)
@@ -1100,6 +1104,7 @@
   few <- failed <- noconv <- rankdef <- character(0)
   for (j in seq_len(p)) {
     ok <- !M[, j] & is.finite(X[, j])
+    if (!is.null(fit_rows)) ok <- ok & fit_rows
     cf <- col_fit(U, ok, X[, j])
     if (cf$rankdef && warn_design) rankdef <- c(rankdef, cnames[j])
     if (cf$status == "thin") few <- c(few, cnames[j])

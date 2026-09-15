@@ -17,7 +17,8 @@ imputeCellGLoc(
   damp = NULL,
   cw_crit = 1e-08,
   trace = FALSE,
-  start = c("robust", "classical")
+  start = c("robust", "classical"),
+  categorical = c("em", "level")
 )
 }
 \arguments{

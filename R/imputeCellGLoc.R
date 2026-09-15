@@ -246,9 +246,11 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                            psi_c = 4.685, peer_w_min = 0.5,
                            peer_band = .gloc_peer_band, damp = NULL,
                            cw_crit = 1e-8, trace = FALSE,
-                           start = c("robust", "classical")) {
+                           start = c("robust", "classical"),
+                           categorical = c("em", "level")) {
   weights <- match.arg(weights)
   start <- match.arg(start)
+  categorical <- match.arg(categorical)
   # cellWise::cellMCD (with DDC and estLocScale inside it) and robustbase's
   # S-estimator create .Random.seed in a session that has none. A session with
   # none must still have none afterwards, or two fresh sessions draw the same
@@ -274,24 +276,30 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
             is.numeric(peer_band), length(peer_band) == 1L,
             is.finite(peer_band), peer_band >= 0)
   if (!relax) { adaptive <- FALSE; damp <- 1 }
-  is_cat <- vapply(data, function(x) is.factor(x) || is.character(x) ||
-                     is.logical(x), logical(1))
-  cont_vars <- names(data)[!is_cat]
-  cat_vars  <- names(data)[is_cat]
+  sv <- .gloc_split_vars(data)
+  cont_vars <- sv$cont
+  cat_vars  <- sv$cat
   if (!length(cont_vars))
     stop("imputeCellGLoc() needs at least one continuous variable.")
+  # The categorical EM runs only when a categorical cell is missing. Without
+  # one this function takes the 7.4.1 path unchanged, which is what keeps
+  # categorical = "em" and "level" bit-identical there.
+  catp <- .gloc_cat_prepare(data, cat_vars)
+  em <- identical(categorical, "em") && any(catp$Mc)
 
   X <- as.matrix(data[, cont_vars, drop = FALSE])
   storage.mode(X) <- "double"
-  U <- .gloc_design(data, design, cat_vars)
-  # The main-effects design and the level combinations, used only for
-  # combinations that the rows a variable is fitted from do not identify.
-  aux <- .gloc_design_aux(data, design, cat_vars)
-  U_main <- if (is.null(aux$U_main)) U else aux$U_main
-  pats <- aux$patterns
-  if (!is.null(pats) && !identical(colnames(pats$P), colnames(U))) pats <- NULL
-  if (!is.null(pats$P_main) && !identical(colnames(pats$P_main), colnames(U_main)))
-    pats$P_main <- NULL
+  if (!em) {
+    U <- .gloc_design(data, design, cat_vars)
+    # The main-effects design and the level combinations, used only for
+    # combinations that the rows a variable is fitted from do not identify.
+    aux <- .gloc_design_aux(data, design, cat_vars)
+    U_main <- if (is.null(aux$U_main)) U else aux$U_main
+    pats <- aux$patterns
+    if (!is.null(pats) && !identical(colnames(pats$P), colnames(U))) pats <- NULL
+    if (!is.null(pats$P_main) && !identical(colnames(pats$P_main), colnames(U_main)))
+      pats$P_main <- NULL
+  }
   n <- nrow(X); p <- ncol(X)
 
   # Inf / NaN are treated as missing and imputed, which is a real decision
@@ -318,11 +326,32 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   }
 
   M <- !is.finite(X)                       # missing mask
+  if (em) {
+    cc <- rowSums(catp$Mc) == 0L
+    if (!any(cc))
+      stop(paste("imputeCellGLoc(): categorical = \"em\" needs at least one row",
+                 "with every categorical variable observed; use",
+                 "categorical = \"level\"."))
+    withCallingHandlers({
+      cand   <- .gloc_cat_candidates(catp, data, design)
+      priors <- .gloc_cat_fit_priors(catp$F[cc, , drop = FALSE], rep(1, sum(cc)),
+                                     catp$levels)
+      es     <- .gloc_cat_estep(X, M, NULL, NULL, NULL, catp, cand, priors,
+                                w_min = peer_w_min, band = peer_band)
+    }, warning = dedup)
+    U <- es$Ubar                                     # expected design rows
+    U_main <- if (is.null(es$Umain_bar)) U else es$Umain_bar
+    pats <- cand$pats_rows                           # NA id where a category is unknown
+    priors0 <- priors; es0 <- es
+  }
+  post_old <- NULL
   W <- matrix(1, n, p, dimnames = dimnames(X))
   W[M] <- 0
   # Design warnings are collected rather than raised, and reported once from
   # the final iterate: the unidentified set can change between iterations.
-  B <- withCallingHandlers(.gloc_update_B(X, U, W, U_main, pats, warn = FALSE),
+  W_fit <- W
+  if (em) W_fit[!cc, ] <- 0                        # fit on complete-category rows
+  B <- withCallingHandlers(.gloc_update_B(X, U, W_fit, U_main, pats, warn = FALSE),
                            warning = dedup)
   design_diag <- attr(B, "gloc_design")
   attr(B, "gloc_design") <- NULL
@@ -335,6 +364,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   restarted <- FALSE      # has the floor-schedule fallback already been used?
   W0 <- W; B0 <- B        # the cold start, kept for that fallback
   dB <- dS <- dW <- NA_real_       # stopping residuals, reported in $criterion
+  dR <- 0      # categorical posterior change; stays 0 without the EM
   # Ring buffer of the last .gloc_stall_iters scatters. A non-converged fit
   # returns whatever the last iteration produced, and from the returned Sigma
   # alone the caller cannot tell a point on a settled cycle -- where the answer
@@ -365,7 +395,8 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # step, which also says what the returned fit does with it.
   if (relax && start == "robust") {
     st <- withCallingHandlers(.gloc_start_robust(X, U, M, warn_design = FALSE,
-                                                 U_main = U_main, patterns = pats),
+                                                 U_main = U_main, patterns = pats,
+                                                 fit_rows = if (em) cc else NULL),
                               warning = dedup)
     W <- st$W; B <- st$B
     W0 <- W; B0 <- B
@@ -413,7 +444,15 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
           Sigma <- fit$S; W <- fit$W
         }
       } else {
-        Sigma <- .gloc_scatter_soft(R, W, M, kappa = kappa_soft, crit = cw_crit)
+        # Under the EM the scatter is taken over the pseudo-rows: a row with a
+        # missing category enters once per level, its cell weights scaled by the
+        # level's posterior, which cwLocScat treats as a case weight.
+        Sigma <- if (em)
+          .gloc_scatter_soft(X[es$pr_row, , drop = FALSE] - es$Up %*% B,
+                             W[es$pr_row, , drop = FALSE] * es$pr_w,
+                             M[es$pr_row, , drop = FALSE],
+                             kappa = kappa_soft, crit = cw_crit)
+        else .gloc_scatter_soft(R, W, M, kappa = kappa_soft, crit = cw_crit)
         # Condition each cell only on peers that are themselves still clean.
         # Conditioning on every finite peer propagates a single bad cell to its
         # whole row: contaminating only x1 flagged 88-94% of the clean x2 and
@@ -442,7 +481,23 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
         W <- (1 - damp) * W + damp * .gloc_bisquare(Z, psi_c)
       }
       W[M] <- 0
-      B <- .gloc_update_B(X, U, W, U_main, pats, warn = FALSE)
+      if (em) {
+        # E-step, then the M-step on the pseudo-rows. The W-step above used the
+        # expected design rows, and so does the next one.
+        es <- .gloc_cat_estep(X, M, W, B, Sigma, catp, cand, priors,
+                              w_min = peer_w_min, band = peer_band)
+        dR <- .gloc_cat_change(es$post, post_old)
+        post_old <- es$post
+        U <- es$Ubar
+        U_main <- if (is.null(es$Umain_bar)) U else es$Umain_bar
+        B <- .gloc_update_B(X[es$pr_row, , drop = FALSE], cand$Up,
+                            W[es$pr_row, , drop = FALSE] * es$pr_w,
+                            if (is.null(cand$Up_main)) cand$Up else cand$Up_main,
+                            cand$pat_pr, warn = FALSE)
+        priors <- .gloc_cat_fit_priors(es$Fp, es$pr_w, catp$levels)
+      } else {
+        B <- .gloc_update_B(X, U, W, U_main, pats, warn = FALSE)
+      }
       design_diag <- attr(B, "gloc_design")
       attr(B, "gloc_design") <- NULL
 
@@ -490,7 +545,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                                  it, dB, dS, dW, damp))
       if (dW < 0.99 * dW_best) { dW_best <- dW; stall <- 0L } else
         stall <- stall + 1L
-      if (dB < eps && dS < eps && dW < eps) { converged <- TRUE; break }
+      if (dB < eps && dS < eps && dW < eps && dR < eps) { converged <- TRUE; break }
 
       # Strengthen the relaxation only when the iteration stops contracting.
       # Cycling is correlation-driven, and at low correlation dropping a peer
@@ -535,6 +590,11 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
           stall >= .gloc_stall_iters) {
         restarted <- TRUE
         W <- W0; B <- B0
+        if (em) {
+          es <- es0; U <- es0$Ubar
+          U_main <- if (is.null(es0$Umain_bar)) U else es0$Umain_bar
+          priors <- priors0; post_old <- NULL
+        }
         dW_prev <- Inf; dW_best <- Inf; stall <- 0L
         if (trace) message(sprintf(paste("  iter %d: still cycling at the",
                                          "relaxation floor; restarting from",
@@ -593,22 +653,45 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
         min(maxit, .gloc_stall_iters), S_spread)
       warning(sprintf(paste("cellGLoc: did not converge in %d iteration(s)",
                             "(scaled change in fitted means %s, in scatter %s,",
-                            "max |dW| %s, tolerance %.3g). The estimates are",
+                            "max |dW| %s%s, tolerance %.3g). The estimates are",
                             "still moving, so B, Sigma and W are only whatever",
                             "the last iteration produced. %s%s $criterion",
-                            "carries all four numbers."),
-                      maxit, .gloc_fmt(dB), .gloc_fmt(dS), .gloc_fmt(dW), eps,
-                      drift, if (nzchar(drift)) paste0(" ", diagnosis)
-                             else diagnosis),
+                            "carries all %s numbers."),
+                      maxit, .gloc_fmt(dB), .gloc_fmt(dS), .gloc_fmt(dW),
+                      if (em) paste0(", largest change in a categorical posterior ",
+                                     .gloc_fmt(dR)) else "",
+                      eps, drift,
+                      if (nzchar(drift)) paste0(" ", diagnosis) else diagnosis,
+                      if (em) "five" else "four"),
               call. = FALSE)
     }
 
-    if (is.null(Sigma))                                  # maxit = 0
-      Sigma <- .gloc_scatter_soft(X - U %*% B, W, M,
-                                  kappa = if (weights == "binary") 1
-                                          else kappa_soft,
-                                  crit = cw_crit)
+    if (is.null(Sigma)) {                                # maxit = 0
+      kap <- if (weights == "binary") 1 else kappa_soft
+      Sigma <- if (em)
+        .gloc_scatter_soft(X[es$pr_row, , drop = FALSE] - es$Up %*% B,
+                           W[es$pr_row, , drop = FALSE] * es$pr_w,
+                           M[es$pr_row, , drop = FALSE], kappa = kap, crit = cw_crit)
+      else .gloc_scatter_soft(X - U %*% B, W, M, kappa = kap, crit = cw_crit)
+    }
   }, warning = dedup)
+
+  # One last E-step at the returned (B, Sigma, W), so the posteriors, the
+  # expected design and the imputations all belong to the returned fit.
+  cat_post <- cat_pobs <- cat_multi <- cat_pri <- NULL
+  if (identical(categorical, "em") && length(cat_vars)) {
+    if (em) {
+      es <- withCallingHandlers(
+        .gloc_cat_estep(X, M, W, B, Sigma, catp, cand, priors,
+                        w_min = peer_w_min, band = peer_band),
+        warning = dedup)
+      U <- es$Ubar
+      U_main <- if (is.null(es$Umain_bar)) U else es$Umain_bar
+    }
+    cat_post  <- if (em) es$post else list()
+    cat_multi <- mean(rowSums(catp$Mc) >= 2L)
+    if (em) cat_pri <- priors
+  }
 
   # Impute from the unflagged cells only, by the peer rule detection uses. Both
   # corners: a binary flag is a weight of exactly 0 or 1, where the band is inert.
@@ -616,11 +699,20 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                        band = peer_band)
   out <- data
   for (v in cont_vars) out[[v]] <- .gloc_restore_class(Ximp[, v], data[[v]], v)
+  if (em) for (v in names(cat_post)) {
+    P <- cat_post[[v]]
+    val <- catp$F[[v]]
+    val[as.integer(rownames(P))] <- colnames(P)[max.col(P, ties.method = "first")]
+    out[[v]] <- .gloc_cat_restore(val, data[[v]])
+  }
 
   list(B = B, Sigma = Sigma, W = W, U = U, imputed = out,
        converged = converged, iterations = iter_count,
        criterion = c(means = dB, scatter = dS, weights = dW,
-                     scatter_spread = S_spread))
+                     scatter_spread = S_spread,
+                     categorical = if (iter_count == 0L) NA_real_ else dR),
+       cat_posterior = cat_post, cat_prob_observed = cat_pobs,
+       cat_multi_missing = cat_multi, cat_priors = cat_pri)
 }
 
 #' Relaxation schedule for the soft corner's weight update

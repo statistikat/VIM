@@ -13,7 +13,8 @@
   control = NULL,
   warn_design = TRUE,
   U_main = U,
-  patterns = NULL
+  patterns = NULL,
+  fit_rows = NULL
 )
 }
 \arguments{
@@ -43,6 +44,11 @@ says what the returned fit does.}
 without interaction terms.}
 
 \item{patterns}{the level combinations; see \code{.gloc_update_B}.}
+
+\item{fit_rows}{optional logical vector over the rows: the per-column fits
+use only these rows, while the residuals flagged afterwards cover every
+row. \code{imputeCellGLoc} passes the rows without a missing categorical
+cell when \code{categorical = "em"}.}
 }
 \value{
 a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
