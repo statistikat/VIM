@@ -286,7 +286,8 @@
     rv <- which(nmis == 1L & Mc[, v]); L <- nlev[[v]]
     if (!length(rv)) next
     Fc <- F[rep(rv, each = L), , drop = FALSE]
-    Fc[[v]] <- factor(rep(lev[[v]], times = length(rv)), levels = lev[[v]])
+    Fc[[v]] <- factor(rep(lev[[v]], times = length(rv)), levels = lev[[v]],
+                      ordered = is.ordered(F[[v]]))
     parts[[length(parts) + 1L]] <- Fc
     rows[[length(rows) + 1L]] <- rep(rv, each = L)
     single[[v]] <- list(rows = rv,
@@ -299,7 +300,8 @@
     g <- unname(as.matrix(expand.grid(lapply(nlev[vs], seq_len))))
     Fi <- F[rep(i, nrow(g)), , drop = FALSE]
     for (a in seq_along(vs))
-      Fi[[vs[a]]] <- factor(lev[[vs[a]]][g[, a]], levels = lev[[vs[a]]])
+      Fi[[vs[a]]] <- factor(lev[[vs[a]]][g[, a]], levels = lev[[vs[a]]],
+                            ordered = is.ordered(F[[vs[a]]]))
     parts[[length(parts) + 1L]] <- Fi
     rows[[length(rows) + 1L]] <- rep(i, nrow(g))
     multi[[length(multi) + 1L]] <- list(row = i, vars = vs, lvl = g,

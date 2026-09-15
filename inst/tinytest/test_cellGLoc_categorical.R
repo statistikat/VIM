@@ -210,6 +210,17 @@ expect_true(all(cand4o$Up == 1))
 es4o <- VIM:::.gloc_cat_estep(X4, M4, NULL, NULL, NULL, cp4, cand4o, pri4)
 expect_true(all(es4o$Ubar == 1) && is.null(es4o$Umain_bar))
 
+# an ordered factor keeps its contrasts in the pseudo-rows (rows missing f alone and f and g)
+d4ord <- sim4$d
+d4ord$f <- factor(d4ord$f, levels = c("a", "b", "c"), ordered = TRUE)
+t4ord <- sim4$truth
+t4ord$f <- factor(t4ord$f, levels = c("a", "b", "c"), ordered = TRUE)
+cp4ord <- VIM:::.gloc_cat_prepare(d4ord, c("f", "g"))
+cand4ord <- VIM:::.gloc_cat_candidates(cp4ord, d4ord, ~ .)
+expect_true(is.ordered(cand4ord$Fp$f))
+expect_identical(colnames(cand4ord$Up), colnames(VIM:::.gloc_design(t4ord, ~ ., c("f", "g"))))
+expect_true(all(cand4ord$Up == VIM:::.gloc_design_rows(cand4ord$Fp, ~ ., cp4ord$levels)))
+
 # two missing cells whose evidence factorises (diagonal Sigma, f moves x1 only,
 # g moves x2 only, marginal priors): the mean-field sweeps are exact
 d5 <- data.frame(x1 = c(1.7, 0.1, 2.0, -1.9, 0.3, 2.2, -2.1),
