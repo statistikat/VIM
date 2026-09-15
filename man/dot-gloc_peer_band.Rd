@@ -27,12 +27,15 @@ single threshold crossing used to produce, so \eqn{h} must exceed about
 wide and the interpolation stops being a fringe: bisquare weights sit at
 0.5 at \eqn{|z| = 2.55}, so a band of \eqn{\pm h} covers the standardised
 residuals in roughly \eqn{|z| \in (2.55 - 4h, 2.55 + 4h)}, which at
-\eqn{h = 0.05} is about 1.2\\% of clean Gaussian cells and at \eqn{h = 0.25}
-would be nearer 10\\%.
+\eqn{h = 0.05} is about 1.2\% of clean Gaussian cells and at \eqn{h = 0.25}
+would be nearer 10\%.
 
 0.05 sits above the steepness bound and below the fringe bound. Measured on
-a sweep of one cell's weight across the threshold, the largest one-step jump
-it leaves in a row-mate's standardised residual is 0.0035, against 0.110 for
-the hard cut, with identical values at both ends of the sweep.
+a sweep of one cell's weight across the threshold (the portable test data,
+drawn as \code{Z \%*\% chol(S)}), the largest one-step jump it leaves in a
+row-mate's standardised residual is 0.0071, against 0.225 for the hard cut,
+a factor of 32, with identical values outside the band. (Corrected: this
+page quoted 0.0035 against 0.110, figures that matched neither the earlier
+\code{MASS::mvrnorm} test data nor the current ones.)
 }
 \keyword{internal}

@@ -617,8 +617,11 @@ if (at_home()) {
   colnames(Xz) <- paste0("x", 1:4)
 
   # Both fits use start = "classical": this block pins a property of the peer
-  # rule, and the robust start (7.4.1) avoids this cycle on its own, a separate
-  # finding that would otherwise mask what the band does.
+  # rule, and the start must not be allowed to change which state the hard cut
+  # reaches. On this machine the robust start (7.4.1) happened to converge on
+  # these data, but that is one draw on one BLAS and is not asserted.
+  # (Corrected: this comment first said the robust start "avoids this cycle on
+  # its own", a claim no test checks.)
   expect_warning(zh <- VIM::imputeCellGLoc(as.data.frame(Xz), design = ~ 1,
                                            weights = "soft", maxit = 200,
                                            peer_band = 0, start = "classical"),
@@ -744,19 +747,30 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
     VIM::imputeCellGLoc(dsb, design = ~ ., weights = "binary", start = "classical")[keep_b])
 }
 
-# --- start = "classical" reproduces VIM 7.4.0's ESTIMATES bit for bit. The
-# reference was written by 7.4.0 (commit e8f204c) on fixed data. at_home()
-# only: bit-identity is a statement about this code on one platform, and a
-# different BLAS or compiler may legitimately move the last digit.
+# --- start = "classical" reproduces VIM 7.4.0's ESTIMATES. The reference was
+# written by 7.4.0 (commit e8f204c) on fixed data, with Apple's Accelerate BLAS.
 # Since 7.4.1 a missing cell is imputed from the unflagged peers in its row
 # only, by the detection peer rule. B, Sigma and W do not depend on the
-# imputation, so they must still match exactly. $imputed must NOT match in the
-# rows where a peer is flagged. The 7.4.0 imputations are asserted to be the
+# imputation, so they must still match. $imputed must NOT match in the rows
+# where a peer is flagged. The 7.4.0 imputations are asserted to be the
 # all-peers rule applied to the same estimates, so the whole difference is
-# attributable to the peer rule. ---
+# attributable to the peer rule.
+#
+# Correction, recorded rather than deleted: until 2026-09-15 this block
+# compared B, Sigma, W, the criterion and the all-peers imputations with
+# expect_identical() under at_home(), and said bit-identity was "a statement
+# about this code on one platform". But tests/tinytest.R sets at_home from
+# NOT_CRAN, which the GitHub workflow sets on all 6 platforms, so the
+# comparison ran everywhere. Under R's reference BLAS it failed 6 times, with
+# differences up to 4.4e-15 and equal iteration counts. The bitwise
+# comparisons now run only with VIM_BITREF=true. Everywhere else the
+# iteration count and convergence flag are exact and B, Sigma, W and the
+# all-peers imputations agree to 1e-10, a tolerance fixed before the first run
+# and far above the measured cross-BLAS gap. ---
 if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
   ref740 <- readRDS("gloc_classical_ref_740.rds")
-  keep <- c("B", "Sigma", "W", "U", "converged", "iterations", "criterion")
+  bitref <- identical(Sys.getenv("VIM_BITREF"), "true")
+  keep_num <- c("B", "Sigma", "W")
   cases <- list(soft_dot = list(design = ~ ., weights = "soft"),
                 soft_one = list(design = ~ 1, weights = "soft"),
                 bin_dot  = list(design = ~ ., weights = "binary"))
@@ -766,13 +780,20 @@ if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
                                                 design = cases[[nm]]$design,
                                                 weights = cases[[nm]]$weights,
                                                 start = "classical"))
-    expect_identical(fit[keep], ref[keep], info = nm)
+    expect_identical(fit[c("U", "converged", "iterations")],
+                     ref[c("U", "converged", "iterations")], info = nm)
+    for (k in keep_num)
+      expect_equal(fit[[k]], ref[[k]], tolerance = 1e-10, info = paste(nm, k))
+    if (bitref)
+      expect_identical(fit[c(keep_num, "criterion")], ref[c(keep_num, "criterion")],
+                       info = nm)
     cont <- colnames(fit$W)
     Xr <- as.matrix(ref740$data[, cont]); Mr <- is.na(Xr)
     old_imp <- as.matrix(ref$imputed[, cont])
     new_imp <- as.matrix(fit$imputed[, cont])
-    expect_identical(unname(VIM:::.gloc_impute(Xr, fit$U, fit$B, fit$Sigma, Mr)[Mr]),
-                     unname(old_imp[Mr]), info = nm)
+    all_peers <- unname(VIM:::.gloc_impute(Xr, fit$U, fit$B, fit$Sigma, Mr)[Mr])
+    expect_equal(all_peers, unname(old_imp[Mr]), tolerance = 1e-10, info = nm)
+    if (bitref) expect_identical(all_peers, unname(old_imp[Mr]), info = nm)
     rel <- VIM:::.gloc_peer_rel(!Mr, fit$W)
     hit <- rowSums(Mr) > 0 & rowSums(!Mr & rel < 1) > 0
     cells_hit  <- Mr & hit
@@ -791,9 +812,10 @@ if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
 # cellMCD refuses any column whose marginal outliers plus NAs exceed 1 - alpha.
 # At the user-facing default alpha = 0.75 that is 25%, which 20% missingness
 # plus a few percent of shifted cells already exceeds, so in the 7.4.1 pilot the
-# robust start fell back to MAD flags in 74 of 360 fits, all of them where it
-# mattered most. The start therefore runs cellMCD at its own alpha, and the
-# binary corner keeps the user's.
+# robust start fell back to MAD flags in 74 of its 180 fits, all at 10-20%
+# contamination, 67 of them with shifts of 6 or 10 and 7 with a shift of 3.
+# (Corrected: this comment first said 74 of 360 fits.) The start therefore runs
+# cellMCD at its own alpha, and the binary corner keeps the user's.
 set.seed(62)
 n_a <- 400
 Xa <- matrix(rnorm(n_a * 4), n_a) %*% chol(0.5 * diag(4) + 0.5)
@@ -970,3 +992,110 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
     expect_equal(f4$imputed$x1[1], unname(ref_na[1, 1]), tolerance = 1e-10, info = lab)
   }
 }
+
+# ==========================================================================
+# Robust start on a design without an intercept column (7.4.1 review round)
+#
+# The start centres each response by its median and used to add the median
+# back to B[1, j] only, i.e. to the first design column, assumed to be the
+# intercept. With design = ~ f - 1 that column is the first level's dummy: the
+# start's fitted means came out 10.25 / 0.37 / 10.16 against a truth of
+# 10 / 20 / 30, and the final fit flagged 210 cells (172 of them clean) against
+# 55 (17 clean) under the classical start, with no warning. The classical
+# start's 17 clean flags, and 19 for the robust start with ~ f, were measured
+# before the thresholds below were fixed.
+# ==========================================================================
+set.seed(301)
+n_ni <- 300
+f_ni <- factor(sample(c("a", "b", "c"), n_ni, TRUE))
+mu_ni <- c(a = 10, b = 20, c = 30)
+X_ni <- matrix(rnorm(n_ni * 3), n_ni) %*% chol(0.5 * diag(3) + 0.5) +
+  mu_ni[as.character(f_ni)]
+colnames(X_ni) <- paste0("x", 1:3)
+X_ni[matrix(runif(n_ni * 3) < 0.1, n_ni)] <- NA
+inj_ni <- matrix(runif(n_ni * 3) < 0.05, n_ni) & !is.na(X_ni)
+X_ni[inj_ni] <- X_ni[inj_ni] + 8
+d_ni <- data.frame(X_ni, f = f_ni)
+first_ni <- match(levels(f_ni), f_ni)
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  for (des in list(~ f, ~ f - 1)) {
+    lab <- deparse(des)
+    U_ni <- VIM:::.gloc_design(d_ni, des, "f")
+    st_ni <- suppressWarnings(VIM:::.gloc_start_robust(X_ni, U_ni, is.na(X_ni)))
+    expect_true(all(abs((U_ni %*% st_ni$B)[first_ni, 1] - mu_ni) < 0.5), info = lab)
+    w_ni <- collect_warnings(fit_ni <- VIM::imputeCellGLoc(d_ni, design = des,
+                                                           weights = "soft"))
+    expect_false(any(grepl("robust start", w_ni)), info = lab)
+    fl_ni <- fit_ni$W < 0.5 & !is.na(X_ni)
+    expect_true(mean(fl_ni[inj_ni]) >= 0.95, info = lab)
+    expect_true(sum(fl_ni & !inj_ni) <= 25, info = lab)
+  }
+}
+
+# ==========================================================================
+# The caller's random-number state (7.4.1 review round)
+#
+# cellWise::cellMCD, with DDC and estLocScale inside it, creates .Random.seed in
+# a session that has none; cwLocScat and the start's L1 path do not. So the
+# default soft fit, through the robust start, and the binary corner left a
+# .Random.seed behind, and two fresh sessions then drew identical "random"
+# numbers after one call. An existing stream must not be advanced either.
+# ==========================================================================
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  has_seed <- function() exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+  saved_seed <- if (has_seed()) get(".Random.seed", envir = globalenv()) else NULL
+  d_rng <- data.frame(Xsb, g = g)
+  for (wt in c("soft", "binary")) {
+    if (has_seed()) rm(".Random.seed", envir = globalenv())
+    invisible(suppressWarnings(VIM::imputeCellGLoc(d_rng, design = ~ ., weights = wt)))
+    expect_false(has_seed(), info = wt)
+  }
+  set.seed(11); before_rng <- .Random.seed
+  invisible(suppressWarnings(VIM::imputeCellGLoc(d_rng, design = ~ ., weights = "soft")))
+  expect_identical(.Random.seed, before_rng)
+  if (is.null(saved_seed)) {
+    if (has_seed()) rm(".Random.seed", envir = globalenv())
+  } else {
+    assign(".Random.seed", saved_seed, envir = globalenv())
+  }
+}
+
+# --- the start's cellMCD failure fallback. A column with more than half of its
+# cells missing makes cellMCD refuse at the start's alpha. The start warns,
+# flags by |residual| / MAD instead, and prints nothing: until this round
+# cellMCD printed six console lines per refusal. The existing "failed" test
+# above reaches lmrob's failure path, not this one. ---
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  set.seed(91)
+  X_mf <- matrix(rnorm(300 * 4), 300) %*% chol(0.5 * diag(4) + 0.5)
+  colnames(X_mf) <- paste0("x", 1:4)
+  X_mf[sample(300, 180), 2] <- NA
+  k_mf <- matrix(FALSE, 300, 4); k_mf[sample(300 * 4, 60)] <- TRUE
+  k_mf <- k_mf & !is.na(X_mf)
+  X_mf[k_mf] <- X_mf[k_mf] + 8
+  U_mf <- matrix(1, 300, 1, dimnames = list(NULL, "(Intercept)"))
+  con_mf <- capture.output(
+    w_mf <- collect_warnings(st_mf <- VIM:::.gloc_start_robust(X_mf, U_mf, is.na(X_mf))))
+  expect_true(any(grepl("robust start: cellWise::cellMCD() failed", w_mf, fixed = TRUE)))
+  expect_equal(length(con_mf), 0L)
+  expect_true(mean(st_mf$W[k_mf] == 0) > 0.90)
+  expect_true(mean(st_mf$W[!k_mf & !is.na(X_mf)] == 0) < 0.05)
+}
+
+# --- a rank-deficient design says so. With an aliased factor (f2 a copy of
+# f1) the start used to warn that "robustbase::lmrob did not converge", which
+# names the symptom, not the cause. ---
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  set.seed(93)
+  f1_rd <- factor(sample(c("a", "b", "c"), 240, TRUE))
+  X_rd <- matrix(rnorm(240 * 3), 240) %*% chol(0.5 * diag(3) + 0.5)
+  colnames(X_rd) <- paste0("x", 1:3)
+  U_rd <- VIM:::.gloc_design(data.frame(f1 = f1_rd, f2 = f1_rd), ~ ., c("f1", "f2"))
+  w_rd <- collect_warnings(st_rd <- VIM:::.gloc_start_robust(X_rd, U_rd, is.na(X_rd)))
+  expect_true(any(grepl("rank deficient", w_rd, fixed = TRUE)))
+  expect_false(any(grepl("did not converge", w_rd, fixed = TRUE)))
+  expect_false(anyNA(st_rd$B))
+}
+
+# --- start comes after trace, so positional calls that pass trace keep working ---
+expect_identical(tail(names(formals(VIM::imputeCellGLoc)), 2), c("trace", "start"))

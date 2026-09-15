@@ -2,23 +2,43 @@
 
 ## Changes
 - **`imputeCellGLoc()` now starts the soft corner from a robust fit** (new argument
-  `start = c("robust", "classical")`, default `"robust"`). Until 7.4.0 the iteration began with
-  every observed cell at weight 1 and the mean structure by ordinary least squares, and a
-  redescending weight function started there can settle on a masked solution. The robust start
-  fits each continuous column by MM regression (`robustbase::lmrob`) on the categorical design
-  alone, where no predictor cell can be contaminated, and takes the starting flags from
-  `cellWise::cellMCD()` on those residuals. It is deterministic and leaves the caller's
-  random-number stream untouched. Degraded paths (too few rows per design column, `lmrob` failing
-  or not converging, `cellWise` unavailable) warn.
-- **The MM fit of the start begins from the L1 regression, not from an S-estimator.** This is what
-  `lmrob(..., init = "M-S")` does when every predictor is categorical, and it gives the same
-  coefficients. `lmrob`'s default S start failed to converge for some column in 42 of 90 pilot fits
-  with `design = ~ .`, as often on clean data as under contamination, and each such column then
-  started without its group means. It remains the fallback.
+  `start = c("robust", "classical")`, default `"robust"`, placed after `trace` so positional calls
+  keep working). Until 7.4.0 the iteration began with every observed cell at weight 1 and the mean
+  structure by ordinary least squares, and a redescending weight function started there can settle
+  on a masked solution. The robust start fits each continuous column on the categorical design
+  alone, where no predictor cell can be contaminated, along `robustbase::lmrob`'s M-S path (see
+  below), and takes the starting flags from `cellWise::cellMCD()` on those residuals. The median
+  used to centre each column is put back through the design, so designs without an intercept
+  column (`~ f - 1`) work. The start is deterministic. Degraded paths warn and print nothing to the
+  console: too few rows per design column, a rank-deficient design (fitted on its non-aliased
+  columns), `lmrob` failing or not converging, `cellMCD()` failing, `cellWise` unavailable.
+- **The start selects the fixed point, not only the path.** On clean data (n = 200, six continuous
+  and six categorical variables, 20% missing) at a convergence tolerance of 1e-8, the two starts
+  reached different fixed points in 7 of 10 fits with `design = ~ .` (relative scatter difference
+  0.009 to 0.032, 2 to 14 cells flagged differently, unchanged as the tolerance tightens) and in 2
+  of 3 converged fits with `design = ~ 1`. Over the ten `~ .` fits 29 cells were flagged only under
+  the robust start, 22 of them already flagged by the start's `cellMCD()`, which flags 2.3 to 4.6%
+  of clean cells at both `alpha = 0.5` and `0.75`. Under contamination the classical start can
+  mask: in the pilot (`design = ~ .`, 20% of cells shifted by 10) its scatter error was 6.45
+  against 0.14.
+- **The start's fit is `lmrob`'s M-S path: the L1 regression followed by an M-step at the L1
+  residual scale.** This is what `lmrob(..., init = "M-S")` does when every predictor is
+  categorical, and it gives the same coefficients. `lmrob`'s default S-estimator start failed to
+  converge for some column in 42 of 90 pilot fits with `design = ~ .`, as often on clean data as
+  under contamination, and each such column then started without its group means. It remains the
+  fallback. (Corrected: earlier drafts of this entry called the fit "MM regression". There is no S
+  step on this path, so it is not the MM estimator.)
+- **The caller's random-number state is left as it was.** An existing stream is not advanced, and a
+  session without a `.Random.seed` still has none afterwards. (Corrected: an earlier draft said the
+  start "leaves the caller's random-number stream untouched" without qualification. But
+  `cellWise::cellMCD()` creates `.Random.seed` when there is none, so the default soft fit and the
+  binary corner left one behind, and two fresh sessions then drew identical numbers after one
+  call. `imputeCellGLoc()` now removes a `.Random.seed` that it created.)
 - **The start runs `cellMCD()` at its own tolerance, `alpha = 0.5`.** cellMCD refuses a column whose
-  marginal outliers plus missing values exceed `1 - alpha`; at the default `alpha = 0.75` it did so
-  in 74 of 360 pilot fits with 20% missing cells, all of them at 10–20% contamination with shifts
-  of 6 or 10, and the start fell back to cruder MAD flags exactly where it mattered. The `alpha`
+  marginal outliers plus missing values exceed `1 - alpha`. At the default `alpha = 0.75` it did so
+  in 74 of the 180 robust-start pilot fits with 20% missing cells, all at 10–20% contamination, 67
+  of them with shifts of 6 or 10 and 7 with a shift of 3, and the start fell back to cruder MAD
+  flags. (Corrected: earlier drafts said 74 of 360 fits, all with shifts of 6 or 10.) The `alpha`
   argument keeps governing the binary corner.
 - **`cellWise::cwLocScat()`'s warning "There were rows with only zero weights, we dropped them" no
   longer reaches users.** A row whose cells are all missing or flagged carries no weight, so dropping
@@ -29,10 +49,14 @@
   now imputed from the cells that pass the same peer rule detection uses (`peer_w_min` with the
   peer band), in both weight corners. `B`, `Sigma` and `W` do not depend on this step and are
   unchanged; imputed values in rows with a flagged cell are not.
-- **With `start = "classical"`, `B`, `Sigma` and `W` reproduce 7.4.0 bit for bit**, which a test pins
-  against a stored 7.4.0 fit. Imputed values differ from 7.4.0 in the rows with a flagged cell, and
-  the test asserts that split. `start` has no effect with `weights = "binary"`, which already begins
-  with `cellWise::cellMCD()`.
+- **With `start = "classical"`, `B`, `Sigma` and `W` reproduce 7.4.0**: bit for bit on the platform
+  that wrote the stored reference (Apple's Accelerate BLAS; the test checks this when
+  `VIM_BITREF=true`), and to 1e-10 elsewhere, where R's reference BLAS moves the last digits by up
+  to 4.4e-15 with identical iteration counts. (Corrected: an earlier draft claimed bit-identity
+  without that qualifier, and the test asserted it on all six CI platforms, where it failed.)
+  Imputed values differ from 7.4.0 in the rows with a flagged cell, and the test asserts that
+  split. `start` has no effect with `weights = "binary"`, which already begins with
+  `cellWise::cellMCD()`.
 
 # VIM 7.4.0
 

@@ -38,16 +38,19 @@ a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
 Until 7.4.0 the soft corner started from a classical fit: every observed
 cell at weight 1 and \eqn{B} by ordinary least squares. A redescending weight
 function started there can settle on a masked solution. This start fits each
-continuous column by MM regression (bisquare) on the categorical design
-\emph{alone}. The predictors are dummies, which cannot carry a contaminated
-continuous cell, so the casewise robustness of MM is exactly what is needed:
-a contaminated cell is an outlying response. The starting flags are then
-those of \code{cellWise::cellMCD} on the residuals \eqn{X - U B}, at
-\code{.gloc_start_alpha}.
+continuous column on the categorical design \emph{alone}, along
+\code{robustbase::lmrob}'s M-S path: an L1 regression
+(\code{robustbase::lmrob.lar}) followed by an M-step with the bisquare at the
+L1 fit's residual scale (\code{method = "lM"}). The predictors are dummies,
+which cannot carry a contaminated continuous cell, so casewise robustness is
+exactly what is needed: a contaminated cell is an outlying response. The
+starting flags are then those of \code{cellWise::cellMCD} on the residuals
+\eqn{X - U B}, at \code{.gloc_start_alpha}. (Corrected: this page first called
+the fit "MM regression". There is no S step on this path, so it is not the
+MM estimator.)
 }
 \details{
-The MM fit starts from the L1 regression (\code{robustbase::lmrob.lar})
-followed by the M-step (\code{method = "lM"}). That is exactly what
+The path is exactly what
 \code{robustbase::lmrob(..., init = "M-S")} does for a design with no
 continuous predictor: its coefficients agreed to 0 over 960 column fits.
 \code{lmrob}'s default S-estimator start is not used first because it does
@@ -60,12 +63,31 @@ converged every time. The two agree in accuracy (median fitted-mean error
 against the truth 0.243 and 0.237) and the L1 start needs no subsampling. The
 S start remains the fallback when the L1-started fit does not converge.
 
-Every degraded path warns, once per reason, naming the columns:
-too few observed rows for the design (fewer than \eqn{2q}, or a design column
-with fewer than three observed rows), an \code{lmrob} error, or \code{lmrob}
-not converging from either start each fall back to the column median as
-intercept with zero contrasts; without \code{cellWise}, or if \code{cellMCD}
-fails, a cell is flagged when \eqn{|r_{ij}| / \mathrm{MAD}(r_{.j})} exceeds
-\eqn{\sqrt{\chi^2_{1,0.99}}}.
+Each response is centred by its median before the fit, because lmrob's
+stopping rules are relative to the size of the coefficients, and the median
+is put back through the design: into the intercept column when the design
+has one, which leaves every other coefficient bit for bit as fitted, and
+otherwise as the coefficients that reproduce the constant on the observed
+rows. (Corrected: it used to be added to the first design column, assumed to
+be the intercept. With \code{design = ~ f - 1} that column is a level's
+dummy, and the start's fitted means came out 10.25, 0.37 and 10.16 against a
+truth of 10, 20 and 30, after which the fit flagged 210 cells, 172 of them
+clean, without a warning.)
+
+A design that is rank deficient on a column's observed rows, an aliased
+factor say, is fitted on its non-aliased columns as chosen by \code{qr()}'s
+pivoting, and the aliased columns get coefficient 0. (Corrected: this used to
+surface as "robustbase::lmrob did not converge", naming the symptom.)
+
+Every degraded path warns, once per reason, naming the columns: too few
+observed rows for the design (fewer than \eqn{2q}, or a non-constant design
+column with fewer than three observed rows), a rank-deficient design, an
+\code{lmrob} error, or \code{lmrob} not converging from either start. The
+first and the last two fall back to the column median as the fitted mean,
+without group effects. Without \code{cellWise}, or if \code{cellMCD} fails, a
+cell is flagged when \eqn{|r_{ij}| / \mathrm{MAD}(r_{.j})} exceeds
+\eqn{\sqrt{\chi^2_{1,0.99}}}. What \code{cellMCD} prints when it refuses is
+captured, so a failure is reported once, as a warning, and not also as six
+lines on the console.
 }
 \keyword{internal}

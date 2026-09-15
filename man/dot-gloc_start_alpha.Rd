@@ -13,13 +13,14 @@ An object of class \code{numeric} of length 1.
 \description{
 \code{cellWise::cellMCD} refuses any column whose marginal outliers plus
 missing values exceed \eqn{1 - \alpha} of its cells. At the user-facing
-default \eqn{\alpha = 0.75} that is 25\\%, which 20\\% missingness plus a few
+default \eqn{\alpha = 0.75} that is 25\%, which 20\% missingness plus a few
 percent of shifted cells already exceeds: in the 7.4.1 pilot (n = 200, six
-continuous columns, 20\\% missing) the robust start fell back to its
-MAD-threshold flags in 74 of 360 fits, all of them at \eqn{\epsilon \ge 0.10}
-with shifts of 6 or 10, where the start matters most, and in none at
-\eqn{\alpha = 0.5}. The start therefore runs cellMCD at this value, and the
-\code{alpha} argument of \code{imputeCellGLoc} keeps governing the binary
-corner only.
+continuous columns, 20\% missing) the robust start fell back to its
+MAD-threshold flags in 74 of its 180 fits, all of them at
+\eqn{\epsilon \ge 0.10}, 67 with shifts of 6 or 10 and 7 with a shift of 3,
+and in none at \eqn{\alpha = 0.5}. (Corrected: this page first said 74 of
+360 fits, all with shifts of 6 or 10.) The start therefore runs cellMCD at
+this value, and the \code{alpha} argument of \code{imputeCellGLoc} keeps
+governing the binary corner only.
 }
 \keyword{internal}

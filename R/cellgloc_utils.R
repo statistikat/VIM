@@ -88,13 +88,16 @@
 #' wide and the interpolation stops being a fringe: bisquare weights sit at
 #' 0.5 at \eqn{|z| = 2.55}, so a band of \eqn{\pm h} covers the standardised
 #' residuals in roughly \eqn{|z| \in (2.55 - 4h, 2.55 + 4h)}, which at
-#' \eqn{h = 0.05} is about 1.2\% of clean Gaussian cells and at \eqn{h = 0.25}
-#' would be nearer 10\%.
+#' \eqn{h = 0.05} is about 1.2% of clean Gaussian cells and at \eqn{h = 0.25}
+#' would be nearer 10%.
 #'
 #' 0.05 sits above the steepness bound and below the fringe bound. Measured on
-#' a sweep of one cell's weight across the threshold, the largest one-step jump
-#' it leaves in a row-mate's standardised residual is 0.0035, against 0.110 for
-#' the hard cut, with identical values at both ends of the sweep.
+#' a sweep of one cell's weight across the threshold (the portable test data,
+#' drawn as \code{Z %*% chol(S)}), the largest one-step jump it leaves in a
+#' row-mate's standardised residual is 0.0071, against 0.225 for the hard cut,
+#' a factor of 32, with identical values outside the band. (Corrected: this
+#' page quoted 0.0035 against 0.110, figures that matched neither the earlier
+#' \code{MASS::mvrnorm} test data nor the current ones.)
 #'
 #' @format a length-one numeric.
 #' @keywords internal
@@ -184,9 +187,9 @@
 #' Measured over 520 paired fits with known ground truth -- band against no
 #' band within the same build, varying correlation, contamination fraction,
 #' shift and contamination type, so that only the band differs -- the scatter
-#' moves by up to about 20\% per fit in \emph{either} direction (largest
-#' relative changes -19.9\% and +20.7\%), and 22\% of fits move by more than
-#' 1\% of their error. The direction is a coin flip: 48.5\% of fits move
+#' moves by up to about 20% per fit in \emph{either} direction (largest
+#' relative changes -19.9% and +20.7%), and 22% of fits move by more than
+#' 1% of their error. The direction is a coin flip: 48.5% of fits move
 #' towards the truth on the mean-structure arm, sign test p = 0.66, and among
 #' the fits that move appreciably it is about 2 to 1 \emph{away}. What can be
 #' said is that the mean effect is near zero (relative error 0.8401 against
@@ -205,7 +208,7 @@
 #' \eqn{r \to 0}. (ii) Rows whose peers are all at \eqn{r \in \{0, 1\}} keep
 #' the pattern grouping and one inversion per pattern; only rows holding a peer
 #' inside the band pay for an inversion of their own. With \eqn{h} small that
-#' is a handful of rows, and the whole function is about 1\% of an iteration.
+#' is a handful of rows, and the whole function is about 1% of an iteration.
 #' (iii) \code{band = 0} restores the hard cut bit-for-bit, which is how the
 #' tests pin the endpoint behaviour.
 #'
@@ -280,13 +283,22 @@
   Z
 }
 
-#' Fixed random-number state for the robust start
+#' Fixed random-number state for the robust start's S-estimator fallback
 #'
 #' A valid Mersenne-Twister \code{.Random.seed} vector, built by a linear
 #' congruential recursion so that constructing it draws no random numbers.
-#' \code{robustbase::lmrob} installs it for the subsampling in its S-step and
-#' restores the caller's stream afterwards, which makes the robust start
-#' deterministic and keeps it from desynchronising paired simulation arms.
+#' The start's main path, an L1 fit followed by an M-step, draws none either.
+#' Only its fallback, \code{robustbase::lmrob}'s S-estimator, subsamples. It
+#' installs this vector for that and restores an existing stream afterwards,
+#' so the fallback is deterministic and does not desynchronise paired
+#' simulation arms.
+#'
+#' Correction, recorded rather than deleted: this page used to present the S
+#' step as the start's normal path and to say the caller's stream was left
+#' untouched. The S step is the fallback, and "untouched" held only in a
+#' session that already had a stream: robustbase's S path and
+#' \code{cellWise::cellMCD} create \code{.Random.seed} when there is none.
+#' \code{imputeCellGLoc} now removes a \code{.Random.seed} that it created.
 #' @keywords internal
 .gloc_start_seed <- local({
   s <- numeric(624L)
@@ -303,14 +315,15 @@
 #'
 #' \code{cellWise::cellMCD} refuses any column whose marginal outliers plus
 #' missing values exceed \eqn{1 - \alpha} of its cells. At the user-facing
-#' default \eqn{\alpha = 0.75} that is 25\%, which 20\% missingness plus a few
+#' default \eqn{\alpha = 0.75} that is 25%, which 20% missingness plus a few
 #' percent of shifted cells already exceeds: in the 7.4.1 pilot (n = 200, six
-#' continuous columns, 20\% missing) the robust start fell back to its
-#' MAD-threshold flags in 74 of 360 fits, all of them at \eqn{\epsilon \ge 0.10}
-#' with shifts of 6 or 10, where the start matters most, and in none at
-#' \eqn{\alpha = 0.5}. The start therefore runs cellMCD at this value, and the
-#' \code{alpha} argument of \code{imputeCellGLoc} keeps governing the binary
-#' corner only.
+#' continuous columns, 20% missing) the robust start fell back to its
+#' MAD-threshold flags in 74 of its 180 fits, all of them at
+#' \eqn{\epsilon \ge 0.10}, 67 with shifts of 6 or 10 and 7 with a shift of 3,
+#' and in none at \eqn{\alpha = 0.5}. (Corrected: this page first said 74 of
+#' 360 fits, all with shifts of 6 or 10.) The start therefore runs cellMCD at
+#' this value, and the \code{alpha} argument of \code{imputeCellGLoc} keeps
+#' governing the binary corner only.
 #' @keywords internal
 .gloc_start_alpha <- 0.5
 
@@ -319,15 +332,18 @@
 #' Until 7.4.0 the soft corner started from a classical fit: every observed
 #' cell at weight 1 and \eqn{B} by ordinary least squares. A redescending weight
 #' function started there can settle on a masked solution. This start fits each
-#' continuous column by MM regression (bisquare) on the categorical design
-#' \emph{alone}. The predictors are dummies, which cannot carry a contaminated
-#' continuous cell, so the casewise robustness of MM is exactly what is needed:
-#' a contaminated cell is an outlying response. The starting flags are then
-#' those of \code{cellWise::cellMCD} on the residuals \eqn{X - U B}, at
-#' \code{.gloc_start_alpha}.
+#' continuous column on the categorical design \emph{alone}, along
+#' \code{robustbase::lmrob}'s M-S path: an L1 regression
+#' (\code{robustbase::lmrob.lar}) followed by an M-step with the bisquare at the
+#' L1 fit's residual scale (\code{method = "lM"}). The predictors are dummies,
+#' which cannot carry a contaminated continuous cell, so casewise robustness is
+#' exactly what is needed: a contaminated cell is an outlying response. The
+#' starting flags are then those of \code{cellWise::cellMCD} on the residuals
+#' \eqn{X - U B}, at \code{.gloc_start_alpha}. (Corrected: this page first called
+#' the fit "MM regression". There is no S step on this path, so it is not the
+#' MM estimator.)
 #'
-#' The MM fit starts from the L1 regression (\code{robustbase::lmrob.lar})
-#' followed by the M-step (\code{method = "lM"}). That is exactly what
+#' The path is exactly what
 #' \code{robustbase::lmrob(..., init = "M-S")} does for a design with no
 #' continuous predictor: its coefficients agreed to 0 over 960 column fits.
 #' \code{lmrob}'s default S-estimator start is not used first because it does
@@ -340,13 +356,32 @@
 #' against the truth 0.243 and 0.237) and the L1 start needs no subsampling. The
 #' S start remains the fallback when the L1-started fit does not converge.
 #'
-#' Every degraded path warns, once per reason, naming the columns:
-#' too few observed rows for the design (fewer than \eqn{2q}, or a design column
-#' with fewer than three observed rows), an \code{lmrob} error, or \code{lmrob}
-#' not converging from either start each fall back to the column median as
-#' intercept with zero contrasts; without \code{cellWise}, or if \code{cellMCD}
-#' fails, a cell is flagged when \eqn{|r_{ij}| / \mathrm{MAD}(r_{.j})} exceeds
-#' \eqn{\sqrt{\chi^2_{1,0.99}}}.
+#' Each response is centred by its median before the fit, because lmrob's
+#' stopping rules are relative to the size of the coefficients, and the median
+#' is put back through the design: into the intercept column when the design
+#' has one, which leaves every other coefficient bit for bit as fitted, and
+#' otherwise as the coefficients that reproduce the constant on the observed
+#' rows. (Corrected: it used to be added to the first design column, assumed to
+#' be the intercept. With \code{design = ~ f - 1} that column is a level's
+#' dummy, and the start's fitted means came out 10.25, 0.37 and 10.16 against a
+#' truth of 10, 20 and 30, after which the fit flagged 210 cells, 172 of them
+#' clean, without a warning.)
+#'
+#' A design that is rank deficient on a column's observed rows, an aliased
+#' factor say, is fitted on its non-aliased columns as chosen by \code{qr()}'s
+#' pivoting, and the aliased columns get coefficient 0. (Corrected: this used to
+#' surface as "robustbase::lmrob did not converge", naming the symptom.)
+#'
+#' Every degraded path warns, once per reason, naming the columns: too few
+#' observed rows for the design (fewer than \eqn{2q}, or a non-constant design
+#' column with fewer than three observed rows), a rank-deficient design, an
+#' \code{lmrob} error, or \code{lmrob} not converging from either start. The
+#' first and the last two fall back to the column median as the fitted mean,
+#' without group effects. Without \code{cellWise}, or if \code{cellMCD} fails, a
+#' cell is flagged when \eqn{|r_{ij}| / \mathrm{MAD}(r_{.j})} exceeds
+#' \eqn{\sqrt{\chi^2_{1,0.99}}}. What \code{cellMCD} prints when it refuses is
+#' captured, so a failure is reported once, as a warning, and not also as six
+#' lines on the console.
 #'
 #' @param X \eqn{n x p} numeric matrix of continuous variables, may contain NA.
 #' @param U \eqn{n x q} design matrix from \code{.gloc_design}.
@@ -378,19 +413,40 @@
                                  warning = function(w) invokeRestart("muffleWarning")),
              error = function(e) NULL)
   usable <- function(f) !is.null(f) && !anyNA(f$coefficients)
+  # A column of ones, if the design has one, and the non-constant columns.
+  icol  <- which(colSums(U != 1) == 0L)[1L]
+  dummy <- colSums(U != 1) > 0L
+  # Coefficients that reproduce the constant m on the rows of Uo: exactly
+  # m in the intercept column when there is one, otherwise least squares on the
+  # design, with aliased columns at 0.
+  const_coef <- function(Uo, m) {
+    b <- numeric(q)
+    if (!is.na(icol)) { b[icol] <- m; return(b) }
+    if (!nrow(Uo) || m == 0) return(b)
+    b <- qr.coef(qr(Uo), rep(m, nrow(Uo)))
+    b[is.na(b)] <- 0
+    b
+  }
 
-  few <- failed <- noconv <- character(0)
+  few <- failed <- noconv <- rankdef <- character(0)
   for (j in seq_len(p)) {
     ok <- !M[, j] & is.finite(X[, j])
     Uo <- U[ok, , drop = FALSE]
     thin <- sum(ok) < 2L * q ||
-      (q > 1L && min(colSums(Uo[, -1L, drop = FALSE] != 0)) < 3L)
+      (any(dummy) && min(colSums(Uo[, dummy, drop = FALSE] != 0)) < 3L)
     fit <- NULL
+    cols <- seq_len(q)
     if (thin) {
       few <- c(few, cnames[j])
     } else {
-      # Centre the response by its median first and put the median back into
-      # the intercept afterwards (column 1 of U). lmrob's stopping rules are
+      qr_o <- qr(Uo)
+      if (qr_o$rank < q) {
+        rankdef <- c(rankdef, cnames[j])
+        cols <- sort(qr_o$pivot[seq_len(qr_o$rank)])
+      }
+      Uf <- Uo[, cols, drop = FALSE]
+      # Centre the response by its median first and put the median back through
+      # the design afterwards (see const_coef). lmrob's stopping rules are
       # relative to the size of the coefficients, so on data shifted by +1000
       # the uncentred fit stopped earlier: its intercept moved by up to 3.3e-4
       # and the final weights by 8e-6, breaking the shift equivariance the
@@ -403,13 +459,13 @@
       # used here and whose computation only warns after a non-S start.
       fit <- quiet({
         ctrl_l <- control; ctrl_l$method <- "lM"
-        robustbase::lmrob.fit(Uo, yc, control = ctrl_l, bare.only = TRUE,
-                              init = robustbase::lmrob.lar(Uo, yc,
+        robustbase::lmrob.fit(Uf, yc, control = ctrl_l, bare.only = TRUE,
+                              init = robustbase::lmrob.lar(Uf, yc,
                                                            control = ctrl_l))
       })
       if (!(usable(fit) && isTRUE(fit$converged))) {
         # fallback: lmrob's default S-estimator start
-        fit_s <- quiet(robustbase::lmrob.fit(Uo, yc, control = control,
+        fit_s <- quiet(robustbase::lmrob.fit(Uf, yc, control = control,
                                              bare.only = TRUE))
         if (usable(fit_s) && isTRUE(fit_s$converged)) {
           fit <- fit_s
@@ -421,19 +477,26 @@
       }
     }
     if (is.null(fit)) {
-      B[1L, j] <- if (any(ok)) stats::median(X[ok, j]) else 0
+      B[, j] <- const_coef(Uo, if (any(ok)) stats::median(X[ok, j]) else 0)
     } else {
-      B[, j] <- fit$coefficients
-      B[1L, j] <- B[1L, j] + mj          # undo the centring
+      B[cols, j] <- fit$coefficients
+      B[, j] <- B[, j] + const_coef(Uo, mj)      # undo the centring
     }
   }
-  fallback_msg <- "using the column median as intercept with zero contrasts."
+  fallback_msg <- "using the column median as the fitted mean, without group effects."
   if (length(few))
     warning(sprintf(paste("cellGLoc: robust start: too few observed rows for",
                           "the design in column(s) %s (fewer than %d rows, or a",
                           "design column with fewer than 3); %s"),
                     paste(few, collapse = ", "), 2L * q, fallback_msg),
             call. = FALSE)
+  if (length(rankdef))
+    warning(sprintf(paste("cellGLoc: robust start: the design is rank deficient on",
+                          "the observed rows of column(s) %s (aliased design",
+                          "columns, such as two identical factors); fitted on the",
+                          "non-aliased columns, and the aliased ones get",
+                          "coefficient 0."),
+                    paste(rankdef, collapse = ", ")), call. = FALSE)
   if (length(failed))
     warning(sprintf("cellGLoc: robust start: robustbase::lmrob failed for column(s) %s; %s",
                     paste(failed, collapse = ", "), fallback_msg), call. = FALSE)
@@ -449,12 +512,17 @@
     cm_err <- NULL
     # cellMCD stops with "mean(): object has no elements" when any row has no
     # observed cell, at every alpha. Such a row has nothing to flag (its cells
-    # get weight 0 below), so it is left out of the call.
+    # get weight 0 below), so it is left out of the call. When cellMCD refuses
+    # it also prints the per-variable percentages; that output is captured, and
+    # the refusal reaches the user once, as the warning below.
     has_obs <- rowSums(is.finite(R)) > 0
-    cm <- tryCatch(cellWise::cellMCD(R[has_obs, , drop = FALSE], alpha = alpha,
-                                     checkPars = list(coreOnly = TRUE,
-                                                      silent = TRUE)),
-                   error = function(e) { cm_err <<- conditionMessage(e); NULL })
+    cm <- tryCatch({
+      utils::capture.output(
+        cm_fit <- cellWise::cellMCD(R[has_obs, , drop = FALSE], alpha = alpha,
+                                    checkPars = list(coreOnly = TRUE,
+                                                     silent = TRUE)))
+      cm_fit
+    }, error = function(e) { cm_err <<- conditionMessage(e); NULL })
     if (is.null(cm)) {
       warning(sprintf(paste("cellGLoc: robust start: cellWise::cellMCD() failed",
                             "(%s); the starting flags use a hard threshold on",

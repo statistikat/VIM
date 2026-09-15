@@ -55,12 +55,16 @@
 #' than one of them doing the work: over 260 fits of the
 #' categorical-mean-structure arm, \code{converged} is 131 under the 7.3.1
 #' schedule and hard cut, 181 with the relaxation floor at 0.5 and the scatter
-#' condition but the cut still hard, and 245 with the band as well. About 40\%
+#' condition but the cut still hard, and 245 with the band as well. About 40%
 #' of the gain is the floor, the rest the band.
 #'
 #' Convergence is not universal and should not be assumed. On that 260-fit grid
-#' it is 245, or 94\%, with the failures concentrated at correlations of 0.6
-#' and above combined with 20\% of cells contaminated.
+#' it is 245, or 94%, with the failures concentrated at correlations of 0.6
+#' and above combined with 20% of cells contaminated.
+#'
+#' All convergence figures in this section were measured before 7.4.1, with
+#' the classical cold start (\code{start = "classical"}); the robust start has
+#' not been measured on that grid.
 #'
 #' Continuous columns that are \code{integer} in \code{data} stay
 #' \code{integer} in \code{$imputed}; their conditional expectations are
@@ -122,21 +126,39 @@
 #'   \code{weights = "binary"}, which takes \eqn{W} from
 #'   \code{cellWise::cellMCD} and never relaxes it.
 #' @param cw_crit convergence tolerance of the EM inside
-#'   \code{cellWise::cwLocScat}, the scatter step. That step is about 95\% of an
+#'   \code{cellWise::cwLocScat}, the scatter step. That step is about 95% of an
 #'   outer iteration, and \code{cwLocScat}'s own default of 1e-12 is seven
 #'   orders of magnitude tighter than \code{eps}, so it refines digits this
 #'   function immediately discards. See \code{.gloc_scatter_soft}.
 #' @param start starting values for the soft corner. \code{"robust"} (default
-#'   since 7.4.1) fits each continuous column by MM regression
-#'   (\code{robustbase::lmrob}, started from the L1 fit) on the categorical
-#'   design alone and takes the starting flags from \code{cellWise::cellMCD} on
-#'   those residuals at \code{.gloc_start_alpha}; see
-#'   \code{.gloc_start_robust}. \code{"classical"} starts with every observed
-#'   cell at weight 1 and the mean structure by least squares, and reproduces
-#'   VIM 7.4.0 exactly. A redescending weight function started from a
-#'   non-robust fit can settle on a masked solution, which is why the default
-#'   changed. Ignored for \code{weights = "binary"}, whose first step already
-#'   calls \code{cellWise::cellMCD}.
+#'   since 7.4.1) fits each continuous column on the categorical design alone
+#'   along \code{robustbase::lmrob}'s M-S path (an L1 fit followed by an M-step
+#'   at the L1 residual scale) and takes the starting flags from
+#'   \code{cellWise::cellMCD} on those residuals at \code{.gloc_start_alpha};
+#'   see \code{.gloc_start_robust}. \code{"classical"} starts with every
+#'   observed cell at weight 1 and the mean structure by least squares. A
+#'   redescending weight function started from a non-robust fit can settle on
+#'   a masked solution, which is why the default changed. Ignored for
+#'   \code{weights = "binary"}, whose first step already calls
+#'   \code{cellWise::cellMCD}.
+#'
+#'   \code{start} selects the fixed point, not only the path to it. On clean
+#'   data (n = 200, six continuous and six categorical variables, 20% missing)
+#'   at \code{eps = 1e-8}, the two starts reached different fixed points in 7
+#'   of 10 fits with \code{design = ~ .} (relative scatter difference 0.009 to
+#'   0.032, 2 to 14 cells flagged differently, unchanged as the tolerance
+#'   tightens) and in 2 of 3 converged fits with \code{design = ~ 1}. Over the
+#'   ten \code{~ .} fits 29 cells were flagged only under the robust start, 22
+#'   of them already flagged by the start's cellMCD, which flags 2.3 to 4.6% of
+#'   clean cells at both \code{alpha = 0.5} and 0.75. Under contamination the
+#'   classical start can mask: with 20% of cells shifted by 10 its scatter error
+#'   was 6.45 against 0.14 for the robust start.
+#'
+#'   With \code{"classical"} the estimates \code{B}, \code{Sigma} and \code{W}
+#'   reproduce VIM 7.4.0; the imputations do not, because since 7.4.1 a missing
+#'   cell is imputed from unflagged cells only. (Corrected: this page said
+#'   \code{"classical"} "reproduces VIM 7.4.0 exactly", which stopped being true
+#'   for \code{$imputed} under both starts.)
 #' @param peer_w_min a cell is conditioned on only when its weight exceeds
 #'   this, so that a downweighted peer is treated as absent rather than as
 #'   evidence. The threshold is applied over a narrow band rather than at a
@@ -169,9 +191,9 @@
 #'
 #'   Setting it changes the estimator and not only the iteration. Measured over
 #'   520 paired fits against \code{peer_band = 0} on the same data, the scatter
-#'   moves by up to about 20\% either way (the largest relative Frobenius
-#'   changes seen were -19.9\% and +20.7\%, and 22\% of fits move by more than
-#'   1\%). The mean effect is near zero -- 0.8401 against 0.8389 in relative
+#'   moves by up to about 20% either way (the largest relative Frobenius
+#'   changes seen were -19.9% and +20.7%, and 22% of fits move by more than
+#'   1%). The mean effect is near zero -- 0.8401 against 0.8389 in relative
 #'   error against a known truth -- the direction is not predictable from
 #'   anything but the design arm itself, and detection is unaffected (F1 0.4837
 #'   against 0.4842). The band is a fix for convergence, not for accuracy, and
@@ -214,10 +236,17 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                            maxit = 200, eps = 5e-3, alpha = 0.75,
                            psi_c = 4.685, peer_w_min = 0.5,
                            peer_band = .gloc_peer_band, damp = NULL,
-                           cw_crit = 1e-8, start = c("robust", "classical"),
-                           trace = FALSE) {
+                           cw_crit = 1e-8, trace = FALSE,
+                           start = c("robust", "classical")) {
   weights <- match.arg(weights)
   start <- match.arg(start)
+  # cellWise::cellMCD (with DDC and estLocScale inside it) and robustbase's
+  # S-estimator create .Random.seed in a session that has none. A session with
+  # none must still have none afterwards, or two fresh sessions draw the same
+  # "random" numbers after one call. An existing stream is left alone.
+  if (!exists(".Random.seed", envir = globalenv(), inherits = FALSE))
+    on.exit(if (exists(".Random.seed", envir = globalenv(), inherits = FALSE))
+              rm(".Random.seed", envir = globalenv()), add = TRUE)
   stopifnot(is.data.frame(data))
   adaptive <- is.null(damp)
   if (adaptive) damp <- .gloc_damp_start
@@ -298,7 +327,10 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # becomes the cold start the relaxation schedule falls back to. The first
   # iteration recomputes Sigma from (X - U B, W), so no starting scatter is
   # needed. The binary corner keeps its start: its first step already calls
-  # cellWise::cellMCD, and start = "classical" reproduces 7.4.0 exactly.
+  # cellWise::cellMCD. With start = "classical" the estimates B, Sigma and W
+  # reproduce 7.4.0; $imputed does not, under either start, because a missing
+  # cell is now imputed from unflagged cells only. (Corrected: this comment said
+  # start = "classical" "reproduces 7.4.0 exactly".)
   # The start's cellMCD runs at .gloc_start_alpha, not at the user's alpha,
   # which governs the binary corner only.
   if (relax && start == "robust") {
@@ -583,7 +615,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 #' by how badly it cycles, and it rises from 0.25 to 0.50.
 #'
 #' The floor and the band are a package and must not be quoted apart. The floor
-#' is worth about 40\% of the convergence gain on the mean-structure arm (131,
+#' is worth about 40% of the convergence gain on the mean-structure arm (131,
 #' then 181, then 245 of 260 fits, adding the floor and the scatter condition
 #' first and the band second), and it is worth that only \emph{with} the band:
 #' under the hard cut a low floor is the better setting, and raising it costs
@@ -658,7 +690,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 #' worth, because at the old floor it was doing real damage. Measured on the
 #' 40 mean-structure fits at floor 0.25 \emph{with} the band, it fires in every
 #' non-converged run, discards between 30 and 98 iterations of progress -- in
-#' one case a state whose fixed-point residual was within 26\% of the tolerance
+#' one case a state whose fixed-point residual was within 26% of the tolerance
 #' -- and costs four configurations: 35/40 with it against 39/40 without. At
 #' the 0.50 floor it never fires there at all (40/40 either way, to the
 #' iteration). On the \eqn{p = 4} sweep at floor 0.50 it is still worth exactly
@@ -690,7 +722,7 @@ NULL
 #' \code{maxit} cannot help). A running best is compared rather than
 #' consecutive values, so a cycle of any period is caught, not just period 2.
 #' The warning's two labels are a heuristic and should be read as such: a run
-#' contracting at a rate near 0.999 improves \code{max |dW|} by only 2\% over
+#' contracting at a rate near 0.999 improves \code{max |dW|} by only 2% over
 #' 20 iterations and so is reported as cycling although it is merely slow.
 #'
 #' @format a length-one integer.
@@ -821,13 +853,13 @@ NULL
 #'   \code{.gloc_consistency}.
 #' @param crit convergence tolerance handed to \code{cellWise::cwLocScat}'s
 #'   EM. This is an inner loop inside the outer cellGLoc iteration, and it is
-#'   the whole cost of a cellGLoc step: about 95\% of an iteration against
-#'   about 5\% for the conditional residuals. Measured by \code{Rprof} over
-#'   five draws at \eqn{n = 1000}, \eqn{p = 10}, \eqn{\rho = 0.5}, 5\% of cells
+#'   the whole cost of a cellGLoc step: about 95% of an iteration against
+#'   about 5% for the conditional residuals. Measured by \code{Rprof} over
+#'   five draws at \eqn{n = 1000}, \eqn{p = 10}, \eqn{\rho = 0.5}, 5% of cells
 #'   shifted by +8, \code{weights = "soft"}, across \code{design = ~ 1} and
-#'   \code{design = ~ .}: the share runs 94.3 to 95.6\%. Earlier releases
-#'   quoted 98.8\% here and 97.5\% elsewhere for the same quantity; neither
-#'   reproduced, and 95\% replaces both.
+#'   \code{design = ~ .}: the share runs 94.3 to 95.6%. Earlier releases
+#'   quoted 98.8% here and 97.5% elsewhere for the same quantity; neither
+#'   reproduced, and 95% replaces both.
 #'   \code{cwLocScat}'s own default is 1e-12, seven orders of magnitude
 #'   tighter than the outer loop's \code{eps} of 5e-3 can resolve, so the EM
 #'   spends most of its steps refining digits the caller discards. The default

@@ -53,7 +53,7 @@ radius. The floor is therefore set by how fast the iteration converges, not
 by how badly it cycles, and it rises from 0.25 to 0.50.
 
 The floor and the band are a package and must not be quoted apart. The floor
-is worth about 40\\% of the convergence gain on the mean-structure arm (131,
+is worth about 40\% of the convergence gain on the mean-structure arm (131,
 then 181, then 245 of 260 fits, adding the floor and the scatter condition
 first and the band second), and it is worth that only \emph{with} the band:
 under the hard cut a low floor is the better setting, and raising it costs
@@ -128,7 +128,7 @@ The fallback is kept, but it is worth being precise about what it is now
 worth, because at the old floor it was doing real damage. Measured on the
 40 mean-structure fits at floor 0.25 \emph{with} the band, it fires in every
 non-converged run, discards between 30 and 98 iterations of progress -- in
-one case a state whose fixed-point residual was within 26\\% of the tolerance
+one case a state whose fixed-point residual was within 26\% of the tolerance
 -- and costs four configurations: 35/40 with it against 39/40 without. At
 the 0.50 floor it never fires there at all (40/40 either way, to the
 iteration). On the \eqn{p = 4} sweep at floor 0.50 it is still worth exactly

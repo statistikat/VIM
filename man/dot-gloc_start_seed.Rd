@@ -3,7 +3,7 @@
 \docType{data}
 \name{.gloc_start_seed}
 \alias{.gloc_start_seed}
-\title{Fixed random-number state for the robust start}
+\title{Fixed random-number state for the robust start's S-estimator fallback}
 \format{
 An object of class \code{integer} of length 626.
 }
@@ -13,8 +13,18 @@ An object of class \code{integer} of length 626.
 \description{
 A valid Mersenne-Twister \code{.Random.seed} vector, built by a linear
 congruential recursion so that constructing it draws no random numbers.
-\code{robustbase::lmrob} installs it for the subsampling in its S-step and
-restores the caller's stream afterwards, which makes the robust start
-deterministic and keeps it from desynchronising paired simulation arms.
+The start's main path, an L1 fit followed by an M-step, draws none either.
+Only its fallback, \code{robustbase::lmrob}'s S-estimator, subsamples. It
+installs this vector for that and restores an existing stream afterwards,
+so the fallback is deterministic and does not desynchronise paired
+simulation arms.
+}
+\details{
+Correction, recorded rather than deleted: this page used to present the S
+step as the start's normal path and to say the caller's stream was left
+untouched. The S step is the fallback, and "untouched" held only in a
+session that already had a stream: robustbase's S path and
+\code{cellWise::cellMCD} create \code{.Random.seed} when there is none.
+\code{imputeCellGLoc} now removes a \code{.Random.seed} that it created.
 }
 \keyword{internal}

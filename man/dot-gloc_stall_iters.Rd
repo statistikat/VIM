@@ -17,7 +17,7 @@ iteration limit (raise \code{maxit}) apart from a limit cycle (raising
 \code{maxit} cannot help). A running best is compared rather than
 consecutive values, so a cycle of any period is caught, not just period 2.
 The warning's two labels are a heuristic and should be read as such: a run
-contracting at a rate near 0.999 improves \code{max |dW|} by only 2\\% over
+contracting at a rate near 0.999 improves \code{max |dW|} by only 2\% over
 20 iterations and so is reported as cycling although it is merely slow.
 }
 \keyword{internal}

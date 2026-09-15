@@ -84,9 +84,9 @@ nothing else, and it must not be described as an improvement in accuracy.
 Measured over 520 paired fits with known ground truth -- band against no
 band within the same build, varying correlation, contamination fraction,
 shift and contamination type, so that only the band differs -- the scatter
-moves by up to about 20\\% per fit in \emph{either} direction (largest
-relative changes -19.9\\% and +20.7\\%), and 22\\% of fits move by more than
-1\\% of their error. The direction is a coin flip: 48.5\\% of fits move
+moves by up to about 20\% per fit in \emph{either} direction (largest
+relative changes -19.9\% and +20.7\%), and 22\% of fits move by more than
+1\% of their error. The direction is a coin flip: 48.5\% of fits move
 towards the truth on the mean-structure arm, sign test p = 0.66, and among
 the fits that move appreciably it is about 2 to 1 \emph{away}. What can be
 said is that the mean effect is near zero (relative error 0.8401 against
@@ -105,7 +105,7 @@ unscaled \eqn{\Sigma_{SS} + \mathrm{diag}(\sigma_{kk}(1/r - 1))} blows up as
 \eqn{r \to 0}. (ii) Rows whose peers are all at \eqn{r \in \{0, 1\}} keep
 the pattern grouping and one inversion per pattern; only rows holding a peer
 inside the band pay for an inversion of their own. With \eqn{h} small that
-is a handful of rows, and the whole function is about 1\\% of an iteration.
+is a handful of rows, and the whole function is about 1\% of an iteration.
 (iii) \code{band = 0} restores the hard cut bit-for-bit, which is how the
 tests pin the endpoint behaviour.
 }

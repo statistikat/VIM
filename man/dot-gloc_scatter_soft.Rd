@@ -25,13 +25,13 @@
 
 \item{crit}{convergence tolerance handed to \code{cellWise::cwLocScat}'s
 EM. This is an inner loop inside the outer cellGLoc iteration, and it is
-the whole cost of a cellGLoc step: about 95\\% of an iteration against
-about 5\\% for the conditional residuals. Measured by \code{Rprof} over
-five draws at \eqn{n = 1000}, \eqn{p = 10}, \eqn{\rho = 0.5}, 5\\% of cells
+the whole cost of a cellGLoc step: about 95\% of an iteration against
+about 5\% for the conditional residuals. Measured by \code{Rprof} over
+five draws at \eqn{n = 1000}, \eqn{p = 10}, \eqn{\rho = 0.5}, 5\% of cells
 shifted by +8, \code{weights = "soft"}, across \code{design = ~ 1} and
-\code{design = ~ .}: the share runs 94.3 to 95.6\\%. Earlier releases
-quoted 98.8\\% here and 97.5\\% elsewhere for the same quantity; neither
-reproduced, and 95\\% replaces both.
+\code{design = ~ .}: the share runs 94.3 to 95.6\%. Earlier releases
+quoted 98.8\% here and 97.5\% elsewhere for the same quantity; neither
+reproduced, and 95\% replaces both.
 \code{cwLocScat}'s own default is 1e-12, seven orders of magnitude
 tighter than the outer loop's \code{eps} of 5e-3 can resolve, so the EM
 spends most of its steps refining digits the caller discards. The default
