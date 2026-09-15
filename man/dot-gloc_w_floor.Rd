@@ -11,15 +11,18 @@ a length-one numeric.
 .gloc_w_floor
 }
 \description{
-In a design that is rank deficient on a variable's fitted rows,
-\code{.gloc_update_B} refits on the cells whose weight exceeds this
-fraction of the column's largest weight before it decides which level
-combinations are identified. With level b at weight 1e-16, the pivoted QR
-kept b under treatment coding and dropped it under sum and Helmert coding,
-and the three codings returned 20.07, 39.52 and 80.27 for b. A full-rank
-fit is not refitted, so it stays bit for bit what it was; in that case (all
-levels observed, b at 1e-16) the coding can still change b, because a
-coding that sees the rank deficiency fills b while one that does not fits
-it from the tiny weights.
+In every fit, \code{.gloc_update_B} decides which level combinations are
+identified on the cells whose weight exceeds this fraction of the column's
+largest. When the design is full rank on those cells, the fit on all cells
+with positive weight is kept bit for bit, tiny cells included; when it is
+rank deficient on them, the fill path runs on them alone. A level whose
+weights are all at or below the floor is therefore filled, whatever the
+coding and whether or not other levels are observed. (Corrected, twice:
+with level b at weight 1e-16 the pivoted QR kept b under treatment coding
+and dropped it under sum and Helmert coding, and the codings returned
+20.07, 39.52 and 80.27 for b; after a first fix the floor acted only in fits
+that were already rank deficient, so b at 1e-9 was fitted, 20.05, when
+level a was observed and filled, 35.06, when it was not. The soft corner
+reaches weights of 5.4e-29 in the simulation designs.)
 }
 \keyword{internal}

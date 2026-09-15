@@ -16,10 +16,9 @@ unknown), and \code{P}, the pure design row of each combination.}
 }
 \value{
 a list: \code{N}, the null-space basis; \code{nonest}, logical, the
-combinations not identified; \code{first}, their indices; \code{sv} and
-\code{keep}, the singular value decomposition of their null-space
-components and which singular values count; and \code{pure}, whether some
-null direction is invisible on every such combination.
+combinations not identified; \code{first}, their indices; and \code{pure},
+whether some null direction is invisible on every such combination
+(singular values counted as in \code{.gloc_fill_null}).
 }
 \description{
 A combination is identified when a fitted row has it, or when its pure

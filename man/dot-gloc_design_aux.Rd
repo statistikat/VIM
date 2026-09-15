@@ -4,7 +4,13 @@
 \alias{.gloc_design_aux}
 \title{Main-effects design and level combinations for a cellGLoc design}
 \usage{
-.gloc_design_aux(data, design, cat_vars)
+.gloc_design_aux(
+  data,
+  design,
+  cat_vars,
+  max_patterns = .gloc_max_patterns,
+  main_terms = function(vars) stats::terms(stats::reformulate(vars))
+)
 }
 \arguments{
 \item{data}{a data.frame containing the categorical variables.}
@@ -12,6 +18,13 @@
 \item{design}{a one-sided formula, e.g. \code{~ .} or \code{~ 1}.}
 
 \item{cat_vars}{character vector naming the categorical columns.}
+
+\item{max_patterns}{enumerate every level combination up to this many,
+otherwise only those in the data; see \code{.gloc_max_patterns}.}
+
+\item{main_terms}{a function of the backticked variable names returning the
+terms of the main-effects design; an argument so the failure path can be
+tested.}
 }
 \value{
 a list with \code{U_main}, the main-effects design matrix, or
@@ -33,9 +46,10 @@ The main-effects design has the variables of \code{design} and none of its
 terms of order greater than one. The variables are read from the terms
 object with \code{deparse1}, so a term such as \code{relevel(g2, ref = "B")}
 or \code{C(g1, contr.sum)} is kept as written, and the matrix is built on
-the model frame that \code{.gloc_design} evaluates. If that fails for any
-reason, \code{U_main} is \code{NULL} and the fill uses the weighted mean
-only. (Corrected: the first 7.4.1 fix rebuilt the formula from backticked
+the model frame that \code{.gloc_design} evaluates; the names are deparsed
+with backticks for \code{reformulate()}, so a factor named with a space
+parses. If that fails for any reason, \code{U_main} is \code{NULL}, a
+warning says so, and the fill uses the weighted mean only. (Corrected: the first 7.4.1 fix rebuilt the formula from backticked
 model-frame names, and a function call in an interaction term made
 \code{imputeCellGLoc} stop with "object not found".)
 

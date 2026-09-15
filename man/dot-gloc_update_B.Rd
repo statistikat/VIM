@@ -50,16 +50,20 @@ A design that is rank deficient on the rows a column is fitted from is
 fitted on a maximal set of linearly independent design columns, chosen by
 the same pivoted QR decomposition \code{qr.solve()} uses; a full-rank design
 takes exactly the arithmetic of \code{qr.solve()}, so its result is
-unchanged bit for bit. A rank-deficient fit first leaves out the cells
-whose weight is at most \code{.gloc_w_floor} times the column's largest.
+unchanged bit for bit. Identification is decided on the cells whose weight
+exceeds \code{.gloc_w_floor} times the column's largest: a fit that is full
+rank on them keeps that full-rank result, tiny cells included, and a fit
+that is rank deficient on them takes the path below on them alone.
 The data then determine the fitted mean only of the level combinations that
 a fitted row has or whose pure design row lies in the row space of the
 fitted rows, and those keep it exactly. Every other combination -- a level
 for which the variable has no cell with positive weight, under any coding
 of the factors, an unseen combination of partly aliased factors, or a
-combination absent from the data -- is filled by one least-squares step in
-the null space of the fitted rows' design (\code{.gloc_estimable},
-\code{.gloc_fill_null}). Identification and targets are decided on level
+combination absent from the data -- is filled in the null space of the
+fitted rows' design (\code{.gloc_estimable}, \code{.gloc_fill_null}):
+first the combinations that occur in the data, by one least-squares step,
+then the absent ones, only in the null-space directions that step leaves
+free, so an absent combination never moves a row that exists. Identification and targets are decided on level
 combinations (\code{patterns}), not on rows: a probability-weighted row
 whose combination is unknown (an \code{NA} id) is never a combination
 itself, and its fitted mean follows from the filled coefficients. The
@@ -70,11 +74,8 @@ mean. Where several combinations share one unidentified direction, it is
 their average over the combinations that meets the target: under
 \code{~ g1 + g2} with a level of \code{g1} never observed, that level's
 combinations keep the \code{g2} effects between them. The fitted means this
-gives do not depend on how the factors are coded or ordered, with one
-exception: when every level is observed but one only at weights that are
-numerically zero, a coding under which the fit stays full rank fits that
-level from the tiny weights, while a coding that sees the rank deficiency
-fills it (see \code{.gloc_w_floor}). Aliased columns that change no fitted
+gives do not depend on how the factors are coded or ordered, nor on whether
+combinations absent from the data are enumerated. Aliased columns that change no fitted
 mean (two identical factors) warn as duplicates, naming neither a column
 that is zero on every fitted row nor one of an unidentified combination.
 Unidentified combinations that occur in the data (all of them, when some

@@ -1594,3 +1594,135 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
                      grepl("x1", w3h, fixed = TRUE)), 1L)
   expect_false(any(grepl("aliased design column", w3h, fixed = TRUE)))
 }
+
+# ==========================================================================
+# Third fix round on the fill (re-review of b9ae897). S1: a factor whose name
+# is not syntactic ("g 1") silently lost the main-effects targets, because
+# the variables were deparsed without backticks; (c, C) came back 13.98
+# against a truth of 30. S2: combinations absent from the data entered the
+# same least-squares step as present ones and moved present rows (imputed x1
+# changed by up to 1.80 under partial aliasing). S3: the weight floor acted
+# only in rank-deficient fits, so its effect depended on the rank. Tolerances
+# fixed before the first run.
+# ==========================================================================
+maxdiff <- function(A, B) if (!identical(dim(A), dim(B))) NA_real_ else max(abs(A - B))
+
+# --- S1: a non-syntactic factor name in an interaction design ---
+d_sp <- data.frame(X9i, `g 1` = g1, g2 = g2, check.names = FALSE)
+ax_sp <- tryCatch(VIM:::.gloc_design_aux(d_sp, ~ `g 1` * g2, c("g 1", "g2")),
+                  error = function(e) NULL)
+expect_false(is.null(ax_sp$U_main))
+U_sp <- VIM:::.gloc_design(d_sp, ~ `g 1` * g2, c("g 1", "g2"))
+U_spm <- VIM:::.gloc_design(d_sp, ~ `g 1` + g2, c("g 1", "g2"))
+F_sp <- fit_at(U_sp, ub(X9i, U_sp, W9i, U_main = ax_sp$U_main, patterns = ax_sp$patterns),
+               first9)
+F_spm <- fit_at(U_spm, ub(X9i, U_spm, W9i), first9)
+expect_true(abs(F_sp[cC9, 1] - F_spm[cC9, 1]) < 1e-8)
+# a main-effects design that cannot be built warns, instead of silently
+# dropping the main-effects targets
+ax_mt <- NULL
+w_mt <- collect_warnings(ax_mt <- tryCatch(
+  VIM:::.gloc_design_aux(d9, ~ g1 * g2, c("g1", "g2"),
+                         main_terms = function(vars) stop("forced")),
+  error = function(e) NULL))
+expect_true(any(startsWith(w_mt, "cellGLoc: ") & grepl("main-effects", w_mt, fixed = TRUE)))
+expect_true(!is.null(ax_mt) && is.null(ax_mt$U_main))
+if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
+  e_sp <- suppressWarnings(VIM::imputeCellGLoc(d_sp, design = ~ `g 1` * g2,
+                                               weights = "soft", start = "classical"))
+  e_sy <- suppressWarnings(VIM::imputeCellGLoc(data.frame(X9i, g1 = g1, g2 = g2),
+                                               design = ~ g1 * g2, weights = "soft",
+                                               start = "classical"))
+  expect_true(max(abs(e_sp$U %*% e_sp$B - e_sy$U %*% e_sy$B)) < 1e-8)
+}
+
+# --- S2: combinations absent from the data never move the fitted means of
+# rows that exist. Present rows must come out the same with the full table of
+# combinations, with the table cut to the combinations in the data, and with
+# max_patterns = 1 (which enumerates only those). ---
+restrict_present <- function(pat) {
+  keep <- tabulate(pat$id[!is.na(pat$id)], nrow(pat$P)) > 0
+  map <- cumsum(keep)
+  list(id = map[pat$id], P = pat$P[keep, , drop = FALSE],
+       P_main = if (is.null(pat$P_main)) NULL else pat$P_main[keep, , drop = FALSE],
+       labels = pat$labels[keep])
+}
+# (a) partial aliasing: f2 differs from f1 on 15 rows where x1 is missing
+miss_rk <- which(is.na(X_rk[, 1]))
+chg15 <- miss_rk[seq_len(min(15, length(miss_rk)))]
+f2q <- f_rk
+f2q[chg15] <- levels(f_rk)[(as.integer(f_rk[chg15]) %% 3) + 1]
+d_pq <- data.frame(f1 = f_rk, f2 = f2q)
+U_pq <- VIM:::.gloc_design(d_pq, ~ ., c("f1", "f2"))
+ax_pq <- VIM:::.gloc_design_aux(d_pq, ~ ., c("f1", "f2"))
+ax_pq1 <- tryCatch(VIM:::.gloc_design_aux(d_pq, ~ ., c("f1", "f2"), max_patterns = 1),
+                   error = function(e) NULL)
+expect_true(nrow(ax_pq$patterns$P) > nrow(restrict_present(ax_pq$patterns)$P))
+F_grid <- fit_at(U_pq, ub(X_rk, U_pq, W_rk, patterns = ax_pq$patterns), all_rk)
+F_pres <- fit_at(U_pq, ub(X_rk, U_pq, W_rk, patterns = restrict_present(ax_pq$patterns)),
+                 all_rk)
+F_one <- fit_at(U_pq, if (is.null(ax_pq1)) NULL else
+  ub(X_rk, U_pq, W_rk, patterns = ax_pq1$patterns), all_rk)
+expect_true(maxdiff(F_grid, F_pres) < 1e-10)
+expect_true(maxdiff(F_grid, F_one) < 1e-10)
+# (b) ~ k1 + k2, x1 never recorded for k1 = c, (c, C) absent from the data.
+# b9ae897 gave (c, A) / (c, B) 5.55 / 10.45 with the full table and
+# 8.05 / 12.94 with max_patterns = 1.
+set.seed(55)
+k1 <- factor(sample(c("a", "b", "c"), 900, TRUE))
+k2 <- factor(sample(c("A", "B", "C"), 900, TRUE))
+keep_k <- !(k1 == "c" & k2 == "C")
+k1 <- k1[keep_k]; k2 <- k2[keep_k]
+tr_k <- c(a = 0, b = 10, c = 20)[as.character(k1)] + c(A = 0, B = 5, C = 10)[as.character(k2)]
+X_k <- cbind(x1 = tr_k + rnorm(sum(keep_k)), x2 = tr_k + rnorm(sum(keep_k)))
+X_k[k1 == "c", 1] <- NA
+W_k <- (!is.na(X_k)) + 0
+d_k <- data.frame(k1 = k1, k2 = k2)
+U_k <- VIM:::.gloc_design(d_k, ~ k1 + k2, c("k1", "k2"))
+ax_k <- VIM:::.gloc_design_aux(d_k, ~ k1 + k2, c("k1", "k2"))
+ax_k1 <- tryCatch(VIM:::.gloc_design_aux(d_k, ~ k1 + k2, c("k1", "k2"), max_patterns = 1),
+                  error = function(e) NULL)
+all_k <- seq_len(nrow(X_k))
+G_grid <- fit_at(U_k, ub(X_k, U_k, W_k, patterns = ax_k$patterns), all_k)
+G_pres <- fit_at(U_k, ub(X_k, U_k, W_k, patterns = restrict_present(ax_k$patterns)), all_k)
+G_one <- fit_at(U_k, if (is.null(ax_k1)) NULL else
+  ub(X_k, U_k, W_k, patterns = ax_k1$patterns), all_k)
+expect_true(maxdiff(G_grid, G_pres) < 1e-10)
+expect_true(maxdiff(G_grid, G_one) < 1e-10)
+
+# --- S3: the weight floor decides identification in every fit, whatever the
+# rank of the full fit ---
+set.seed(1)
+f_y <- factor(sample(c("a", "b", "c", "d"), 240, TRUE))
+X_y <- cbind(x1 = c(a = 10, b = 20, c = 30, d = 40)[as.character(f_y)] + rnorm(240),
+             x2 = rnorm(240))
+W_y <- matrix(runif(240 * 2, 0.05, 1), 240)
+first_y <- match(levels(f_y), f_y)
+fit_codings <- function(X, W) lapply(list(treatment = NULL,
+                                          sum = c("contr.sum", "contr.poly"),
+                                          helmert = c("contr.helmert", "contr.poly")),
+                                     function(ct) {
+  if (!is.null(ct)) { op <- options(contrasts = ct); on.exit(options(op)) }
+  U <- VIM:::.gloc_design(data.frame(f = f_y), ~ f, "f")
+  fit_at(U, suppressWarnings(ub(X, U, W)), first_y)[, 1]
+})
+# (a) every level observed, level b at 1e-16: the codings agree (b9ae897:
+# 20.05 under treatment, 25.43 under sum and Helmert)
+W_y16 <- W_y; W_y16[f_y == "b", 1] <- 1e-16
+fy16 <- fit_codings(X_y, W_y16)
+expect_true(max(abs(fy16$sum - fy16$treatment)) < 1e-8)
+expect_true(max(abs(fy16$helmert - fy16$treatment)) < 1e-8)
+# (b) level b at 1e-9 is filled whether or not level a is observed (b9ae897
+# fitted it from the tiny weights, 20.05, when a was observed)
+W_y9 <- W_y; W_y9[f_y == "b", 1] <- 1e-9
+X_ya <- X_y; X_ya[f_y == "a", 1] <- NA
+W_ya9 <- W_y9; W_ya9[f_y == "a", 1] <- 0
+for (cs in list(list(X_y, W_y9, "a observed"), list(X_ya, W_ya9, "a unobserved"))) {
+  live_s3 <- is.finite(cs[[1]][, 1]) & cs[[2]][, 1] > 1e-8 * max(cs[[2]][, 1])
+  m_s3 <- stats::weighted.mean(cs[[1]][live_s3, 1], cs[[2]][live_s3, 1])
+  expect_true(abs(fit_codings(cs[[1]], cs[[2]])$treatment[2] - m_s3) < 1e-8, info = cs[[3]])
+}
+# (c) and level a's cells at 1e-9 count exactly as if they were missing
+W_ya_tiny <- W_y9; W_ya_tiny[f_y == "a", 1] <- 1e-9
+expect_true(max(abs(fit_codings(X_y, W_ya_tiny)$treatment -
+                      fit_codings(X_ya, W_ya9)$treatment)) < 1e-10)

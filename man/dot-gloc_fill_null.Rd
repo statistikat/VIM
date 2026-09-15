@@ -4,7 +4,7 @@
 \alias{.gloc_fill_null}
 \title{Fill the level combinations that the fitted rows do not identify}
 \usage{
-.gloc_fill_null(b0, P, est, target)
+.gloc_fill_null(b0, P, est, target, present = rep(TRUE, nrow(P)))
 }
 \arguments{
 \item{b0}{length-\eqn{q} coefficients of the fit, 0 in the aliased columns.}
@@ -15,19 +15,31 @@
 
 \item{target}{one target value per combination; only unidentified ones are
 read.}
+
+\item{present}{logical, one element per combination, from
+\code{.gloc_present}.}
 }
 \value{
 length-\eqn{q} coefficients.
 }
 \description{
-Returns \eqn{b = b_0 + N c}, where \eqn{c} is the minimum-norm
-least-squares solution of \eqn{p (b_0 + N c) = t_p} over the pure design
-rows \eqn{p} of the unidentified combinations. Identified combinations keep
-their fitted means, because \eqn{p N = 0} there; a row whose categories are
-unknown gets whatever its design row gives with the filled coefficients.
-The solution goes through the singular values that \code{.gloc_estimable}
-keeps, all above a fixed positive threshold, so no quantity that can be 0
-is divided by and finite input gives finite coefficients under any
-contrasts. With no unidentified combination, \eqn{b_0} is returned as it is.
+Returns \eqn{b = b_0 + N c}. Identified combinations keep their fitted
+means, because \eqn{p N = 0} for their pure design rows \eqn{p}; a row whose
+categories are unknown gets whatever its design row gives with the filled
+coefficients. The fill runs in two stages. First, \eqn{c} is the
+minimum-norm least-squares solution of \eqn{p (b_0 + N c) = t_p} over the
+unidentified combinations that occur in the data. Second, the unidentified
+combinations absent from the data are fitted the same way, but only in the
+directions of the null space that the first stage leaves free, which are
+invisible on every combination of the first stage. An absent combination
+therefore never changes the fitted mean of a row that exists, and the
+same data give the same fitted means whether or not absent combinations
+are enumerated (\code{.gloc_max_patterns}). (Corrected: until the third
+7.4.1 fix round both kinds entered one least-squares step, and absent
+combinations moved present ones: under partial aliasing imputed values
+changed by up to 1.80.) Each stage divides only by singular values above
+\code{.gloc_est_tol} times the length of the longest pure row involved, so
+finite input gives finite coefficients under any contrasts. With no
+unidentified combination, \eqn{b_0} is returned as it is.
 }
 \keyword{internal}

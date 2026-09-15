@@ -51,23 +51,26 @@
   means unchanged, and a warning names them when every combination the data hold is identified. A
   level combination that the fitted rows do not identify warns once per variable, from the final
   iterate, naming the variables and the combinations (not the aliased design columns): the
-  variable's mean there is not identifiable from the data. The fit fills such combinations by one
-  least-squares step in the null space of the fitted rows' design, which leaves every identified
-  fitted mean as it is. Identification and targets are decided on level combinations, not on
-  design rows: every combination of the design's levels (up to 4096, otherwise those in the data)
-  with its pure design row, where a row whose categories are unknown can be marked so that it never
-  counts as a combination. A combination absent from the data is filled in the same way, without a
-  warning. The target is the variable's weighted mean over the rows it was estimated from (several
-  such combinations meet it on average, with the identified effects kept between them), or, under
-  a design with interaction terms, the main-effects fit wherever that identifies the combination.
-  The fitted means do not depend on the coding or order of the factors, with one exception: when
-  every level is observed but one only at weights that are numerically zero (at most 1e-8 of the
-  largest, which a rank-deficient fit leaves out), a coding under which the fit stays full rank
-  fits that level from those weights, while a coding that sees the rank deficiency fills it. The
-  robust start fills by the same rule, towards the column median, and takes main-effects targets
-  only when its own fit of the column succeeded.
+  variable's mean there is not identifiable from the data. The fit fills such combinations in the
+  null space of the fitted rows' design, which leaves every identified fitted mean as it is: first
+  the unidentified combinations that occur in the data, by one least-squares step, then those
+  absent from the data, only in the null-space directions that step leaves free, so an absent
+  combination never moves a row that exists. Identification and targets are decided on level
+  combinations, not on design rows: every combination of the design's levels (up to 4096,
+  otherwise those in the data) with its pure design row, where a row whose categories are unknown
+  can be marked so that it never counts as a combination. A combination absent from the data is
+  filled without a warning. Identification is decided on the cells whose weight exceeds 1e-8 of
+  the column's largest: a fit that is full rank on those cells keeps its full-rank result, tiny
+  cells included, and a fit that is rank deficient on them is filled from them alone. The target
+  is the variable's weighted mean over the rows it was estimated from (several such combinations
+  meet it on average, with the identified effects kept between them), or, under a design with
+  interaction terms, the main-effects fit wherever that identifies the combination; a warning says
+  so when that design cannot be built. The fitted means do not depend on the coding or order of
+  the factors, nor on whether absent combinations are enumerated. The robust start fills by the
+  same rule, towards the column median, and takes main-effects targets only when its own fit of
+  the column succeeded.
 
-  (Corrected, twice. The first version of this fix filled design columns one at a time,
+  (Corrected, three times. The first version of this fix filled design columns one at a time,
   recognised an unobserved level only as an all-zero column, and was described here as holding
   "under any coding of the factor". It missed a never-observed reference level under treatment
   coding, where level a came back 30.72 against a truth of 10 with only a warning about duplicate
@@ -81,7 +84,13 @@
   depended on the coding (20.07, 39.52 and 80.27 for that level under treatment, sum and Helmert
   coding). It let a robust start whose own fit had failed take main-effects targets, and it warned
   again whenever the unidentified set changed between iterations, the first time with a stale
-  set.)
+  set. The third version read a factor name such as `g 1` without backticks, so the main-effects
+  design failed silently and (c, C) was imputed at 13.98 against a truth of 30. It let
+  combinations absent from the data move present ones within one least-squares step: under partial
+  aliasing imputed values changed by up to 1.80, and (c, A) / (c, B) moved from 5.55 / 10.45 to
+  8.05 / 12.94 when absent combinations were not enumerated. And it applied the weight floor only
+  to fits that were already rank deficient, so a level at weight 1e-9 was fitted (20.05) or filled
+  (35.06) depending on whether another level was observed.)
 - **The start runs `cellMCD()` at its own tolerance, `alpha = 0.5`.** cellMCD refuses a column whose
   marginal outliers plus missing values exceed `1 - alpha`. At the default `alpha = 0.75` it did so
   in 74 of the 180 robust-start pilot fits with 20% missing cells, all at 10–20% contamination, 67

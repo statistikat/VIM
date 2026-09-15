@@ -4,7 +4,7 @@
 \alias{.gloc_patterns}
 \title{Level combinations, their pure design rows and each row's combination}
 \usage{
-.gloc_patterns(mf, tt, main_tt, vars)
+.gloc_patterns(mf, tt, main_tt, vars, max_patterns = .gloc_max_patterns)
 }
 \arguments{
 \item{mf}{the model frame of the design.}
@@ -12,7 +12,10 @@
 \item{tt, main_tt}{the terms of the design and of its main-effects version
 (\code{NULL} if none).}
 
-\item{vars}{the deparsed variables of \code{tt}.}
+\item{vars}{the deparsed variables of \code{tt}, for the labels.}
+
+\item{max_patterns}{enumerate every combination up to this many, otherwise
+only those in the data.}
 }
 \value{
 the \code{patterns} list described in \code{.gloc_design_aux}, or

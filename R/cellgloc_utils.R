@@ -45,9 +45,10 @@
 #' terms of order greater than one. The variables are read from the terms
 #' object with \code{deparse1}, so a term such as \code{relevel(g2, ref = "B")}
 #' or \code{C(g1, contr.sum)} is kept as written, and the matrix is built on
-#' the model frame that \code{.gloc_design} evaluates. If that fails for any
-#' reason, \code{U_main} is \code{NULL} and the fill uses the weighted mean
-#' only. (Corrected: the first 7.4.1 fix rebuilt the formula from backticked
+#' the model frame that \code{.gloc_design} evaluates; the names are deparsed
+#' with backticks for \code{reformulate()}, so a factor named with a space
+#' parses. If that fails for any reason, \code{U_main} is \code{NULL}, a
+#' warning says so, and the fill uses the weighted mean only. (Corrected: the first 7.4.1 fix rebuilt the formula from backticked
 #' model-frame names, and a function call in an interaction term made
 #' \code{imputeCellGLoc} stop with "object not found".)
 #'
@@ -56,6 +57,11 @@
 #' otherwise those that occur in the data.
 #'
 #' @inheritParams .gloc_design
+#' @param max_patterns enumerate every level combination up to this many,
+#'   otherwise only those in the data; see \code{.gloc_max_patterns}.
+#' @param main_terms a function of the backticked variable names returning the
+#'   terms of the main-effects design; an argument so the failure path can be
+#'   tested.
 #' @return a list with \code{U_main}, the main-effects design matrix, or
 #'   \code{NULL} when \code{design} has no interaction term, and
 #'   \code{patterns}, or \code{NULL} when \code{design} uses no categorical
@@ -66,27 +72,41 @@
 #'   with the columns of the design; \code{P_main}, the same for \code{U_main}
 #'   (or \code{NULL}); and \code{labels}, such as \code{"g1=c, g2=C"}.
 #' @keywords internal
-.gloc_design_aux <- function(data, design, cat_vars) {
+.gloc_design_aux <- function(data, design, cat_vars,
+                             max_patterns = .gloc_max_patterns,
+                             main_terms = function(vars)
+                               stats::terms(stats::reformulate(vars))) {
   if (is.null(design)) design <- ~ 1
   none <- list(U_main = NULL, patterns = NULL)
   if (!length(cat_vars) || identical(all.vars(design), character(0))) return(none)
   mf <- .gloc_model_frame(data, design, cat_vars)
   tt <- attr(mf, "terms")
-  vars <- vapply(as.list(attr(tt, "variables"))[-1L], deparse1, "")
-  if (!length(vars)) return(none)
+  var_exprs <- as.list(attr(tt, "variables"))[-1L]
+  if (!length(var_exprs)) return(none)
+  # reformulate() gets the names with backticks, so that `g 1` parses; the
+  # labels keep them as they read. (Corrected: without backticks a name such as
+  # "g 1" made reformulate() fail inside tryCatch, U_main became NULL without a
+  # word, and (c, C) was imputed at 13.98 against a truth of 30.)
+  vars <- vapply(var_exprs, deparse1, "")
+  vars_bt <- vapply(var_exprs, deparse1, "", backtick = TRUE)
   main_tt <- U_main <- NULL
   if (any(attr(tt, "order") > 1L)) {
-    main_tt <- tryCatch(stats::terms(stats::reformulate(vars)),
-                        error = function(e) NULL)
     U_main <- tryCatch({
+      main_tt <- main_terms(vars_bt)
       mfm <- mf
       attr(mfm, "terms") <- main_tt
       stats::model.matrix(main_tt, mfm)
-    }, error = function(e) NULL)
+    }, error = function(e) {
+      warning(sprintf(paste("cellGLoc: the main-effects version of the design could",
+                            "not be built (%s); a level combination that the data do",
+                            "not identify is filled towards the variable's weighted",
+                            "mean only."), conditionMessage(e)), call. = FALSE)
+      NULL
+    })
     if (is.null(U_main)) main_tt <- NULL
   }
   list(U_main = U_main,
-       patterns = tryCatch(.gloc_patterns(mf, tt, main_tt, vars),
+       patterns = tryCatch(.gloc_patterns(mf, tt, main_tt, vars, max_patterns),
                            error = function(e) NULL))
 }
 
@@ -104,16 +124,18 @@
 #' @param mf the model frame of the design.
 #' @param tt,main_tt the terms of the design and of its main-effects version
 #'   (\code{NULL} if none).
-#' @param vars the deparsed variables of \code{tt}.
+#' @param vars the deparsed variables of \code{tt}, for the labels.
+#' @param max_patterns enumerate every combination up to this many, otherwise
+#'   only those in the data.
 #' @return the \code{patterns} list described in \code{.gloc_design_aux}, or
 #'   \code{NULL} when a variable is not a factor.
 #' @keywords internal
-.gloc_patterns <- function(mf, tt, main_tt, vars) {
+.gloc_patterns <- function(mf, tt, main_tt, vars, max_patterns = .gloc_max_patterns) {
   if (!all(vapply(mf, is.factor, TRUE))) return(NULL)
   k <- length(vars)
   nl <- vapply(mf, nlevels, 1L)
   codes <- matrix(unlist(lapply(mf, as.integer), use.names = FALSE), nrow(mf), k)
-  if (prod(as.numeric(nl)) <= .gloc_max_patterns) {
+  if (prod(as.numeric(nl)) <= max_patterns) {
     grid <- as.matrix(expand.grid(lapply(nl, seq_len), KEEP.OUT.ATTRS = FALSE))
     id <- as.integer(drop((codes - 1L) %*% cumprod(c(1, nl[-k]))) + 1L)
     rep_row <- lapply(seq_len(k), function(v) match(seq_len(nl[v]), codes[, v]))
@@ -160,16 +182,20 @@
 #' fitted on a maximal set of linearly independent design columns, chosen by
 #' the same pivoted QR decomposition \code{qr.solve()} uses; a full-rank design
 #' takes exactly the arithmetic of \code{qr.solve()}, so its result is
-#' unchanged bit for bit. A rank-deficient fit first leaves out the cells
-#' whose weight is at most \code{.gloc_w_floor} times the column's largest.
+#' unchanged bit for bit. Identification is decided on the cells whose weight
+#' exceeds \code{.gloc_w_floor} times the column's largest: a fit that is full
+#' rank on them keeps that full-rank result, tiny cells included, and a fit
+#' that is rank deficient on them takes the path below on them alone.
 #' The data then determine the fitted mean only of the level combinations that
 #' a fitted row has or whose pure design row lies in the row space of the
 #' fitted rows, and those keep it exactly. Every other combination -- a level
 #' for which the variable has no cell with positive weight, under any coding
 #' of the factors, an unseen combination of partly aliased factors, or a
-#' combination absent from the data -- is filled by one least-squares step in
-#' the null space of the fitted rows' design (\code{.gloc_estimable},
-#' \code{.gloc_fill_null}). Identification and targets are decided on level
+#' combination absent from the data -- is filled in the null space of the
+#' fitted rows' design (\code{.gloc_estimable}, \code{.gloc_fill_null}):
+#' first the combinations that occur in the data, by one least-squares step,
+#' then the absent ones, only in the null-space directions that step leaves
+#' free, so an absent combination never moves a row that exists. Identification and targets are decided on level
 #' combinations (\code{patterns}), not on rows: a probability-weighted row
 #' whose combination is unknown (an \code{NA} id) is never a combination
 #' itself, and its fitted mean follows from the filled coefficients. The
@@ -180,11 +206,8 @@
 #' their average over the combinations that meets the target: under
 #' \code{~ g1 + g2} with a level of \code{g1} never observed, that level's
 #' combinations keep the \code{g2} effects between them. The fitted means this
-#' gives do not depend on how the factors are coded or ordered, with one
-#' exception: when every level is observed but one only at weights that are
-#' numerically zero, a coding under which the fit stays full rank fits that
-#' level from the tiny weights, while a coding that sees the rank deficiency
-#' fills it (see \code{.gloc_w_floor}). Aliased columns that change no fitted
+#' gives do not depend on how the factors are coded or ordered, nor on whether
+#' combinations absent from the data are enumerated. Aliased columns that change no fitted
 #' mean (two identical factors) warn as duplicates, naming neither a column
 #' that is zero on every fitted row nor one of an unidentified combination.
 #' Unidentified combinations that occur in the data (all of them, when some
@@ -253,24 +276,31 @@
     A  <- U[ok, , drop = FALSE] * sw
     qa <- qr(A, tol = 1e-7)                        # what qr.solve() does
     b  <- qr.coef(qa, X[ok, j] * sw)
+    # Identification is decided on the cells whose weight exceeds .gloc_w_floor
+    # times the column's largest. Full rank on them keeps the full-rank result
+    # just computed, tiny cells included, bit for bit; rank deficient on them,
+    # the fill path runs on them alone. (Corrected: until the third 7.4.1 fix
+    # round the floor acted only when the fit on all cells was already rank
+    # deficient, so whether a level at weight 1e-9 was fitted or filled
+    # depended on the coding and on whether another level was observed.)
+    live <- ok & w > .gloc_w_floor * max(w[ok])
+    if (!all(live == ok)) {
+      ql <- qr(U[live, , drop = FALSE] * sqrt(w[live]), tol = 1e-7)
+      if (ql$rank < q || qa$rank < q) {
+        ok <- live
+        sw <- sqrt(w[ok])
+        qa <- ql
+        b  <- qr.coef(qa, X[ok, j] * sw)
+      }
+    }
     if (qa$rank == q) {                            # full rank: qr.solve() exactly
       B[, j] <- b
       next
     }
-    # Rank deficient. A cell whose weight is numerically zero next to the
-    # column's largest takes no part in the fit that decides what is
-    # identified: at 1e-16 the rank decision counted such cells under
-    # treatment coding and not under sum or Helmert coding (.gloc_w_floor).
-    live <- ok & w > .gloc_w_floor * max(w[ok])
-    if (!all(live == ok)) {
-      ok <- live
-      sw <- sqrt(w[ok])
-      qa <- qr(U[ok, , drop = FALSE] * sw, tol = 1e-7)
-      b  <- qr.coef(qa, X[ok, j] * sw)
-    }
     # level combinations, computed once per call (.gloc_row_patterns)
     if (is.null(patterns)) patterns <- .gloc_row_patterns(U, if (use_main) U_main)
     if (is.null(patterns$shown)) patterns$shown <- .gloc_shown(patterns)
+    if (is.null(patterns$present)) patterns$present <- .gloc_present(patterns)
     dropped <- which(is.na(b))
     b[dropped] <- 0
     est <- .gloc_estimable(qa, patterns, ok)
@@ -289,7 +319,7 @@
           else rep(TRUE, k)
         target[from_main] <- drop(patterns$P_main[from_main, , drop = FALSE] %*% bm)
       }
-      b <- .gloc_fill_null(b, patterns$P, est, target)
+      b <- .gloc_fill_null(b, patterns$P, est, target, patterns$present)
       shown <- est$nonest & patterns$shown
       if (any(shown))
         nonid[[j]] <- list(main = sort(patterns$labels[shown & from_main]),
@@ -443,6 +473,18 @@
   tabulate(pat$id, nbins = k) > 0L
 }
 
+#' Which level combinations occur in the data
+#'
+#' A combination is present when some row with a known combination (an id
+#' that is not \code{NA}) has it. \code{.gloc_fill_null} fills present
+#' combinations first and absent ones only in what that leaves free.
+#' @param pat a \code{patterns} list.
+#' @return a logical vector, one element per combination.
+#' @keywords internal
+.gloc_present <- function(pat) {
+  tabulate(pat$id[!is.na(pat$id)], nbins = nrow(pat$P)) > 0L
+}
+
 #' Which level combinations the fitted rows identify
 #'
 #' A combination is identified when a fitted row has it, or when its pure
@@ -458,10 +500,9 @@
 #'   unknown), and \code{P}, the pure design row of each combination.
 #' @param fitted logical, the rows the fit used.
 #' @return a list: \code{N}, the null-space basis; \code{nonest}, logical, the
-#'   combinations not identified; \code{first}, their indices; \code{sv} and
-#'   \code{keep}, the singular value decomposition of their null-space
-#'   components and which singular values count; and \code{pure}, whether some
-#'   null direction is invisible on every such combination.
+#'   combinations not identified; \code{first}, their indices; and \code{pure},
+#'   whether some null direction is invisible on every such combination
+#'   (singular values counted as in \code{.gloc_fill_null}).
 #' @keywords internal
 .gloc_estimable <- function(qa, pat, fitted) {
   P  <- pat$P
@@ -474,39 +515,65 @@
   seen[ids[!is.na(ids)]] <- TRUE
   nonest <- far & !seen
   first <- which(nonest)
-  sv <- if (length(first)) svd(PN[first, , drop = FALSE]) else NULL
-  keep <- if (is.null(sv)) logical(0) else
-    sv$d > .gloc_est_tol * max(1, rn[first])
-  list(N = N, nonest = nonest, first = first, sv = sv, keep = keep,
-       pure = sum(keep) < ncol(N))
+  d <- if (length(first)) svd(PN[first, , drop = FALSE], nu = 0L, nv = 0L)$d else numeric(0)
+  list(N = N, nonest = nonest, first = first,
+       pure = sum(d > .gloc_est_tol * max(1, rn[first])) < ncol(N))
 }
 
 #' Fill the level combinations that the fitted rows do not identify
 #'
-#' Returns \eqn{b = b_0 + N c}, where \eqn{c} is the minimum-norm
-#' least-squares solution of \eqn{p (b_0 + N c) = t_p} over the pure design
-#' rows \eqn{p} of the unidentified combinations. Identified combinations keep
-#' their fitted means, because \eqn{p N = 0} there; a row whose categories are
-#' unknown gets whatever its design row gives with the filled coefficients.
-#' The solution goes through the singular values that \code{.gloc_estimable}
-#' keeps, all above a fixed positive threshold, so no quantity that can be 0
-#' is divided by and finite input gives finite coefficients under any
-#' contrasts. With no unidentified combination, \eqn{b_0} is returned as it is.
+#' Returns \eqn{b = b_0 + N c}. Identified combinations keep their fitted
+#' means, because \eqn{p N = 0} for their pure design rows \eqn{p}; a row whose
+#' categories are unknown gets whatever its design row gives with the filled
+#' coefficients. The fill runs in two stages. First, \eqn{c} is the
+#' minimum-norm least-squares solution of \eqn{p (b_0 + N c) = t_p} over the
+#' unidentified combinations that occur in the data. Second, the unidentified
+#' combinations absent from the data are fitted the same way, but only in the
+#' directions of the null space that the first stage leaves free, which are
+#' invisible on every combination of the first stage. An absent combination
+#' therefore never changes the fitted mean of a row that exists, and the
+#' same data give the same fitted means whether or not absent combinations
+#' are enumerated (\code{.gloc_max_patterns}). (Corrected: until the third
+#' 7.4.1 fix round both kinds entered one least-squares step, and absent
+#' combinations moved present ones: under partial aliasing imputed values
+#' changed by up to 1.80.) Each stage divides only by singular values above
+#' \code{.gloc_est_tol} times the length of the longest pure row involved, so
+#' finite input gives finite coefficients under any contrasts. With no
+#' unidentified combination, \eqn{b_0} is returned as it is.
 #' @param b0 length-\eqn{q} coefficients of the fit, 0 in the aliased columns.
 #' @param P the pure design rows of the combinations.
 #' @param est the result of \code{.gloc_estimable}.
 #' @param target one target value per combination; only unidentified ones are
 #'   read.
+#' @param present logical, one element per combination, from
+#'   \code{.gloc_present}.
 #' @return length-\eqn{q} coefficients.
 #' @keywords internal
-.gloc_fill_null <- function(b0, P, est, target) {
-  f <- est$first
-  if (!length(f)) return(b0)
-  k <- est$keep
-  rhs <- target[f] - drop(P[f, , drop = FALSE] %*% b0)
-  cc <- est$sv$v[, k, drop = FALSE] %*%
-    (crossprod(est$sv$u[, k, drop = FALSE], rhs) / est$sv$d[k])
-  b0 + drop(est$N %*% cc)
+.gloc_fill_null <- function(b0, P, est, target, present = rep(TRUE, nrow(P))) {
+  if (!length(est$first)) return(b0)
+  rn <- sqrt(rowSums(P^2))
+  # one minimum-norm least-squares step in the directions Nd; also returns the
+  # directions of Nd that the combinations in rows leave free
+  stage <- function(b, Nd, rows) {
+    PN <- P[rows, , drop = FALSE] %*% Nd
+    s <- svd(PN, nv = ncol(Nd))
+    kk <- which(s$d > .gloc_est_tol * max(1, rn[rows]))
+    rhs <- target[rows] - drop(P[rows, , drop = FALSE] %*% b)
+    cc <- s$v[, kk, drop = FALSE] %*% (crossprod(s$u[, kk, drop = FALSE], rhs) / s$d[kk])
+    list(b = b + drop(Nd %*% cc),
+         free = Nd %*% s$v[, setdiff(seq_len(ncol(Nd)), kk), drop = FALSE])
+  }
+  pres <- est$first[present[est$first]]
+  abs_ <- est$first[!present[est$first]]
+  b <- b0
+  Nd <- est$N
+  if (length(pres)) {
+    st1 <- stage(b, Nd, pres)
+    b <- st1$b
+    Nd <- st1$free
+  }
+  if (length(abs_) && ncol(Nd)) b <- stage(b, Nd, abs_)$b
+  b
 }
 
 #' Name design rows by their non-zero columns
@@ -573,16 +640,19 @@
 
 #' Relative weight below which a cell does not decide identification
 #'
-#' In a design that is rank deficient on a variable's fitted rows,
-#' \code{.gloc_update_B} refits on the cells whose weight exceeds this
-#' fraction of the column's largest weight before it decides which level
-#' combinations are identified. With level b at weight 1e-16, the pivoted QR
-#' kept b under treatment coding and dropped it under sum and Helmert coding,
-#' and the three codings returned 20.07, 39.52 and 80.27 for b. A full-rank
-#' fit is not refitted, so it stays bit for bit what it was; in that case (all
-#' levels observed, b at 1e-16) the coding can still change b, because a
-#' coding that sees the rank deficiency fills b while one that does not fits
-#' it from the tiny weights.
+#' In every fit, \code{.gloc_update_B} decides which level combinations are
+#' identified on the cells whose weight exceeds this fraction of the column's
+#' largest. When the design is full rank on those cells, the fit on all cells
+#' with positive weight is kept bit for bit, tiny cells included; when it is
+#' rank deficient on them, the fill path runs on them alone. A level whose
+#' weights are all at or below the floor is therefore filled, whatever the
+#' coding and whether or not other levels are observed. (Corrected, twice:
+#' with level b at weight 1e-16 the pivoted QR kept b under treatment coding
+#' and dropped it under sum and Helmert coding, and the codings returned
+#' 20.07, 39.52 and 80.27 for b; after a first fix the floor acted only in fits
+#' that were already rank deficient, so b at 1e-9 was fitted, 20.05, when
+#' level a was observed and filled, 35.06, when it was not. The soft corner
+#' reaches weights of 5.4e-29 in the simulation designs.)
 #' @format a length-one numeric.
 #' @keywords internal
 .gloc_w_floor <- 1e-8
@@ -1045,6 +1115,7 @@
     qr_o <- if (!any(ok)) NULL else if (is.null(cf$qr)) qr(U[ok, , drop = FALSE]) else cf$qr
     if (!is.null(qr_o) && qr_o$rank < q) {
       if (is.null(patterns)) patterns <- .gloc_row_patterns(U, if (use_main) U_main)
+      if (is.null(patterns$present)) patterns$present <- .gloc_present(patterns)
       est <- .gloc_estimable(qr_o, patterns, ok)
       if (length(est$first)) {
         k <- nrow(patterns$P)
@@ -1063,7 +1134,7 @@
             target[from_main] <- drop(patterns$P_main[from_main, , drop = FALSE] %*% cm$b)
           }
         }
-        b <- .gloc_fill_null(b, patterns$P, est, target)
+        b <- .gloc_fill_null(b, patterns$P, est, target, patterns$present)
       }
     }
     B[, j] <- b
