@@ -20,7 +20,7 @@ of .gloc_cond_resid for the argument and the construction."><!-- mathjax --><scr
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.1</span>
       </span>
     </div>
 
@@ -121,12 +121,15 @@ single threshold crossing used to produce, so \(h\) must exceed about
 wide and the interpolation stops being a fringe: bisquare weights sit at
 0.5 at \(|z| = 2.55\), so a band of \(\pm h\) covers the standardised
 residuals in roughly \(|z| \in (2.55 - 4h, 2.55 + 4h)\), which at
-\(h = 0.05\) is about 1.2\<!-- % of clean Gaussian cells and at \eqn{h = 0.25} -->
-would be nearer 10\<!-- %. --></p>
+\(h = 0.05\) is about 1.2% of clean Gaussian cells and at \(h = 0.25\)
+would be nearer 10%.</p>
 <p>0.05 sits above the steepness bound and below the fringe bound. Measured on
-a sweep of one cell's weight across the threshold, the largest one-step jump
-it leaves in a row-mate's standardised residual is 0.0035, against 0.110 for
-the hard cut, with identical values at both ends of the sweep.</p>
+a sweep of one cell's weight across the threshold (the portable test data,
+drawn as <code>Z %*% chol(S)</code>), the largest one-step jump it leaves in a
+row-mate's standardised residual is 0.0071, against 0.225 for the hard cut,
+a factor of 32, with identical values outside the band. (Corrected: this
+page quoted 0.0035 against 0.110, figures that matched neither the earlier
+<code><a href="https://rdrr.io/pkg/MASS/man/mvrnorm.html" class="external-link">MASS::mvrnorm</a></code> test data nor the current ones.)</p>
     </div>
 
   </div>

@@ -20,7 +20,7 @@ the cell weights, and it is never taken silently."><!-- mathjax --><script src="
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.1</span>
       </span>
     </div>
 
@@ -136,13 +136,13 @@ the cell weights, and it is never taken silently.</p>
 <dt id="arg-crit">crit<a class="anchor" aria-label="anchor" href="#arg-crit"></a></dt>
 <dd><p>convergence tolerance handed to <code><a href="https://rdrr.io/pkg/cellWise/man/cwLocScat.html" class="external-link">cellWise::cwLocScat</a></code>'s
 EM. This is an inner loop inside the outer cellGLoc iteration, and it is
-the whole cost of a cellGLoc step: about 95\<!-- % of an iteration against -->
-about 5\<!-- % for the conditional residuals. Measured by \code{Rprof} over -->
-five draws at \(n = 1000\), \(p = 10\), \(\rho = 0.5\), 5\<!-- % of cells -->
+the whole cost of a cellGLoc step: about 95% of an iteration against
+about 5% for the conditional residuals. Measured by <code>Rprof</code> over
+five draws at \(n = 1000\), \(p = 10\), \(\rho = 0.5\), 5% of cells
 shifted by +8, <code>weights = "soft"</code>, across <code>design = ~ 1</code> and
-<code>design = ~ .</code>: the share runs 94.3 to 95.6\<!-- %. Earlier releases -->
-quoted 98.8\<!-- % here and 97.5\\% elsewhere for the same quantity; neither -->
-reproduced, and 95\<!-- % replaces both. -->
+<code>design = ~ .</code>: the share runs 94.3 to 95.6%. Earlier releases
+quoted 98.8% here and 97.5% elsewhere for the same quantity; neither
+reproduced, and 95% replaces both.
 <code>cwLocScat</code>'s own default is 1e-12, seven orders of magnitude
 tighter than the outer loop's <code>eps</code> of 5e-3 can resolve, so the EM
 spends most of its steps refining digits the caller discards. The default

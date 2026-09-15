@@ -18,7 +18,7 @@ every observation keeps a design row."><!-- mathjax --><script src="https://cdnj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.1</span>
       </span>
     </div>
 
@@ -119,7 +119,10 @@ every observation keeps a design row.</p>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>an <code>n x q</code> numeric matrix whose first column is the intercept.</p>
+    <p>an <code>n x q</code> numeric matrix from <code>model.matrix</code>. Its first
+column is the intercept only when the design has one; under
+<code>~ f - 1</code> it is the first level's indicator. (Corrected: this page
+said the first column is always the intercept.)</p>
     </div>
 
   </div>

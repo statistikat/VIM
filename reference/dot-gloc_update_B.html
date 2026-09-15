@@ -19,7 +19,7 @@ scatter step, not here."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.1</span>
       </span>
     </div>
 
@@ -100,7 +100,7 @@ scatter step, not here.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.gloc_update_B</span><span class="op">(</span><span class="va">X</span>, <span class="va">U</span>, <span class="va">W</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.gloc_update_B</span><span class="op">(</span><span class="va">X</span>, <span class="va">U</span>, <span class="va">W</span>, U_main <span class="op">=</span> <span class="va">U</span>, patterns <span class="op">=</span> <span class="cn">NULL</span>, warn <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -118,6 +118,27 @@ scatter step, not here.</p>
 <dt id="arg-w">W<a class="anchor" aria-label="anchor" href="#arg-w"></a></dt>
 <dd><p>\(n x p\) matrix of cell weights in [0, 1].</p></dd>
 
+
+<dt id="arg-u-main">U_main<a class="anchor" aria-label="anchor" href="#arg-u-main"></a></dt>
+<dd><p>the main-effects version of <code>U</code>, from
+<code>.gloc_design_aux</code>; the default, <code>U</code> itself, stands for a design
+without interaction terms.</p></dd>
+
+
+<dt id="arg-patterns">patterns<a class="anchor" aria-label="anchor" href="#arg-patterns"></a></dt>
+<dd><p>the level combinations, from <code>.gloc_design_aux</code>: each
+row's combination (<code>id</code>, <code>NA</code> where a row's categories are
+unknown), the pure design row of each combination (<code>P</code>, and
+<code>P_main</code> for <code>U_main</code>) and its <code>labels</code>. <code>NULL</code> takes
+every distinct row of <code>U</code> as a combination
+(<code>.gloc_row_patterns</code>).</p></dd>
+
+
+<dt id="arg-warn">warn<a class="anchor" aria-label="anchor" href="#arg-warn"></a></dt>
+<dd><p><code>TRUE</code> raises the design warnings here; <code>FALSE</code>
+attaches them to the result as the attribute <code>"gloc_design"</code>, when
+there is anything to report, for <code>.gloc_warn_design</code>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
@@ -129,7 +150,58 @@ scatter step, not here.</p>
 cannot be fit at all; rather than silently returning <code>NA</code> into
 downstream matrices, this case warns (naming the offending column) and
 falls back to the unweighted median of that column's finite values, or to
-<code>0</code> if none exists.</p>
+<code>0</code> if none exists. A column with fewer usable cells than design
+columns warns too and uses the median of those cells. Either constant is put
+through the design (<code>.gloc_const_coef</code>), so every row gets it whether
+or not the design has an intercept column.</p>
+<p>A design that is rank deficient on the rows a column is fitted from is
+fitted on a maximal set of linearly independent design columns, chosen by
+the same pivoted QR decomposition <code><a href="https://rdrr.io/r/base/qr.html" class="external-link">qr.solve()</a></code> uses; a full-rank design
+takes exactly the arithmetic of <code><a href="https://rdrr.io/r/base/qr.html" class="external-link">qr.solve()</a></code>, so its result is
+unchanged bit for bit. Identification is decided on the cells whose weight
+exceeds <code>.gloc_w_floor</code> times the column's largest: a fit that is full
+rank on them keeps that full-rank result, tiny cells included, and a fit
+that is rank deficient on them takes the path below on them alone.
+The data then determine the fitted mean only of the level combinations that
+a fitted row has or whose pure design row lies in the row space of the
+fitted rows, and those keep it exactly. Every other combination – a level
+for which the variable has no cell with positive weight, under any coding
+of the factors, an unseen combination of partly aliased factors, or a
+combination absent from the data – is filled in the null space of the
+fitted rows' design (<code>.gloc_estimable</code>, <code>.gloc_fill_null</code>):
+first the combinations that occur in the data, by one least-squares step,
+then the absent ones, only in the null-space directions that step leaves
+free, so an absent combination never moves a row that exists. Identification and targets are decided on level
+combinations (<code>patterns</code>), not on rows: a probability-weighted row
+whose combination is unknown (an <code>NA</code> id) is never a combination
+itself, and its fitted mean follows from the filled coefficients. The
+target is the variable's weighted mean over the fitted rows, except that
+under a design with interaction terms a combination that the main-effects
+design <code>U_main</code> identifies on the same rows takes that design's fitted
+mean. Where several combinations share one unidentified direction, it is
+their average over the combinations that meets the target: under
+<code>~ g1 + g2</code> with a level of <code>g1</code> never observed, that level's
+combinations keep the <code>g2</code> effects between them. The fitted means this
+gives do not depend on how the factors are coded or ordered, nor on whether
+combinations absent from the data are enumerated. Aliased columns that change no fitted
+mean (two identical factors) warn as duplicates, naming neither a column
+that is zero on every fitted row nor one of an unidentified combination.
+Unidentified combinations that occur in the data (all of them, when some
+row's combination is unknown) warn once per reason, naming the variables,
+the combinations and what the fit does with them. With <code>warn = FALSE</code>
+the diagnostics are returned instead, and <code>imputeCellGLoc</code> raises them
+once, from its final iterate.</p>
+<p>Correction, recorded rather than deleted: until 7.4.1 a rank-deficient
+design silently kept only a weighted mean in <code>B[1, j]</code>, assuming column
+1 is the intercept. With a factor duplicated, the x1 group means came back
+flat at 0.39 against 0.17, 3.92 and -3.15, and <code>diag(Sigma)</code> was 8.5
+against 0.87; with a level that never records x1 they came back flat at
+15.44 under <code>~ f</code>, and 14.97, 0 and 0 under <code>~ f - 1</code>. The first
+7.4.1 fix filled design columns one at a time and recognised an unobserved
+level only as an all-zero column. It missed a never-observed reference level
+under treatment coding (level a came back 30.72 against a truth of 10),
+divided by zero under sum contrasts, and sent a combination missing only
+from an interaction to the grand mean (14.03 against 30).</p>
     </div>
 
   </div>

@@ -21,7 +21,7 @@ and the row's categorical pattern."><!-- mathjax --><script src="https://cdnjs.c
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.1</span>
       </span>
     </div>
 
@@ -116,7 +116,8 @@ conditional residual of a cell given the other continuous cells in its row
 <span>  peer_band <span class="op">=</span> <span class="va">.gloc_peer_band</span>,</span>
 <span>  damp <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cw_crit <span class="op">=</span> <span class="fl">1e-08</span>,</span>
-<span>  trace <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  trace <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"robust"</span>, <span class="st">"classical"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -167,7 +168,9 @@ the binding one.</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
-<dd><p>minimum fraction of unflagged cells per column (binary corner).</p></dd>
+<dd><p>minimum fraction of unflagged cells per column (binary corner).
+The robust start of the soft corner runs cellMCD at its own tolerance,
+<code>.gloc_start_alpha</code> = 0.5, and ignores this argument.</p></dd>
 
 
 <dt id="arg-psi-c">psi_c<a class="anchor" aria-label="anchor" href="#arg-psi-c"></a></dt>
@@ -191,7 +194,8 @@ weight decays geometrically towards zero without ever attaining it
 (measured around 4e-6 at convergence, with no cell exactly 0), and a
 zero threshold readmits those cells at full influence. Use a negative
 value to condition on every finite peer, which is useful only for
-demonstrating what the filtering buys.</p></dd>
+demonstrating what the filtering buys. The same rule selects the cells a
+missing cell is imputed from (since 7.4.1).</p></dd>
 
 
 <dt id="arg-peer-band">peer_band<a class="anchor" aria-label="anchor" href="#arg-peer-band"></a></dt>
@@ -209,9 +213,9 @@ converges 208 times at the current floor of 0.5 against 245 at the old
 under the band.</p>
 <p>Setting it changes the estimator and not only the iteration. Measured over
 520 paired fits against <code>peer_band = 0</code> on the same data, the scatter
-moves by up to about 20\<!-- % either way (the largest relative Frobenius -->
-changes seen were -19.9\<!-- % and +20.7\\%, and 22\\% of fits move by more than -->
-1\<!-- %). The mean effect is near zero -- 0.8401 against 0.8389 in relative -->
+moves by up to about 20% either way (the largest relative Frobenius
+changes seen were -19.9% and +20.7%, and 22% of fits move by more than
+1%). The mean effect is near zero – 0.8401 against 0.8389 in relative
 error against a known truth – the direction is not predictable from
 anything but the design arm itself, and detection is unaffected (F1 0.4837
 against 0.4842). The band is a fix for convergence, not for accuracy, and
@@ -238,7 +242,7 @@ four times earlier than <code>eps</code> asked; see <code>eps</code>. Ignored fo
 
 <dt id="arg-cw-crit">cw_crit<a class="anchor" aria-label="anchor" href="#arg-cw-crit"></a></dt>
 <dd><p>convergence tolerance of the EM inside
-<code><a href="https://rdrr.io/pkg/cellWise/man/cwLocScat.html" class="external-link">cellWise::cwLocScat</a></code>, the scatter step. That step is about 95\<!-- % of an -->
+<code><a href="https://rdrr.io/pkg/cellWise/man/cwLocScat.html" class="external-link">cellWise::cwLocScat</a></code>, the scatter step. That step is about 95% of an
 outer iteration, and <code>cwLocScat</code>'s own default of 1e-12 is seven
 orders of magnitude tighter than <code>eps</code>, so it refines digits this
 function immediately discards. See <code>.gloc_scatter_soft</code>.</p></dd>
@@ -246,6 +250,45 @@ function immediately discards. See <code>.gloc_scatter_soft</code>.</p></dd>
 
 <dt id="arg-trace">trace<a class="anchor" aria-label="anchor" href="#arg-trace"></a></dt>
 <dd><p>print progress.</p></dd>
+
+
+<dt id="arg-start">start<a class="anchor" aria-label="anchor" href="#arg-start"></a></dt>
+<dd><p>starting values for the soft corner. <code>"robust"</code> (default
+since 7.4.1) fits each continuous column on the categorical design alone
+along <code><a href="https://rdrr.io/pkg/robustbase/man/lmrob.html" class="external-link">robustbase::lmrob</a></code>'s M-S path (an L1 fit followed by an M-step
+at the L1 residual scale) and takes the starting flags from
+<code><a href="https://rdrr.io/pkg/cellWise/man/cellMCD.html" class="external-link">cellWise::cellMCD</a></code> on those residuals at <code>.gloc_start_alpha</code>;
+see <code>.gloc_start_robust</code>. <code>"classical"</code> starts with every
+observed cell at weight 1 and the mean structure by least squares. A
+redescending weight function started from a non-robust fit can settle on
+a masked solution, which is why the default changed. Ignored for
+<code>weights = "binary"</code>, whose first step already calls
+<code><a href="https://rdrr.io/pkg/cellWise/man/cellMCD.html" class="external-link">cellWise::cellMCD</a></code>.</p>
+<p><code>start</code> selects the fixed point, not only the path to it: the
+iteration can have several fixed points, and the starting values choose
+among them. On clean data (n = 200, six continuous and six categorical
+variables, 20% missing) at <code>eps = 1e-8</code>, the two starts reached
+different fixed points in 7 of 10 fits with <code>design = ~ .</code> (relative
+scatter difference 0.009 to 0.032, 2 to 14 cells flagged differently,
+unchanged as the tolerance tightens) and in 4 of 9 converged fits with
+<code>design = ~ 1</code>. Which fixed point is reached depends on the starting
+mean and the starting weights together, and on how the weights are built:
+in the 7 differing <code>~ .</code> fits, the start's hard flags with a
+least-squares starting mean reached the robust start's fixed point in 4;
+soft starting weights on the robust residuals reached it in 6 when computed
+from conditional residuals and in none when computed from marginal ones.
+The conditional construction used the start's hard flags twice: as the
+cell weights of the scatter it conditioned with, and as the set of peers
+it conditioned on.
+(Corrected: an earlier version said the hard starting flags were not the
+cause, on the evidence of one construction of soft starting weights.) Under
+contamination the classical start can mask: with 20% of cells shifted by 10
+its scatter error was 6.45 against 0.14 for the robust start.</p>
+<p>With <code>"classical"</code> the estimates <code>B</code>, <code>Sigma</code> and <code>W</code>
+reproduce VIM 7.4.0; the imputations do not, because since 7.4.1 a missing
+cell is imputed from unflagged cells only. (Corrected: this page said
+<code>"classical"</code> "reproduces VIM 7.4.0 exactly", which stopped being true
+for <code>$imputed</code> under both starts.)</p></dd>
 
 </dl></div>
     <div id="value">
@@ -320,14 +363,24 @@ exist – and in the <code>design = ~ .</code> arm it usually was. The peer band
 than one of them doing the work: over 260 fits of the
 categorical-mean-structure arm, <code>converged</code> is 131 under the 7.3.1
 schedule and hard cut, 181 with the relaxation floor at 0.5 and the scatter
-condition but the cut still hard, and 245 with the band as well. About 40\<!-- % -->
+condition but the cut still hard, and 245 with the band as well. About 40%
 of the gain is the floor, the rest the band.</p>
 <p>Convergence is not universal and should not be assumed. On that 260-fit grid
-it is 245, or 94\<!-- %, with the failures concentrated at correlations of 0.6 -->
-and above combined with 20\<!-- % of cells contaminated. --></p>
+it is 245, or 94%, with the failures concentrated at correlations of 0.6
+and above combined with 20% of cells contaminated.</p>
+<p>All convergence figures in this section were measured before 7.4.1, with
+the classical cold start (<code>start = "classical"</code>); the robust start has
+not been measured on that grid.</p>
 <p>Continuous columns that are <code>integer</code> in <code>data</code> stay
 <code>integer</code> in <code>$imputed</code>; their conditional expectations are
 rounded.</p>
+<p>A missing continuous cell is imputed by its conditional expectation given
+the unflagged cells in its row, selected by the same peer rule detection
+uses (<code>peer_w_min</code> with the peer band), in both weight corners. Until
+7.4.0 the imputation conditioned on every observed cell, flagged ones
+included, so a grossly contaminated cell was carried into the imputation of
+its row-mates; <code>B</code>, <code>Sigma</code> and <code>W</code> were not affected. See
+<code>.gloc_impute</code>.</p>
     </div>
     <div id="references">
     <h2>References</h2>
