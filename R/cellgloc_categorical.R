@@ -27,12 +27,34 @@
   list(cont = names(data)[!is_cat], cat = names(data)[is_cat])
 }
 
+#' Re-attach a factor's contrasts attribute after the factor was rebuilt
+#'
+#' \code{droplevels()} and \code{factor()} both drop a \code{contrasts}
+#' attribute; subsetting a factor keeps it, and so do \code{.gloc_design} and
+#' \code{.gloc_patterns}. A column rebuilt without it would give the candidate
+#' design rows different column names from the design built on the completed
+#' copy -- \code{fb}, \code{fc} against \code{f1}, \code{f2} under
+#' \code{contr.sum} -- and the fit would stop. A matrix of the wrong size for
+#' the levels that are kept is not re-attached, since dropping a level
+#' invalidates it.
+#' @param y the rebuilt factor.
+#' @param template the factor it was rebuilt from.
+#' @return \code{y}, carrying \code{template}'s contrasts where they still fit.
+#' @keywords internal
+.gloc_keep_contrasts <- function(y, template) {
+  ct <- attr(template, "contrasts")
+  if (!is.null(ct) && (!is.matrix(ct) || nrow(ct) == nlevels(y)))
+    attr(y, "contrasts") <- ct
+  y
+}
+
 #' Categorical columns as factors, their missing mask and their levels
 #'
 #' @param data a data frame.
 #' @param cat_vars names of the categorical columns.
 #' @return \code{list(F, Mc, levels)}: \code{F} holds the columns as factors of
-#'   their observed values (NA kept), \code{Mc} is the \eqn{n x k} missing mask,
+#'   their observed values (NA kept, a \code{contrasts} attribute carried over by
+#'   \code{.gloc_keep_contrasts}), \code{Mc} is the \eqn{n x k} missing mask,
 #'   \code{levels} the observed levels per column.
 #' @keywords internal
 .gloc_cat_prepare <- function(data, cat_vars) {
@@ -41,7 +63,8 @@
   lev <- stats::setNames(vector("list", length(cat_vars)), cat_vars)
   for (v in cat_vars) {
     x <- F[[v]]
-    F[[v]] <- if (is.factor(x)) droplevels(x) else factor(x)
+    y <- if (is.factor(x)) droplevels(x) else factor(x)
+    F[[v]] <- .gloc_keep_contrasts(y, x)
     lev[[v]] <- levels(F[[v]])
   }
   Mc <- matrix(FALSE, n, length(cat_vars), dimnames = list(NULL, cat_vars))
@@ -55,7 +78,10 @@
 #' levels fixed to \code{levels} and unused levels kept. Candidate rows that
 #' fill a missing cell with each level therefore get the columns of the
 #' complete-data design. On complete data the result is identical to
-#' \code{.gloc_design}.
+#' \code{.gloc_design}, contrasts included: a column's \code{contrasts}
+#' attribute survives the rebuild (\code{.gloc_keep_contrasts}), so a factor
+#' coded with \code{contr.sum} gets the design's columns and not the
+#' treatment-coded ones.
 #' @param Fr data frame of the categorical columns, without NA.
 #' @param design one-sided formula.
 #' @param levels named list of levels, from \code{.gloc_cat_prepare}.
@@ -68,8 +94,9 @@
                   dimnames = list(NULL, "(Intercept)")))
   df <- Fr
   for (v in names(levels))
-    df[[v]] <- factor(as.character(df[[v]]), levels = levels[[v]],
-                      ordered = is.ordered(Fr[[v]]))
+    df[[v]] <- .gloc_keep_contrasts(
+      factor(as.character(df[[v]]), levels = levels[[v]],
+             ordered = is.ordered(Fr[[v]])), Fr[[v]])
   mf <- stats::model.frame(design, data = df, na.action = stats::na.pass,
                            drop.unused.levels = FALSE)
   stats::model.matrix(design, mf)
@@ -206,7 +233,10 @@
 #' @param Ucand candidate design rows, one per candidate.
 #' @param row_of the data row of each candidate.
 #' @param w_min,band the peer rule.
-#' @return one log-likelihood per candidate, constant dropped.
+#' @return one log-likelihood per candidate, constant dropped. A row with no
+#'   usable peer -- every continuous cell of it missing or flagged -- gets 0 for
+#'   every candidate, so the density says nothing there and the prior alone
+#'   decides the level.
 #' @keywords internal
 .gloc_cat_loglik <- function(X, M, W, B, Sigma, Ucand, row_of, w_min = 0.5,
                              band = .gloc_peer_band) {
@@ -250,6 +280,12 @@
 #' In \code{pat_pr}, a level combination is present only when a row whose
 #' categorical values are all known has it (\code{.gloc_present} on
 #' \code{pats_rows}).
+#'
+#' Precondition: at least one row has every categorical variable observed. Those
+#' rows are the table's complete part, the data the prior models are first
+#' fitted on, and the source of the most frequent level a capped row takes;
+#' without one this function has nothing to build from. \code{imputeCellGLoc}
+#' enforces it with a clear error before calling here.
 #' @param catp result of \code{.gloc_cat_prepare}.
 #' @param data the data frame of the fit; unknown categorical cells are NA.
 #' @param design one-sided formula.
@@ -289,8 +325,9 @@
     rv <- which(nmis == 1L & Mc[, v]); L <- nlev[[v]]
     if (!length(rv)) next
     Fc <- F[rep(rv, each = L), , drop = FALSE]
-    Fc[[v]] <- factor(rep(lev[[v]], times = length(rv)), levels = lev[[v]],
-                      ordered = is.ordered(F[[v]]))
+    Fc[[v]] <- .gloc_keep_contrasts(
+      factor(rep(lev[[v]], times = length(rv)), levels = lev[[v]],
+             ordered = is.ordered(F[[v]])), F[[v]])
     parts[[length(parts) + 1L]] <- Fc
     rows[[length(rows) + 1L]] <- rep(rv, each = L)
     single[[v]] <- list(rows = rv,
@@ -303,8 +340,9 @@
     g <- unname(as.matrix(expand.grid(lapply(nlev[vs], seq_len))))
     Fi <- F[rep(i, nrow(g)), , drop = FALSE]
     for (a in seq_along(vs))
-      Fi[[vs[a]]] <- factor(lev[[vs[a]]][g[, a]], levels = lev[[vs[a]]],
-                            ordered = is.ordered(F[[vs[a]]]))
+      Fi[[vs[a]]] <- .gloc_keep_contrasts(
+        factor(lev[[vs[a]]][g[, a]], levels = lev[[vs[a]]],
+               ordered = is.ordered(F[[vs[a]]])), F[[vs[a]]])
     parts[[length(parts) + 1L]] <- Fi
     rows[[length(rows) + 1L]] <- rep(i, nrow(g))
     multi[[length(multi) + 1L]] <- list(row = i, vars = vs, lvl = g,
@@ -312,6 +350,11 @@
     N <- N + nrow(g)
   }
   Fp <- do.call(rbind, parts); rownames(Fp) <- NULL
+  # rbind() on data frames rebuilds every factor column and drops its contrasts
+  # attribute, which the design on the completed copy keeps. Without this the
+  # pseudo-rows would be coded differently from that design and to_combo() below
+  # would stop on data whose factors carry their own contrasts.
+  for (v in vars) Fp[[v]] <- .gloc_keep_contrasts(Fp[[v]], F[[v]])
   pr_row <- unlist(rows, use.names = FALSE)
   pr_c <- Up_main <- pat_pr <- pats_rows <- NULL
   if (no_table) {
@@ -506,13 +549,21 @@
 #' refit. A miscoded cell whose continuous cells point elsewhere gets a small
 #' value. Other missing categorical cells of the row enter through the row's
 #' pseudo-rows. The estimation does not use this value.
+#'
+#' The density is evaluated at the row's expected design row rather than
+#' averaged over its level combinations -- a Jensen approximation, taken because
+#' the pseudo-rows are already weighted. It is exact for a row whose other
+#' categorical cells are all observed, which is every row when only one
+#' categorical variable has missing cells.
 #' @param X,M,W,B,Sigma the continuous data, mask, weights and returned fit.
 #' @param catp result of \code{.gloc_cat_prepare}.
 #' @param priors result of \code{.gloc_cat_fit_priors}.
 #' @param design one-sided formula.
 #' @param es the last E-step (or \code{.gloc_cat_identity}).
 #' @param w_min,band the peer rule.
-#' @return an \eqn{n x k} matrix, \code{NA} where the cell is missing.
+#' @return an \eqn{n x k} matrix, \code{NA} where the cell is missing and in
+#'   every column of a row above the combination cap, which has no pseudo-rows to
+#'   compute it from.
 #' @keywords internal
 .gloc_cat_prob_observed <- function(X, M, W, B, Sigma, catp, priors, design, es,
                                     w_min = 0.5, band = .gloc_peer_band) {
@@ -527,8 +578,9 @@
     Fq <- es$Fp[keep, , drop = FALSE]; wq <- es$pr_w[keep]; rq <- es$pr_row[keep]
     P0 <- .gloc_cat_prior(priors[[v]], Fq)
     Fc <- Fq[rep(seq_len(nrow(Fq)), each = L), , drop = FALSE]
-    Fc[[v]] <- factor(rep(lev[[v]], times = nrow(Fq)), levels = lev[[v]],
-                      ordered = is.ordered(Fq[[v]]))
+    Fc[[v]] <- .gloc_keep_contrasts(
+      factor(rep(lev[[v]], times = nrow(Fq)), levels = lev[[v]],
+             ordered = is.ordered(Fq[[v]])), Fq[[v]])
     Uc <- .gloc_design_rows(Fc, design, lev)
     if (!is.null(rownames(B)) && !identical(colnames(Uc), rownames(B)))
       stop("imputeCellGLoc(): the design columns of cat_prob_observed do not match B.")

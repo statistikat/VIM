@@ -34,7 +34,10 @@
 \item{w_min, band}{the peer rule.}
 }
 \value{
-one log-likelihood per candidate, constant dropped.
+one log-likelihood per candidate, constant dropped. A row with no
+usable peer -- every continuous cell of it missing or flagged -- gets 0 for
+every candidate, so the density says nothing there and the prior alone
+decides the level.
 }
 \description{
 The level assignment of a row with a missing categorical cell conditions on

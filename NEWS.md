@@ -19,6 +19,12 @@
 - **`$criterion` gains a fifth entry, `categorical`**, the largest change of a posterior probability
   in the last iteration; it enters the stopping rule, and the non-convergence warning names it. The
   first four entries are unchanged.
+- **`categorical = "em"` needs `cellWise` once a categorical cell is missing.** The scatter is then
+  taken over pseudo-rows whose cell weights carry each level's posterior probability, and only
+  `cellWise::cwLocScat()` turns such weights into a case weight linearly. The weighted pairwise
+  fallback would square them -- a row split evenly over two levels contributing 0.25 + 0.25 against
+  a complete row's 1 -- so under `"em"` that fallback is refused with an error naming `cellWise` and
+  `categorical = "level"` instead of being taken silently.
 - **`categorical = "level"` reproduces 7.4.1**, and without a missing categorical cell `"em"` gives
   the same `B`, `Sigma`, `W` and `imputed` as `"level"`, bit for bit.
 

@@ -186,7 +186,18 @@ are trusted; see \code{cat_prob_observed}. \code{"level"} keeps the 7.4.x
 behaviour: a missing categorical value becomes an extra level of the design and
 stays \code{NA} in \code{imputed}. Without a missing categorical cell the two
 give the same \code{B}, \code{Sigma}, \code{W}, \code{imputed} and
-\code{criterion}, bit for bit.}
+\code{criterion}, bit for bit.
+
+\code{"em"} needs \pkg{cellWise} once a categorical cell is missing: the
+scatter is then taken over the pseudo-rows, whose cell weights carry each
+level's posterior, and only \code{cellWise::cwLocScat} turns those into a
+case weight linearly. The weighted pairwise fallback of
+\code{.gloc_scatter_soft} would square them, so it is refused rather than
+taken here; install \pkg{cellWise} or use \code{"level"}.
+
+With \code{"em"} the \code{cat_prob_observed} diagnostic fits the multinomial
+priors on every call, including a call on data with no missing categorical
+cell, where the estimation itself needs no priors at all.}
 }
 \value{
 a list with \code{B}, \code{Sigma}, \code{W}, \code{U},
@@ -204,7 +215,9 @@ level from these probabilities first and the continuous cells given it.
 \code{cat_prob_observed} is an \eqn{n x k} matrix, \code{NA} where the cell is
 missing: for every observed categorical cell, the posterior probability of its
 own level computed as if the cell were missing, without a refit. A small value
-points at a miscoded cell; the estimation does not use it.
+points at a miscoded cell; the estimation does not use it. It is \code{NA} in
+every column of a row above the combination cap as well, since such a row has
+no pseudo-rows to compute it from.
 \code{cat_multi_missing} is the share of rows with two or more missing
 categorical cells. \code{cat_priors} holds the final multinomial prior models,
 so that level posteriors for other rows can be computed under this fit (for

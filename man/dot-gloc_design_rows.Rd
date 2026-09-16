@@ -21,6 +21,9 @@ Builds the design the way \code{.gloc_design} does, but with every column's
 levels fixed to \code{levels} and unused levels kept. Candidate rows that
 fill a missing cell with each level therefore get the columns of the
 complete-data design. On complete data the result is identical to
-\code{.gloc_design}.
+\code{.gloc_design}, contrasts included: a column's \code{contrasts}
+attribute survives the rebuild (\code{.gloc_keep_contrasts}), so a factor
+coded with \code{contr.sum} gets the design's columns and not the
+treatment-coded ones.
 }
 \keyword{internal}

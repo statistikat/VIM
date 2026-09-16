@@ -32,7 +32,9 @@
 \item{w_min, band}{the peer rule.}
 }
 \value{
-an \eqn{n x k} matrix, \code{NA} where the cell is missing.
+an \eqn{n x k} matrix, \code{NA} where the cell is missing and in
+every column of a row above the combination cap, which has no pseudo-rows to
+compute it from.
 }
 \description{
 For every observed categorical cell: the probability of the level it holds,
@@ -40,5 +42,12 @@ computed as if the cell were missing, at the returned fit and without a
 refit. A miscoded cell whose continuous cells point elsewhere gets a small
 value. Other missing categorical cells of the row enter through the row's
 pseudo-rows. The estimation does not use this value.
+}
+\details{
+The density is evaluated at the row's expected design row rather than
+averaged over its level combinations -- a Jensen approximation, taken because
+the pseudo-rows are already weighted. It is exact for a row whose other
+categorical cells are all observed, which is every row when only one
+categorical variable has missing cells.
 }
 \keyword{internal}

@@ -161,6 +161,16 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   b <- cellWise::cwLocScat(Xp, W2, crit = 1e-14, maxiter = 10000, lmin = NULL)
   expect_equal(a$cwMLEsigma, b$cwMLEsigma, tolerance = 1e-10)
   expect_equal(a$cwMLEmu, b$cwMLEmu, tolerance = 1e-10)
+  # ... and again at the settings the estimator itself uses (R43): cw_crit's
+  # default 1e-8 with cwLocScat's own maxiter and lmin. lmin is an eigenvalue
+  # floor, a nonlinear step that need not commute with case weights, so the
+  # property is pinned where it is relied on and not only in a tighter
+  # neighbouring configuration. Tolerance fixed before the first run.
+  ap <- cellWise::cwLocScat(rbind(Xp, Xp[1:15, ]), rbind(Wp, Wp[1:15, ]),
+                            methods = "all", crit = 1e-8)
+  bp <- cellWise::cwLocScat(Xp, W2, methods = "all", crit = 1e-8)
+  expect_equal(ap$cwMLEsigma, bp$cwMLEsigma, tolerance = 1e-6)
+  expect_equal(ap$cwMLEmu, bp$cwMLEmu, tolerance = 1e-6)
 }
 
 sim4 <- gen_cat(90, 4, miss_f = 0.2, miss_g = 0.15)
@@ -253,10 +263,20 @@ expect_equal(es5$pr_w[mr5$pos],
 expect_identical(which(cand5$pat_pr$present),
                  sort(unique(cand5$pats_rows$id[!is.na(cand5$pats_rows$id)])))
 expect_false(all(cand5$pat_pr$present[cand5$pr_c[cand5$pr_row == 1L]]))
-# a factor with its own contrasts attribute stops with the hint (R26)
+# a factor with its own contrasts attribute is coded like the design, so the
+# candidate columns match it and the fit runs (R42). droplevels(), factor() and
+# rbind() each drop the attribute while .gloc_design() and .gloc_patterns() keep
+# it; 7.4.1 fitted such data, so the new default must too. The reference is the
+# design on the COMPLETED copy, which is what the EM codes against -- on the raw
+# data .gloc_design() adds an NA level and loses the attribute with it.
 d5s <- d5; contrasts(d5s$f) <- contr.sum(3)
-expect_error(VIM:::.gloc_cat_candidates(VIM:::.gloc_cat_prepare(d5s, c("f", "g")), d5s, ~ .),
-             "categorical = \"level\"")
+cp5s <- VIM:::.gloc_cat_prepare(d5s, c("f", "g"))
+cand5s <- VIM:::.gloc_cat_candidates(cp5s, d5s, ~ .)
+d5sf <- d5s; d5sf$f[1] <- "a"; d5sf$g[1] <- "u"
+expect_identical(colnames(cand5s$Up),
+                 colnames(VIM:::.gloc_design(d5sf, ~ ., c("f", "g"))))
+expect_identical(colnames(cand5s$Up), c("(Intercept)", "f1", "f2", "gv"))
+expect_true(all(cand5s$Up == VIM:::.gloc_design_rows(cand5s$Fp, ~ ., cp5s$levels)))
 
 # a row with more combinations than the cap stays out of the table, once warned
 wc <- collect_warnings(cand5c <- VIM:::.gloc_cat_candidates(cp5, d5, ~ ., max_combos = 2L))
@@ -357,6 +377,27 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   fit_i <- suppressWarnings(VIM::imputeCellGLoc(s7$d, design = ~ f * g))
   expect_true(all(is.finite(fit_i$U %*% fit_i$B)))
   expect_false(anyNA(fit_i$imputed$f))
+
+  # R40 -- at a tight tolerance the categorical residual can be the last of the
+  # four to settle, so the stall detector has to count its improvements as
+  # progress; keyed on the weight change alone, the cold restart could fire and
+  # discard every categorical iteration. The fit converges and each stopping
+  # residual is below eps. scatter_spread is NA on a converged fit by design
+  # (it would describe the approach, not the answer), so it is checked apart.
+  tight <- suppressWarnings(VIM::imputeCellGLoc(s5$d, eps = 1e-5))
+  expect_true(tight$converged)
+  expect_true(all(tight$criterion[c("means", "scatter", "weights",
+                                    "categorical")] < 1e-5))
+  expect_true(is.na(tight$criterion[["scatter_spread"]]))
+
+  # R42 -- a factor carrying its own contrasts attribute fits under the default,
+  # as it did in 7.4.1, and the diagnostic runs on it too
+  sc <- gen_cat(200, 12, miss_f = 0.2)
+  contrasts(sc$d$f) <- contr.sum(3)
+  fitc <- suppressWarnings(VIM::imputeCellGLoc(sc$d))
+  expect_identical(rownames(fitc$B), c("(Intercept)", "f1", "f2", "gv"))
+  expect_false(anyNA(fitc$imputed$f))
+  expect_false(anyNA(fitc$cat_prob_observed[!is.na(sc$d$f), "f"]))
 
   # a fit stopped by maxit names the categorical change in its warning
   w7 <- collect_warnings(VIM::imputeCellGLoc(s7$d, maxit = 1))

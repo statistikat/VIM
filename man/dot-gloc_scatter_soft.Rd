@@ -10,7 +10,8 @@
   M,
   kappa = 1,
   crit = 1e-08,
-  have_cw = requireNamespace("cellWise", quietly = TRUE)
+  have_cw = requireNamespace("cellWise", quietly = TRUE),
+  em = FALSE
 )
 }
 \arguments{
@@ -41,6 +42,10 @@ and cut the scatter step's time by about 30\%.}
 
 \item{have_cw}{whether \pkg{cellWise} may be used; exposed so the fallback
 path is directly testable.}
+
+\item{em}{whether the rows are the categorical EM's pseudo-rows, whose cell
+weights carry a level's posterior probability. \code{TRUE} stops instead of
+falling back; see the note above.}
 }
 \value{
 a \eqn{p x p} scatter matrix.
@@ -50,5 +55,14 @@ Uses \code{cellWise::cwLocScat()} when available. \pkg{cellWise} is in
 Suggests, so its absence is a supported configuration rather than an edge
 case; the fallback is a weighted pairwise covariance, which still honours
 the cell weights, and it is never taken silently.
+}
+\details{
+The fallback is refused under \code{em = TRUE}. \code{cwLocScat} turns a
+row's cell weights into a case weight linearly, which is what lets the
+categorical EM weight a pseudo-row by its level's posterior probability; the
+fallback forms pairwise weights \eqn{w_{ij} w_{ik}} instead, so scaling a row
+by \eqn{r} scales its contribution by \eqn{r^2} and a row split evenly over
+two levels would count 0.25 + 0.25 against a complete row's 1. That is a
+silent statistical error rather than a cruder estimator, so this stops.
 }
 \keyword{internal}

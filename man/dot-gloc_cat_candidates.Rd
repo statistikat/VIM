@@ -29,4 +29,11 @@ In \code{pat_pr}, a level combination is present only when a row whose
 categorical values are all known has it (\code{.gloc_present} on
 \code{pats_rows}).
 }
+\details{
+Precondition: at least one row has every categorical variable observed. Those
+rows are the table's complete part, the data the prior models are first
+fitted on, and the source of the most frequent level a capped row takes;
+without one this function has nothing to build from. \code{imputeCellGLoc}
+enforces it with a clear error before calling here.
+}
 \keyword{internal}

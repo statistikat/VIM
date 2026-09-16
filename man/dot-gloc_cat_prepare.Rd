@@ -13,7 +13,8 @@
 }
 \value{
 \code{list(F, Mc, levels)}: \code{F} holds the columns as factors of
-their observed values (NA kept), \code{Mc} is the \eqn{n x k} missing mask,
+their observed values (NA kept, a \code{contrasts} attribute carried over by
+\code{.gloc_keep_contrasts}), \code{Mc} is the \eqn{n x k} missing mask,
 \code{levels} the observed levels per column.
 }
 \description{

@@ -190,6 +190,17 @@
 #'   stays \code{NA} in \code{imputed}. Without a missing categorical cell the two
 #'   give the same \code{B}, \code{Sigma}, \code{W}, \code{imputed} and
 #'   \code{criterion}, bit for bit.
+#'
+#'   \code{"em"} needs \pkg{cellWise} once a categorical cell is missing: the
+#'   scatter is then taken over the pseudo-rows, whose cell weights carry each
+#'   level's posterior, and only \code{cellWise::cwLocScat} turns those into a
+#'   case weight linearly. The weighted pairwise fallback of
+#'   \code{.gloc_scatter_soft} would square them, so it is refused rather than
+#'   taken here; install \pkg{cellWise} or use \code{"level"}.
+#'
+#'   With \code{"em"} the \code{cat_prob_observed} diagnostic fits the multinomial
+#'   priors on every call, including a call on data with no missing categorical
+#'   cell, where the estimation itself needs no priors at all.
 #' @param peer_w_min a cell is conditioned on only when its weight exceeds
 #'   this, so that a downweighted peer is treated as absent rather than as
 #'   evidence. The threshold is applied over a narrow band rather than at a
@@ -245,7 +256,9 @@
 #'   \code{cat_prob_observed} is an \eqn{n x k} matrix, \code{NA} where the cell is
 #'   missing: for every observed categorical cell, the posterior probability of its
 #'   own level computed as if the cell were missing, without a refit. A small value
-#'   points at a miscoded cell; the estimation does not use it.
+#'   points at a miscoded cell; the estimation does not use it. It is \code{NA} in
+#'   every column of a row above the combination cap as well, since such a row has
+#'   no pseudo-rows to compute it from.
 #'   \code{cat_multi_missing} is the share of rows with two or more missing
 #'   categorical cells. \code{cat_priors} holds the final multinomial prior models,
 #'   so that level posteriors for other rows can be computed under this fit (for
@@ -407,7 +420,8 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   iter_count <- 0L
   dW_prev <- Inf          # previous iteration's weight change, for the backoff
   dW_best <- Inf          # best so far, for stall detection
-  stall   <- 0L           # iterations since the weight change last improved
+  dR_best <- Inf          # the same for the categorical posterior change
+  stall   <- 0L           # iterations since either of those last improved
   restarted <- FALSE      # has the floor-schedule fallback already been used?
   W0 <- W; B0 <- B        # the cold start, kept for that fallback
   dB <- dS <- dW <- NA_real_       # stopping residuals, reported in $criterion
@@ -498,7 +512,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
           .gloc_scatter_soft(X[es$pr_row, , drop = FALSE] - es$Up %*% B,
                              W[es$pr_row, , drop = FALSE] * es$pr_w,
                              M[es$pr_row, , drop = FALSE],
-                             kappa = kappa_soft, crit = cw_crit)
+                             kappa = kappa_soft, crit = cw_crit, em = TRUE)
         else .gloc_scatter_soft(R, W, M, kappa = kappa_soft, crit = cw_crit)
         # Condition each cell only on peers that are themselves still clean.
         # Conditioning on every finite peer propagates a single bad cell to its
@@ -589,8 +603,20 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                                        "fixed-point residual in W = %.3g,",
                                        "damping = %.3g"),
                                  it, dB, dS, dW, damp))
-      if (dW < 0.99 * dW_best) { dW_best <- dW; stall <- 0L } else
-        stall <- stall + 1L
+      # Progress is an improvement in EITHER residual that the stopping rule
+      # tests and the iteration can still move. dR joined that rule, so a fit
+      # whose weights have settled while its posteriors are still moving is
+      # converging, not stalling; keying the counter on dW alone would call it a
+      # cycle, and the cold restart below would then throw away every
+      # categorical iteration -- on real survey data at a tight eps, dR is a
+      # plausible last-to-converge component. The damping stays keyed on dW.
+      # Each best keeps its own 1% rule rather than a running minimum, so
+      # without the EM (dR is 0 at every iteration, and 0 < 0.99 * 0 is FALSE
+      # after the first) the counter follows exactly the pre-7.5.0 trajectory.
+      impr <- dW < 0.99 * dW_best || dR < 0.99 * dR_best
+      if (dW < 0.99 * dW_best) dW_best <- dW
+      if (dR < 0.99 * dR_best) dR_best <- dR
+      stall <- if (impr) 0L else stall + 1L
       if (dB < eps && dS < eps && dW < eps && dR < eps) { converged <- TRUE; break }
 
       # Strengthen the relaxation only when the iteration stops contracting.
@@ -640,7 +666,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
           es <- es0; U <- es0$Ubar
           priors <- priors0; post_old <- NULL
         }
-        dW_prev <- Inf; dW_best <- Inf; stall <- 0L
+        dW_prev <- Inf; dW_best <- Inf; dR_best <- Inf; stall <- 0L
         if (trace) message(sprintf(paste("  iter %d: still cycling at the",
                                          "relaxation floor; restarting from",
                                          "the cold start at damping %.3g"),
@@ -701,13 +727,13 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                             "max |dW| %s%s, tolerance %.3g). The estimates are",
                             "still moving, so B, Sigma and W are only whatever",
                             "the last iteration produced. %s%s $criterion",
-                            "carries all %s numbers."),
+                            "carries %s."),
                       maxit, .gloc_fmt(dB), .gloc_fmt(dS), .gloc_fmt(dW),
                       if (em) paste0(", largest change in a categorical posterior ",
                                      .gloc_fmt(dR)) else "",
                       eps, drift,
                       if (nzchar(drift)) paste0(" ", diagnosis) else diagnosis,
-                      if (em) "five" else "four"),
+                      if (em) "all five numbers" else "the first four numbers"),
               call. = FALSE)
     }
 
@@ -716,7 +742,8 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
       Sigma <- if (em)
         .gloc_scatter_soft(X[es$pr_row, , drop = FALSE] - es$Up %*% B,
                            W[es$pr_row, , drop = FALSE] * es$pr_w,
-                           M[es$pr_row, , drop = FALSE], kappa = kap, crit = cw_crit)
+                           M[es$pr_row, , drop = FALSE], kappa = kap,
+                           crit = cw_crit, em = TRUE)
       else .gloc_scatter_soft(X - U %*% B, W, M, kappa = kap, crit = cw_crit)
     }
   }, warning = dedup)
@@ -1026,6 +1053,14 @@ NULL
 #' case; the fallback is a weighted pairwise covariance, which still honours
 #' the cell weights, and it is never taken silently.
 #'
+#' The fallback is refused under \code{em = TRUE}. \code{cwLocScat} turns a
+#' row's cell weights into a case weight linearly, which is what lets the
+#' categorical EM weight a pseudo-row by its level's posterior probability; the
+#' fallback forms pairwise weights \eqn{w_{ij} w_{ik}} instead, so scaling a row
+#' by \eqn{r} scales its contribution by \eqn{r^2} and a row split evenly over
+#' two levels would count 0.25 + 0.25 against a complete row's 1. That is a
+#' silent statistical error rather than a cruder estimator, so this stops.
+#'
 #' @param R \eqn{n x p} matrix of residuals from the mean structure.
 #' @param W \eqn{n x p} matrix of cell weights in \[0, 1\].
 #' @param M \eqn{n x p} logical mask of missing cells.
@@ -1048,12 +1083,24 @@ NULL
 #'   and cut the scatter step's time by about 30%.
 #' @param have_cw whether \pkg{cellWise} may be used; exposed so the fallback
 #'   path is directly testable.
+#' @param em whether the rows are the categorical EM's pseudo-rows, whose cell
+#'   weights carry a level's posterior probability. \code{TRUE} stops instead of
+#'   falling back; see the note above.
 #' @return a \eqn{p x p} scatter matrix.
 #' @keywords internal
 .gloc_scatter_soft <- function(R, W, M, kappa = 1, crit = 1e-8,
                                have_cw = requireNamespace("cellWise",
-                                                          quietly = TRUE)) {
+                                                          quietly = TRUE),
+                               em = FALSE) {
   Rna <- R; Rna[M] <- NA_real_
+  em_stop <- function(cause)
+    stop(sprintf(paste("imputeCellGLoc(): the pseudo-row scatter of categorical",
+                       "= \"em\" needs cellWise::cwLocScat, which takes a row's",
+                       "cell weights as a case weight linearly, but %s. The",
+                       "weighted pairwise fallback would square each row's",
+                       "posterior weight and so under-weight the rows whose",
+                       "level is uncertain. Install cellWise, or use",
+                       "categorical = \"level\"."), cause), call. = FALSE)
   if (have_cw) {
     Wc <- W; Wc[!is.finite(Wc)] <- 0
     # cellWise's internal unpack() drops rows whose weights are all zero and
@@ -1074,11 +1121,13 @@ NULL
       error = function(e) NULL)
     if (!is.null(fit) && all(is.finite(fit$cwMLEsigma)))
       return(.gloc_correct_scatter(fit$cwMLEsigma, kappa))
+    if (em) em_stop("it failed or returned a non-finite scatter")
     warning(paste("cellGLoc: cellWise::cwLocScat() failed or returned a",
                   "non-finite scatter; falling back to a weighted pairwise",
                   "covariance, which is a cruder estimator than the cellwise",
                   "weighted MLE."), call. = FALSE)
   } else {
+    if (em) em_stop("the package is not installed")
     warning(paste("cellGLoc: the cellWise package is not installed, so the",
                   "cellwise weighted MLE scatter is unavailable; falling back",
                   "to a weighted pairwise covariance, which is a cruder",
