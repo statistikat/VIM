@@ -422,7 +422,16 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_identical(dim(fit6$cat_prob_observed), c(400L, 2L))
   expect_false(anyNA(po))
   expect_identical(names(fit6$cat_priors), c("f", "g"))
-  expect_true(mean(po[mis6]) < 0.2)
+  # Separation, not an absolute level. A miscoded label inflates its own row's
+  # residuals, so the fit's weights flag that row's continuous cells and the
+  # diagnostic falls back to the prior of the recorded level (design doc §12.2,
+  # self-masking). What the diagnostic must do is separate miscoded cells from
+  # correct ones.
+  auc6 <- mean(outer(po[-mis6], po[mis6], ">")) +
+    0.5 * mean(outer(po[-mis6], po[mis6], "=="))
+  expect_true(auc6 > 0.9)
+  expect_true(mean(po[mis6] < 0.5) > 0.8)
+  expect_true(mean(po[-mis6] < 0.5) < 0.05)
   expect_true(mean(po[-mis6]) > 0.7)
 
   # missing cells are NA in the diagnostic; the posterior carries them instead
