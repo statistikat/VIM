@@ -478,7 +478,31 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   d1u$f[5] <- NA                                # one missing cell
   fit1u <- suppressWarnings(VIM::imputeCellGLoc(d1u))
   d1uf <- d1u; d1uf$f[5] <- "a"
-  expect_identical(colnames(fit1u$U), colnames(VIM:::.gloc_design(d1uf, ~ ., c("f", "g"))))
+  # The reference design is built on a factor that still carries the stale
+  # matrix, so model.matrix() drops it with base R's "contrasts dropped from
+  # factor f due to missing levels" -- the very loss this test is about. The
+  # warning is silenced rather than matched: its text is base R's and may be
+  # translated (R54, m1).
+  expect_identical(colnames(fit1u$U),
+                   colnames(suppressWarnings(VIM:::.gloc_design(d1uf, ~ ., c("f", "g")))))
+
+  # R54 m3 -- the same with a character-valued contrasts attribute set
+  # directly, together with an unused level. Before R46 the guard re-attached
+  # any non-matrix attribute after droplevels(), so the EM design used
+  # contr.sum while the reference design, which loses the attribute with the
+  # unused level, used treatment coding, and the fit stopped with "candidate
+  # design columns do not match the design".
+  s1k <- gen_cat(200, 23, miss_f = 0)
+  d1k <- s1k$truth
+  levels(d1k$f) <- c(levels(d1k$f), "z")        # an unused 4th level
+  attr(d1k$f, "contrasts") <- "contr.sum"       # a character, set directly
+  d1k$f[5] <- NA
+  fit1k <- suppressWarnings(VIM::imputeCellGLoc(d1k))
+  d1kf <- d1k; d1kf$f[5] <- "a"
+  expect_identical(colnames(fit1k$U),
+                   colnames(suppressWarnings(VIM:::.gloc_design(d1kf, ~ ., c("f", "g")))))
+  expect_identical(colnames(fit1k$U), c("(Intercept)", "fb", "fc", "gv"))
+  expect_false(anyNA(fit1k$imputed$f))
 
   # R46 item 5 -- an EM-imputed factor's restored column keeps the caller's
   # own contrasts attribute (.gloc_cat_restore() used to rebuild it with a
@@ -634,3 +658,243 @@ Pal <- VIM:::.gloc_cat_prior(al$f, data.frame(f = factor("a", levels = c("a", "b
 expect_identical(dim(Pal), c(1L, 3L))
 expect_equal(Pal[1, 1] / Pal[1, 2], 3, tolerance = 1e-8)
 expect_true(Pal[1, 3] < 1e-9)
+
+# ==========================================================================
+# Task 13: two starts under the EM (spec §12.2 "Two starts under the EM",
+# §12.3 test 9; Rulings R57 and R60)
+# ==========================================================================
+# --- the objective: -2 log-likelihood of the retained cells of each row, plus
+# lambda_j per flagged observed cell, against a hand computation. A cell is
+# retained when its weight is at least 1/2 (row 2's first cell sits exactly
+# there). The missing cell carries weight 1 on purpose: the mask, not the
+# weight, keeps it out. Row 3 retains nothing and adds only its penalty.
+R13 <- rbind(c(0.3, -1.2, 0.8),
+             c(2.5, 0.4, -0.6),
+             c(-0.7, 0.9, 1.1),
+             c(1.4, -0.2, NA))
+W13 <- rbind(c(1, 0.9, 0.2),
+             c(0.5, 0.4, 1),
+             c(0.1, 0.3, 0.45),
+             c(1, 1, 1))
+M13 <- is.na(R13)
+S13 <- matrix(c(2, 0.6, 0.3, 0.6, 1.5, -0.4, 0.3, -0.4, 1), 3)
+lam13 <- c(7.1, 6.4, 8.2)
+m2ll <- function(r, S) drop(t(r) %*% solve(S) %*% r) + log(det(S)) + length(r) * log(2 * pi)
+obj13 <- m2ll(R13[1, 1:2], S13[1:2, 1:2]) + m2ll(R13[2, c(1, 3)], S13[c(1, 3), c(1, 3)]) +
+  m2ll(R13[4, 1:2], S13[1:2, 1:2]) +
+  lam13[1] * 1 + lam13[2] * 2 + lam13[3] * 2        # flagged observed cells per column: 1, 2, 2
+expect_equal(VIM:::.gloc_objective(R13, W13, M13, S13, lam13), obj13, tolerance = 1e-12)
+# the penalty from a scatter S: qchisq(0.99, 1) + log(2 pi) + log c_j, c_j = 1 / (S^-1)_jj
+expect_equal(VIM:::.gloc_lambda(S13),
+             qchisq(0.99, 1) + log(2 * pi) + log(1 / diag(solve(S13))), tolerance = 1e-12)
+expect_null(VIM:::.gloc_lambda(NULL))               # no cellMCD scatter (R60 item 1)
+expect_null(VIM:::.gloc_lambda(matrix(1, 2, 2)))    # nor a singular one
+
+# --- the second start's design rows and coefficients (R60 item 2). Evaluated at
+# the EM's pseudo-rows, the NA-level design reproduces the EM design in the EM's
+# columns and is 0 in its NA-level columns under treatment coding, so the
+# NA-level rows of B are dropped by name; least squares on the fitted means of
+# the same level combinations agrees.
+s13 <- gen_cat(150, 13, miss_f = 0.2, miss_g = 0.1)
+cp13 <- VIM:::.gloc_cat_prepare(s13$d, c("f", "g"))
+cand13 <- VIM:::.gloc_cat_candidates(cp13, s13$d, ~ .)
+Ud13 <- VIM:::.gloc_design(s13$d, ~ ., c("f", "g"))     # the design of categorical = "level"
+Ul13 <- VIM:::.gloc_level_rows(s13$d, cand13$Fp, ~ ., c("f", "g"))
+nm13 <- colnames(cand13$Up)
+cc13 <- which(rowSums(cp13$Mc) == 0L)
+expect_identical(colnames(Ul13), colnames(Ud13))
+expect_identical(dim(Ul13), c(nrow(cand13$Fp), ncol(Ud13)))
+expect_true(all(Ul13[seq_along(cc13), ] == Ud13[cc13, ]))   # complete rows: their own rows
+expect_true(all(Ul13[, nm13] == cand13$Up))
+expect_true(all(Ul13[, setdiff(colnames(Ud13), nm13)] == 0))
+set.seed(1301)
+Bl13 <- matrix(rnorm(ncol(Ud13) * 3), ncol(Ud13), 3,
+               dimnames = list(colnames(Ud13), c("x1", "x2", "x3")))
+Bn13 <- VIM:::.gloc_level_B(Bl13, Ul13, cand13$Up)
+expect_identical(Bn13, Bl13[nm13, , drop = FALSE])
+expect_true(max(abs(VIM:::.gloc_level_B(Bl13, Ul13, cand13$Up, lsq = TRUE) - Bn13)) < 1e-10)
+# An ordered factor: the NA level changes the polynomial coding of the observed
+# levels, so the names match while the coefficients do not; the fitted means
+# are carried over instead.
+d13o <- s13$d
+d13o$f <- factor(d13o$f, levels = c("a", "b", "c"), ordered = TRUE)
+cp13o <- VIM:::.gloc_cat_prepare(d13o, c("f", "g"))
+cand13o <- VIM:::.gloc_cat_candidates(cp13o, d13o, ~ .)
+Ud13o <- VIM:::.gloc_design(d13o, ~ ., c("f", "g"))
+Ul13o <- VIM:::.gloc_level_rows(d13o, cand13o$Fp, ~ ., c("f", "g"))
+set.seed(1302)
+Bl13o <- matrix(rnorm(ncol(Ud13o) * 3), ncol(Ud13o), 3,
+                dimnames = list(colnames(Ud13o), c("x1", "x2", "x3")))
+Bm13o <- VIM:::.gloc_level_B(Bl13o, Ul13o, cand13o$Up)
+expect_identical(dimnames(Bm13o), list(colnames(cand13o$Up), c("x1", "x2", "x3")))
+expect_true(all(colnames(cand13o$Up) %in% colnames(Ud13o)))
+expect_true(max(abs(Bm13o - Bl13o[colnames(cand13o$Up), ])) > 0.01)
+expect_true(max(abs(cand13o$Up %*% Bm13o - Ul13o %*% Bl13o)) < 1e-10)
+
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  cols13 <- c("x1", "x2", "x3")
+  obj_of <- function(fit, d) {
+    X <- as.matrix(d[, cols13])
+    VIM:::.gloc_objective(X - fit$U %*% fit$B, fit$W, is.na(X), fit$Sigma, fit$em_starts$lambda)
+  }
+
+  # spec test 9 -- with a missing categorical cell, the soft corner, the robust
+  # start and a categorical term, two starts run. em_starts reports both, and
+  # the returned fit is the chosen run: it reproduces that run's objective, and
+  # its iterations and converged are that run's.
+  s5 <- gen_cat(400, 5, miss_f = 0.2)
+  f13 <- suppressWarnings(VIM::imputeCellGLoc(s5$d))
+  es13 <- f13$em_starts
+  expect_false(is.null(es13))
+  expect_identical(names(es13), c("chosen", "objective", "converged", "iterations", "lambda"))
+  expect_true(es13$chosen %in% c("complete", "na_level"))
+  for (k in c("objective", "converged", "iterations"))
+    expect_identical(names(es13[[k]]), c("complete", "na_level"), info = k)
+  expect_identical(names(es13$lambda), cols13)
+  expect_equal(obj_of(f13, s5$d), es13$objective[[es13$chosen]], tolerance = 1e-10)
+  expect_identical(f13$iterations, es13$iterations[[es13$chosen]])
+  expect_identical(f13$converged, es13$converged[[es13$chosen]])
+
+  # spec test 9 -- only one start runs without a missing categorical cell, under
+  # "level", start = "classical" and design = ~ 1, and (R60 items 5 and 6) in the
+  # binary corner and at maxit = 0. em_starts is then NULL, but present.
+  s13n <- gen_cat(150, 11, miss_f = 0)
+  one13 <- list(
+    no_missing = suppressWarnings(VIM::imputeCellGLoc(s13n$truth)),
+    level      = suppressWarnings(VIM::imputeCellGLoc(s5$d, categorical = "level")),
+    classical  = suppressWarnings(VIM::imputeCellGLoc(s5$d, start = "classical")),
+    intercept  = suppressWarnings(VIM::imputeCellGLoc(s5$d, design = ~ 1)),
+    binary     = suppressWarnings(VIM::imputeCellGLoc(s5$d, weights = "binary")),
+    maxit0     = suppressWarnings(VIM::imputeCellGLoc(s5$d, maxit = 0)))
+  for (nm in names(one13)) {
+    expect_true("em_starts" %in% names(one13[[nm]]), info = nm)
+    expect_null(one13[[nm]]$em_starts, info = nm)
+  }
+
+  # spec test 9 -- maxit = 0 returns start 1's starting fit: the robust start on
+  # the prior-expected design rows, fitted on the complete-category rows
+  X13 <- as.matrix(s5$d[, cols13])
+  M13s <- is.na(X13)
+  cp13s <- VIM:::.gloc_cat_prepare(s5$d, c("f", "g"))
+  cand13s <- VIM:::.gloc_cat_candidates(cp13s, s5$d, ~ .)
+  cc13s <- rowSums(cp13s$Mc) == 0L
+  pri13s <- VIM:::.gloc_cat_fit_priors(cp13s$F[cc13s, , drop = FALSE], rep(1, sum(cc13s)),
+                                       cp13s$levels)
+  es13s <- VIM:::.gloc_cat_estep(X13, M13s, NULL, NULL, NULL, cp13s, cand13s, pri13s)
+  st13s <- VIM:::.gloc_start_robust(X13, es13s$Ubar, M13s, warn_design = FALSE,
+                                    patterns = cand13s$pats_rows, fit_rows = cc13s)
+  expect_identical(one13$maxit0$W, st13s$W)
+  expect_identical(one13$maxit0$B, st13s$B)
+  expect_identical(one13$maxit0$iterations, 0L)
+
+  # R60 item 1 -- when start 1's cellMCD refuses (here 55% of x3 is missing),
+  # the start flags by MAD and says so, and the fit runs from that start alone
+  d13h <- s5$d
+  set.seed(1313)
+  d13h$x3[sample(400, 220)] <- NA
+  w13h <- collect_warnings(f13h <- VIM::imputeCellGLoc(d13h))
+  expect_true(any(grepl("robust start: cellWise::cellMCD() failed", w13h, fixed = TRUE)))
+  expect_true("em_starts" %in% names(f13h))
+  expect_null(f13h$em_starts)
+
+  # R60 item 4 -- an error in the second start never becomes an error of the
+  # fit. A term that maps the NA level to NA, factor(f, levels = ...), leaves
+  # NA rows in the NA-level design, whose robust start then stops; the EM design
+  # has no NA level and fits. One warning, start 1's fit, the error recorded.
+  des13 <- ~ factor(f, levels = c("a", "b", "c")) + g
+  w13i <- collect_warnings(f13i <- VIM::imputeCellGLoc(s5$d, design = des13))
+  expect_equal(sum(grepl(paste0("^cellGLoc: the second start failed \\(.+\\); ",
+                                "returning the fit from the first start"), w13i)), 1L)
+  es13i <- f13i$em_starts
+  expect_identical(names(es13i),
+                   c("chosen", "objective", "converged", "iterations", "lambda", "error"))
+  expect_identical(es13i$chosen, "complete")
+  expect_true(is.na(es13i$objective[["na_level"]]) && is.na(es13i$converged[["na_level"]]) &&
+                is.na(es13i$iterations[["na_level"]]))
+  expect_true(is.character(es13i$error) && length(es13i$error) == 1L && nzchar(es13i$error))
+  expect_true(f13i$converged)
+  expect_equal(obj_of(f13i, s5$d), es13i$objective[["complete"]], tolerance = 1e-10)
+
+  # R60 item 3 -- only the returned run's warnings reach the caller. At maxit = 1
+  # neither run converges, so start 1 is returned, and exactly one
+  # non-convergence warning appears, carrying start 1's numbers.
+  s13w <- gen_cat(300, 7, miss_f = 0.2, miss_g = 0.2)
+  w13w <- collect_warnings(f13w <- VIM::imputeCellGLoc(s13w$d, maxit = 1))
+  expect_false(is.null(f13w$em_starts))
+  expect_identical(f13w$em_starts$chosen, "complete")
+  nc13 <- grep("did not converge", w13w, value = TRUE)
+  expect_equal(length(nc13), 1L)
+  expect_true(any(grepl(sprintf("scaled change in fitted means %s,",
+                                VIM:::.gloc_fmt(f13w$criterion[["means"]])), nc13, fixed = TRUE)))
+  # Two missing cells give the NA-level design a column of two rows, which the
+  # second start's robust fit reports as too thin; that warning appears exactly
+  # when the second start is the run returned.
+  s13k <- gen_cat(300, 41, miss_f = 0)
+  d13k <- s13k$d
+  d13k$f[c(7, 19)] <- NA
+  w13k <- collect_warnings(f13k <- VIM::imputeCellGLoc(d13k))
+  expect_false(is.null(f13k$em_starts))
+  expect_identical(any(grepl("robust start: too few observed rows", w13k, fixed = TRUE)),
+                   identical(f13k$em_starts$chosen, "na_level"))
+
+  # R60 item 2 -- an ordered factor with missing cells fits under two starts
+  w13o <- collect_warnings(f13o <- VIM::imputeCellGLoc(d13o))
+  expect_false(is.null(f13o$em_starts))
+  expect_false(any(grepl("second start failed", w13o, fixed = TRUE)))
+  expect_false(anyNA(f13o$imputed$f))
+  expect_true(is.ordered(f13o$imputed$f))
+}
+
+# spec test 9 -- two starts that end at clearly different fixed points (slow: two
+# fits of 200 rows, six continuous and six categorical variables). A compact
+# version of the pilot's hard cell: shifts of 6 in 20% of rows of the block
+# x1..x5 and of the lone, weakly correlated column x6, 20% of continuous cells
+# and 10% of every factor missing. The first start alone masks the contamination
+# here; the second does not. The objectives differ by far more than one fixed
+# point reached from different starts spreads (at most about 18 in the
+# investigation behind the rule), the fit returned is the run with the smaller
+# objective, and its scatter is the unmasked one (relative error below 0.6).
+if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
+  gen_hard <- function(seed, n = 200) {
+    set.seed(seed)
+    S <- matrix(0.1, 6, 6); S[1:5, 1:5] <- 0.7; diag(S) <- 1
+    X <- matrix(rnorm(n * 6), n) %*% chol(S)
+    colnames(X) <- paste0("x", 1:6)
+    f <- data.frame(f1 = sample(c("A", "B", "C"), n, TRUE, c(0.5, 0.3, 0.2)),
+                    f2 = sample(c("low", "med", "high"), n, TRUE),
+                    f3 = sample(c("yes", "no"), n, TRUE),
+                    f4 = sample(c("t1", "t2", "t3", "t4"), n, TRUE),
+                    f5 = sample(c("N", "S", "E", "W"), n, TRUE),
+                    f6 = sample(c("urban", "rural"), n, TRUE, c(0.6, 0.4)),
+                    stringsAsFactors = TRUE)
+    X[, 1] <- X[, 1] + 3 * (f$f1 == "A") - 3 * (f$f1 == "C")
+    X[, 2] <- X[, 2] + 2 * (f$f1 == "A") + 2.5 * (f$f2 == "high") - 2 * (f$f2 == "low")
+    X[, 3] <- X[, 3] + 3 * (f$f3 == "yes") + 2 * (f$f6 == "urban")
+    X[, 4] <- X[, 4] + 3 * (f$f2 == "high") + 2 * (f$f4 == "t1") - 2 * (f$f4 == "t4")
+    X[, 5] <- X[, 5] + 2 * (f$f5 == "N") - 2 * (f$f5 == "S")
+    X[, 6] <- X[, 6] + 3 * (f$f6 == "urban") + 1.5 * (f$f3 == "yes")
+    trig <- runif(n) < 0.2                          # the block x1..x5
+    C <- matrix(FALSE, n, 6)
+    C[, 1] <- trig | runif(n) < 0.06
+    C[, 2:5] <- (trig & matrix(runif(n * 4) < 0.5, n)) | matrix(runif(n * 4) < 0.06, n)
+    C[, 6] <- runif(n) < 0.2 | runif(n) < 0.06      # x6, a block of its own
+    X[C] <- X[C] + sample(c(-6, 6), sum(C), TRUE)
+    X[matrix(runif(n * 6) < 0.2, n)] <- NA
+    d <- data.frame(X, f)
+    for (v in names(f)) d[[v]][runif(n) < 0.1] <- NA
+    list(d = d, S = S)
+  }
+  g13 <- gen_hard(14)
+  f13g <- suppressWarnings(VIM::imputeCellGLoc(g13$d))
+  es13g <- f13g$em_starts
+  expect_true(length(es13g$converged) == 2L && isTRUE(all(es13g$converged)))
+  expect_true(abs(es13g$objective[["na_level"]] - es13g$objective[["complete"]]) > 100)
+  expect_identical(es13g$chosen, c("complete", "na_level")[which.min(es13g$objective)])
+  expect_identical(es13g$chosen, "na_level")
+  Xg <- as.matrix(g13$d[, paste0("x", 1:6)])
+  expect_equal(VIM:::.gloc_objective(Xg - f13g$U %*% f13g$B, f13g$W, is.na(Xg), f13g$Sigma,
+                                     es13g$lambda),
+               es13g$objective[["na_level"]], tolerance = 1e-10)
+  expect_identical(f13g$iterations, es13g$iterations[["na_level"]])
+  expect_true(norm(f13g$Sigma - g13$S, "F") / norm(g13$S, "F") < 0.6)
+}

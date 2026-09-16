@@ -3,7 +3,7 @@
 \docType{data}
 \name{.gloc_stall_iters}
 \alias{.gloc_stall_iters}
-\title{Iterations without an improvement in max |dW| that count as a stalled cycle}
+\title{Iterations without an improvement in max |dW| or in dR that count as a stalled cycle}
 \format{
 a length-one integer.
 }
@@ -14,7 +14,10 @@ a length-one integer.
 Two uses: it arms the cold-start fallback in \code{.gloc_damp_schedule},
 and it phrases the non-convergence warning, which must tell an exhausted
 iteration limit (raise \code{maxit}) apart from a limit cycle (raising
-\code{maxit} cannot help). A running best is compared rather than
+\code{maxit} cannot help). An iteration counts as progress when
+\code{max |dW|} improves or, under the categorical EM, when dR, the largest
+change of a categorical posterior, does; each has its own 1\\% rule. A
+running best is compared rather than
 consecutive values, so a cycle of any period is caught, not just period 2.
 The warning's two labels are a heuristic and should be read as such: a run
 contracting at a rate near 0.999 improves \code{max |dW|} by only 2\% over

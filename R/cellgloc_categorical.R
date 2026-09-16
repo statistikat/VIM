@@ -783,3 +783,100 @@
   attr(out, "dropped") <- length(cols) - length(common)
   out
 }
+
+#' Rows of the design of \code{categorical = "level"} at known categorical values
+#'
+#' The design on the data with a missing categorical value as a level of its own
+#' (\code{.gloc_design}), evaluated at the rows of \code{Fr}, whose categorical
+#' values are all known. The rows of \code{Fr} are appended to the data's own
+#' categorical columns before the design is built, so every variable keeps its
+#' levels, its missing-value level, its orderedness and its contrasts exactly as
+#' in the design on the data alone. The data's own rows must come out unchanged;
+#' otherwise (for example a design term whose levels depend on which rows are
+#' present) this stops.
+#' @param data the data frame of the fit.
+#' @param Fr data frame of the categorical columns without \code{NA}, such as the
+#'   pseudo-row table of \code{.gloc_cat_candidates}.
+#' @param design one-sided formula.
+#' @param cat_vars names of the categorical columns.
+#' @param U the design on \code{data}, if already built.
+#' @return an \code{nrow(Fr) x ncol(U)} matrix with the columns of \code{U}.
+#' @keywords internal
+.gloc_level_rows <- function(data, Fr, design, cat_vars,
+                             U = .gloc_design(data, design, cat_vars)) {
+  n <- nrow(data); m <- nrow(Fr)
+  cols <- lapply(stats::setNames(cat_vars, cat_vars), function(v) {
+    x <- data[[v]]
+    y <- as.character(Fr[[v]])
+    if (is.factor(x))
+      .gloc_keep_contrasts(factor(c(as.character(x), y), levels = levels(x),
+                                  ordered = is.ordered(x)), x)
+    else if (is.logical(x)) c(x, as.logical(y))
+    else c(as.character(x), y)
+  })
+  both <- structure(cols, class = "data.frame", row.names = seq_len(n + m))
+  Ub <- .gloc_design(both, design, cat_vars)
+  if (!identical(colnames(Ub), colnames(U)) ||
+      !isTRUE(all(Ub[seq_len(n), , drop = FALSE] == U)))
+    stop(paste(".gloc_level_rows(): the design at the appended rows does not reproduce",
+               "the design on the data."))
+  Ub[n + seq_len(m), , drop = FALSE]
+}
+
+#' Coefficients of the \code{categorical = "level"} start in the EM's design
+#'
+#' The categorical EM's second start is the robust start of
+#' \code{categorical = "level"}, whose design has a level for the missing value;
+#' the EM's design has none. Under treatment coding, the default for an unordered
+#' factor, that level adds its own columns, which are 0 on every row whose value
+#' is known, and leaves the others unchanged: the rows of \code{B} for those
+#' columns are dropped. That holds exactly when the design of \code{"level"},
+#' evaluated at the EM's pseudo-rows, equals the EM's pseudo-row design in the
+#' EM's columns and is 0 in the others, which is what is checked. Otherwise --
+#' an ordered factor, whose polynomial coding changes with the number of levels,
+#' or sum contrasts -- the start's fitted means are carried over: the coefficients
+#' are the least-squares fit of the EM's pseudo-row design to the fitted means
+#' the \code{"level"} start gives the same level combinations, with the
+#' coefficients of aliased columns at 0. Both routes give the pseudo-rows the
+#' start's fitted means, which is all the iteration uses of a start's
+#' coefficients; where both apply they agree up to rounding.
+#' @param B coefficients of the \code{"level"} design, one row per column of
+#'   \code{Ulv}.
+#' @param Ulv that design at the pseudo-rows (\code{.gloc_level_rows}).
+#' @param Up the EM's pseudo-row design.
+#' @param lsq \code{TRUE} takes the least-squares route even where the rows can
+#'   be dropped; for testing.
+#' @return a matrix with one row per column of \code{Up}.
+#' @keywords internal
+.gloc_level_B <- function(B, Ulv, Up, lsq = FALSE) {
+  nm <- colnames(Up)
+  if (!lsq && all(nm %in% colnames(Ulv)) &&
+      isTRUE(all(Ulv[, nm, drop = FALSE] == Up)) &&
+      isTRUE(all(Ulv[, setdiff(colnames(Ulv), nm), drop = FALSE] == 0)))
+    return(B[nm, , drop = FALSE])
+  Bm <- qr.coef(qr(Up), Ulv %*% B)
+  Bm[is.na(Bm)] <- 0
+  dimnames(Bm) <- list(nm, colnames(B))
+  Bm
+}
+
+#' The categorical EM's second start
+#'
+#' The robust start of \code{categorical = "level"}: a missing categorical value
+#' is a level of its own and every row is fitted (\code{.gloc_design_setup},
+#' \code{.gloc_start_robust} without \code{fit_rows}). Its flags are kept, and its
+#' coefficients are carried into the EM's design by \code{.gloc_level_B}. The
+#' level posteriors are left to the caller, which starts them from the priors
+#' alone, as for the first start.
+#' @param X,M the continuous data and their missing mask.
+#' @param data,design,cat_vars as in \code{imputeCellGLoc}.
+#' @param cand the EM's pseudo-row table, from \code{.gloc_cat_candidates}.
+#' @return \code{list(W, B)}.
+#' @keywords internal
+.gloc_na_level_start <- function(X, M, data, design, cat_vars, cand) {
+  ds <- .gloc_design_setup(data, design, cat_vars)
+  st <- .gloc_start_robust(X, ds$U, M, warn_design = FALSE, U_main = ds$U_main,
+                           patterns = ds$patterns)
+  Ulv <- .gloc_level_rows(data, cand$Fp, design, cat_vars, U = ds$U)
+  list(W = st$W, B = .gloc_level_B(st$B, Ulv, cand$Up))
+}

@@ -32,9 +32,11 @@ imputeCellGLoc(
 \code{"binary"} for the penalised cellwise MCD objective.}
 
 \item{maxit}{maximum number of outer iterations. \code{0} returns the
-starting fit. The default is 200 rather than 50 because the relaxed
-iteration needed up to 51 steps across the sweep in \code{.gloc_damp};
-converged fits leave the loop early, so the cap costs nothing. Failing to
+starting fit; under the categorical EM that is the first start's, and the
+second start (see \code{categorical}) does not run. The default is 200
+rather than 50 because the relaxed iteration needed up to 51 steps across
+the sweep in \code{.gloc_damp}; converged fits leave the loop early, so the
+cap costs nothing. Failing to
 converge within \code{maxit} warns, and the warning says whether the
 limit was merely exhausted or the iteration is cycling. Note that
 \code{maxit} changes the \emph{trajectory} and not only the stopping
@@ -136,7 +138,9 @@ observed cell at weight 1 and the mean structure by least squares. A
 redescending weight function started from a non-robust fit can settle on
 a masked solution, which is why the default changed. Ignored for
 \code{weights = "binary"}, whose first step already calls
-\code{cellWise::cellMCD}.
+\code{cellWise::cellMCD}. Under \code{categorical = "em"} with a missing
+categorical cell, \code{"robust"} runs the fit from two starts and keeps
+the better fixed point; see \code{categorical}.
 
 \code{start} selects the fixed point, not only the path to it: the
 iteration can have several fixed points, and the starting values choose
@@ -188,6 +192,40 @@ stays \code{NA} in \code{imputed}. Without a missing categorical cell the two
 give the same \code{B}, \code{Sigma}, \code{W}, \code{imputed} and
 \code{criterion}, bit for bit.
 
+\strong{Two starts.} Under \code{"em"}, when a categorical cell is missing,
+\code{weights = "soft"}, \code{start = "robust"}, the design has a
+categorical term and \code{maxit >= 1}, the fit runs through the same
+iteration from two starts and returns one of the two fixed points. The first
+start is the robust start on the expected design rows, fitted on the rows
+whose categorical cells are all observed. The second is the robust start of
+\code{"level"}, fitted on every row with the missing value as a level, with
+that level's coefficients dropped; where the extra level changes the coding
+of the others, as with an ordered factor's polynomial contrasts, its fitted
+means are carried over by least squares instead. Both begin with the
+posteriors at the priors. The first start sees fewer rows, and in a heavily
+contaminated column it can miss part of the contamination, which the
+iteration then keeps masked. In the investigation behind this rule (20\\% of
+cells contaminated with a shift of 6, n = 200, six continuous and six
+categorical variables), the fit ended at the good fixed point in 37 of 40
+datasets with both starts against 30 of 40 with the first alone.
+
+The second start's fixed point is returned only if that run converged and
+the first did not, or both converged and the second has the smaller
+binary-corner objective: minus twice the Gaussian log-likelihood of the
+retained residual cells \eqn{x_{ij} - (B' \bar u_i)_j} (weight at least 1/2),
+plus \eqn{\lambda_j = \chi^2_{1;0.99} + \log 2\pi + \log c_j} for each flagged
+cell, where \eqn{c_j = 1 / (S^{-1})_{jj}} and \eqn{S} is the scatter of the
+first start's \code{cellWise::cellMCD} call, the same for both runs. Ties,
+and two runs that did not converge, keep the first start. The objective tells
+a masked fixed point from an unmasked one, not two nearly equivalent ones.
+The choice is discontinuous in the data, as for a multi-start MCD: a small
+change in the data can switch the fixed point returned. Such a fit takes
+about twice as long. If the first start's \code{cellMCD} call fails, only the
+first start runs. An error in the second start does not stop the fit: it
+warns and returns the first start's fit. The warnings, \code{iterations},
+\code{converged} and \code{criterion} are those of the run returned;
+\code{em_starts} reports both runs.
+
 \code{"em"} needs \pkg{cellWise} once a categorical cell is missing: the
 scatter is then taken over the pseudo-rows, whose cell weights carry each
 level's posterior, and only \code{cellWise::cwLocScat} turns those into a
@@ -202,8 +240,8 @@ cell, where the estimation itself needs no priors at all.}
 \value{
 a list with \code{B}, \code{Sigma}, \code{W}, \code{U},
 \code{imputed}, \code{converged}, \code{iterations}, \code{criterion},
-\code{cat_posterior}, \code{cat_prob_observed}, \code{cat_multi_missing}
-and \code{cat_priors}.
+\code{cat_posterior}, \code{cat_prob_observed}, \code{cat_multi_missing},
+\code{cat_priors} and \code{em_starts}.
 
 Under \code{categorical = "em"}, \code{U} holds each row's expected design
 row, so \code{U \%*\% B} are the fitted means. \code{cat_posterior} is a
@@ -224,6 +262,15 @@ so that level posteriors for other rows can be computed under this fit (for
 example in bootstrap multiple imputation). All four are \code{NULL} under
 \code{categorical = "level"}, and under \code{"em"} when the data have no
 categorical column.
+
+\code{em_starts} is \code{NULL} unless the fit ran from two starts (see
+\code{categorical}). Then it is a list: \code{chosen}, \code{"complete"} for
+the first start or \code{"na_level"} for the second; \code{objective},
+\code{converged} and \code{iterations}, each a vector named \code{complete}
+and \code{na_level}; and \code{lambda}, the penalty per continuous variable
+in the objective. When the second start failed, its three entries are
+\code{NA} and \code{error} holds its error message. \code{iterations},
+\code{converged} and \code{criterion} of the fit are those of the chosen run.
 
 \code{criterion} is the named vector \code{(means, scatter, weights,
   scatter_spread, categorical)}: the three stopping residuals as of the last

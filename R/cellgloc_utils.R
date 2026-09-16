@@ -110,6 +110,30 @@
                            error = function(e) NULL))
 }
 
+#' The design a fit with a missing categorical value as a level works on
+#'
+#' The design (\code{.gloc_design}), its main-effects version and its level
+#' combinations (\code{.gloc_design_aux}), with a combination table dropped when
+#' its columns do not match. \code{imputeCellGLoc} uses it whenever no
+#' categorical EM runs, and for the EM's second start, which is the robust start
+#' of \code{categorical = "level"}; one function keeps the two identical.
+#' @inheritParams .gloc_design
+#' @return \code{list(U, U_main, patterns)}; \code{U_main} is \code{U} for a
+#'   design without interaction terms, and \code{patterns} may be \code{NULL}.
+#' @keywords internal
+.gloc_design_setup <- function(data, design, cat_vars) {
+  U <- .gloc_design(data, design, cat_vars)
+  # The main-effects design and the level combinations, used only for
+  # combinations that the rows a variable is fitted from do not identify.
+  aux <- .gloc_design_aux(data, design, cat_vars)
+  U_main <- if (is.null(aux$U_main)) U else aux$U_main
+  pats <- aux$patterns
+  if (!is.null(pats) && !identical(colnames(pats$P), colnames(U))) pats <- NULL
+  if (!is.null(pats$P_main) && !identical(colnames(pats$P_main), colnames(U_main)))
+    pats$P_main <- NULL
+  list(U = U, U_main = U_main, patterns = pats)
+}
+
 #' Largest number of level combinations enumerated in full
 #'
 #' Up to this many, \code{.gloc_design_aux} enumerates every combination of the
@@ -997,8 +1021,11 @@
 #'   use only these rows, while the residuals flagged afterwards cover every
 #'   row. \code{imputeCellGLoc} passes the rows without a missing categorical
 #'   cell when \code{categorical = "em"}.
-#' @return a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
-#'   0 on missing cells).
+#' @return a list with \code{B} (\eqn{q x p}), \code{W} (\eqn{n x p}, 0 or 1,
+#'   0 on missing cells) and \code{S}, the scatter \code{cellWise::cellMCD}
+#'   returned for the residuals (\eqn{p x p}), or \code{NULL} when the flags did
+#'   not come from \code{cellMCD}. The categorical EM takes the penalty of its
+#'   two-start selection from \code{S}; see \code{.gloc_lambda}.
 #' @keywords internal
 .gloc_start_robust <- function(X, U, M, alpha = .gloc_start_alpha,
                                have_cw = requireNamespace("cellWise",
@@ -1170,7 +1197,7 @@
 
   R <- X - U %*% B
   R[M | !is.finite(X)] <- NA_real_
-  W <- NULL
+  W <- S <- NULL
   if (have_cw) {
     cm_err <- NULL
     # cellMCD stops with "mean(): object has no elements" when any row has no
@@ -1194,6 +1221,7 @@
     } else {
       W <- matrix(1, n, p)
       W[has_obs, ] <- as.numeric(cm$W)
+      S <- cm$S
     }
   } else {
     warning(paste("cellGLoc: robust start: the cellWise package is not",
@@ -1211,5 +1239,73 @@
   }
   W[M | !is.finite(X)] <- 0
   dimnames(W) <- dimnames(X)
-  list(B = B, W = W)
+  list(B = B, W = W, S = S)
+}
+
+#' Binary-corner objective of a fit, for choosing between two starts
+#'
+#' The objective of the binary corner evaluated at a fit: minus twice the
+#' Gaussian log-likelihood of the retained residual cells of each row under
+#' \code{Sigma}, plus \code{lambda[j]} for every flagged observed cell of column
+#' \code{j}. A cell is retained when it is observed and its weight is at least
+#' 1/2, so soft weights are dichotomised there, and a row that retains no cell
+#' adds only its penalty. This is the objective \code{cellWise::cellMCD()}
+#' minimises, with the fitted means \eqn{B' \bar u_i} in place of cellMCD's free
+#' centre. cellMCD's penalty also counts missing cells; for two fits of the same
+#' data under the same \code{lambda} that part is one constant, so leaving it
+#' out changes no comparison.
+#'
+#' \code{imputeCellGLoc(categorical = "em")} uses it to choose between the fixed
+#' points reached from its two starts. It tells a masked fixed point from an
+#' unmasked one; it cannot rank two nearly equivalent ones, and it is not a
+#' quantity the soft iteration descends.
+#'
+#' @param R \eqn{n x p} residuals, \code{NA} on missing cells.
+#' @param W \eqn{n x p} cell weights.
+#' @param M \eqn{n x p} logical mask of missing cells.
+#' @param Sigma \eqn{p x p} scatter.
+#' @param lambda length-\eqn{p} penalty per flagged cell; see \code{.gloc_lambda}.
+#' @return a number, \code{Inf} when \code{Sigma} is not positive definite on
+#'   the retained cells of some row.
+#' @keywords internal
+.gloc_objective <- function(R, W, M, Sigma, lambda) {
+  keep <- !M & is.finite(W) & W >= 0.5
+  pen <- sum(lambda * colSums(!M & !keep))
+  key <- apply(keep, 1L, function(r) paste0(as.integer(r), collapse = ""))
+  m2ll <- 0
+  for (g in split(seq_len(nrow(R)), key)) {
+    obs <- which(keep[g[1L], ])
+    if (!length(obs)) next
+    L <- tryCatch(chol(Sigma[obs, obs, drop = FALSE]), error = function(e) NULL)
+    if (is.null(L)) return(Inf)
+    Z <- backsolve(L, t(R[g, obs, drop = FALSE]), transpose = TRUE)
+    m2ll <- m2ll + sum(Z^2) +
+      length(g) * (2 * sum(log(diag(L))) + length(obs) * log(2 * pi))
+  }
+  m2ll + pen
+}
+
+#' Penalty per flagged cell of the binary-corner objective
+#'
+#' \eqn{\lambda_j = \chi^2_{1;0.99} + \log 2\pi + \log c_j} with
+#' \eqn{c_j = 1 / (S^{-1})_{jj}}, the variance of column \eqn{j} given the
+#' others: flagging a cell costs what keeping it at the 99\% cut-off would.
+#' \code{cellWise::cellMCD()} takes \eqn{c_j} from its initial estimate, a
+#' function \pkg{cellWise} does not export. The two-start selection of
+#' \code{imputeCellGLoc(categorical = "em")} takes \eqn{S} from the first
+#' start's own \code{cellMCD} call (\code{.gloc_start_robust}) and holds it
+#' fixed for both candidates.
+#'
+#' @param S a \eqn{p x p} scatter, or \code{NULL}.
+#' @return a length-\eqn{p} vector, named when \code{S} has dimnames, or
+#'   \code{NULL} when \code{S} is \code{NULL} or singular, or gives a non-finite
+#'   value.
+#' @keywords internal
+.gloc_lambda <- function(S) {
+  if (is.null(S)) return(NULL)
+  Si <- tryCatch(solve(S), error = function(e) NULL)
+  if (is.null(Si)) return(NULL)
+  lam <- stats::qchisq(0.99, df = 1) + log(2 * pi) + log(1 / diag(Si))
+  if (!all(is.finite(lam))) return(NULL)
+  lam
 }

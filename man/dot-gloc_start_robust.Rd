@@ -51,8 +51,11 @@ row. \code{imputeCellGLoc} passes the rows without a missing categorical
 cell when \code{categorical = "em"}.}
 }
 \value{
-a list with \code{B} (\eqn{q x p}) and \code{W} (\eqn{n x p}, 0 or 1,
-0 on missing cells).
+a list with \code{B} (\eqn{q x p}), \code{W} (\eqn{n x p}, 0 or 1,
+0 on missing cells) and \code{S}, the scatter \code{cellWise::cellMCD}
+returned for the residuals (\eqn{p x p}), or \code{NULL} when the flags did
+not come from \code{cellMCD}. The categorical EM takes the penalty of its
+two-start selection from \code{S}; see \code{.gloc_lambda}.
 }
 \description{
 Until 7.4.0 the soft corner started from a classical fit: every observed
