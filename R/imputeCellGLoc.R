@@ -178,14 +178,18 @@
 #'   fit is an EM-type algorithm for a pseudo-likelihood, because conditional
 #'   models define no joint distribution, and no monotonicity is claimed. A row
 #'   missing several categorical cells is handled by mean-field sweeps, an
-#'   approximation; \code{cat_multi_missing} reports how many rows it touched.
-#'   In the binary corner \code{Sigma} comes from \code{cellWise::cellMCD} on one
-#'   residual row per observation, so the level uncertainty enters \code{B} but
-#'   not \code{Sigma}. Observed categorical cells are trusted; see
-#'   \code{cat_prob_observed}. \code{"level"} keeps the 7.4.x behaviour: a
-#'   missing categorical value becomes an extra level of the design and stays
-#'   \code{NA} in \code{imputed}. Without a missing categorical cell the two
-#'   give the same \code{B}, \code{Sigma} and \code{W}, bit for bit.
+#'   approximation; \code{cat_multi_missing} is the share of rows with two or more
+#'   missing categorical cells, and a row with more level combinations than the cap
+#'   takes the most frequent level instead of being swept, with a warning. In the
+#'   binary corner \code{Sigma} comes from \code{cellWise::cellMCD} on one residual
+#'   row per observation, so the level uncertainty enters \code{B} but not
+#'   \code{Sigma}; with \code{maxit = 0} no iteration runs, and \code{Sigma} then
+#'   comes from the weighted pseudo-rows in both corners. Observed categorical cells
+#'   are trusted; see \code{cat_prob_observed}. \code{"level"} keeps the 7.4.x
+#'   behaviour: a missing categorical value becomes an extra level of the design and
+#'   stays \code{NA} in \code{imputed}. Without a missing categorical cell the two
+#'   give the same \code{B}, \code{Sigma}, \code{W}, \code{imputed} and
+#'   \code{criterion}, bit for bit.
 #' @param peer_w_min a cell is conditioned on only when its weight exceeds
 #'   this, so that a downweighted peer is treated as absent rather than as
 #'   evidence. The threshold is applied over a narrow band rather than at a
@@ -238,30 +242,31 @@
 #'   levels, its entries posterior probabilities. \code{imputed} holds the
 #'   posterior mode (ties: the first level). For multiple imputation, draw the
 #'   level from these probabilities first and the continuous cells given it.
-#'   \code{cat_prob_observed} is an \eqn{n x k} matrix: for every observed
-#'   categorical cell, the posterior probability of its own level computed as
-#'   if the cell were missing, without a refit. A small value points at a
-#'   miscoded cell; the estimation does not use it. \code{cat_multi_missing} is
-#'   the share of rows with two or more missing categorical cells.
-#'   \code{cat_priors} holds the final multinomial prior models, so that level
-#'   posteriors for other rows can be computed under this fit (for example in
-#'   bootstrap multiple imputation). All four are
-#'   \code{NULL} under \code{categorical = "level"}.
+#'   \code{cat_prob_observed} is an \eqn{n x k} matrix, \code{NA} where the cell is
+#'   missing: for every observed categorical cell, the posterior probability of its
+#'   own level computed as if the cell were missing, without a refit. A small value
+#'   points at a miscoded cell; the estimation does not use it.
+#'   \code{cat_multi_missing} is the share of rows with two or more missing
+#'   categorical cells. \code{cat_priors} holds the final multinomial prior models,
+#'   so that level posteriors for other rows can be computed under this fit (for
+#'   example in bootstrap multiple imputation). All four are \code{NULL} under
+#'   \code{categorical = "level"}, and under \code{"em"} when the data have no
+#'   categorical column.
 #'
 #'   \code{criterion} is the named vector \code{(means, scatter, weights,
-#'   scatter_spread)}: the three stopping residuals as of the last iteration,
-#'   compared against \code{eps}, plus the elementwise spread of \eqn{\Sigma}
-#'   over the last \code{.gloc_stall_iters} iterations relative to its largest
-#'   variance. \code{scatter_spread} is reported only when \code{converged} is
-#'   \code{FALSE}, and is \code{NA} otherwise: on a converged fit the window
-#'   still holds the last steps of the approach, so a value there would say
-#'   nothing about stability. When the fit did not converge it says how much
-#'   the returned scatter depends on where \code{maxit} happened to stop -- a
-#'   settled cycle reports its amplitude, a run still drifting reports the
-#'   drift -- and a caller can test it instead of parsing a warning string.
-#'   The fifth entry, \code{categorical}, is the largest change of a categorical
-#'   posterior probability in the last iteration; it is 0 without the EM,
-#'   \code{NA} when no iteration ran, and part of the stopping rule with the EM.
+#'   scatter_spread, categorical)}: the three stopping residuals as of the last
+#'   iteration, compared against \code{eps}, plus the elementwise spread of
+#'   \eqn{\Sigma} over the last \code{.gloc_stall_iters} iterations relative to its
+#'   largest variance. \code{scatter_spread} is reported only when \code{converged}
+#'   is \code{FALSE}, and is \code{NA} otherwise: on a converged fit the window
+#'   still holds the last steps of the approach, so a value there would say nothing
+#'   about stability. When the fit did not converge it says how much the returned
+#'   scatter depends on where \code{maxit} happened to stop -- a settled cycle
+#'   reports its amplitude, a run still drifting reports the drift -- and a caller
+#'   can test it instead of parsing a warning string. The fifth entry,
+#'   \code{categorical}, is the largest change of a categorical posterior
+#'   probability in the last iteration; it is 0 without the EM, \code{NA} when no
+#'   iteration ran, and part of the stopping rule with the EM.
 #'
 #'   It does not tell those two apart, and it is not an error estimate. On 10
 #'   non-converged \code{weights = "binary"} fits it was positive for all 10,

@@ -9,13 +9,13 @@
   prior with the density of the row's unflagged continuous cells, so a contaminated cell does not
   steer the level. Missing categorical cells are now imputed (posterior mode); until 7.4.1 they
   stayed `NA`, and in the fit they formed an extra design level that pooled rows of different
-  groups. The fit is an EM-type algorithm for a pseudo-likelihood. Rows missing several
-  categorical cells use mean-field sweeps, an approximation, reported in `cat_multi_missing`.
+  groups. The fit is an EM-type algorithm for a pseudo-likelihood. Rows missing several categorical
+  cells use mean-field sweeps, an approximation; `cat_multi_missing` is the share of rows with two
+  or more missing categorical cells.
 - **New return values.** `cat_posterior` (per variable, the posterior probabilities of the missing
   cells) and `cat_prob_observed` (for each observed categorical cell, the probability of its own
-  level as if it were missing; a small value points at a miscoded cell), and `cat_priors` (the fitted
-  prior models). `U` now holds the
-  expected design rows under `"em"`.
+  level as if it were missing; a small value points at a miscoded cell), and `cat_priors` (the
+  fitted prior models). `U` now holds the expected design rows under `"em"`.
 - **`$criterion` gains a fifth entry, `categorical`**, the largest change of a posterior probability
   in the last iteration; it enters the stopping rule, and the non-convergence warning names it. The
   first four entries are unchanged.
