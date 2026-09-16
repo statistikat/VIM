@@ -545,3 +545,68 @@
   }
   out
 }
+
+#' A square root of a positive semi-definite matrix
+#' @param C symmetric positive semi-definite matrix.
+#' @return \code{R} with \code{t(R) \%*\% R} equal to \code{C}.
+#' @keywords internal
+.gloc_chol_psd <- function(C) {
+  tryCatch(chol(C), error = function(e) {
+    ev <- eigen((C + t(C)) / 2, symmetric = TRUE)
+    t(ev$vectors %*% diag(sqrt(pmax(ev$values, 0)), length(ev$values)))
+  })
+}
+
+#' One multiple-imputation draw from a cellGLoc fit
+#'
+#' Draws each missing categorical level from \code{fit$cat_posterior} (several
+#' missing cells of one row independently from their marginals, an
+#' approximation), builds the design rows for the drawn levels, and draws the
+#' missing continuous cells from their conditional normal given those levels
+#' and the unflagged peers (\code{.gloc_impute} with \code{cov = TRUE}). The
+#' draws use the caller's random-number stream. \code{noise = FALSE} returns
+#' the fit's own \code{imputed}: posterior modes and conditional expectations
+#' under the expected design rows.
+#' @param fit an \code{imputeCellGLoc} result.
+#' @param data the data it was fitted on.
+#' @param design,peer_w_min,peer_band the values used for the fit.
+#' @param noise draw (\code{TRUE}) or return the point imputation.
+#' @return an imputed copy of \code{data}.
+#' @keywords internal
+.gloc_draw_mi <- function(fit, data, design = ~ ., peer_w_min = 0.5,
+                          peer_band = .gloc_peer_band, noise = TRUE) {
+  sv <- .gloc_split_vars(data)
+  X <- as.matrix(data[, sv$cont, drop = FALSE]); storage.mode(X) <- "double"
+  X[!is.finite(X)] <- NA_real_
+  M <- is.na(X)
+  out <- data
+  Ud <- fit$U
+  post <- fit$cat_posterior
+  if (length(post)) {
+    catp <- .gloc_cat_prepare(data, sv$cat)
+    Fd <- catp$F
+    for (v in names(post)) {
+      P <- post[[v]]
+      rows <- as.integer(rownames(P))
+      k <- if (noise)
+        pmin(1L + rowSums(stats::runif(nrow(P)) > t(apply(P, 1L, cumsum))), ncol(P))
+      else max.col(P, ties.method = "first")
+      Fd[[v]][rows] <- colnames(P)[k]
+      out[[v]] <- .gloc_cat_restore(Fd[[v]], data[[v]])
+    }
+    if (noise) Ud <- .gloc_design_rows(Fd, design, catp$levels)
+    if (noise && !identical(colnames(Ud), rownames(fit$B)))
+      stop(paste(".gloc_draw_mi(): the design columns of the drawn levels do not match",
+                 "fit$B; pass the design the fit used."))
+  }
+  imp <- .gloc_impute(X, Ud, fit$B, fit$Sigma, M, W = fit$W, w_min = peer_w_min,
+                      band = peer_band, cov = noise)
+  Xi <- if (noise) imp$X else imp
+  if (noise) for (nm in names(imp$cond_cov)) {
+    i <- as.integer(nm); miss <- which(M[i, ])
+    Xi[i, miss] <- Xi[i, miss] +
+      drop(stats::rnorm(length(miss)) %*% .gloc_chol_psd(imp$cond_cov[[nm]]))
+  }
+  for (v in sv$cont) out[[v]] <- .gloc_restore_class(Xi[, v], data[[v]], v)
+  out
+}

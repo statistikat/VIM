@@ -448,3 +448,30 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_false(anyNA(fit6o$imputed$f))
   expect_false(anyNA(fit6o$cat_prob_observed[!is.na(d6o$f), "f"]))
 }
+
+# ==========================================================================
+# Task 7: one MI draw
+# ==========================================================================
+Cp <- matrix(c(1, 1, 1, 1), 2)                       # singular
+Rp <- VIM:::.gloc_chol_psd(Cp)
+expect_equal(crossprod(Rp), Cp, tolerance = 1e-12)
+
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  s8 <- gen_cat(200, 8, miss_f = 0.2)
+  r3 <- which(!is.na(s8$d$f))[1:3]
+  s8$d$x3[r3] <- NA
+  fit8 <- suppressWarnings(VIM::imputeCellGLoc(s8$d))
+  expect_identical(VIM:::.gloc_draw_mi(fit8, s8$d, noise = FALSE), fit8$imputed)
+  expect_error(VIM:::.gloc_draw_mi(fit8, s8$d, design = ~ f), "do not match")
+  if (at_home()) {
+    set.seed(808)
+    draws <- lapply(1:300, function(i) VIM:::.gloc_draw_mi(fit8, s8$d))
+    rf8 <- rownames(fit8$cat_posterior$f)[1]
+    freq <- table(factor(vapply(draws, function(z) as.character(z$f[as.integer(rf8)]), ""),
+                         levels = levels(s8$d$f))) / 300
+    expect_true(max(abs(as.vector(freq) - fit8$cat_posterior$f[rf8, ])) < 0.1)
+    x3d <- vapply(draws, function(z) z$x3[r3[1]], 0)
+    expect_true(abs(mean(x3d) - fit8$imputed$x3[r3[1]]) < 4 * sd(x3d) / sqrt(300))
+    expect_true(sd(x3d) > 0)
+  }
+}
