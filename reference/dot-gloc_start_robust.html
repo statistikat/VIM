@@ -29,7 +29,7 @@ MM estimator.)"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/l
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.1</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.0</span>
       </span>
     </div>
 
@@ -129,7 +129,8 @@ MM estimator.)</p>
 <span>  control <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  warn_design <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  U_main <span class="op">=</span> <span class="va">U</span>,</span>
-<span>  patterns <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  patterns <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fit_rows <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -181,11 +182,21 @@ without interaction terms.</p></dd>
 <dt id="arg-patterns">patterns<a class="anchor" aria-label="anchor" href="#arg-patterns"></a></dt>
 <dd><p>the level combinations; see <code>.gloc_update_B</code>.</p></dd>
 
+
+<dt id="arg-fit-rows">fit_rows<a class="anchor" aria-label="anchor" href="#arg-fit-rows"></a></dt>
+<dd><p>optional logical vector over the rows: the per-column fits
+use only these rows, while the residuals flagged afterwards cover every
+row. <code>imputeCellGLoc</code> passes the rows without a missing categorical
+cell when <code>categorical = "em"</code>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>a list with <code>B</code> (\(q x p\)) and <code>W</code> (\(n x p\), 0 or 1,
-0 on missing cells).</p>
+    <p>a list with <code>B</code> (\(q x p\)), <code>W</code> (\(n x p\), 0 or 1,
+0 on missing cells) and <code>S</code>, the scatter <code><a href="https://rdrr.io/pkg/cellWise/man/cellMCD.html" class="external-link">cellWise::cellMCD</a></code>
+returned for the residuals (\(p x p\)), or <code>NULL</code> when the flags did
+not come from <code>cellMCD</code>. The categorical EM takes the penalty of its
+two-start selection from <code>S</code>; see <code>.gloc_lambda</code>.</p>
     </div>
     <div id="details">
     <h2>Details</h2>

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.1</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.0</span>
       </span>
     </div>
 
@@ -90,6 +90,24 @@
       <small>Source: <a href="https://github.com/statistikat/VIM/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="7.5.0" id="vim-750">VIM 7.5.0<a class="anchor" aria-label="anchor" href="#vim-750"></a></h2>
+<div class="section level3">
+<h3 id="changes-7-5-0">Changes<a class="anchor" aria-label="anchor" href="#changes-7-5-0"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/imputeCellGLoc.html">imputeCellGLoc()</a></code> imputes missing categorical cells under its own model</strong> (new argument <code>categorical = c("em", "level")</code>, default <code>"em"</code>, placed after <code>start</code> so positional calls keep working). Each categorical variable gets a multinomial logistic regression on the other categorical variables. A row with a missing categorical cell enters the estimation once per candidate level, weighted by the level’s posterior probability, and the posterior combines that prior with the density of the row’s unflagged continuous cells, so a contaminated cell does not steer the level. Missing categorical cells are now imputed (posterior mode); until 7.4.1 they stayed <code>NA</code>, and in the fit they formed an extra design level that pooled rows of different groups. The fit is an EM-type algorithm for a pseudo-likelihood. Rows missing several categorical cells use mean-field sweeps, an approximation; <code>cat_multi_missing</code> is the share of rows with two or more missing categorical cells.</li>
+<li>
+<strong>New return values.</strong> <code>cat_posterior</code> (per variable, the posterior probabilities of the missing cells) and <code>cat_prob_observed</code> (for each observed categorical cell, the probability of its own level as if it were missing; a small value points at a miscoded cell), and <code>cat_priors</code> (the fitted prior models). <code>U</code> now holds the expected design rows under <code>"em"</code>.</li>
+<li>
+<strong><code>$criterion</code> gains a fifth entry, <code>categorical</code></strong>, the largest change of a posterior probability in the last iteration; it enters the stopping rule, and the non-convergence warning names it. The first four entries are unchanged.</li>
+<li>
+<strong><code>categorical = "em"</code> needs <code>cellWise</code> once a categorical cell is missing.</strong> The scatter is then taken over pseudo-rows whose cell weights carry each level’s posterior probability, and only <code><a href="https://rdrr.io/pkg/cellWise/man/cwLocScat.html" class="external-link">cellWise::cwLocScat()</a></code> turns such weights into a case weight linearly. The weighted pairwise fallback would square them – a row split evenly over two levels contributing 0.25 + 0.25 against a complete row’s 1 – so under <code>"em"</code> that fallback is refused with an error naming <code>cellWise</code> and <code>categorical = "level"</code> instead of being taken silently.</li>
+<li>
+<strong><code>categorical = "level"</code> reproduces 7.4.1</strong>, and without a missing categorical cell <code>"em"</code> gives the same <code>B</code>, <code>Sigma</code>, <code>W</code> and <code>imputed</code> as <code>"level"</code>, bit for bit.</li>
+<li>
+<strong>Two starts under <code>categorical = "em"</code>.</strong> When a categorical cell is missing (soft corner, robust start, a design with a categorical term), the fit runs from the robust start on the rows whose categories are all known and from the robust start of <code>categorical = "level"</code>, and returns the fixed point with the smaller binary-corner objective: minus twice the Gaussian log-likelihood of the retained residual cells plus a cellMCD-type penalty per flagged cell, with the penalty taken from the first start’s <code>cellMCD</code> scatter. A converged run beats a non-converged one; ties, and two runs that did not converge, keep the first start. The first start sees fewer rows and can miss part of the contamination in a heavily contaminated column, which then stays masked: with block contamination at eps = 0.20 and a shift of 6 (n = 200), the fit ended at the good fixed point in 37 of 40 datasets with both starts against 30 of 40 with the first alone. The choice is discontinuous in the data, and such a fit takes about twice as long. The new return value <code>em_starts</code> reports both runs; the warnings, <code>iterations</code>, <code>converged</code> and <code>criterion</code> are those of the run returned, and the warnings of a returned second start read <code>"cellGLoc: (second start) ..."</code>. If the first start’s <code>cellMCD</code> call fails, or its scatter gives no valid penalty, only the first start runs. An error in the second start warns and returns the first start’s fit. <code>"level"</code>, the binary corner, <code>maxit = 0</code> and every fit without a missing categorical cell keep a single start and are unchanged.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="7.4.1" id="vim-741">VIM 7.4.1<a class="anchor" aria-label="anchor" href="#vim-741"></a></h2>
 <div class="section level3">

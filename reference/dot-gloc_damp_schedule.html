@@ -20,7 +20,7 @@ between iterations, so the factor can be adapted freely."><!-- mathjax --><scrip
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.1</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.0</span>
       </span>
     </div>
 
@@ -188,7 +188,8 @@ stopping point depend on the relaxation factor. That is fixed (see
 <code>eps</code>), and the fallback is retained for the path effect described
 above, which is about which cycle is entered, not about which fixed point is
 selected. When the
-factor is at the floor and <code>max |dW|</code> has not improved for
+factor is at the floor and neither <code>max |dW|</code> nor, under the
+categorical EM, the largest posterior change has improved for
 <code>.gloc_stall_iters</code> iterations, the iteration therefore falls back once
 to the cold start at the floor, which is precisely the fixed-<code>.gloc_damp</code>
 run.</p>

@@ -20,7 +20,7 @@ the cell weights, and it is never taken silently."><!-- mathjax --><script src="
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.4.1</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.0</span>
       </span>
     </div>
 
@@ -108,7 +108,8 @@ the cell weights, and it is never taken silently.</p>
 <span>  <span class="va">M</span>,</span>
 <span>  kappa <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  crit <span class="op">=</span> <span class="fl">1e-08</span>,</span>
-<span>  have_cw <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"cellWise"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span>  have_cw <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"cellWise"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  em <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -155,10 +156,26 @@ and cut the scatter step's time by about 30%.</p></dd>
 <dd><p>whether <span class="pkg">cellWise</span> may be used; exposed so the fallback
 path is directly testable.</p></dd>
 
+
+<dt id="arg-em">em<a class="anchor" aria-label="anchor" href="#arg-em"></a></dt>
+<dd><p>whether the rows are the categorical EM's pseudo-rows, whose cell
+weights carry a level's posterior probability. <code>TRUE</code> stops instead of
+falling back; see the note above.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
     <p>a \(p x p\) scatter matrix.</p>
+    </div>
+    <div id="details">
+    <h2>Details</h2>
+    <p>The fallback is refused under <code>em = TRUE</code>. <code>cwLocScat</code> turns a
+row's cell weights into a case weight linearly, which is what lets the
+categorical EM weight a pseudo-row by its level's posterior probability; the
+fallback forms pairwise weights \(w_{ij} w_{ik}\) instead, so scaling a row
+by \(r\) scales its contribution by \(r^2\) and a row split evenly over
+two levels would count 0.25 + 0.25 against a complete row's 1. That is a
+silent statistical error rather than a cruder estimator, so this stops.</p>
     </div>
 
   </div>
