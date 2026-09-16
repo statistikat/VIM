@@ -475,3 +475,30 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
     expect_true(sd(x3d) > 0)
   }
 }
+
+# ==========================================================================
+# Task 7b: posteriors for other rows under a given fit
+# ==========================================================================
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  s9 <- gen_cat(200, 9, miss_f = 0.2)
+  fit9 <- suppressWarnings(VIM::imputeCellGLoc(s9$d))
+  fo9 <- VIM:::.gloc_cat_posterior_for(fit9, s9$d, W = fit9$W)
+  expect_equal(fo9$cat_posterior, fit9$cat_posterior, tolerance = 1e-10)
+  expect_equal(unname(fo9$U), unname(fit9$U), tolerance = 1e-10)
+  expect_identical(attr(fo9, "dropped"), 0L)
+  set.seed(909)
+  bi <- sample(200, 200, TRUE)
+  fb9 <- suppressWarnings(VIM::imputeCellGLoc(s9$d[bi, ]))
+  fo9b <- VIM:::.gloc_cat_posterior_for(fb9, s9$d, W = fit9$W)
+  expect_equal(unname(rowSums(fo9b$cat_posterior$f)), rep(1, sum(is.na(s9$d$f))),
+               tolerance = 1e-12)
+  expect_true(all(is.finite(fo9b$U %*% fo9b$B)))
+  expect_false(anyNA(VIM:::.gloc_draw_mi(fo9b, s9$d)[, c("x1", "x2", "x3", "f")]))
+}
+# a level the prior model never saw gets the floor; the others keep their ratio
+pr_m <- list(f = list(type = "marginal", probs = c(0.75, 0.25), levels = c("a", "b")))
+al <- VIM:::.gloc_cat_align_priors(pr_m, list(f = c("a", "b", "c")))
+Pal <- VIM:::.gloc_cat_prior(al$f, data.frame(f = factor("a", levels = c("a", "b", "c"))))
+expect_identical(dim(Pal), c(1L, 3L))
+expect_equal(Pal[1, 1] / Pal[1, 2], 3, tolerance = 1e-8)
+expect_true(Pal[1, 3] < 1e-9)

@@ -610,3 +610,73 @@
   for (v in sv$cont) out[[v]] <- .gloc_restore_class(Xi[, v], data[[v]], v)
   out
 }
+
+#' Align prior models to another data set's categorical levels
+#' @param priors prior models from \code{.gloc_cat_fit_priors}; entries may be
+#'   \code{NULL}.
+#' @param levels named list of the new data's levels.
+#' @return the prior models with \code{map} and \code{new_levels} set, so that
+#'   \code{.gloc_cat_prior} returns probabilities over \code{levels}. A level the
+#'   models never saw gets the floor; a missing model becomes uniform.
+#' @keywords internal
+.gloc_cat_align_priors <- function(priors, levels) {
+  out <- stats::setNames(vector("list", length(levels)), names(levels))
+  for (v in names(levels)) {
+    pr <- priors[[v]]
+    if (is.null(pr)) {
+      L <- length(levels[[v]])
+      out[[v]] <- list(type = "marginal", probs = rep(1 / L, L), levels = levels[[v]])
+      next
+    }
+    pr$map <- match(pr$levels, levels[[v]])
+    pr$new_levels <- levels[[v]]
+    out[[v]] <- pr
+  }
+  out
+}
+
+#' Level posteriors and expected design rows for data under a given fit
+#'
+#' Bootstrap-proper multiple imputation refits the estimator on a bootstrap
+#' sample and imputes the original rows under that fit. This computes what
+#' \code{.gloc_draw_mi} needs for the rows of \code{data}: the fit's \code{B}
+#' aligned to \code{data}'s design columns (0 where the fit lacks a column,
+#' counted in the attribute \code{dropped}), its \code{Sigma}, the cell weights
+#' \code{W}, and one E-step at the fit's parameters and prior models.
+#' @param fit an \code{imputeCellGLoc} result with \code{cat_priors}.
+#' @param data the rows to impute.
+#' @param W cell weights for \code{data}; \code{NULL} gives 1 on observed cells.
+#' @param design,peer_w_min,peer_band as for the fit.
+#' @return \code{list(B, Sigma, W, U, cat_posterior)}.
+#' @keywords internal
+.gloc_cat_posterior_for <- function(fit, data, W = NULL, design = ~ .,
+                                    peer_w_min = 0.5, peer_band = .gloc_peer_band) {
+  sv <- .gloc_split_vars(data)
+  X <- as.matrix(data[, sv$cont, drop = FALSE]); storage.mode(X) <- "double"
+  X[!is.finite(X)] <- NA_real_
+  M <- is.na(X)
+  if (is.null(W)) W <- (!M) + 0
+  catp <- .gloc_cat_prepare(data, sv$cat)
+  em <- any(catp$Mc)
+  U0 <- if (em) .gloc_design_rows(catp$F[rowSums(catp$Mc) == 0L, , drop = FALSE],
+                                  design, catp$levels)
+        else .gloc_design(data, design, sv$cat)
+  cols <- colnames(U0)
+  B <- matrix(0, length(cols), ncol(fit$B), dimnames = list(cols, colnames(fit$B)))
+  common <- intersect(cols, rownames(fit$B))
+  B[common, ] <- fit$B[common, ]
+  out <- list(B = B, Sigma = fit$Sigma, W = W, U = U0, cat_posterior = list())
+  if (em) {
+    cand <- .gloc_cat_candidates(catp, data, design)
+    if (!identical(colnames(cand$Up), cols))
+      stop(paste(".gloc_cat_posterior_for(): the candidate design columns do not match",
+                 "the data's design."))
+    es <- .gloc_cat_estep(X, M, W, B, fit$Sigma, catp, cand,
+                          .gloc_cat_align_priors(fit$cat_priors, catp$levels),
+                          w_min = peer_w_min, band = peer_band)
+    out$U <- es$Ubar
+    out$cat_posterior <- es$post
+  }
+  attr(out, "dropped") <- length(cols) - length(common)
+  out
+}
