@@ -168,6 +168,24 @@
 #'   cell is imputed from unflagged cells only. (Corrected: this page said
 #'   \code{"classical"} "reproduces VIM 7.4.0 exactly", which stopped being true
 #'   for \code{$imputed} under both starts.)
+#' @param categorical how missing categorical cells are treated. \code{"em"}
+#'   (default since 7.5.0) imputes them under the model itself. Each
+#'   categorical variable gets a multinomial logistic regression on the other
+#'   categorical variables. A row with a missing cell enters the estimation
+#'   once per candidate level, weighted by that level's posterior probability,
+#'   and the posterior combines the prior with the density of the row's
+#'   unflagged continuous cells (the peer rule of detection and imputation). The
+#'   fit is an EM-type algorithm for a pseudo-likelihood, because conditional
+#'   models define no joint distribution, and no monotonicity is claimed. A row
+#'   missing several categorical cells is handled by mean-field sweeps, an
+#'   approximation; \code{cat_multi_missing} reports how many rows it touched.
+#'   In the binary corner \code{Sigma} comes from \code{cellWise::cellMCD} on one
+#'   residual row per observation, so the level uncertainty enters \code{B} but
+#'   not \code{Sigma}. Observed categorical cells are trusted; see
+#'   \code{cat_prob_observed}. \code{"level"} keeps the 7.4.x behaviour: a
+#'   missing categorical value becomes an extra level of the design and stays
+#'   \code{NA} in \code{imputed}. Without a missing categorical cell the two
+#'   give the same \code{B}, \code{Sigma} and \code{W}, bit for bit.
 #' @param peer_w_min a cell is conditioned on only when its weight exceeds
 #'   this, so that a downweighted peer is treated as absent rather than as
 #'   evidence. The threshold is applied over a narrow band rather than at a
@@ -209,7 +227,26 @@
 #'   is not claimed to improve the estimate.
 #' @param trace print progress.
 #' @return a list with \code{B}, \code{Sigma}, \code{W}, \code{U},
-#'   \code{imputed}, \code{converged}, \code{iterations} and \code{criterion}.
+#'   \code{imputed}, \code{converged}, \code{iterations}, \code{criterion},
+#'   \code{cat_posterior}, \code{cat_prob_observed}, \code{cat_multi_missing}
+#'   and \code{cat_priors}.
+#'
+#'   Under \code{categorical = "em"}, \code{U} holds each row's expected design
+#'   row, so \code{U \%*\% B} are the fitted means. \code{cat_posterior} is a
+#'   list with one matrix per categorical variable that has a missing cell: its
+#'   rows are those cells' rows (row names are row indices), its columns the
+#'   levels, its entries posterior probabilities. \code{imputed} holds the
+#'   posterior mode (ties: the first level). For multiple imputation, draw the
+#'   level from these probabilities first and the continuous cells given it.
+#'   \code{cat_prob_observed} is an \eqn{n x k} matrix: for every observed
+#'   categorical cell, the posterior probability of its own level computed as
+#'   if the cell were missing, without a refit. A small value points at a
+#'   miscoded cell; the estimation does not use it. \code{cat_multi_missing} is
+#'   the share of rows with two or more missing categorical cells.
+#'   \code{cat_priors} holds the final multinomial prior models, so that level
+#'   posteriors for other rows can be computed under this fit (for example in
+#'   bootstrap multiple imputation). All four are
+#'   \code{NULL} under \code{categorical = "level"}.
 #'
 #'   \code{criterion} is the named vector \code{(means, scatter, weights,
 #'   scatter_spread)}: the three stopping residuals as of the last iteration,
@@ -222,6 +259,9 @@
 #'   the returned scatter depends on where \code{maxit} happened to stop -- a
 #'   settled cycle reports its amplitude, a run still drifting reports the
 #'   drift -- and a caller can test it instead of parsing a warning string.
+#'   The fifth entry, \code{categorical}, is the largest change of a categorical
+#'   posterior probability in the last iteration; it is 0 without the EM,
+#'   \code{NA} when no iteration ran, and part of the stopping rule with the EM.
 #'
 #'   It does not tell those two apart, and it is not an error estimate. On 10
 #'   non-converged \code{weights = "binary"} fits it was positive for all 10,

@@ -7,5 +7,5 @@
 utils::globalVariables(c(
   "alpha", "factors", "ndata", "pivotCoord", "rn", "robust",
   "supportedMethods", "useGLMpoisson", "useLogistic", "x_reg", "r", "p",
-  ".cw_row_weights"
+  ".cw_row_weights", ".w"
 ))

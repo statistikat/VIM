@@ -1,3 +1,27 @@
+# VIM 7.5.0
+
+## Changes
+- **`imputeCellGLoc()` imputes missing categorical cells under its own model** (new argument
+  `categorical = c("em", "level")`, default `"em"`, placed after `start` so positional calls keep
+  working). Each categorical variable gets a multinomial logistic regression on the other
+  categorical variables. A row with a missing categorical cell enters the estimation once per
+  candidate level, weighted by the level's posterior probability, and the posterior combines that
+  prior with the density of the row's unflagged continuous cells, so a contaminated cell does not
+  steer the level. Missing categorical cells are now imputed (posterior mode); until 7.4.1 they
+  stayed `NA`, and in the fit they formed an extra design level that pooled rows of different
+  groups. The fit is an EM-type algorithm for a pseudo-likelihood. Rows missing several
+  categorical cells use mean-field sweeps, an approximation, reported in `cat_multi_missing`.
+- **New return values.** `cat_posterior` (per variable, the posterior probabilities of the missing
+  cells) and `cat_prob_observed` (for each observed categorical cell, the probability of its own
+  level as if it were missing; a small value points at a miscoded cell), and `cat_priors` (the fitted
+  prior models). `U` now holds the
+  expected design rows under `"em"`.
+- **`$criterion` gains a fifth entry, `categorical`**, the largest change of a posterior probability
+  in the last iteration; it enters the stopping rule, and the non-convergence warning names it. The
+  first four entries are unchanged.
+- **`categorical = "level"` reproduces 7.4.1**, and without a missing categorical cell `"em"` gives
+  the same `B`, `Sigma`, `W` and `imputed` as `"level"`, bit for bit.
+
 # VIM 7.4.1
 
 ## Changes
