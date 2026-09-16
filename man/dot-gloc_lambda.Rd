@@ -11,8 +11,8 @@
 }
 \value{
 a length-\eqn{p} vector, named when \code{S} has dimnames, or
-\code{NULL} when \code{S} is \code{NULL} or singular, or gives a non-finite
-value.
+\code{NULL} when \code{S} is \code{NULL} or singular, when a diagonal entry
+of its inverse is not finite and positive, or when a value is not finite.
 }
 \description{
 \eqn{\lambda_j = \chi^2_{1;0.99} + \log 2\pi + \log c_j} with
@@ -23,5 +23,10 @@ function \pkg{cellWise} does not export. The two-start selection of
 \code{imputeCellGLoc(categorical = "em")} takes \eqn{S} from the first
 start's own \code{cellMCD} call (\code{.gloc_start_robust}) and holds it
 fixed for both candidates.
+}
+\details{
+A scatter that is singular, or whose inverse has a diagonal entry that is not
+finite and positive (it is then not positive definite), gives no penalty, and
+the log is not taken, so no "NaNs produced" warning escapes.
 }
 \keyword{internal}

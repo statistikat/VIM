@@ -32,15 +32,18 @@
   categories are all known and from the robust start of `categorical = "level"`, and returns the
   fixed point with the smaller binary-corner objective: minus twice the Gaussian log-likelihood of
   the retained residual cells plus a cellMCD-type penalty per flagged cell, with the penalty taken
-  from the first start's `cellMCD` scatter. A converged run beats a non-converged one, and ties keep
-  the first start. The first start sees fewer rows and can miss part of the contamination in a
-  heavily contaminated column, which then stays masked: with 20% of cells contaminated by a shift
-  of 6 (n = 200), the fit ended at the good fixed point in 37 of 40 datasets with both starts
-  against 30 of 40 with the first alone. The choice is discontinuous in the data, and such a fit
-  takes about twice as long. The new return value `em_starts` reports both runs; the warnings,
-  `iterations`, `converged` and `criterion` are those of the run returned. An error in the second
-  start warns and returns the first start's fit. `"level"`, the binary corner, `maxit = 0` and
-  every fit without a missing categorical cell keep a single start and are unchanged.
+  from the first start's `cellMCD` scatter. A converged run beats a non-converged one; ties, and two
+  runs that did not converge, keep the first start. The first start sees fewer rows and can miss
+  part of the contamination in a heavily contaminated column, which then stays masked: with block
+  contamination at eps = 0.20 and a shift of 6 (n = 200), the fit ended at the good fixed point in
+  37 of 40 datasets with both starts against 30 of 40 with the first alone. The choice is
+  discontinuous in the data, and such a fit takes about twice as long. The new return value
+  `em_starts` reports both runs; the warnings, `iterations`, `converged` and `criterion` are those of
+  the run returned, and the warnings of a returned second start read `"cellGLoc: (second start)
+  ..."`. If the first start's `cellMCD` call fails, or its scatter gives no valid penalty, only the
+  first start runs. An error in the second start warns and returns the first start's fit.
+  `"level"`, the binary corner, `maxit = 0` and every fit without a missing categorical cell keep a
+  single start and are unchanged.
 
 # VIM 7.4.1
 

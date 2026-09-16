@@ -444,6 +444,11 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   # reverting the rule locally: same run, 59 iterations and one "restarting
   # from" message, against 38 iterations and none under the current rule).
   # trace = TRUE's "restarting from" message is the observable signal.
+  # Those counts are the first start's run. The fit now runs from two starts
+  # (spec §12.2): the trace holds the first start's iterations, then a "second
+  # start" line and the second start's (13 iterations here, and it is the run
+  # returned), so the restart check reads the first start's part only, and a
+  # legitimate restart of the second start cannot break it (R64 M5).
   s7t <- gen_cat(300, 5, miss_f = 0.25)
   msg_tight <- capture.output(
     tight_tr <- suppressWarnings(VIM::imputeCellGLoc(s7t$d, eps = 1e-5, trace = TRUE)),
@@ -451,7 +456,9 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_true(tight_tr$converged)
   expect_true(all(tight_tr$criterion[c("means", "scatter", "weights",
                                        "categorical")] < 1e-5))
-  expect_false(any(grepl("restarting from", msg_tight, fixed = TRUE)))
+  cut_tight <- grep("second start: the robust start", msg_tight, fixed = TRUE)
+  msg_first <- if (length(cut_tight)) msg_tight[seq_len(cut_tight[1] - 1L)] else msg_tight
+  expect_false(any(grepl("restarting from", msg_first, fixed = TRUE)))
 
   # R42 -- a factor carrying its own contrasts attribute fits under the default,
   # as it did in 7.4.1, and the diagnostic runs on it too
@@ -689,6 +696,27 @@ expect_equal(VIM:::.gloc_lambda(S13),
              qchisq(0.99, 1) + log(2 * pi) + log(1 / diag(solve(S13))), tolerance = 1e-12)
 expect_null(VIM:::.gloc_lambda(NULL))               # no cellMCD scatter (R60 item 1)
 expect_null(VIM:::.gloc_lambda(matrix(1, 2, 2)))    # nor a singular one
+# nor an invertible one whose inverse has a negative diagonal, and without a
+# "NaNs produced" warning from the log (R64 M2)
+expect_silent(VIM:::.gloc_lambda(diag(c(1, -1))))
+expect_null(suppressWarnings(VIM:::.gloc_lambda(diag(c(1, -1)))))
+
+# --- R64 I1: a warning of the second start reads "cellGLoc: (second start) ...",
+# and one reason is reported once per call whether it arrives with the label or
+# without; warnings without the prefix pass as before
+hd13 <- VIM:::.gloc_dedup_handler()
+wd13 <- collect_warnings(withCallingHandlers({
+  warning("cellGLoc: A", call. = FALSE)
+  warning("cellGLoc: (second start) A", call. = FALSE)
+  warning("cellGLoc: (second start) B", call. = FALSE)
+  warning("cellGLoc: B", call. = FALSE)
+  warning("other", call. = FALSE)
+  warning("other", call. = FALSE)
+}, warning = hd13))
+expect_identical(wd13, c("cellGLoc: A", "cellGLoc: (second start) B", "other", "other"))
+expect_identical(conditionMessage(VIM:::.gloc_label_second(simpleWarning("cellGLoc: robust start: x"))),
+                 "cellGLoc: (second start) robust start: x")
+expect_identical(conditionMessage(VIM:::.gloc_label_second(simpleWarning("other"))), "other")
 
 # --- the second start's design rows and coefficients (R60 item 2). Evaluated at
 # the EM's pseudo-rows, the NA-level design reproduces the EM design in the EM's
@@ -730,6 +758,23 @@ expect_identical(dimnames(Bm13o), list(colnames(cand13o$Up), c("x1", "x2", "x3")
 expect_true(all(colnames(cand13o$Up) %in% colnames(Ud13o)))
 expect_true(max(abs(Bm13o - Bl13o[colnames(cand13o$Up), ])) > 0.01)
 expect_true(max(abs(cand13o$Up %*% Bm13o - Ul13o %*% Bl13o)) < 1e-10)
+# Sum contrasts on a factor with missing cells (R64 M4): the EM design keeps them
+# (f1, f2), while addNA() strips the attribute from the "level" design, which
+# is treatment-coded (fb, fc, fNA); the names differ, and the fitted means are
+# carried over by least squares.
+s13c <- gen_cat(200, 12, miss_f = 0.2)
+d13c <- s13c$d
+contrasts(d13c$f) <- contr.sum(3)
+cp13c <- VIM:::.gloc_cat_prepare(d13c, c("f", "g"))
+cand13c <- VIM:::.gloc_cat_candidates(cp13c, d13c, ~ .)
+Ul13c <- VIM:::.gloc_level_rows(d13c, cand13c$Fp, ~ ., c("f", "g"))
+expect_identical(colnames(Ul13c), c("(Intercept)", "fb", "fc", "fNA", "gv"))
+set.seed(1303)
+Bl13c <- matrix(rnorm(ncol(Ul13c) * 3), ncol(Ul13c), 3,
+                dimnames = list(colnames(Ul13c), c("x1", "x2", "x3")))
+Bm13c <- VIM:::.gloc_level_B(Bl13c, Ul13c, cand13c$Up)
+expect_identical(rownames(Bm13c), c("(Intercept)", "f1", "f2", "gv"))
+expect_true(max(abs(cand13c$Up %*% Bm13c - Ul13c %*% Bl13c)) < 1e-10)
 
 if (requireNamespace("cellWise", quietly = TRUE)) {
   cols13 <- c("x1", "x2", "x3")
@@ -828,7 +873,8 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
                                 VIM:::.gloc_fmt(f13w$criterion[["means"]])), nc13, fixed = TRUE)))
   # Two missing cells give the NA-level design a column of two rows, which the
   # second start's robust fit reports as too thin; that warning appears exactly
-  # when the second start is the run returned.
+  # when the second start is the run returned, and then with the label "(second
+  # start)" after the prefix, never without it (R64 I1).
   s13k <- gen_cat(300, 41, miss_f = 0)
   d13k <- s13k$d
   d13k$f[c(7, 19)] <- NA
@@ -836,6 +882,10 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_false(is.null(f13k$em_starts))
   expect_identical(any(grepl("robust start: too few observed rows", w13k, fixed = TRUE)),
                    identical(f13k$em_starts$chosen, "na_level"))
+  expect_identical(any(grepl("cellGLoc: (second start) robust start: too few observed rows",
+                             w13k, fixed = TRUE)),
+                   identical(f13k$em_starts$chosen, "na_level"))
+  expect_false(any(startsWith(w13k, "cellGLoc: robust start: too few observed rows")))
 
   # R60 item 2 -- an ordered factor with missing cells fits under two starts
   w13o <- collect_warnings(f13o <- VIM::imputeCellGLoc(d13o))
@@ -843,6 +893,33 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_false(any(grepl("second start failed", w13o, fixed = TRUE)))
   expect_false(anyNA(f13o$imputed$f))
   expect_true(is.ordered(f13o$imputed$f))
+
+  # R64 I2 -- a factor with a contrasts attribute and an unused level: base R
+  # drops the attribute with a "contrasts dropped from factor f due to missing
+  # levels" warning wherever a design is built from it. The EM builds designs
+  # that "level" does not (on the completed copy, and for the second start);
+  # under "em" the fit must raise that warning no more often than under "level",
+  # both when the factor itself has missing cells (A: "level" strips the
+  # attribute with the NA level and is silent) and when another factor has (B).
+  set.seed(1)
+  n13d <- 300
+  d13d <- data.frame(x1 = rnorm(n13d), x2 = rnorm(n13d), x3 = rnorm(n13d),
+                     f = factor(sample(c("a", "b", "c"), n13d, TRUE),
+                                levels = c("a", "b", "c", "z")),
+                     g = factor(sample(c("u", "v"), n13d, TRUE)))
+  contrasts(d13d$f) <- contr.sum(4)
+  n_dropped <- function(dd, ...) {
+    k <- 0L
+    withCallingHandlers(VIM::imputeCellGLoc(dd, ...), warning = function(w) {
+      if (grepl("contrasts dropped", conditionMessage(w), fixed = TRUE)) k <<- k + 1L
+      invokeRestart("muffleWarning")
+    })
+    k
+  }
+  d13A <- d13d; d13A$f[1:30] <- NA
+  d13B <- d13d; d13B$g[1:30] <- NA
+  expect_true(n_dropped(d13A) <= n_dropped(d13A, categorical = "level"))
+  expect_true(n_dropped(d13B) <= n_dropped(d13B, categorical = "level"))
 }
 
 # spec test 9 -- two starts that end at clearly different fixed points (slow: two

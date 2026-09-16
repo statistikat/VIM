@@ -59,6 +59,32 @@
   y
 }
 
+#' Evaluate an expression without base R's "contrasts dropped" warning
+#'
+#' Base R drops a factor's contrasts attribute when the factor's levels no longer
+#' fit it, and \code{model.matrix()} says so: "contrasts dropped from factor ...
+#' due to missing levels". The categorical EM meets it where \code{"level"} does
+#' not. It builds its design on a completed copy of the data
+#' (\code{.gloc_cat_candidates}), where a factor with a missing cell has no NA
+#' level, so \code{addNA()} no longer strips the attribute first and
+#' \code{model.frame(drop.unused.levels = TRUE)} drops it with an unused level
+#' instead; and it builds the design of \code{"level"} again for its second start
+#' (\code{.gloc_na_level_start}). With a factor that has a contrasts attribute and
+#' an unused level, 7.4.1 raised that warning twice when the factor was fully
+#' observed and never when it had a missing cell. These calls must not raise more
+#' copies under \code{"em"} than \code{"level"} raises, so only that warning is
+#' muffled there, and the coding the design ends up with is unchanged. The same
+#' warning comes from \code{predict.multinom()} in \code{.gloc_cat_prior}.
+#' @param expr the expression.
+#' @return the value of \code{expr}.
+#' @keywords internal
+.gloc_no_contrasts_warning <- function(expr) {
+  withCallingHandlers(expr, warning = function(w) {
+    if (grepl("contrasts dropped", conditionMessage(w), fixed = TRUE))
+      invokeRestart("muffleWarning")
+  })
+}
+
 #' Categorical columns as factors, their missing mask and their levels
 #'
 #' @param data a data frame.
@@ -219,14 +245,10 @@
     # design predict() builds), it fires on essentially every E-step once such
     # a predictor is in play, and it carries none of the "cellGLoc: " prefix
     # dedup() keys on, so left alone it reaches the user every single time.
-    pp <- withCallingHandlers(
+    pp <- .gloc_no_contrasts_warning(
       tryCatch(stats::predict(pr$model, newdata = Fnew[, pr$preds, drop = FALSE],
                               type = "probs"),
-               error = function(e) NULL),   # e.g. a predictor level the fit never saw
-      warning = function(w) {
-        if (grepl("contrasts dropped", conditionMessage(w), fixed = TRUE))
-          invokeRestart("muffleWarning")
-      })
+               error = function(e) NULL))   # e.g. a predictor level the fit never saw
     if (is.null(pp)) {
       P <- matrix(pr$probs, m, L, byrow = TRUE)
     } else {
@@ -351,11 +373,15 @@
     # memory cost (one row per combination, not per data row) that stops
     # paying for itself beyond it.
     n_all <- prod(as.numeric(nlev))
-    aux <- .gloc_design_aux(dc, design, vars,
-                            max_patterns = if (n_all <= 1e6) max(n_all, .gloc_max_patterns)
-                                           else .gloc_max_patterns)
+    # The completed copy has no NA level, so a factor with a contrasts attribute
+    # and an unused level makes base R warn "contrasts dropped" here, where
+    # "level" is silent; see .gloc_no_contrasts_warning.
+    aux <- .gloc_no_contrasts_warning(
+      .gloc_design_aux(dc, design, vars,
+                       max_patterns = if (n_all <= 1e6) max(n_all, .gloc_max_patterns)
+                                      else .gloc_max_patterns))
     pats <- aux$patterns
-    Uref <- .gloc_design(dc, design, vars)
+    Uref <- .gloc_no_contrasts_warning(.gloc_design(dc, design, vars))
     if (is.null(pats) || !identical(colnames(pats$P), colnames(Uref)))
       stop(paste("imputeCellGLoc(): categorical = \"em\" could not enumerate the level",
                  "combinations of this design; use categorical = \"level\"."))
@@ -874,9 +900,12 @@
 #' @return \code{list(W, B)}.
 #' @keywords internal
 .gloc_na_level_start <- function(X, M, data, design, cat_vars, cand) {
-  ds <- .gloc_design_setup(data, design, cat_vars)
+  # Base R's "contrasts dropped" warnings of these designs would repeat those of
+  # the EM's own design; see .gloc_no_contrasts_warning.
+  ds <- .gloc_no_contrasts_warning(.gloc_design_setup(data, design, cat_vars))
   st <- .gloc_start_robust(X, ds$U, M, warn_design = FALSE, U_main = ds$U_main,
                            patterns = ds$patterns)
-  Ulv <- .gloc_level_rows(data, cand$Fp, design, cat_vars, U = ds$U)
+  Ulv <- .gloc_no_contrasts_warning(
+    .gloc_level_rows(data, cand$Fp, design, cat_vars, U = ds$U))
   list(W = st$W, B = .gloc_level_B(st$B, Ulv, cand$Up))
 }

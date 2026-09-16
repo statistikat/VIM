@@ -142,9 +142,9 @@
 #'   redescending weight function started from a non-robust fit can settle on
 #'   a masked solution, which is why the default changed. Ignored for
 #'   \code{weights = "binary"}, whose first step already calls
-#'   \code{cellWise::cellMCD}. Under \code{categorical = "em"} with a missing
-#'   categorical cell, \code{"robust"} runs the fit from two starts and keeps
-#'   the better fixed point; see \code{categorical}.
+#'   \code{cellWise::cellMCD}. Under \code{categorical = "em"}, \code{"robust"}
+#'   can run the fit from two starts and keep the better fixed point; the
+#'   paragraph "Two starts" of \code{categorical} says when.
 #'
 #'   \code{start} selects the fixed point, not only the path to it: the
 #'   iteration can have several fixed points, and the starting values choose
@@ -207,10 +207,10 @@
 #'   means are carried over by least squares instead. Both begin with the
 #'   posteriors at the priors. The first start sees fewer rows, and in a heavily
 #'   contaminated column it can miss part of the contamination, which the
-#'   iteration then keeps masked. In the investigation behind this rule (20\% of
-#'   cells contaminated with a shift of 6, n = 200, six continuous and six
-#'   categorical variables), the fit ended at the good fixed point in 37 of 40
-#'   datasets with both starts against 30 of 40 with the first alone.
+#'   iteration then keeps masked. In the investigation behind this rule (block
+#'   contamination at \code{eps = 0.20} with a shift of 6, n = 200, six continuous
+#'   and six categorical variables), the fit ended at the good fixed point in 37
+#'   of 40 datasets with both starts against 30 of 40 with the first alone.
 #'
 #'   The second start's fixed point is returned only if that run converged and
 #'   the first did not, or both converged and the second has the smaller
@@ -223,11 +223,14 @@
 #'   a masked fixed point from an unmasked one, not two nearly equivalent ones.
 #'   The choice is discontinuous in the data, as for a multi-start MCD: a small
 #'   change in the data can switch the fixed point returned. Such a fit takes
-#'   about twice as long. If the first start's \code{cellMCD} call fails, only the
-#'   first start runs. An error in the second start does not stop the fit: it
-#'   warns and returns the first start's fit. The warnings, \code{iterations},
-#'   \code{converged} and \code{criterion} are those of the run returned;
-#'   \code{em_starts} reports both runs.
+#'   about twice as long. If the first start's \code{cellMCD} call fails, or its
+#'   scatter gives no valid penalty (it is singular, or its inverse has a
+#'   non-positive diagonal entry), only the first start runs. An error in the
+#'   second start does not stop the fit: it warns and returns the first start's
+#'   fit. The warnings, \code{iterations}, \code{converged} and \code{criterion}
+#'   are those of the run returned, and the warnings of a returned second start
+#'   read \code{"cellGLoc: (second start) ..."}; \code{em_starts} reports both
+#'   runs.
 #'
 #'   \code{"em"} needs \pkg{cellWise} once a categorical cell is missing: the
 #'   scatter is then taken over the pseudo-rows, whose cell weights carry each
@@ -416,14 +419,10 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # A degraded path must never be taken silently, but neither should it shout
   # once per iteration: report each distinct reason exactly once per call. The
   # mean step warns about a rank-deficient design on every call, from the
-  # classical start below onwards, so the handler is set up before it.
-  seen <- character(0)
-  dedup <- function(w) {
-    m <- conditionMessage(w)
-    if (startsWith(m, "cellGLoc: ")) {
-      if (m %in% seen) invokeRestart("muffleWarning") else seen <<- c(seen, m)
-    }
-  }
+  # classical start below onwards, so the handler is set up before it. A reason
+  # counts once whether it arrives as it is or labelled "(second start)"; see
+  # .gloc_dedup_handler.
+  dedup <- .gloc_dedup_handler()
 
   M <- !is.finite(X)                       # missing mask
   if (em) {
@@ -801,13 +800,22 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 
   # A run whose result may be discarded does not raise its warnings: they are
   # collected, and only those of the run that is returned are raised, through
-  # dedup, once it is known.
-  collect <- function(expr) {
+  # dedup, once it is known. With flush = TRUE an error inside expr stops the
+  # fit, as an error of the first start does, so the warnings collected up to
+  # it -- those in `before`, then those of expr -- are raised first, through
+  # dedup, exactly as a single run raises them before its error; the error then
+  # continues unchanged. (Corrected: the first version lost them.)
+  collect <- function(expr, before = list(), flush = FALSE) {
     ws <- list()
-    value <- withCallingHandlers(expr, warning = function(w) {
-      ws[[length(ws) + 1L]] <<- w
-      invokeRestart("muffleWarning")
-    })
+    value <- withCallingHandlers(expr,
+      warning = function(w) {
+        ws[[length(ws) + 1L]] <<- w
+        invokeRestart("muffleWarning")
+      },
+      error = function(e) {
+        if (flush) withCallingHandlers(for (w in c(before, ws)) warning(w),
+                                       warning = dedup)
+      })
     list(value = value, warnings = ws)
   }
   pass <- function(w) NULL
@@ -826,7 +834,9 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # keep the first start. The second start is an auxiliary device: an error in
   # it warns and returns the first start's fit, while an error in the first
   # start stops the fit as it always did. Without a cellMCD scatter from the
-  # first start there is no penalty, and only the first start runs. The binary
+  # first start, or with one that gives no valid penalty, there is no penalty,
+  # and only the first start runs. The warnings of a returned second start are
+  # labelled "cellGLoc: (second start) ..." (.gloc_label_second). The binary
   # corner has no robust start, and "level", maxit = 0 and every fit without a
   # missing categorical cell keep their single start, so they are unchanged.
   two <- em && relax && start == "robust" && isTRUE(maxit >= 1) &&
@@ -852,11 +862,11 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
       .gloc_start_robust(X, U, M, warn_design = FALSE, U_main = U_main,
                          patterns = pats, fit_rows = if (em) cc else NULL)
     if (two) {
-      cs <- collect(robust_start())
+      cs <- collect(robust_start(), flush = TRUE)
       st <- cs$value
       st_warn <- cs$warnings
       lambda <- .gloc_lambda(st$S)
-      if (is.null(lambda)) {                 # cellMCD failed: this start alone
+      if (is.null(lambda)) {                 # no valid penalty: this start alone
         two <- FALSE
         withCallingHandlers(for (w in st_warn) warning(w), warning = dedup)
       }
@@ -870,7 +880,8 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   if (!two) {
     run <- run_from(W_start, B_start)
   } else {
-    c1 <- collect(run_from(W_start, B_start, on_warning = pass))
+    c1 <- collect(run_from(W_start, B_start, on_warning = pass),
+                  before = st_warn, flush = TRUE)
     r1 <- c1$value
     r1$warnings <- c(st_warn, c1$warnings)
     r1$objective <- .gloc_objective(X - r1$U %*% r1$B, r1$W, M, r1$Sigma, lambda)
@@ -908,8 +919,10 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                                      "%.8g (second start); returning the %s start"),
                                r1$objective, em_starts$objective[["na_level"]],
                                if (pick2) "second" else "first"))
+    # The returned run's warnings; those of the second start carry its label
+    # after the prefix, while dedup still counts each reason once.
     withCallingHandlers({
-      for (w in run$warnings) warning(w)
+      for (w in run$warnings) warning(if (pick2) .gloc_label_second(w) else w)
       if (!is.null(err2))
         warning(sprintf(paste("cellGLoc: the second start failed (%s); returning",
                               "the fit from the first start"), err2), call. = FALSE)
@@ -1194,6 +1207,48 @@ NULL
   if (length(x) != 1L || is.na(x)) "not available"
   else if (!is.finite(x)) "not defined on the first iteration"
   else sprintf("%.3g", x)
+}
+
+#' One warning per distinct reason within a call
+#'
+#' A calling handler for \code{withCallingHandlers()}: a warning whose message
+#' starts with \code{"cellGLoc: "} is muffled when one with the same reason has
+#' already passed through the handler, and every other warning passes. The reason
+#' is the message without the label \code{"(second start) "} that
+#' \code{.gloc_label_second} puts after the prefix, so a reason reported once --
+#' in the shared setup, say -- is not reported again by the returned second start,
+#' labelled or not. \code{imputeCellGLoc} makes one handler per call.
+#'
+#' @return a function of one warning condition.
+#' @keywords internal
+.gloc_dedup_handler <- function() {
+  seen <- character(0)
+  function(w) {
+    m <- conditionMessage(w)
+    if (startsWith(m, "cellGLoc: ")) {
+      reason <- sub("^cellGLoc: \\(second start\\) ", "cellGLoc: ", m)
+      if (reason %in% seen) invokeRestart("muffleWarning") else seen <<- c(seen, reason)
+    }
+  }
+}
+
+#' Label a warning of the categorical EM's second start
+#'
+#' When \code{imputeCellGLoc(categorical = "em")} returns the fixed point of its
+#' second start, the warnings of that run reach the caller as
+#' \code{"cellGLoc: (second start) ..."}. The label follows the prefix, so the
+#' prefix that \code{.gloc_dedup_handler} and callers key on is unchanged, and the
+#' rest of the message, such as "did not converge" or "cycling", is kept verbatim.
+#' A warning without the prefix is returned as it is.
+#'
+#' @param w a warning condition.
+#' @return the condition, its message labelled.
+#' @keywords internal
+.gloc_label_second <- function(w) {
+  m <- conditionMessage(w)
+  if (startsWith(m, "cellGLoc: "))
+    w$message <- paste0("cellGLoc: (second start) ", substring(m, 11L))
+  w
 }
 
 #' Tukey bisquare weights for standardised conditional residuals

@@ -138,9 +138,9 @@ observed cell at weight 1 and the mean structure by least squares. A
 redescending weight function started from a non-robust fit can settle on
 a masked solution, which is why the default changed. Ignored for
 \code{weights = "binary"}, whose first step already calls
-\code{cellWise::cellMCD}. Under \code{categorical = "em"} with a missing
-categorical cell, \code{"robust"} runs the fit from two starts and keeps
-the better fixed point; see \code{categorical}.
+\code{cellWise::cellMCD}. Under \code{categorical = "em"}, \code{"robust"}
+can run the fit from two starts and keep the better fixed point; the
+paragraph "Two starts" of \code{categorical} says when.
 
 \code{start} selects the fixed point, not only the path to it: the
 iteration can have several fixed points, and the starting values choose
@@ -204,10 +204,10 @@ of the others, as with an ordered factor's polynomial contrasts, its fitted
 means are carried over by least squares instead. Both begin with the
 posteriors at the priors. The first start sees fewer rows, and in a heavily
 contaminated column it can miss part of the contamination, which the
-iteration then keeps masked. In the investigation behind this rule (20\\% of
-cells contaminated with a shift of 6, n = 200, six continuous and six
-categorical variables), the fit ended at the good fixed point in 37 of 40
-datasets with both starts against 30 of 40 with the first alone.
+iteration then keeps masked. In the investigation behind this rule (block
+contamination at \code{eps = 0.20} with a shift of 6, n = 200, six continuous
+and six categorical variables), the fit ended at the good fixed point in 37
+of 40 datasets with both starts against 30 of 40 with the first alone.
 
 The second start's fixed point is returned only if that run converged and
 the first did not, or both converged and the second has the smaller
@@ -220,11 +220,14 @@ and two runs that did not converge, keep the first start. The objective tells
 a masked fixed point from an unmasked one, not two nearly equivalent ones.
 The choice is discontinuous in the data, as for a multi-start MCD: a small
 change in the data can switch the fixed point returned. Such a fit takes
-about twice as long. If the first start's \code{cellMCD} call fails, only the
-first start runs. An error in the second start does not stop the fit: it
-warns and returns the first start's fit. The warnings, \code{iterations},
-\code{converged} and \code{criterion} are those of the run returned;
-\code{em_starts} reports both runs.
+about twice as long. If the first start's \code{cellMCD} call fails, or its
+scatter gives no valid penalty (it is singular, or its inverse has a
+non-positive diagonal entry), only the first start runs. An error in the
+second start does not stop the fit: it warns and returns the first start's
+fit. The warnings, \code{iterations}, \code{converged} and \code{criterion}
+are those of the run returned, and the warnings of a returned second start
+read \code{"cellGLoc: (second start) ..."}; \code{em_starts} reports both
+runs.
 
 \code{"em"} needs \pkg{cellWise} once a categorical cell is missing: the
 scatter is then taken over the pseudo-rows, whose cell weights carry each

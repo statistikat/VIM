@@ -1296,16 +1296,22 @@
 #' start's own \code{cellMCD} call (\code{.gloc_start_robust}) and holds it
 #' fixed for both candidates.
 #'
+#' A scatter that is singular, or whose inverse has a diagonal entry that is not
+#' finite and positive (it is then not positive definite), gives no penalty, and
+#' the log is not taken, so no "NaNs produced" warning escapes.
+#'
 #' @param S a \eqn{p x p} scatter, or \code{NULL}.
 #' @return a length-\eqn{p} vector, named when \code{S} has dimnames, or
-#'   \code{NULL} when \code{S} is \code{NULL} or singular, or gives a non-finite
-#'   value.
+#'   \code{NULL} when \code{S} is \code{NULL} or singular, when a diagonal entry
+#'   of its inverse is not finite and positive, or when a value is not finite.
 #' @keywords internal
 .gloc_lambda <- function(S) {
   if (is.null(S)) return(NULL)
   Si <- tryCatch(solve(S), error = function(e) NULL)
   if (is.null(Si)) return(NULL)
-  lam <- stats::qchisq(0.99, df = 1) + log(2 * pi) + log(1 / diag(Si))
+  dSi <- diag(Si)
+  if (!all(is.finite(dSi) & dSi > 0)) return(NULL)
+  lam <- stats::qchisq(0.99, df = 1) + log(2 * pi) + log(1 / dSi)
   if (!all(is.finite(lam))) return(NULL)
   lam
 }
