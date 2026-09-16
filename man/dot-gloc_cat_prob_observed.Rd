@@ -47,7 +47,15 @@ pseudo-rows. The estimation does not use this value.
 The density is evaluated at the row's expected design row rather than
 averaged over its level combinations -- a Jensen approximation, taken because
 the pseudo-rows are already weighted. It is exact for a row whose other
-categorical cells are all observed, which is every row when only one
-categorical variable has missing cells.
+categorical cells (every categorical variable except \code{v}, the column
+being computed) are all observed. \emph{Corrected: an earlier version of
+this paragraph said that is every row whenever only one categorical
+variable has missing cells, for every column \code{v}. That is false for
+any \code{v} other than the one variable with missing cells: computing
+that other, fully observed variable's column still hits the approximation
+on any row where the one variable with missing cells is itself missing.
+The exact case is only \code{v}'s own column, and only because "only one
+variable has missing cells" then means every other variable has none,
+anywhere.}
 }
 \keyword{internal}

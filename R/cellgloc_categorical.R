@@ -34,16 +34,27 @@
 #' \code{.gloc_patterns}. A column rebuilt without it would give the candidate
 #' design rows different column names from the design built on the completed
 #' copy -- \code{fb}, \code{fc} against \code{f1}, \code{f2} under
-#' \code{contr.sum} -- and the fit would stop. A matrix of the wrong size for
-#' the levels that are kept is not re-attached, since dropping a level
-#' invalidates it.
+#' \code{contr.sum} -- and the fit would stop. \code{y} keeps the attribute
+#' only when it still has exactly \code{template}'s number of levels.
+#' Comparing \code{nrow} of the contrasts matrix against \code{nlevels(y)}
+#' is not enough: \code{levels(f) <- c(levels(f), "z")} adds an unused level
+#' to \code{f} without going through \code{factor()}, so it leaves a stale
+#' contrasts matrix sized for \code{f}'s levels \emph{before} the addition
+#' attached to \code{f} itself. If \code{droplevels()} then removes exactly
+#' that unused level elsewhere, the stale matrix's row count coincidentally
+#' matches the reduced \code{y} and the old check re-attached it, even though
+#' the reference design -- built through
+#' \code{model.frame(drop.unused.levels = TRUE)}, which drops the attribute
+#' whenever it rebuilds a factor to remove an unused level -- had already lost
+#' it. Comparing against \code{template}'s own current level count catches
+#' that case too.
 #' @param y the rebuilt factor.
 #' @param template the factor it was rebuilt from.
 #' @return \code{y}, carrying \code{template}'s contrasts where they still fit.
 #' @keywords internal
 .gloc_keep_contrasts <- function(y, template) {
   ct <- attr(template, "contrasts")
-  if (!is.null(ct) && (!is.matrix(ct) || nrow(ct) == nlevels(y)))
+  if (!is.null(ct) && nlevels(y) == nlevels(template))
     attr(y, "contrasts") <- ct
   y
 }
@@ -104,14 +115,21 @@
 
 #' Give an imputed categorical column back the class of the original
 #'
+#' \code{factor()} drops a \code{contrasts} attribute like \code{droplevels()}
+#' does (see \code{.gloc_keep_contrasts}), so without re-attaching it here an
+#' EM-imputed factor would come back from \code{imputeCellGLoc()} coded
+#' differently from how the user's own column was coded, even though the
+#' level set is unchanged -- \code{levels(orig)} is passed through verbatim.
 #' @param f factor of values (observed and imputed).
 #' @param orig the original column.
-#' @return a factor with \code{orig}'s levels and orderedness, a logical, or a
-#'   character vector, following \code{orig}.
+#' @return a factor with \code{orig}'s levels, orderedness and contrasts (where
+#'   \code{.gloc_keep_contrasts} keeps them), a logical, or a character vector,
+#'   following \code{orig}.
 #' @keywords internal
 .gloc_cat_restore <- function(f, orig) {
   if (is.factor(orig))
-    return(factor(as.character(f), levels = levels(orig), ordered = is.ordered(orig)))
+    return(.gloc_keep_contrasts(
+      factor(as.character(f), levels = levels(orig), ordered = is.ordered(orig)), orig))
   if (is.logical(orig)) return(as.logical(as.character(f)))
   as.character(f)
 }
@@ -192,9 +210,23 @@
   if (identical(pr$type, "marginal")) {
     P <- matrix(pr$probs, m, L, byrow = TRUE)
   } else {
-    pp <- tryCatch(stats::predict(pr$model, newdata = Fnew[, pr$preds, drop = FALSE],
-                                  type = "probs"),
-                   error = function(e) NULL)   # e.g. a predictor level the fit never saw
+    # A predictor that carries a contrasts attribute (.gloc_keep_contrasts) can
+    # make predict.multinom()'s own model.matrix() call warn "contrasts dropped
+    # from factor ... due to missing levels" whenever Fnew -- one row per
+    # candidate level, or a "keep" subset of the pseudo-row table -- does not
+    # itself realise every level of that predictor. The returned probabilities
+    # do not depend on it (the fit's own xlevels and contrasts still drive the
+    # design predict() builds), it fires on essentially every E-step once such
+    # a predictor is in play, and it carries none of the "cellGLoc: " prefix
+    # dedup() keys on, so left alone it reaches the user every single time.
+    pp <- withCallingHandlers(
+      tryCatch(stats::predict(pr$model, newdata = Fnew[, pr$preds, drop = FALSE],
+                              type = "probs"),
+               error = function(e) NULL),   # e.g. a predictor level the fit never saw
+      warning = function(w) {
+        if (grepl("contrasts dropped", conditionMessage(w), fixed = TRUE))
+          invokeRestart("muffleWarning")
+      })
     if (is.null(pp)) {
       P <- matrix(pr$probs, m, L, byrow = TRUE)
     } else {
@@ -307,6 +339,17 @@
     for (v in vars) if (any(Mc[, v])) {
       val <- dc[[v]]; val[Mc[, v]] <- lev[[v]][1L]; dc[[v]] <- val
     }
+    # The combination table must cover every level combination the completed
+    # copy's design can produce, or to_combo() below has nothing to match a
+    # candidate row against (the stop just below fires instead). So the level
+    # grid is enumerated in full -- not only up to .gloc_max_patterns (4096)
+    # -- whenever it has at most 1e6 rows; only above that does the pattern
+    # revert to the combinations that occur in the data. That is a real
+    # cliff, not a corner case: about ten categorical variables already put
+    # prod(nlev) in the (4096, 1e6] range this widens, e.g. a table of 1e5 to
+    # 1e6 rows, and the ceiling exists because full enumeration there is a
+    # memory cost (one row per combination, not per data row) that stops
+    # paying for itself beyond it.
     n_all <- prod(as.numeric(nlev))
     aux <- .gloc_design_aux(dc, design, vars,
                             max_patterns = if (n_all <= 1e6) max(n_all, .gloc_max_patterns)
@@ -553,8 +596,16 @@
 #' The density is evaluated at the row's expected design row rather than
 #' averaged over its level combinations -- a Jensen approximation, taken because
 #' the pseudo-rows are already weighted. It is exact for a row whose other
-#' categorical cells are all observed, which is every row when only one
-#' categorical variable has missing cells.
+#' categorical cells (every categorical variable except \code{v}, the column
+#' being computed) are all observed. \emph{Corrected: an earlier version of
+#' this paragraph said that is every row whenever only one categorical
+#' variable has missing cells, for every column \code{v}. That is false for
+#' any \code{v} other than the one variable with missing cells: computing
+#' that other, fully observed variable's column still hits the approximation
+#' on any row where the one variable with missing cells is itself missing.
+#' The exact case is only \code{v}'s own column, and only because "only one
+#' variable has missing cells" then means every other variable has none,
+#' anywhere.}
 #' @param X,M,W,B,Sigma the continuous data, mask, weights and returned fit.
 #' @param catp result of \code{.gloc_cat_prepare}.
 #' @param priors result of \code{.gloc_cat_fit_priors}.

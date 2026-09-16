@@ -12,10 +12,15 @@
 \item{orig}{the original column.}
 }
 \value{
-a factor with \code{orig}'s levels and orderedness, a logical, or a
-character vector, following \code{orig}.
+a factor with \code{orig}'s levels, orderedness and contrasts (where
+\code{.gloc_keep_contrasts} keeps them), a logical, or a character vector,
+following \code{orig}.
 }
 \description{
-Give an imputed categorical column back the class of the original
+\code{factor()} drops a \code{contrasts} attribute like \code{droplevels()}
+does (see \code{.gloc_keep_contrasts}), so without re-attaching it here an
+EM-imputed factor would come back from \code{imputeCellGLoc()} coded
+differently from how the user's own column was coded, even though the
+level set is unchanged -- \code{levels(orig)} is passed through verbatim.
 }
 \keyword{internal}

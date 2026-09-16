@@ -716,8 +716,9 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                   sprintf(", already at the schedule's floor of %.3g",
                           .gloc_damp) else "")
       else
-        paste("max |dW| is still improving, so this is the iteration limit",
-              "and not a cycle: raise maxit.")
+        paste("max |dW| or, under the categorical EM, the largest posterior",
+              "change is still improving, so this is the iteration limit and",
+              "not a cycle: raise maxit.")
       drift <- if (is.na(S_spread)) "" else sprintf(paste(
         "Over the last %d iteration(s) the scatter moved by a relative %.3g,",
         "which is how much the returned Sigma depends on where maxit stopped."),
@@ -888,7 +889,8 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 #' \code{eps}), and the fallback is retained for the path effect described
 #' above, which is about which cycle is entered, not about which fixed point is
 #' selected. When the
-#' factor is at the floor and \code{max |dW|} has not improved for
+#' factor is at the floor and neither \code{max |dW|} nor, under the
+#' categorical EM, the largest posterior change has improved for
 #' \code{.gloc_stall_iters} iterations, the iteration therefore falls back once
 #' to the cold start at the floor, which is precisely the fixed-\code{.gloc_damp}
 #' run.

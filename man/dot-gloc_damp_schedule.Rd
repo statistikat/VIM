@@ -119,7 +119,8 @@ stopping point depend on the relaxation factor. That is fixed (see
 \code{eps}), and the fallback is retained for the path effect described
 above, which is about which cycle is entered, not about which fixed point is
 selected. When the
-factor is at the floor and \code{max |dW|} has not improved for
+factor is at the floor and neither \code{max |dW|} nor, under the
+categorical EM, the largest posterior change has improved for
 \code{.gloc_stall_iters} iterations, the iteration therefore falls back once
 to the cold start at the floor, which is precisely the fixed-\code{.gloc_damp}
 run.

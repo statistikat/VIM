@@ -20,8 +20,19 @@ attribute; subsetting a factor keeps it, and so do \code{.gloc_design} and
 \code{.gloc_patterns}. A column rebuilt without it would give the candidate
 design rows different column names from the design built on the completed
 copy -- \code{fb}, \code{fc} against \code{f1}, \code{f2} under
-\code{contr.sum} -- and the fit would stop. A matrix of the wrong size for
-the levels that are kept is not re-attached, since dropping a level
-invalidates it.
+\code{contr.sum} -- and the fit would stop. \code{y} keeps the attribute
+only when it still has exactly \code{template}'s number of levels.
+Comparing \code{nrow} of the contrasts matrix against \code{nlevels(y)}
+is not enough: \code{levels(f) <- c(levels(f), "z")} adds an unused level
+to \code{f} without going through \code{factor()}, so it leaves a stale
+contrasts matrix sized for \code{f}'s levels \emph{before} the addition
+attached to \code{f} itself. If \code{droplevels()} then removes exactly
+that unused level elsewhere, the stale matrix's row count coincidentally
+matches the reduced \code{y} and the old check re-attached it, even though
+the reference design -- built through
+\code{model.frame(drop.unused.levels = TRUE)}, which drops the attribute
+whenever it rebuilds a factor to remove an unused level -- had already lost
+it. Comparing against \code{template}'s own current level count catches
+that case too.
 }
 \keyword{internal}

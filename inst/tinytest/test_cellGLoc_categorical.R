@@ -106,6 +106,35 @@ expect_identical(prb$f$type, "marginal")
 expect_equal(unname(prb$f$probs),
              as.vector(tapply(w2, cpb$F$f, sum)) / sum(w2), tolerance = 1e-12)
 
+# R46 item 2 -- a predictor that carries a contrasts attribute can make
+# predict()'s own model.matrix() call warn "contrasts dropped from factor ...
+# due to missing levels" when the newdata it predicts on does not itself
+# realise every one of that predictor's levels (a "keep" or candidate subset
+# of the pseudo-row table routinely does not). The warning is unrelated to
+# whether the returned probabilities are right -- predict.multinom() forces
+# its own xlevels and contrasts regardless -- and it carries no "cellGLoc: "
+# prefix, so it must not reach the user at all.
+gp2 <- data.frame(f = factor(rep(c("a", "b", "c"), each = 20)),
+                  g = factor(rep(c("u", "v"), 30)))
+contrasts(gp2$g) <- contr.sum(2)
+prg2 <- VIM:::.gloc_cat_fit_priors(gp2, rep(1, nrow(gp2)),
+                                   list(f = c("a", "b", "c"), g = c("u", "v")))
+expect_identical(prg2$f$type, "multinom")
+newd2 <- gp2[gp2$g == "u", , drop = FALSE][1:5, ]     # realises only one level of g
+wp2 <- collect_warnings(Pp2 <- VIM:::.gloc_cat_prior(prg2$f, newd2))
+expect_false(any(grepl("contrasts dropped", wp2, fixed = TRUE)))
+expect_identical(dim(Pp2), c(5L, 3L))
+expect_equal(unname(rowSums(Pp2)), rep(1, 5), tolerance = 1e-10)
+# a plain (no contrasts attribute) predictor never had this warning to begin
+# with (the hard constraint: this fix must not change that path at all)
+gp2b <- gp2; attr(gp2b$g, "contrasts") <- NULL
+prg2b <- VIM:::.gloc_cat_fit_priors(gp2b, rep(1, nrow(gp2b)),
+                                    list(f = c("a", "b", "c"), g = c("u", "v")))
+wp2b <- collect_warnings(Pp2b <- VIM:::.gloc_cat_prior(prg2b$f, gp2b[gp2b$g == "u", ][1:5, ]))
+expect_equal(length(wp2b), 0L)
+expect_identical(dim(Pp2b), c(5L, 3L))
+expect_equal(unname(rowSums(Pp2b)), rep(1, 5), tolerance = 1e-10)
+
 # ==========================================================================
 # Task 3: level log-likelihood
 # ==========================================================================
@@ -288,6 +317,24 @@ expect_equal(unname(es5c$post$f["1", ]), c(2, 2, 2) / 6, tolerance = 1e-12)   # 
 expect_identical(VIM:::.gloc_cat_change(es5$post, NULL), Inf)
 expect_identical(VIM:::.gloc_cat_change(es5$post, es5$post), 0)
 
+# R46 item 6 / R41 -- under the categorical EM the pseudo-row scatter stops
+# rather than silently falling back to the weighted pairwise covariance,
+# which would square a pseudo-row's posterior weight and so under-weight the
+# rows whose level is uncertain. have_cw is exposed exactly so this is
+# testable without installing or removing cellWise, and no namespace
+# patching is used: have_cw = FALSE reaches the same em_stop() as an actual
+# cellWise failure would, on the "package is not installed" branch.
+Rsc <- matrix(rnorm(20 * 3), 20); Wsc <- matrix(runif(20 * 3), 20); Msc <- matrix(FALSE, 20, 3)
+e6 <- tryCatch(VIM:::.gloc_scatter_soft(Rsc, Wsc, Msc, have_cw = FALSE, em = TRUE),
+               error = function(e) conditionMessage(e))
+expect_true(is.character(e6))
+expect_true(grepl("cellWise", e6, fixed = TRUE))
+expect_true(grepl('categorical = "level"', e6, fixed = TRUE))
+# em = FALSE takes the fallback instead (a warning, not a stop) on the same input
+w6 <- collect_warnings(S6 <- VIM:::.gloc_scatter_soft(Rsc, Wsc, Msc, have_cw = FALSE, em = FALSE))
+expect_true(any(grepl("^cellGLoc: ", w6)))
+expect_identical(dim(S6), c(3L, 3L))
+
 # ==========================================================================
 # Task 5: the EM inside imputeCellGLoc()
 # ==========================================================================
@@ -390,6 +437,22 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
                                     "categorical")] < 1e-5))
   expect_true(is.na(tight$criterion[["scatter_spread"]]))
 
+  # R46 item 7 -- pin the R40 stall-reset rule itself, not only that a fit at
+  # tight eps happens to converge. On this dataset dW alone (the pre-R40 rule)
+  # plateaus for .gloc_stall_iters iterations while dR is still improving, so
+  # the pre-R40 rule fires one cold restart (confirmed by temporarily
+  # reverting the rule locally: same run, 59 iterations and one "restarting
+  # from" message, against 38 iterations and none under the current rule).
+  # trace = TRUE's "restarting from" message is the observable signal.
+  s7t <- gen_cat(300, 5, miss_f = 0.25)
+  msg_tight <- capture.output(
+    tight_tr <- suppressWarnings(VIM::imputeCellGLoc(s7t$d, eps = 1e-5, trace = TRUE)),
+    type = "message")
+  expect_true(tight_tr$converged)
+  expect_true(all(tight_tr$criterion[c("means", "scatter", "weights",
+                                       "categorical")] < 1e-5))
+  expect_false(any(grepl("restarting from", msg_tight, fixed = TRUE)))
+
   # R42 -- a factor carrying its own contrasts attribute fits under the default,
   # as it did in 7.4.1, and the diagnostic runs on it too
   sc <- gen_cat(200, 12, miss_f = 0.2)
@@ -398,6 +461,34 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_identical(rownames(fitc$B), c("(Intercept)", "f1", "f2", "gv"))
   expect_false(anyNA(fitc$imputed$f))
   expect_false(anyNA(fitc$cat_prob_observed[!is.na(sc$d$f), "f"]))
+
+  # R46 item 1 -- a stale contrasts matrix (set while a factor had fewer
+  # levels than it now declares -- levels(f) <- c(levels(f), "z") adds a level
+  # without going through factor(), so it leaves the OLD, now too-small
+  # contrasts matrix attached) must not be re-attached just because its row
+  # count happens to match the reduced level count droplevels() produces
+  # elsewhere: the reference design (built on the completed copy, which
+  # model.frame(drop.unused.levels = TRUE) strips of the very same attribute)
+  # would then use different columns and the fit would stop with "candidate
+  # design columns do not match the design".
+  s1u <- gen_cat(200, 21, miss_f = 0)
+  d1u <- s1u$truth
+  contrasts(d1u$f) <- contr.sum(3)
+  levels(d1u$f) <- c(levels(d1u$f), "z")        # an unused 4th level, contrasts left stale
+  d1u$f[5] <- NA                                # one missing cell
+  fit1u <- suppressWarnings(VIM::imputeCellGLoc(d1u))
+  d1uf <- d1u; d1uf$f[5] <- "a"
+  expect_identical(colnames(fit1u$U), colnames(VIM:::.gloc_design(d1uf, ~ ., c("f", "g"))))
+
+  # R46 item 5 -- an EM-imputed factor's restored column keeps the caller's
+  # own contrasts attribute (.gloc_cat_restore() used to rebuild it with a
+  # plain factor(), which drops one just like droplevels() does)
+  s1r <- gen_cat(200, 22, miss_f = 0.2)
+  d1r <- s1r$d
+  contrasts(d1r$f) <- contr.sum(3)
+  fit1r <- suppressWarnings(VIM::imputeCellGLoc(d1r))
+  expect_false(anyNA(fit1r$imputed$f))
+  expect_identical(attr(fit1r$imputed$f, "contrasts"), attr(d1r$f, "contrasts"))
 
   # a fit stopped by maxit names the categorical change in its warning
   w7 <- collect_warnings(VIM::imputeCellGLoc(s7$d, maxit = 1))
