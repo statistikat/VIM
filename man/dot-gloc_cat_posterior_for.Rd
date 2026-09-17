@@ -8,6 +8,7 @@
   fit,
   data,
   W = NULL,
+  cat_weights = NULL,
   design = ~.,
   peer_w_min = 0.5,
   peer_band = .gloc_peer_band
@@ -20,10 +21,15 @@
 
 \item{W}{cell weights for \code{data}; \code{NULL} gives 1 on observed cells.}
 
+\item{cat_weights}{the per-candidate cell weights of a fit on \emph{these}
+rows (its \code{cat_weights}), or \code{NULL}. Its \code{row} and
+\code{levels} must match the candidate table of \code{data}, or this stops.}
+
 \item{design, peer_w_min, peer_band}{as for the fit.}
 }
 \value{
-\code{list(B, Sigma, W, U, cat_posterior)}.
+\code{list(B, Sigma, W, U, cat_posterior, cat_weights)};
+\code{cat_weights} is \code{NULL} unless it was passed in.
 }
 \description{
 Bootstrap-proper multiple imputation refits the estimator on a bootstrap
@@ -32,5 +38,13 @@ sample and imputes the original rows under that fit. This computes what
 aligned to \code{data}'s design columns (0 where the fit lacks a column,
 counted in the attribute \code{dropped}), its \code{Sigma}, the cell weights
 \code{W}, and one E-step at the fit's parameters and prior models.
+Under per-level detection (soft corner, since 7.5.1) the posteriors are a
+function of the \emph{candidates'} own weight rows, not of \code{W}, so
+reproducing them needs \code{cat_weights} as well: the E-step then scores each
+candidate with \code{.gloc_cat_score} under those weights, with \eqn{\lambda}
+from \code{fit$Sigma} (Ruling R74). The original fit's \code{cat_weights} are
+returned with their \code{prob} recomputed under this fit, so that
+\code{.gloc_draw_mi} can impute a drawn row with its candidate's weights.
+Without them the 7.5.0 E-step runs, which is what the binary corner needs.
 }
 \keyword{internal}

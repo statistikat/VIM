@@ -14,7 +14,8 @@
 )
 }
 \arguments{
-\item{fit}{an \code{imputeCellGLoc} result.}
+\item{fit}{an \code{imputeCellGLoc} result, or the list
+\code{.gloc_cat_posterior_for} returns.}
 
 \item{data}{the data it was fitted on.}
 
@@ -32,7 +33,22 @@ approximation), builds the design rows for the drawn levels, and draws the
 missing continuous cells from their conditional normal given those levels
 and the unflagged peers (\code{.gloc_impute} with \code{cov = TRUE}). The
 draws use the caller's random-number stream. \code{noise = FALSE} returns
-the fit's own \code{imputed}: posterior modes and conditional expectations
-under the expected design rows.
+the fit's own \code{imputed}: posterior modes and, for a row that misses a
+categorical cell, the posterior mixture of \code{.gloc_impute_mix}.
+}
+\details{
+With \code{fit$cat_weights} (per-level detection, soft corner, since 7.5.1) a
+draw imputes each row that misses a categorical cell, and lies below the
+combination cap, with the cell weights of the candidate whose level
+combination was drawn for it, not with the row's own weights, which are the
+posterior mixture over the candidates (Ruling R74). A row above the cap, and a
+fit without \code{cat_weights} -- the binary corner, \code{categorical =
+"level"}, or a \code{fit} assembled by \code{.gloc_cat_posterior_for} without
+them -- keeps the 7.5.0 rule, one weight row per observation.
+
+A candidate's weight row whose posterior probability is small may sit up to
+\code{eps / prob} from its own fixed point, because the stopping rule weights a
+candidate's weight change by that probability (Ruling R73); a draw that lands
+on such a candidate therefore conditions on a slightly unsettled flag set.
 }
 \keyword{internal}

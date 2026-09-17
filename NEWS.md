@@ -24,6 +24,25 @@
   without a missing categorical cell are unchanged, bit for bit. The binary corner takes one weight
   row per observation from `cellWise::cellMCD()`, so its detection stays at the expected design
   row, and the lock can still occur there.
+- **`imputed`: a missing continuous cell of a row that also misses a categorical cell is now the
+  posterior mixture of the candidates' conditional expectations**, each taken at that candidate's
+  design row and conditioned on the cells that are clean under it. That is the exact posterior
+  mean. Until 7.5.0 such a cell was imputed once, at the row's expected design row, which was the
+  exact mixture expectation only while every level shared one weight row -- it no longer does, and
+  conditioning at the expected design row on the mixture weights would condition on a cell with a
+  weight that no candidate gave it. Only those cells change; every other cell of `imputed`, a row
+  above the combination cap included, is what 7.5.0 returned, bit for bit. Measured on two of the
+  test fixtures, 17 of 400 and 53 of 300 rows' cells move, by a median 0.017 and 0.012 of the
+  variables' scale and at most 0.31 and 0.26.
+- **Multiple imputation follows the same rule.** A draw takes the level, or level combination, from
+  `cat_posterior` as before, and now imputes the row with the cell weights of the candidate it
+  drew rather than with the row's own, which are the posterior mixture over the candidates. A row
+  above the cap, the binary corner and `categorical = "level"` keep one weight row per observation.
+  Both the fit's own imputation and the MI draws come through one internal routine, so the point
+  draw still reproduces `imputed` exactly. A candidate whose posterior probability is small may sit
+  up to `eps` divided by that probability from its own fixed point, since the stopping rule weights
+  a candidate's weight change by it, so a draw landing on such a candidate conditions on a slightly
+  unsettled flag set.
 
 # VIM 7.5.0
 

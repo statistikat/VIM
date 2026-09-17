@@ -880,6 +880,58 @@
   })
 }
 
+#' The posterior mixture of the candidates' conditional expectations
+#'
+#' Under per-level detection (\code{imputeCellGLoc(categorical = "em")}, soft
+#' corner, since 7.5.1) a missing continuous cell of a row that also misses a
+#' categorical cell is imputed by \eqn{\sum_k r_k E[x_{mis} | \textrm{cells clean
+#' under } k, u_k]}: \code{.gloc_impute} on the row's candidate rows, each at its
+#' own design row with its own cell weights, mixed by the candidates' posterior
+#' probabilities. That is the exact posterior mean of the missing cell.
+#'
+#' Until 7.5.0 such a cell was imputed once, at the row's expected design row
+#' \eqn{\bar u_i}. That was exact only because every level shared one weight row
+#' and hence one set of clean peers, so the conditional expectation was linear in
+#' the design row and the mixture could be taken inside it. Per-level detection
+#' breaks that: conditioning at \eqn{\bar u_i} on the mixture weights would
+#' condition on a cell with a weight that no candidate gave it, leaving detection
+#' and imputation inconsistent (Ruling R74).
+#'
+#' Only the missing cells of the rows in \code{cw} are replaced, and only where
+#' the row has one; every other cell of \code{Xi} is returned untouched, bit for
+#' bit. A row above the combination cap is not in \code{cw} and keeps the 7.5.0
+#' imputation. \code{imputeCellGLoc} and \code{.gloc_draw_mi(noise = FALSE)} both
+#' come through here, which is what makes the second reproduce the first exactly.
+#' @param Xi the imputation so far, from \code{.gloc_impute} at the expected
+#'   design rows; its non-mixture rows are the result's.
+#' @param X,M the continuous data and its missing mask.
+#' @param B,Sigma the fit's coefficients and scatter.
+#' @param cw the fit's \code{cat_weights}.
+#' @param design one-sided formula, the fit's.
+#' @param levels named list of levels, from \code{.gloc_cat_prepare}.
+#' @param w_min,band the peer rule.
+#' @return \code{Xi} with those cells replaced.
+#' @keywords internal
+.gloc_impute_mix <- function(Xi, X, M, B, Sigma, cw, design, levels,
+                             w_min = 0.5, band = .gloc_peer_band) {
+  k <- which(rowSums(M[cw$row, , drop = FALSE]) > 0L)
+  if (!length(k)) return(Xi)
+  rows <- cw$row[k]
+  Uk <- .gloc_design_rows(cw$levels[k, , drop = FALSE], design, levels)
+  if (!is.null(rownames(B)) && !identical(colnames(Uk), rownames(B)))
+    stop(paste(".gloc_impute_mix(): the design columns of the candidate levels do not",
+               "match B; pass the design the fit used."))
+  Xk <- .gloc_impute(X[rows, , drop = FALSE], Uk, B, Sigma, M[rows, , drop = FALSE],
+                     W = cw$W[k, , drop = FALSE], w_min = w_min, band = band)
+  S <- rowsum(Xk * cw$prob[k], rows, reorder = TRUE)
+  at <- as.integer(rownames(S))
+  mm <- M[at, , drop = FALSE]
+  sub <- Xi[at, , drop = FALSE]
+  sub[mm] <- S[mm]                      # observed cells are left exactly as they were
+  Xi[at, ] <- sub
+  Xi
+}
+
 #' One multiple-imputation draw from a cellGLoc fit
 #'
 #' Draws each missing categorical level from \code{fit$cat_posterior} (several
@@ -888,9 +940,24 @@
 #' missing continuous cells from their conditional normal given those levels
 #' and the unflagged peers (\code{.gloc_impute} with \code{cov = TRUE}). The
 #' draws use the caller's random-number stream. \code{noise = FALSE} returns
-#' the fit's own \code{imputed}: posterior modes and conditional expectations
-#' under the expected design rows.
-#' @param fit an \code{imputeCellGLoc} result.
+#' the fit's own \code{imputed}: posterior modes and, for a row that misses a
+#' categorical cell, the posterior mixture of \code{.gloc_impute_mix}.
+#'
+#' With \code{fit$cat_weights} (per-level detection, soft corner, since 7.5.1) a
+#' draw imputes each row that misses a categorical cell, and lies below the
+#' combination cap, with the cell weights of the candidate whose level
+#' combination was drawn for it, not with the row's own weights, which are the
+#' posterior mixture over the candidates (Ruling R74). A row above the cap, and a
+#' fit without \code{cat_weights} -- the binary corner, \code{categorical =
+#' "level"}, or a \code{fit} assembled by \code{.gloc_cat_posterior_for} without
+#' them -- keeps the 7.5.0 rule, one weight row per observation.
+#'
+#' A candidate's weight row whose posterior probability is small may sit up to
+#' \code{eps / prob} from its own fixed point, because the stopping rule weights a
+#' candidate's weight change by that probability (Ruling R73); a draw that lands
+#' on such a candidate therefore conditions on a slightly unsettled flag set.
+#' @param fit an \code{imputeCellGLoc} result, or the list
+#'   \code{.gloc_cat_posterior_for} returns.
 #' @param data the data it was fitted on.
 #' @param design,peer_w_min,peer_band the values used for the fit.
 #' @param noise draw (\code{TRUE}) or return the point imputation.
@@ -904,7 +971,10 @@
   M <- is.na(X)
   out <- data
   Ud <- fit$U
+  W  <- fit$W
+  cw <- fit$cat_weights
   post <- fit$cat_posterior
+  catp <- NULL
   if (length(post)) {
     catp <- .gloc_cat_prepare(data, sv$cat)
     Fd <- catp$F
@@ -921,8 +991,23 @@
     if (noise && !identical(colnames(Ud), rownames(fit$B)))
       stop(paste(".gloc_draw_mi(): the design columns of the drawn levels do not match",
                  "fit$B; pass the design the fit used."))
+    # The drawn candidate's own cell weights. A row is matched to its candidate
+    # by its whole level combination, observed cells included, which is what
+    # cat_weights$levels holds; a row above the cap matches nothing and keeps
+    # fit$W.
+    if (noise && !is.null(cw)) {
+      ckey <- do.call(paste, c(lapply(cw$levels, as.character), list(sep = "\r")))
+      dkey <- do.call(paste, c(lapply(Fd[names(cw$levels)], as.character),
+                               list(sep = "\r")))
+      rws <- sort(unique(cw$row))
+      kk <- match(paste(rws, dkey[rws]), paste(cw$row, ckey))
+      if (anyNA(kk))
+        stop(paste(".gloc_draw_mi(): a drawn level combination is not in",
+                   "fit$cat_weights; pass the data the fit was computed on."))
+      W[rws, ] <- cw$W[kk, , drop = FALSE]
+    }
   }
-  imp <- .gloc_impute(X, Ud, fit$B, fit$Sigma, M, W = fit$W, w_min = peer_w_min,
+  imp <- .gloc_impute(X, Ud, fit$B, fit$Sigma, M, W = W, w_min = peer_w_min,
                       band = peer_band, cov = noise)
   Xi <- if (noise) imp$X else imp
   if (noise) for (nm in names(imp$cond_cov)) {
@@ -930,6 +1015,10 @@
     Xi[i, miss] <- Xi[i, miss] +
       drop(stats::rnorm(length(miss)) %*% .gloc_chol_psd(imp$cond_cov[[nm]]))
   }
+  # The point imputation is the fit's, so it takes the fit's mixture as well.
+  if (!noise && !is.null(cw))
+    Xi <- .gloc_impute_mix(Xi, X, M, fit$B, fit$Sigma, cw, design, catp$levels,
+                           w_min = peer_w_min, band = peer_band)
   for (v in sv$cont) out[[v]] <- .gloc_restore_class(Xi[, v], data[[v]], v)
   out
 }
@@ -966,13 +1055,26 @@
 #' aligned to \code{data}'s design columns (0 where the fit lacks a column,
 #' counted in the attribute \code{dropped}), its \code{Sigma}, the cell weights
 #' \code{W}, and one E-step at the fit's parameters and prior models.
+#' Under per-level detection (soft corner, since 7.5.1) the posteriors are a
+#' function of the \emph{candidates'} own weight rows, not of \code{W}, so
+#' reproducing them needs \code{cat_weights} as well: the E-step then scores each
+#' candidate with \code{.gloc_cat_score} under those weights, with \eqn{\lambda}
+#' from \code{fit$Sigma} (Ruling R74). The original fit's \code{cat_weights} are
+#' returned with their \code{prob} recomputed under this fit, so that
+#' \code{.gloc_draw_mi} can impute a drawn row with its candidate's weights.
+#' Without them the 7.5.0 E-step runs, which is what the binary corner needs.
 #' @param fit an \code{imputeCellGLoc} result with \code{cat_priors}.
 #' @param data the rows to impute.
 #' @param W cell weights for \code{data}; \code{NULL} gives 1 on observed cells.
+#' @param cat_weights the per-candidate cell weights of a fit on \emph{these}
+#'   rows (its \code{cat_weights}), or \code{NULL}. Its \code{row} and
+#'   \code{levels} must match the candidate table of \code{data}, or this stops.
 #' @param design,peer_w_min,peer_band as for the fit.
-#' @return \code{list(B, Sigma, W, U, cat_posterior)}.
+#' @return \code{list(B, Sigma, W, U, cat_posterior, cat_weights)};
+#'   \code{cat_weights} is \code{NULL} unless it was passed in.
 #' @keywords internal
-.gloc_cat_posterior_for <- function(fit, data, W = NULL, design = ~ .,
+.gloc_cat_posterior_for <- function(fit, data, W = NULL, cat_weights = NULL,
+                                    design = ~ .,
                                     peer_w_min = 0.5, peer_band = .gloc_peer_band) {
   sv <- .gloc_split_vars(data)
   X <- as.matrix(data[, sv$cont, drop = FALSE]); storage.mode(X) <- "double"
@@ -988,17 +1090,40 @@
   B <- matrix(0, length(cols), ncol(fit$B), dimnames = list(cols, colnames(fit$B)))
   common <- intersect(cols, rownames(fit$B))
   B[common, ] <- fit$B[common, ]
-  out <- list(B = B, Sigma = fit$Sigma, W = W, U = U0, cat_posterior = list())
+  out <- list(B = B, Sigma = fit$Sigma, W = W, U = U0, cat_posterior = list(),
+              cat_weights = NULL)
   if (em) {
     cand <- .gloc_cat_candidates(catp, data, design)
     if (!identical(colnames(cand$Up), cols))
       stop(paste(".gloc_cat_posterior_for(): the candidate design columns do not match",
                  "the data's design."))
+    inc <- which(rowSums(catp$Mc)[cand$pr_row] > 0L)
+    Wc <- NULL
+    if (!is.null(cat_weights)) {
+      lv <- cand$Fp[inc, , drop = FALSE]
+      ok <- identical(as.integer(cat_weights$row), as.integer(cand$pr_row[inc])) &&
+        identical(dim(cat_weights$W), c(length(inc), ncol(W))) &&
+        identical(names(cat_weights$levels), names(lv)) &&
+        all(vapply(names(lv), function(v)
+          identical(as.character(cat_weights$levels[[v]]), as.character(lv[[v]])),
+          NA))
+      if (!ok)
+        stop(paste(".gloc_cat_posterior_for(): cat_weights does not match the candidate table",
+                   "of these rows; pass the cat_weights of a fit on this data."))
+      # Only the candidates of rows with a missing categorical cell are read; the
+      # rest carry their row's weights so that the matrix means what it says.
+      Wc <- W[cand$pr_row, , drop = FALSE]
+      Wc[inc, ] <- cat_weights$W
+    }
     es <- .gloc_cat_estep(X, M, W, B, fit$Sigma, catp, cand,
                           .gloc_cat_align_priors(fit$cat_priors, catp$levels),
-                          w_min = peer_w_min, band = peer_band)
+                          w_min = peer_w_min, band = peer_band, Wc = Wc)
     out$U <- es$Ubar
     out$cat_posterior <- es$post
+    if (!is.null(cat_weights)) {
+      cat_weights$prob <- es$pr_w[inc]
+      out$cat_weights <- cat_weights
+    }
   }
   attr(out, "dropped") <- length(cols) - length(common)
   out

@@ -105,8 +105,13 @@
 #' each, so it still does not steer the level. The binary corner keeps one weight
 #' row per observation, since \code{cellWise::cellMCD} returns one: its detection
 #' stays at the expected design row, and the lock can occur there. The soft corner
-#' is the default. The missing continuous cells of such a row are imputed at its
-#' expected design row with the returned \code{W}.
+#' is the default. The missing continuous cells of such a row are imputed by the
+#' posterior mixture of its candidates' conditional expectations, each taken at
+#' that candidate's design row and conditioned on the cells that are clean under
+#' it (\code{.gloc_impute_mix}); see \code{imputed} under Value. (Corrected: until
+#' 7.5.0 they were imputed once, at the expected design row with the row's weights,
+#' which was the exact mixture expectation only while every level shared one
+#' weight row.)
 #'
 #' @param data a \code{data.frame} with continuous and categorical columns.
 #' @param design one-sided formula for the categorical mean structure.
@@ -326,6 +331,19 @@
 #'   categorical cell reports the posterior mixture
 #'   \eqn{W_i = \sum_k r_k W_k} of its candidates' weights under the final E-step;
 #'   a row without one, and a row above the combination cap, reports its own.
+#'
+#'   \code{imputed} is \code{data} with its missing cells filled: a continuous
+#'   cell by its conditional expectation given the unflagged cells of its row, a
+#'   categorical cell (under \code{"em"}) by its posterior mode. Under per-level
+#'   detection a missing continuous cell of a row that \emph{also} misses a
+#'   categorical cell is imputed instead by the posterior mixture
+#'   \eqn{\sum_k r_k E[x_{mis} | \textrm{cells clean under } k, u_k]} over that
+#'   row's candidates: each candidate contributes the conditional expectation at
+#'   its own design row, conditioned on the cells that are clean under it, and the
+#'   candidates are mixed by their posterior probabilities \eqn{r_k}. That is the
+#'   exact posterior mean of the cell. Every other row, a row above the
+#'   combination cap included, is imputed at its expected design row with the
+#'   returned \code{W}, as in 7.5.0.
 #'
 #'   \code{cat_weights} is \code{NULL} unless per-level detection ran. Then it is a
 #'   list with one entry per candidate of the rows below the combination cap that
@@ -1077,6 +1095,16 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # corners: a binary flag is a weight of exactly 0 or 1, where the band is inert.
   Ximp <- .gloc_impute(X, U, B, Sigma, M, W = W, w_min = peer_w_min,
                        band = peer_band)
+  # Under per-level detection a row that misses a categorical cell is imputed by
+  # the posterior mixture of its candidates' conditional expectations, each at
+  # that candidate's design row with that candidate's clean peers (Ruling R74).
+  # 7.5.0's argument that imputing once at the expected design row is already the
+  # mixture expectation needed the peers to be shared by every level, which
+  # per-level weights no longer are. Only those rows' missing continuous cells
+  # change; everything else is the line above, bit for bit.
+  if (!is.null(cat_w))
+    Ximp <- .gloc_impute_mix(Ximp, X, M, B, Sigma, cat_w, design, catp$levels,
+                             w_min = peer_w_min, band = peer_band)
   out <- data
   for (v in cont_vars) out[[v]] <- .gloc_restore_class(Ximp[, v], data[[v]], v)
   if (em) for (v in names(cat_post)) {

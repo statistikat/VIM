@@ -1308,3 +1308,129 @@ if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
   expect_true(hit10 >= mean(noflag10 == truth10) - 0.05)
   expect_true(mean(f10$W[rows10, "x1"] < 0.5) <= 0.08)
 }
+
+# ==========================================================================
+# Task 21: mixture imputation, the MI draws and R65 (spec §12.9, tests 16, 17)
+# ==========================================================================
+# The fixture needs what gen_cat() alone does not produce: missing CONTINUOUS
+# cells in rows that also miss a categorical cell. Those are the only rows the
+# mixture imputation touches. f shifts x1 and x2 by 0, 4, -3 and x3 by half of
+# that, so a row's candidates sit far apart and their flags differ, which is
+# what makes the rule visible at all.
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  s21 <- gen_cat(300, 21, miss_f = 0.2, miss_g = 0.2)
+  d21 <- s21$d
+  mis21 <- which(rowSums(is.na(d21[, c("f", "g")])) > 0L)
+  obs21 <- setdiff(seq_len(300), mis21)
+  d21$x1[mis21[seq(1L, length(mis21), by = 3L)]] <- NA
+  d21$x3[mis21[seq(2L, length(mis21), by = 3L)]] <- NA
+  d21$x2[obs21[1:10]] <- NA                       # and some outside those rows
+  fit21 <- suppressWarnings(VIM::imputeCellGLoc(d21))
+  X21 <- as.matrix(d21[, c("x1", "x2", "x3")])
+  M21 <- is.na(X21)
+  cp21 <- VIM:::.gloc_cat_prepare(d21, c("f", "g"))
+  cand21 <- VIM:::.gloc_cat_candidates(cp21, d21, ~ .)
+  inc21 <- which(rowSums(cp21$Mc)[cand21$pr_row] > 0L)
+  cw21 <- fit21$cat_weights
+  expect_identical(cw21$row, cand21$pr_row[inc21])
+  expect_true(sum(M21[unique(cw21$row), ]) >= 20L)   # the rows the mixture touches
+
+  # spec test 16, first bullet -- the continuous cells of such a row are the
+  # posterior mixture of .gloc_impute() over the row's candidates, each at its
+  # own design row with its own weight row. The reference takes the design rows
+  # from the candidate table rather than from cat_weights$levels, so it pins
+  # that the two routes agree as well.
+  k21 <- which(rowSums(M21[cw21$row, , drop = FALSE]) > 0L)
+  rw21 <- cw21$row[k21]
+  Xk21 <- VIM:::.gloc_impute(X21[rw21, , drop = FALSE],
+                             cand21$Up[inc21[k21], , drop = FALSE],
+                             fit21$B, fit21$Sigma, M21[rw21, , drop = FALSE],
+                             W = cw21$W[k21, , drop = FALSE])
+  mix21 <- rowsum(Xk21 * cw21$prob[k21], rw21, reorder = TRUE)
+  at21 <- as.integer(rownames(mix21))
+  mm21 <- M21[at21, , drop = FALSE]
+  got21 <- as.matrix(fit21$imputed[at21, c("x1", "x2", "x3")])
+  expect_true(max(abs(got21[mm21] - mix21[mm21])) < 1e-10)
+  # the rule is not the 7.5.0 one (impute at the expected design row with the
+  # mixture W), so the test above is not vacuous
+  old21 <- VIM:::.gloc_impute(X21, fit21$U, fit21$B, fit21$Sigma, M21,
+                              W = fit21$W)[at21, , drop = FALSE]
+  expect_true(max(abs(old21[mm21] - mix21[mm21])) > 1e-6)
+  # rows without a missing categorical cell keep the 7.5.0 imputation
+  oth21 <- setdiff(which(rowSums(M21) > 0L), at21)
+  expect_true(length(oth21) > 0L)
+  expect_identical(unname(as.matrix(fit21$imputed[oth21, c("x1", "x2", "x3")])),
+                   unname(VIM:::.gloc_impute(X21, fit21$U, fit21$B, fit21$Sigma, M21,
+                                             W = fit21$W)[oth21, , drop = FALSE]))
+
+  # spec test 16, second bullet
+  expect_identical(VIM:::.gloc_draw_mi(fit21, d21, noise = FALSE), fit21$imputed)
+
+  # spec test 16, third bullet -- a draw with the levels fixed imputes each row
+  # that misses a categorical cell with the weight row of the candidate drawn,
+  # not with the row's own (mixture) weights. The posteriors are made degenerate
+  # at the LEAST likely level, so the drawn levels are determined and differ from
+  # the modes the fit reports; the reference then repeats the draw's own
+  # random-number order -- one runif() block per categorical variable, then one
+  # rnorm() per row with a missing cell in the order .gloc_impute() names them.
+  fix21 <- fit21
+  Fd21 <- cp21$F
+  for (v in names(fix21$cat_posterior)) {
+    P <- fix21$cat_posterior[[v]]
+    sel <- max.col(-P, ties.method = "first")
+    P[] <- 0; P[cbind(seq_len(nrow(P)), sel)] <- 1
+    fix21$cat_posterior[[v]] <- P
+    Fd21[[v]][as.integer(rownames(P))] <- colnames(P)[sel]
+  }
+  Ud21 <- VIM:::.gloc_design_rows(Fd21, ~ ., cp21$levels)
+  keyc21 <- do.call(paste, c(lapply(cw21$levels, as.character), list(sep = "\r")))
+  keyd21 <- do.call(paste, c(lapply(Fd21, as.character), list(sep = "\r")))
+  rws21 <- sort(unique(cw21$row))
+  kk21 <- match(paste(rws21, keyd21[rws21]), paste(cw21$row, keyc21))
+  expect_false(anyNA(kk21))
+  Wd21 <- fit21$W
+  Wd21[rws21, ] <- cw21$W[kk21, , drop = FALSE]
+  expect_true(max(abs(Wd21 - fit21$W)) > 0.1)        # the two rules really differ
+  ref_draw21 <- function(Wuse) {
+    set.seed(2126)
+    for (v in names(fix21$cat_posterior)) stats::runif(nrow(fix21$cat_posterior[[v]]))
+    im <- VIM:::.gloc_impute(X21, Ud21, fit21$B, fit21$Sigma, M21, W = Wuse, cov = TRUE)
+    Xi <- im$X
+    for (nm in names(im$cond_cov)) {
+      i <- as.integer(nm); ms <- which(M21[i, ])
+      Xi[i, ms] <- Xi[i, ms] +
+        drop(stats::rnorm(length(ms)) %*% VIM:::.gloc_chol_psd(im$cond_cov[[nm]]))
+    }
+    Xi
+  }
+  set.seed(2126)
+  drw21 <- VIM:::.gloc_draw_mi(fix21, d21)
+  drwX21 <- as.matrix(drw21[, c("x1", "x2", "x3")])
+  expect_identical(as.character(drw21$f[rws21]), as.character(Fd21$f[rws21]))
+  expect_true(max(abs(drwX21 - ref_draw21(Wd21))) < 1e-12)
+  expect_true(max(abs(drwX21 - ref_draw21(fit21$W))) > 1e-6)
+
+  # Task 20's review left this owed here: in the soft corner the posteriors are a
+  # function of the CANDIDATES' weight rows, so .gloc_cat_posterior_for()
+  # reproduces them only once it is given cat_weights (spec §12.9, "Multiple
+  # imputation"). The binary-corner case is above, under Task 7b.
+  fo21 <- VIM:::.gloc_cat_posterior_for(fit21, d21, W = fit21$W,
+                                        cat_weights = fit21$cat_weights)
+  expect_equal(fo21$cat_posterior, fit21$cat_posterior, tolerance = 1e-10)
+  expect_equal(unname(fo21$U), unname(fit21$U), tolerance = 1e-10)
+  expect_identical(attr(fo21, "dropped"), 0L)
+  expect_identical(fo21$cat_weights$row, cw21$row)
+  expect_identical(fo21$cat_weights$W, cw21$W)
+  expect_equal(fo21$cat_weights$prob, cw21$prob, tolerance = 1e-10)
+  # without them, the 7.5.0 E-step, which is a different answer here
+  fo21b <- VIM:::.gloc_cat_posterior_for(fit21, d21, W = fit21$W)
+  expect_true(max(abs(fo21b$cat_posterior$f - fit21$cat_posterior$f)) > 1e-6)
+  expect_null(fo21b$cat_weights)
+  # cat_weights that do not belong to this data's candidate table are refused
+  bad21 <- cw21; bad21$row <- rev(bad21$row)
+  expect_error(VIM:::.gloc_cat_posterior_for(fit21, d21, W = fit21$W, cat_weights = bad21),
+               "candidate table")
+  bad21b <- cw21; bad21b$levels$f <- rev(bad21b$levels$f)
+  expect_error(VIM:::.gloc_cat_posterior_for(fit21, d21, W = fit21$W, cat_weights = bad21b),
+               "candidate table")
+}

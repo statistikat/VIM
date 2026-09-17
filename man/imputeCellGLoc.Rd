@@ -256,6 +256,19 @@ categorical cell reports the posterior mixture
 \eqn{W_i = \sum_k r_k W_k} of its candidates' weights under the final E-step;
 a row without one, and a row above the combination cap, reports its own.
 
+\code{imputed} is \code{data} with its missing cells filled: a continuous
+cell by its conditional expectation given the unflagged cells of its row, a
+categorical cell (under \code{"em"}) by its posterior mode. Under per-level
+detection a missing continuous cell of a row that \emph{also} misses a
+categorical cell is imputed instead by the posterior mixture
+\eqn{\sum_k r_k E[x_{mis} | \textrm{cells clean under } k, u_k]} over that
+row's candidates: each candidate contributes the conditional expectation at
+its own design row, conditioned on the cells that are clean under it, and the
+candidates are mixed by their posterior probabilities \eqn{r_k}. That is the
+exact posterior mean of the cell. Every other row, a row above the
+combination cap included, is imputed at its expected design row with the
+returned \code{W}, as in 7.5.0.
+
 \code{cat_weights} is \code{NULL} unless per-level detection ran. Then it is a
 list with one entry per candidate of the rows below the combination cap that
 miss a categorical cell, in the order of the candidate table: \code{row}, the
@@ -437,8 +450,13 @@ contaminated cell is flagged under every level and pays the same penalty under
 each, so it still does not steer the level. The binary corner keeps one weight
 row per observation, since \code{cellWise::cellMCD} returns one: its detection
 stays at the expected design row, and the lock can occur there. The soft corner
-is the default. The missing continuous cells of such a row are imputed at its
-expected design row with the returned \code{W}.
+is the default. The missing continuous cells of such a row are imputed by the
+posterior mixture of its candidates' conditional expectations, each taken at
+that candidate's design row and conditioned on the cells that are clean under
+it (\code{.gloc_impute_mix}); see \code{imputed} under Value. (Corrected: until
+7.5.0 they were imputed once, at the expected design row with the row's weights,
+which was the exact mixture expectation only while every level shared one
+weight row.)
 }
 \references{
 Raymaekers, J. and Rousseeuw, P. J. (2024). The cellwise minimum covariance
