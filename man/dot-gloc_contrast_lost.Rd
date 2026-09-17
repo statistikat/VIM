@@ -26,19 +26,23 @@ loses it in two ways, both of which used to pass without a word the user could
 act on (R65, Ruling R79).
 }
 \details{
-\emph{An unused level.} \code{model.frame(drop.unused.levels = TRUE)} rebuilds
-the factor without that level and drops the attribute, matrix or character
-alike, with base R's warning "contrasts dropped from factor ... due to missing
-levels". That warning is muffled at every design site of the fit
+The two are listed here in the order this function appends them, which is the
+order they read in the warning when both apply to one factor and are joined by
+"and".
+
+\emph{First, a missing value that becomes a level.} Under
+\code{categorical = "level"} the design puts a missing categorical value into a
+level of its own, through \code{addNA()}, which goes through \code{factor()} and
+so drops the attribute \emph{silently}: 7.4.1 said nothing here at all.
+
+\emph{Second, an unused level.} \code{model.frame(drop.unused.levels = TRUE)}
+rebuilds the factor without that level and drops the attribute, matrix or
+character alike, with base R's warning "contrasts dropped from factor ... due to
+missing levels". That warning is muffled at every design site of the fit
 (\code{.gloc_no_contrasts_warning}), because the categorical EM builds designs
 that \code{categorical = "level"} does not -- on the completed copy, and again
 for the second start -- and would otherwise warn more often than \code{"level"}
 for the same data.
-
-\emph{A missing value that becomes a level.} Under \code{categorical = "level"}
-the design puts a missing categorical value into a level of its own, through
-\code{addNA()}, which goes through \code{factor()} and so drops the attribute
-\emph{silently}: 7.4.1 said nothing here at all.
 
 Either way the fit codes the factor with the default contrasts. Nothing the fit
 returns depends on the coding -- the fitted means, \eqn{\Sigma}, \eqn{W} and the

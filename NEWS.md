@@ -58,6 +58,15 @@
   differently -- so **no number changes**, in either mode. A factor without an attribute of its own
   keeps taking the session's `options("contrasts")`, silently, as before; so does a design term
   that sets a coding itself, such as `C(f, contr.sum)`.
+- **Cost of per-level detection: no slowdown was measured.** One iteration now runs the weight step
+  and the E-step over the candidate table rather than over the rows, so its cost grows with the
+  number of candidates; but the returned run needs fewer iterations, and the scatter step
+  (`cellWise::cwLocScat()`, about 95% of an iteration) already ran on the candidates in 7.5.0. Over
+  60 `em` fits with a missing categorical cell (n = 200, six continuous and six categorical
+  variables, 10 replicates at each of eps 0, eps 0.10 with a shift of 6, and eps 0.20 with a shift
+  of 6), 7.5.1 took **0.76 times** the total seconds of 7.5.0 -- 0.57, 0.73 and 0.96 by setting --
+  with a median per-fit ratio of 0.85 to 0.98, and 302/333/380 iterations against 538/385/414. The
+  design expected at most 1.2 times.
 
 # VIM 7.5.0
 

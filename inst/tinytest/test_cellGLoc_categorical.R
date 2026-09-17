@@ -1449,6 +1449,24 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   bad21b <- cw21; bad21b$levels$f <- rev(bad21b$levels$f)
   expect_error(VIM:::.gloc_cat_posterior_for(fit21, d21, W = fit21$W, cat_weights = bad21b),
                "candidate table")
+
+  # the mixture's own two refusals (fix round, M1). A design other than the fit's
+  # gives the candidate rows the wrong columns: in .gloc_impute_mix() directly, and
+  # through the point draw, which is the route a caller reaches it by.
+  Xi21 <- VIM:::.gloc_impute(X21, fit21$U, fit21$B, fit21$Sigma, M21, W = fit21$W)
+  expect_error(VIM:::.gloc_impute_mix(Xi21, X21, M21, fit21$B, fit21$Sigma, cw21,
+                                      ~ f, cp21$levels),
+               "do not match B")
+  expect_error(VIM:::.gloc_draw_mi(fit21, d21, design = ~ f, noise = FALSE),
+               "do not match B")
+  # a drawn level combination that cat_weights does not hold. One row's candidates
+  # are all relabelled to a level that row was not drawn, so the row is still in
+  # cat_weights$row -- a row that is absent from it is a capped row and
+  # legitimately keeps fit$W -- but its drawn combination matches none of them.
+  r0 <- rws21[which(as.character(Fd21$f[rws21]) != "a")[1]]
+  bad21c <- fix21
+  bad21c$cat_weights$levels$f[bad21c$cat_weights$row == r0] <- "a"
+  expect_error(VIM:::.gloc_draw_mi(bad21c, d21), "not in")
 }
 
 # spec test 17 -- R65 (Ruling R79): the design drops a factor's own contrasts
@@ -1459,6 +1477,23 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
 # the EM's extra design sites had to muffle, the second not at all. The fit now
 # says so once per factor, with the "cellGLoc: " prefix, and no base-R copy
 # reaches the user. The data are the settling script's of the Task 13 fix wave.
+#
+# "The numbers do not change" is pinned twice. Within the fit, by taking the
+# attribute away, which must leave everything the fit returns alone. Across the
+# change, by the fixture gloc_r65_ref_pre.rds, built with the commit BEFORE R65
+# (baccf09, the mixture-imputation commit of this task) so that a later edit to
+# .gloc_contrast_lost() or to one of the muffled design sites cannot move a
+# fitted number unnoticed:
+#   .libPaths(c("<library with VIM at baccf09>", .libPaths())); library(VIM)
+#   stopifnot(packageVersion("VIM") == "7.5.1")
+#   <the set.seed(1) block and cases17 below, as `cases`>
+#   fits <- list()
+#   for (nm in names(cases)) for (md in c("em", "level")) {
+#     f <- suppressWarnings(imputeCellGLoc(cases[[nm]], categorical = md))
+#     fits[[paste(nm, md)]] <- f[c("B", "Sigma", "W", "imputed")]
+#   }
+#   saveRDS(list(cases = cases, fits = fits, vim = "7.5.1", commit = "baccf09"),
+#           "inst/tinytest/gloc_r65_ref_pre.rds")
 set.seed(1)
 n17 <- 300
 d17 <- data.frame(x1 = rnorm(n17), x2 = rnorm(n17), x3 = rnorm(n17),
@@ -1469,22 +1504,27 @@ contrasts(d17$f) <- contr.sum(4)
 cases17 <- list(A = local({ z <- d17; z$f[1:30] <- NA; z }),   # the factor's own cells
                 B = local({ z <- d17; z$g[1:30] <- NA; z }),   # another factor's
                 C = d17)                                       # neither
+# the arms: both modes in the soft corner, and "level" in the binary corner --
+# the warning is keyed on the design, so it must not depend on the corner
+arms17 <- list("em" = list(categorical = "em"),
+               "level" = list(categorical = "level"),
+               "level/binary" = list(categorical = "level", weights = "binary"))
 if (requireNamespace("cellWise", quietly = TRUE)) {
   strip17 <- function(dd) lapply(dd, function(z) if (is.factor(z)) as.character(z) else z)
-  for (nm17 in names(cases17)) for (md17 in c("em", "level")) {
+  for (nm17 in names(cases17)) for (md17 in names(arms17)) {
     inf17 <- paste(nm17, md17)
-    w17 <- collect_warnings(f17 <- VIM::imputeCellGLoc(cases17[[nm17]], categorical = md17))
+    w17 <- collect_warnings(
+      f17 <- do.call(VIM::imputeCellGLoc, c(list(cases17[[nm17]]), arms17[[md17]])))
     hit17 <- grepl("^cellGLoc: .*contrasts", w17)
     expect_identical(sum(hit17), 1L, info = inf17)
     expect_true(all(grepl("'f'", w17[hit17], fixed = TRUE)), info = inf17)
     expect_false(any(grepl("contrasts dropped", w17, fixed = TRUE)), info = inf17)
     # The warning is true: if the design ignores the attribute, taking it away
-    # must change no number. This is the in-file form of "the numbers do not
-    # change"; the commit-to-commit form is the task's gate. A second fit per
-    # case, so it is at_home only.
+    # must change no number. A second fit per case, so it is at_home only.
     if (at_home()) {
       dz17 <- cases17[[nm17]]; attr(dz17$f, "contrasts") <- NULL
-      f17z <- suppressWarnings(VIM::imputeCellGLoc(dz17, categorical = md17))
+      f17z <- suppressWarnings(
+        do.call(VIM::imputeCellGLoc, c(list(dz17), arms17[[md17]])))
       for (k17 in c("B", "Sigma", "W", "U", "criterion"))
         expect_identical(f17[[k17]], f17z[[k17]], info = paste(inf17, k17))
       expect_identical(strip17(f17$imputed), strip17(f17z$imputed), info = inf17)
@@ -1495,4 +1535,24 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   w17ok <- collect_warnings(f17ok <- VIM::imputeCellGLoc(d17ok))
   expect_false(any(grepl("contrasts", w17ok, fixed = TRUE)))
   expect_identical(rownames(f17ok$B), c("(Intercept)", "f1", "f2", "gv"))
+}
+
+# the pre-R65 fixture (fix round, I1): every fit of the six cases is what the
+# commit before the warning returned
+if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
+  ref65 <- readRDS("gloc_r65_ref_pre.rds")
+  bitref65 <- identical(Sys.getenv("VIM_BITREF"), "true")
+  expect_identical(ref65$commit, "baccf09")
+  expect_identical(ref65$cases, cases17)          # the fixture's data are these data
+  for (nm65 in names(ref65$fits)) {
+    md65 <- sub("^. ", "", nm65)
+    f65 <- suppressWarnings(
+      VIM::imputeCellGLoc(ref65$cases[[substr(nm65, 1L, 1L)]], categorical = md65))
+    for (k65 in c("B", "Sigma", "W", "imputed")) {
+      if (bitref65) expect_identical(f65[[k65]], ref65$fits[[nm65]][[k65]],
+                                     info = paste(nm65, k65))
+      else expect_equal(f65[[k65]], ref65$fits[[nm65]][[k65]], tolerance = 1e-10,
+                        info = paste(nm65, k65))
+    }
+  }
 }
