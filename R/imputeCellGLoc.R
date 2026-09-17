@@ -78,6 +78,35 @@
 #' its row-mates; \code{B}, \code{Sigma} and \code{W} were not affected. See
 #' \code{.gloc_impute}.
 #'
+#' \strong{Per-level detection} (since 7.5.1). Under \code{categorical = "em"}
+#' in the soft corner, a row with a missing categorical cell is judged once per
+#' candidate level, or per level combination when several cells are missing. Each
+#' candidate carries its own cell weights: its cells are compared with its own
+#' fitted mean and conditioned on the cells that are clean under it. The E-step
+#' scores a level by the cellwise-penalised likelihood of the binary corner, the
+#' Gaussian log-density of the cells retained under the level minus
+#' \eqn{\lambda_j / 2} for each cell flagged under it, with
+#' \eqn{\lambda_j = \chi^2_{1;0.99} + \log 2\pi + \log c_j},
+#' \eqn{c_j = 1 / (\Sigma^{-1})_{jj}} from the current scatter, and the peer band
+#' in between (see \code{.gloc_cat_score}). \code{B} and \code{Sigma} are updated
+#' with each candidate's weights times its posterior probability, and \code{W}
+#' reports the posterior mixture of the candidates' weights, which
+#' \code{cat_weights} returns. Why: until 7.5.0 detection in such a row ran at its
+#' expected design row, where a cell that decides the level looks outlying
+#' whenever the true level is far from the prior mean. That cell was flagged, the
+#' E-step dropped it, and the posterior could not move, a self-locking fixed
+#' point. On the datasets of the categorical arms of the 7.5.0 simulation at
+#' \code{eps = 0} (n = 200, six continuous and six categorical variables, 10
+#' replicates per pattern), the decisive cell was flagged in 17.6-19.8\% of the
+#' rows missing the factor, and the imputed level was right in 0.809-0.861 of those
+#' rows, against 0.965-0.986 for the fit's own parameters without flags. A
+#' contaminated cell is flagged under every level and pays the same penalty under
+#' each, so it still does not steer the level. The binary corner keeps one weight
+#' row per observation, since \code{cellWise::cellMCD} returns one: its detection
+#' stays at the expected design row, and the lock can occur there. The soft corner
+#' is the default. The missing continuous cells of such a row are imputed at its
+#' expected design row with the returned \code{W}.
+#'
 #' @param data a \code{data.frame} with continuous and categorical columns.
 #' @param design one-sided formula for the categorical mean structure.
 #'   \code{~ .} (default) is main effects over all categorical columns,
@@ -178,7 +207,10 @@
 #'   categorical variables. A row with a missing cell enters the estimation
 #'   once per candidate level, weighted by that level's posterior probability,
 #'   and the posterior combines the prior with the density of the row's
-#'   unflagged continuous cells (the peer rule of detection and imputation). The
+#'   unflagged continuous cells (the peer rule of detection and imputation). In
+#'   the soft corner each level is judged with its own cell weights, and flagging a
+#'   cell under a level costs a penalty (since 7.5.1; see "Per-level detection" in
+#'   Details). The
 #'   fit is an EM-type algorithm for a pseudo-likelihood, because conditional
 #'   models define no joint distribution, and no monotonicity is claimed. A row
 #'   missing several categorical cells is handled by mean-field sweeps, an
@@ -285,7 +317,25 @@
 #' @return a list with \code{B}, \code{Sigma}, \code{W}, \code{U},
 #'   \code{imputed}, \code{converged}, \code{iterations}, \code{criterion},
 #'   \code{cat_posterior}, \code{cat_prob_observed}, \code{cat_multi_missing},
-#'   \code{cat_priors} and \code{em_starts}.
+#'   \code{cat_priors}, \code{em_starts} and \code{cat_weights}.
+#'
+#'   \code{W} is the \eqn{n x p} matrix of cell weights of the continuous
+#'   variables, 0 on missing cells. Under per-level detection (\code{"em"}, soft
+#'   corner, a missing categorical cell; see Details) a row with a missing
+#'   categorical cell reports the posterior mixture
+#'   \eqn{W_i = \sum_k r_k W_k} of its candidates' weights under the final E-step;
+#'   a row without one, and a row above the combination cap, reports its own.
+#'
+#'   \code{cat_weights} is \code{NULL} unless per-level detection ran. Then it is a
+#'   list with one entry per candidate of the rows below the combination cap that
+#'   miss a categorical cell, in the order of the candidate table: \code{row}, the
+#'   data row (integer); \code{levels}, a data frame of the candidate's values of
+#'   every categorical variable, observed values included; \code{prob}, the
+#'   candidate's posterior probability, the product of the marginal posteriors when
+#'   several cells are missing; and \code{W}, the candidates' cell weights, a
+#'   matrix with one row per candidate and one column per continuous variable.
+#'   \code{W[i, ]} of the fit equals \code{colSums(prob * W)} over row \code{i}'s
+#'   entries.
 #'
 #'   Under \code{categorical = "em"}, \code{U} holds each row's expected design
 #'   row, so \code{U \%*\% B} are the fitted means. \code{cat_posterior} is a
@@ -329,7 +379,13 @@
 #'   can test it instead of parsing a warning string. The fifth entry,
 #'   \code{categorical}, is the largest change of a categorical posterior
 #'   probability in the last iteration; it is 0 without the EM, \code{NA} when no
-#'   iteration ran, and part of the stopping rule with the EM.
+#'   iteration ran, and part of the stopping rule with the EM. Under per-level
+#'   detection \code{weights} is taken over the candidates: the largest change of a
+#'   candidate's cell weight times the candidate's posterior probability (1 for a
+#'   row that is a single candidate or lies above the combination cap), divided by
+#'   the relaxation factor. The adaptive relaxation and the stall detector use the
+#'   same number, so a candidate the posterior has all but ruled out cannot hold up
+#'   convergence.
 #'
 #'   It does not tell those two apart, and it is not an error estimate. On 10
 #'   non-converged \code{weights = "binary"} fits it was positive for all 10,
@@ -443,6 +499,29 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
     pats <- cand$pats_rows                           # NA id where a category is unknown
     priors0 <- priors; es0 <- es
   }
+  # Per-level detection (spec §12.9, since 7.5.1): in the soft corner under the
+  # EM, every candidate of the candidate table carries its own weight row -- a
+  # complete row is one candidate, a row missing a categorical cell has one per
+  # level or level combination, and a row above the combination cap keeps one, at
+  # its mode design row. Detection at the expected design row u-bar, as in 7.5.0,
+  # flagged the cell that decides the level wherever the true level is far from
+  # the prior mean; the E-step then dropped that cell and the posterior could not
+  # move, a self-locking fixed point (at eps = 0, x1 flagged in 17.6-19.8% of the
+  # rows with f1 missing, hit rate 0.809-0.861 against 0.965-0.986 without
+  # flags). The binary corner keeps 7.5.0's path (Ruling R72): cellMCD returns one
+  # weight row per observation. Candidates 1..Np are the pseudo-rows, then the
+  # capped rows.
+  perlevel <- em && relax
+  if (perlevel) {
+    Np <- nrow(cand$Up)
+    n_cap <- length(cand$many$rows)
+    kr <- c(cand$pr_row, cand$many$rows)            # the data row of each candidate
+    Xk <- X[kr, , drop = FALSE]
+    Mk <- M[kr, , drop = FALSE]
+    Uk <- if (n_cap) rbind(cand$Up, cand$many$Umode) else cand$Up
+    pseudo <- function(A) if (n_cap) A[seq_len(Np), , drop = FALSE] else A
+    inc_k <- which(rowSums(catp$Mc)[cand$pr_row] > 0L)   # candidates of cat_weights
+  }
   W <- matrix(1, n, p, dimnames = dimnames(X))
   W[M] <- 0
   # Design warnings are collected rather than raised, and reported once from
@@ -472,6 +551,8 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   run_from <- function(W0, B0, on_warning = dedup) {
     W <- W0; B <- B0; U <- U0
     if (em) { es <- es0; priors <- priors0 }
+    # Every candidate starts at its row's starting weights (spec §12.9, State).
+    if (perlevel) Wk <- W0[kr, , drop = FALSE]
     post_old <- NULL
     damp <- damp0
     design_diag <- design_diag0
@@ -501,7 +582,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
       for (it in seq_len(maxit)) {
         iter_count <- it
         B_old <- B; W_old <- W; Sigma_old <- Sigma
-        R <- X - U %*% B
+        if (perlevel) Wk_old <- Wk else R <- X - U %*% B
 
         if (weights == "binary") {
           if (!requireNamespace("cellWise", quietly = TRUE))
@@ -538,6 +619,20 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
           } else {
             Sigma <- fit$S; W <- fit$W
           }
+        } else if (perlevel) {
+          # Per-level detection. The scatter is the M-step's, over the pseudo-rows
+          # with each candidate's own weights times its posterior (7.5.0 used the
+          # row's weights times the posterior). Each candidate's cells are then
+          # judged against that candidate's fitted mean, conditioned on the cells
+          # that are clean under it, with the relaxed update of the branch below.
+          # For a row without a missing categorical cell this is 7.5.0's step.
+          Rk <- Xk - Uk %*% B
+          Sigma <- .gloc_scatter_soft(pseudo(Rk), pseudo(Wk) * es$pr_w, pseudo(Mk),
+                                      kappa = kappa_soft, crit = cw_crit, em = TRUE)
+          Z <- .gloc_cond_resid(Rk, Sigma, W = Wk, w_min = peer_w_min,
+                                band = peer_band)
+          Wk <- (1 - damp) * Wk + damp * .gloc_bisquare(Z, psi_c)
+          Wk[Mk] <- 0
         } else {
           # Under the EM the scatter is taken over the pseudo-rows: a row with a
           # missing category enters once per level, its cell weights scaled by the
@@ -577,15 +672,19 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
         }
         W[M] <- 0
         if (em) {
-          # E-step, then the M-step on the pseudo-rows. The W-step above used the
-          # expected design rows, and so does the next one.
+          # E-step, then the M-step on the pseudo-rows. In the binary corner the
+          # W-step above used the expected design rows, and so does the next one.
+          # Under per-level detection the E-step scores each candidate under its
+          # own weights (.gloc_cat_score) and the M-step weights its cells by them.
           es <- .gloc_cat_estep(X, M, W, B, Sigma, catp, cand, priors,
-                                w_min = peer_w_min, band = peer_band)
+                                w_min = peer_w_min, band = peer_band,
+                                Wc = if (perlevel) pseudo(Wk))
           dR <- .gloc_cat_change(es$post, post_old)
           post_old <- es$post
           U <- es$Ubar
           B <- .gloc_update_B(X[es$pr_row, , drop = FALSE], cand$Up,
-                              W[es$pr_row, , drop = FALSE] * es$pr_w,
+                              (if (perlevel) pseudo(Wk)
+                               else W[es$pr_row, , drop = FALSE]) * es$pr_w,
                               if (is.null(cand$Up_main)) cand$Up else cand$Up_main,
                               cand$pat_pr, warn = FALSE)
           priors <- .gloc_cat_fit_priors(es$Fp, es$pr_w, catp$levels)
@@ -617,7 +716,15 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
         # the looser run had the lower recall every time it disagreed. Dividing
         # here makes eps mean the same thing at every relaxation factor, and
         # incidentally makes the old fixed-0.25 runs the sloppy ones.
-        dW <- max(abs(W - W_old)) / damp
+        # Under per-level detection the change is taken over the candidates, each
+        # weighted by its posterior (1 for a single candidate and for a row above
+        # the cap; Ruling R73): every returned quantity depends on a candidate's
+        # weights only through r_k W_k or through its score, whose effect dR
+        # tests, so a candidate at a posterior of 1e-10 with a cell inside the
+        # band must not hold up convergence.
+        dW <- if (perlevel)
+          max(abs(Wk - Wk_old) * c(es$pr_w, rep(1, n_cap))) / damp
+        else max(abs(W - W_old)) / damp
         # The estimator is the TRIPLE (B, Sigma, W), so all three are tested.
         # Sigma used to be the one reported quantity with no stopping test of its
         # own, which left the criterion asserting less than the function returns:
@@ -696,6 +803,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
             stall >= .gloc_stall_iters) {
           restarted <- TRUE
           W <- W0; B <- B0
+          if (perlevel) Wk <- W0[kr, , drop = FALSE]
           if (em) {
             es <- es0; U <- es0$Ubar
             priors <- priors0; post_old <- NULL
@@ -786,11 +894,17 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
     if (em) {
       es <- withCallingHandlers(
         .gloc_cat_estep(X, M, W, B, Sigma, catp, cand, priors,
-                        w_min = peer_w_min, band = peer_band),
+                        w_min = peer_w_min, band = peer_band,
+                        Wc = if (perlevel) pseudo(Wk)),
         warning = on_warning)
       U <- es$Ubar
+      # The returned W is the posterior mixture of the candidates' weight rows
+      # under this E-step (spec §12.9, Returned W); at maxit = 0 every candidate
+      # still carries the start's row, and so does W.
+      if (perlevel)
+        W <- .gloc_cat_mix_weights(Wk, c(es$pr_w, rep(1, n_cap)), kr, n, dimnames(X))
     }
-    list(W = W, B = B, Sigma = Sigma, U = U,
+    list(W = W, B = B, Sigma = Sigma, U = U, Wk = if (perlevel) Wk,
          es = if (em) es, priors = if (em) priors,
          converged = converged, iterations = iter_count,
          criterion = c(means = dB, scatter = dS, weights = dW,
@@ -944,6 +1058,16 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
     }, warning = dedup)
     cat_pri <- priors
   }
+  # The candidates' own weights, for the rows below the cap that miss a
+  # categorical cell, in the order of the candidate table (spec §12.9).
+  cat_w <- NULL
+  if (perlevel) {
+    lv <- cand$Fp[inc_k, , drop = FALSE]
+    rownames(lv) <- NULL
+    cat_w <- list(row = cand$pr_row[inc_k], levels = lv, prob = es$pr_w[inc_k],
+                  W = matrix(run$Wk[inc_k, , drop = FALSE], length(inc_k), p,
+                             dimnames = list(NULL, colnames(X))))
+  }
 
   # Impute from the unflagged cells only, by the peer rule detection uses. Both
   # corners: a binary flag is a weight of exactly 0 or 1, where the band is inert.
@@ -963,7 +1087,7 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
        criterion = run$criterion,
        cat_posterior = cat_post, cat_prob_observed = cat_pobs,
        cat_multi_missing = cat_multi, cat_priors = cat_pri,
-       em_starts = em_starts)
+       em_starts = em_starts, cat_weights = cat_w)
 }
 
 #' Relaxation schedule for the soft corner's weight update

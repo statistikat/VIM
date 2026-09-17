@@ -279,6 +279,20 @@
 #' steer the level. \eqn{G} does not depend on the candidate, so candidates of
 #' one row differ only through the quadratic form. Rows whose peers are all
 #' fully in or out share one inversion per peer pattern.
+#'
+#' This is the density term of VIM 7.5.0, with one weight row per observation. It
+#' is still the E-step's term in the binary corner, and \code{cat_prob_observed}
+#' uses it with the returned \code{W}. Per-level detection (soft corner, 7.5.1)
+#' scores each candidate \eqn{k} with its own weight row instead
+#' (\code{.gloc_cat_score}):
+#' \eqn{\ell_k = -\frac{1}{2} [|K| \log 2\pi + \log\det G + y' G^{-1} y]
+#' - \frac{1}{2} \sum_{j \in K} (1 - r_j) p_j - \frac{1}{2} \sum_{j \in O
+#' \setminus K} \lambda_j}, which at the endpoints of the band (every reliability
+#' 0 or 1) is minus one half times the row's term of the binary-corner objective
+#' (\code{.gloc_objective}). When every candidate of a row carries the row's weight
+#' row, \eqn{G}, \eqn{K} and the penalties are shared, so \eqn{\ell_k} and this
+#' function's value differ by one constant within the row and give the same
+#' posteriors.
 #' @param X \eqn{n x p} continuous matrix.
 #' @param M \eqn{n x p} missing mask.
 #' @param W \eqn{n x p} cell weights, or \code{NULL} for every observed cell.
@@ -321,6 +335,152 @@
     ll[idx] <- -0.5 * rowSums((Z %*% Gi) * Z)
   }
   ll
+}
+
+#' Score of candidate levels under their own cell weights (per-level detection)
+#'
+#' Under per-level detection (\code{imputeCellGLoc(categorical = "em")}, soft
+#' corner, since 7.5.1) every candidate \eqn{k} of a row \eqn{i} with a missing
+#' categorical cell -- one level, or one level combination -- carries its own cell
+#' weights \eqn{W_k}, computed at its own design row \eqn{u_k}. The E-step scores
+#' the candidate by the cellwise-penalised likelihood of the binary corner, the
+#' posterior being proportional to the prior times \eqn{\exp(\ell_k)}:
+#'
+#' \deqn{\ell_k = -\frac{1}{2} [ |K| \log 2\pi + \log\det G + y' G^{-1} y ]
+#'   - \frac{1}{2} \sum_{j \in K} (1 - r_j) p_j - \frac{1}{2}
+#'   \sum_{j \in O \setminus K} \lambda_j,}
+#'
+#' with \eqn{O} the observed continuous cells of row \eqn{i}; \eqn{r_j} the peer
+#' reliability of cell \eqn{j} under \eqn{W_k} (\code{.gloc_peer_rel}, band
+#' included); \eqn{K = \{j \in O : r_j > 0\}}; \eqn{D = \mathrm{diag}(\sqrt{r_K})}
+#' and \eqn{G = D \Sigma_{KK} D + \mathrm{diag}(\sigma_{jj} (1 - r_j))} over
+#' \eqn{K}, the noise-inflated construction of \code{.gloc_cond_resid};
+#' \eqn{y = \sqrt{r_K} \odot (x_{iK} - (B' u_k)_K)};
+#' \eqn{\lambda_j = \chi^2_{1;0.99} + \log 2\pi + \log c_j} with
+#' \eqn{c_j = 1 / (\Sigma^{-1})_{jj}} (\code{.gloc_lambda}); and
+#' \eqn{p_j = \lambda_j - \log(2\pi\sigma_{jj}) = \chi^2_{1;0.99} + \log(c_j /
+#' \sigma_{jj})}.
+#'
+#' \strong{Endpoints.} When every \eqn{r_j} is 0 or 1, \eqn{\ell_k} is exactly
+#' \eqn{-1/2} times row \eqn{i}'s term of the binary-corner objective
+#' (\code{.gloc_objective}) at the candidate's residuals \eqn{x_i - B' u_k} and
+#' weights, with \eqn{\lambda} from the same \eqn{\Sigma}: the Gaussian
+#' log-density of the retained cells minus \eqn{\lambda_j / 2} per flagged observed
+#' cell. Missing cells are the same under every candidate and are left out,
+#' whatever their weight. \strong{Inside the band} \eqn{\ell_k} is continuous in
+#' the weights: as \eqn{r_j \to 0}, \eqn{y_j \to 0} and cell \eqn{j}'s row of
+#' \eqn{G} tends to \eqn{\sigma_{jj}}, so the cell contributes
+#' \eqn{-\frac{1}{2} \log(2\pi\sigma_{jj})}, and \eqn{p_j} tops that up to
+#' \eqn{\lambda_j / 2}. The E-step therefore stays continuous in \eqn{W}, which the
+#' fixed-point argument of the peer band needs. When every candidate of a row
+#' carries the row's weight row, \eqn{\ell_k} differs from
+#' \code{.gloc_cat_loglik} by one constant within the row.
+#'
+#' \strong{Why.} A cell that fits candidate \eqn{c} is retained under \eqn{c} and
+#' flagged under a candidate it does not fit, so \eqn{c} gains up to
+#' \eqn{\chi^2_{1;0.99} / 2 \approx 3.3} log units from it. With one weight row per
+#' observation, computed at the expected design row, the cell that decides the
+#' level was flagged under every candidate and dropped from all of them, and the
+#' posterior could not move (the flag lock of 7.5.0). A cell that fits no candidate
+#' is flagged under every candidate, pays the same penalty under each and leaves
+#' the density under each, so its effect on the level is that of a missing cell.
+#'
+#' \eqn{\Sigma} is the scatter of the current iteration (Ruling R71), so the
+#' density and the penalty sit on one scale. If \code{.gloc_lambda(Sigma)} gives no
+#' penalty, \eqn{c_j = \sigma_{jj}}, with a warning. \eqn{\log\det G} and
+#' \eqn{G^{-1}} come from the Cholesky factor of \eqn{G}; if that fails, from its
+#' eigenvalues floored at 1e-8 times the largest, the floor of \code{.gloc_psd}.
+#' Candidates whose reliabilities are all 0 or 1 share one factorisation per
+#' pattern; a candidate with a cell inside the band gets its own.
+#' @param X \eqn{n x p} continuous matrix.
+#' @param M \eqn{n x p} missing mask.
+#' @param Wc cell weights, one row per candidate, in the order of \code{Ucand}.
+#' @param B \eqn{q x p} coefficients.
+#' @param Sigma \eqn{p x p} scatter.
+#' @param Ucand candidate design rows, one per candidate.
+#' @param row_of the data row of each candidate.
+#' @param w_min,band the peer rule.
+#' @return one score \eqn{\ell_k} per candidate.
+#' @keywords internal
+.gloc_cat_score <- function(X, M, Wc, B, Sigma, Ucand, row_of, w_min = 0.5,
+                            band = .gloc_peer_band) {
+  ll <- numeric(nrow(Ucand))
+  if (!length(ll)) return(ll)
+  sdiag <- diag(Sigma)
+  spos <- pmax(sdiag, .Machine$double.eps)
+  lam <- .gloc_lambda(Sigma)
+  if (is.null(lam)) {
+    warning(paste("cellGLoc: the scatter gives no valid flagging penalty (it is",
+                  "singular, or its inverse has a diagonal entry that is not finite",
+                  "and positive), so the score of a candidate level for a missing",
+                  "categorical cell uses each variable's variance in place of its",
+                  "conditional variance in that penalty."), call. = FALSE)
+    lam <- stats::qchisq(0.99, df = 1) + log(2 * pi) + log(spos)
+  }
+  lam <- unname(lam)
+  pj <- lam - log(2 * pi * spos)
+  Obs <- !M[row_of, , drop = FALSE]
+  Rel <- .gloc_peer_rel(Obs, Wc, w_min = w_min, band = band)
+  In  <- Rel > 0
+  # lambda_j for each observed cell outside K, (1 - r_j) p_j for each cell in K
+  pen <- drop((Obs & !In) %*% lam) + drop((In * (1 - Rel)) %*% pj)
+  Mu <- Ucand %*% B
+  key <- apply(Rel, 1L, function(r)
+    if (any(r > 0 & r < 1)) NA_character_ else paste0(as.integer(r > 0), collapse = ""))
+  inband <- is.na(key)
+  key[inband] <- paste0("b", seq_len(sum(inband)))
+  for (g in split(seq_along(key), key)) {
+    r  <- Rel[g[1L], ]
+    kk <- which(r > 0)
+    if (!length(kk)) next
+    rk <- r[kk]; dd <- sqrt(rk)
+    G  <- outer(dd, dd) * Sigma[kk, kk, drop = FALSE] +
+            diag(sdiag[kk] * (1 - rk), length(kk))
+    L <- tryCatch(chol(G), error = function(e) NULL)
+    if (!is.null(L)) {
+      Gi <- chol2inv(L)
+      logdet <- 2 * sum(log(diag(L)))
+    } else {
+      ev <- eigen((G + t(G)) / 2, symmetric = TRUE)
+      top <- max(ev$values)
+      vals <- pmax(ev$values,
+                   if (is.finite(top) && top > 0) 1e-8 * top else .Machine$double.eps)
+      Gi <- ev$vectors %*% (t(ev$vectors) / vals)
+      logdet <- sum(log(vals))
+    }
+    Z <- (X[row_of[g], kk, drop = FALSE] - Mu[g, kk, drop = FALSE]) *
+           rep(dd, each = length(g))
+    ll[g] <- -0.5 * (rowSums((Z %*% Gi) * Z) + logdet + length(kk) * log(2 * pi))
+  }
+  ll - 0.5 * pen
+}
+
+#' The posterior mixture of the candidates' cell weights
+#'
+#' Under per-level detection a row's reported weights are
+#' \eqn{W_i = \sum_k r_k W_k} over its candidates. The sum is taken as
+#' \eqn{W_{k_0} + \sum_k r_k (W_k - W_{k_0})}, with \eqn{k_0} the row's first
+#' candidate, which is the same number up to rounding because the \eqn{r_k} sum to
+#' 1, and is exact wherever the candidates agree: a row that is a single candidate,
+#' or lies above the combination cap, returns its own weight row, and a cell with
+#' the same weight under every candidate (a missing cell, say) returns that weight.
+#' At \code{maxit = 0}, where every candidate carries the start's weight row, the
+#' start's weights come back unchanged.
+#' @param Wk cell weights, one row per candidate.
+#' @param r each candidate's posterior weight (1 for a single candidate).
+#' @param row_of the data row of each candidate; every row in \code{1:n} has one.
+#' @param n the number of rows.
+#' @param dn dimnames of the result.
+#' @return an \eqn{n x p} matrix.
+#' @keywords internal
+.gloc_cat_mix_weights <- function(Wk, r, row_of, n, dn = NULL) {
+  W <- matrix(0, n, ncol(Wk), dimnames = dn)
+  first <- !duplicated(row_of)
+  W[row_of[first], ] <- Wk[first, , drop = FALSE]
+  S <- rowsum((Wk - W[row_of, , drop = FALSE]) * r, row_of, reorder = TRUE)
+  at <- as.integer(rownames(S))
+  W[at, ] <- W[at, , drop = FALSE] + S
+  W
 }
 
 #' The fixed table of pseudo-rows for the categorical EM
@@ -515,24 +675,47 @@
 #' the pseudo-row weights are then the products of the marginal posteriors.
 #' That is an approximation, because conditional models define no joint
 #' distribution.
+#'
+#' With per-candidate weights \code{Wc} (per-level detection, soft corner, since
+#' 7.5.1) the density term of a pseudo-row \eqn{k} of a row with a missing cell is
+#' the cellwise-penalised score of \code{.gloc_cat_score},
+#' \eqn{\ell_k = -\frac{1}{2} [|K| \log 2\pi + \log\det G + y' G^{-1} y]
+#' - \frac{1}{2} \sum_{j \in K} (1 - r_j) p_j - \frac{1}{2} \sum_{j \in O
+#' \setminus K} \lambda_j}, computed under the candidate's own weights with
+#' \eqn{\lambda} from \code{Sigma}; the posterior and the mean-field sweeps are
+#' otherwise unchanged, with \eqn{\ell_k} in place of the density term per level
+#' combination. At the endpoints of the band \eqn{\ell_k} is minus one half times
+#' the row's term of the binary-corner objective (\code{.gloc_objective}); when
+#' every candidate carries its row's weight row, the posteriors are those without
+#' \code{Wc} up to rounding.
 #' @param X,M,W,B,Sigma the continuous data, mask, weights and current fit;
-#'   \code{B = NULL} drops the density (prior-only E-step).
+#'   \code{B = NULL} drops the density (prior-only E-step). \code{W} is not used
+#'   when \code{Wc} is given.
 #' @param catp,cand results of \code{.gloc_cat_prepare} and
 #'   \code{.gloc_cat_candidates}.
 #' @param priors result of \code{.gloc_cat_fit_priors}.
 #' @param w_min,band the peer rule.
 #' @param sweeps see \code{.gloc_cat_sweeps}.
+#' @param Wc \code{NULL} (the 7.5.0 density term, one weight row per observation)
+#'   or cell weights with one row per pseudo-row of \code{cand}, in its order;
+#'   only the rows of candidates whose row misses a categorical cell are read.
 #' @return \code{list(pr_row, pr_w, Fp, Up, Ubar, post, Umain_bar)}.
 #' @keywords internal
 .gloc_cat_estep <- function(X, M, W, B, Sigma, catp, cand, priors, w_min = 0.5,
-                            band = .gloc_peer_band, sweeps = .gloc_cat_sweeps) {
+                            band = .gloc_peer_band, sweeps = .gloc_cat_sweeps,
+                            Wc = NULL) {
   lev <- catp$levels; N <- nrow(cand$Fp)
   inc <- rowSums(catp$Mc)[cand$pr_row] > 0L
   w <- rep(1, N)
   ll <- numeric(N)
   if (!is.null(B) && any(inc))
-    ll[inc] <- .gloc_cat_loglik(X, M, W, B, Sigma, cand$Up[inc, , drop = FALSE],
-                                cand$pr_row[inc], w_min = w_min, band = band)
+    ll[inc] <- if (is.null(Wc))
+      .gloc_cat_loglik(X, M, W, B, Sigma, cand$Up[inc, , drop = FALSE],
+                       cand$pr_row[inc], w_min = w_min, band = band)
+    else
+      .gloc_cat_score(X, M, Wc[inc, , drop = FALSE], B, Sigma,
+                      cand$Up[inc, , drop = FALSE], cand$pr_row[inc],
+                      w_min = w_min, band = band)
   lp <- list()
   for (v in names(lev)) {
     pos <- cand$need[[v]]

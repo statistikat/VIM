@@ -50,4 +50,19 @@ steer the level. \eqn{G} does not depend on the candidate, so candidates of
 one row differ only through the quadratic form. Rows whose peers are all
 fully in or out share one inversion per peer pattern.
 }
+\details{
+This is the density term of VIM 7.5.0, with one weight row per observation. It
+is still the E-step's term in the binary corner, and \code{cat_prob_observed}
+uses it with the returned \code{W}. Per-level detection (soft corner, 7.5.1)
+scores each candidate \eqn{k} with its own weight row instead
+(\code{.gloc_cat_score}):
+\eqn{\ell_k = -\frac{1}{2} [|K| \log 2\pi + \log\det G + y' G^{-1} y]
+- \frac{1}{2} \sum_{j \in K} (1 - r_j) p_j - \frac{1}{2} \sum_{j \in O
+\setminus K} \lambda_j}, which at the endpoints of the band (every reliability
+0 or 1) is minus one half times the row's term of the binary-corner objective
+(\code{.gloc_objective}). When every candidate of a row carries the row's weight
+row, \eqn{G}, \eqn{K} and the penalties are shared, so \eqn{\ell_k} and this
+function's value differ by one constant within the row and give the same
+posteriors.
+}
 \keyword{internal}

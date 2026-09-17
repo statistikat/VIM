@@ -449,6 +449,13 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   # start" line and the second start's (13 iterations here, and it is the run
   # returned), so the restart check reads the first start's part only, and a
   # legitimate restart of the second start cannot break it (R64 M5).
+  # Since 7.5.1 (per-level detection) the plateau is gone, so this test no longer
+  # tells the two rules apart; the counts above are 7.5.0's. Both rules now converge
+  # in 25 iterations of the first start without a restart here, and the pre-R40 rule
+  # fired no first-start restart on any of 275 datasets searched for a replacement
+  # (this call with seeds 1 to 150, and 25 seeds each of five variants: weaker level
+  # shifts, more missing cells, both factors missing, n = 150). It still checks
+  # convergence at a tight tolerance.
   s7t <- gen_cat(300, 5, miss_f = 0.25)
   msg_tight <- capture.output(
     tight_tr <- suppressWarnings(VIM::imputeCellGLoc(s7t$d, eps = 1e-5, trace = TRUE)),
@@ -644,7 +651,11 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
 # ==========================================================================
 if (requireNamespace("cellWise", quietly = TRUE)) {
   s9 <- gen_cat(200, 9, miss_f = 0.2)
-  fit9 <- suppressWarnings(VIM::imputeCellGLoc(s9$d))
+  # The binary corner: its posteriors are a function of the returned W, which is
+  # what W = fit9$W reproduces. Under per-level detection (soft corner, 7.5.1) they
+  # come from the candidates' own weight rows instead (spec §12.9), which this
+  # helper takes only from Task 21 on (its cat_weights argument).
+  fit9 <- suppressWarnings(VIM::imputeCellGLoc(s9$d, weights = "binary"))
   fo9 <- VIM:::.gloc_cat_posterior_for(fit9, s9$d, W = fit9$W)
   expect_equal(fo9$cat_posterior, fit9$cat_posterior, tolerance = 1e-10)
   expect_equal(unname(fo9$U), unname(fit9$U), tolerance = 1e-10)
@@ -974,4 +985,179 @@ if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
                es13g$objective[["na_level"]], tolerance = 1e-10)
   expect_identical(f13g$iterations, es13g$iterations[["na_level"]])
   expect_true(norm(f13g$Sigma - g13$S, "F") / norm(g13$S, "F") < 0.6)
+}
+
+# ==========================================================================
+# Task 20: per-level detection (VIM 7.5.1; spec §12.9, tests 10 to 15)
+# ==========================================================================
+# --- one hand-built row: p = 4, one missing categorical cell (levels a, b), two
+# candidates whose weight rows differ; weights 0 and 0.3 lie below the band
+# (flagged), 0.8 and 1 above it (retained)
+S11 <- matrix(c(1.0, 0.4, 0.2, 0.1,
+                0.4, 1.5, 0.3, -0.2,
+                0.2, 0.3, 0.8, 0.25,
+                0.1, -0.2, 0.25, 1.2), 4)
+B11 <- rbind(c(0.5, -0.3, 1.0, 0.2),                # (Intercept)
+             c(2.0, 1.0, -1.5, 0.5))                # fb
+X11 <- matrix(c(1.1, 0.2, 2.9, -0.4), 1)
+M11 <- matrix(FALSE, 1, 4)
+U11 <- rbind(c(1, 0), c(1, 1))                      # candidates a and b of row 1
+W11 <- rbind(c(1, 0.8, 0.3, 0),
+             c(0, 1, 0.8, 0.3))
+lam11 <- VIM:::.gloc_lambda(S11)
+half_obj <- function(k, w, M = M11)
+  -0.5 * VIM:::.gloc_objective(X11 - U11[k, , drop = FALSE] %*% B11, matrix(w, 1), M,
+                               S11, lam11)
+
+# spec test 11 -- at the endpoints the score is -1/2 times the row's term of the
+# binary-corner objective, with lambda from the same scatter
+sc11 <- VIM:::.gloc_cat_score(X11, M11, W11, B11, S11, U11, c(1L, 1L))
+expect_identical(length(sc11), 2L)
+for (k in 1:2)
+  expect_true(abs(sc11[k] - half_obj(k, W11[k, ])) < 1e-10, info = paste("candidate", k))
+# a missing cell is left out whatever its weight: the mask decides, not the weight
+M11m <- M11; M11m[1, 3] <- TRUE
+W11m <- W11; W11m[1, 3] <- 0.8
+sc11m <- VIM:::.gloc_cat_score(X11, M11m, W11m, B11, S11, U11, c(1L, 1L))
+for (k in 1:2)
+  expect_true(abs(sc11m[k] - half_obj(k, W11m[k, ], M11m)) < 1e-10,
+              info = paste("missing cell, candidate", k))
+
+# spec test 12 -- continuity: candidate b's x3 swept across the band in 201
+# steps, its other cells retained. The ends are the flagged and the retained
+# endpoint values, and no step moves the score by more than 5% of its range.
+w12 <- seq(0.5 - VIM:::.gloc_peer_band, 0.5 + VIM:::.gloc_peer_band, length.out = 201)
+W12 <- cbind(1, 1, w12, 1)
+sc12 <- VIM:::.gloc_cat_score(X11, M11, W12, B11, S11, U11[rep(2L, 201), , drop = FALSE],
+                              rep(1L, 201))
+expect_true(abs(sc12[1] - half_obj(2, c(1, 1, 0, 1))) < 1e-10)
+expect_true(abs(sc12[201] - half_obj(2, c(1, 1, 1, 1))) < 1e-10)
+expect_true(max(abs(diff(sc12))) <= 0.05 * diff(range(sc12)))
+
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  s20 <- gen_cat(400, 5, miss_f = 0.2)
+  f20 <- suppressWarnings(VIM::imputeCellGLoc(s20$d))
+  X20 <- as.matrix(s20$d[, c("x1", "x2", "x3")])
+  M20 <- is.na(X20)
+  cp20 <- VIM:::.gloc_cat_prepare(s20$d, c("f", "g"))
+  cand20 <- VIM:::.gloc_cat_candidates(cp20, s20$d, ~ .)
+  inc20 <- which(rowSums(cp20$Mc)[cand20$pr_row] > 0L)   # candidates of incomplete rows
+  rows20 <- cand20$pr_row[inc20]
+
+  # spec test 13 -- reduction: every candidate given its row's weight row, the
+  # score differs from 7.5.0's density term by one constant within each row, and
+  # the E-step's posteriors are 7.5.0's
+  sc13 <- VIM:::.gloc_cat_score(X20, M20, f20$W[rows20, , drop = FALSE], f20$B, f20$Sigma,
+                                cand20$Up[inc20, , drop = FALSE], rows20)
+  ll13 <- VIM:::.gloc_cat_loglik(X20, M20, f20$W, f20$B, f20$Sigma,
+                                 cand20$Up[inc20, , drop = FALSE], rows20)
+  spread13 <- tapply(sc13 - ll13, rows20, function(z) max(z) - min(z))
+  expect_true(max(spread13) < 1e-10)
+  es13a <- VIM:::.gloc_cat_estep(X20, M20, f20$W, f20$B, f20$Sigma, cp20, cand20, f20$cat_priors)
+  es13b <- VIM:::.gloc_cat_estep(X20, M20, f20$W, f20$B, f20$Sigma, cp20, cand20, f20$cat_priors,
+                                 Wc = f20$W[cand20$pr_row, , drop = FALSE])
+  expect_true(max(abs(es13b$post$f - es13a$post$f)) < 1e-10)
+
+  # spec test 15 -- the returned W is the posterior mixture of the candidates' weight
+  # rows, and the candidates' posterior weights sum to 1 per row
+  cw15 <- f20$cat_weights
+  expect_identical(names(cw15), c("row", "levels", "prob", "W"))
+  expect_identical(cw15$row, rows20)                         # candidate-table order
+  expect_identical(dim(cw15$W), c(length(rows20), 3L))
+  expect_identical(colnames(cw15$W), c("x1", "x2", "x3"))
+  expect_true(max(abs(tapply(cw15$prob, cw15$row, sum) - 1)) < 1e-12)
+  mix15 <- t(vapply(split(seq_along(cw15$row), cw15$row),
+                    function(k) colSums(cw15$prob[k] * cw15$W[k, , drop = FALSE]), numeric(3)))
+  expect_true(max(abs(f20$W[as.integer(rownames(mix15)), ] - mix15)) < 1e-12)
+  # levels: each candidate's level of f, and the row's observed g
+  expect_true(is.data.frame(cw15$levels) && nrow(cw15$levels) == length(rows20))
+  expect_identical(as.character(cw15$levels$f), as.character(cand20$Fp$f[inc20]))
+  expect_identical(as.character(cw15$levels$g), as.character(s20$d$g[rows20]))
+  expect_true(all(tapply(as.character(cw15$levels$f), cw15$row,
+                         function(z) identical(sort(z), c("a", "b", "c")))))
+  # NULL, but present, in the binary corner, under "level" and without a missing
+  # categorical cell
+  none15 <- list(binary   = suppressWarnings(VIM::imputeCellGLoc(s20$d, weights = "binary")),
+                 level    = suppressWarnings(VIM::imputeCellGLoc(s20$d, categorical = "level")),
+                 complete = suppressWarnings(VIM::imputeCellGLoc(s20$truth)))
+  for (nm in names(none15)) {
+    expect_true("cat_weights" %in% names(none15[[nm]]), info = nm)
+    expect_null(none15[[nm]]$cat_weights, info = nm)
+  }
+}
+
+# spec test 14 -- the binary corner under "em", with missing categorical cells,
+# returns 7.5.0's fit (Ruling R72). A regression guard: it passed before 7.5.1.
+# The fixture was built with the durable VIM 7.5.0 library (commit 15b08a3)
+# before any 7.5.1 code existed:
+#   .libPaths(c("<VIM 7.5.0 library>", .libPaths())); library(VIM)
+#   stopifnot(packageVersion("VIM") == "7.5.0")
+#   d <- gen_cat(300, 7, miss_f = 0.2, miss_g = 0.2)$d        # gen_cat of this file
+#   fit <- imputeCellGLoc(d, weights = "binary")
+#   saveRDS(list(data = d,
+#                fit = fit[c("B", "Sigma", "W", "U", "imputed", "cat_posterior",
+#                            "criterion", "converged", "iterations")],
+#                vim = "7.5.0", commit = "15b08a3"),
+#           "inst/tinytest/gloc_em_binary_ref_750.rds")
+if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
+  ref750 <- readRDS("gloc_em_binary_ref_750.rds")
+  bitref750 <- identical(Sys.getenv("VIM_BITREF"), "true")
+  fit14 <- suppressWarnings(VIM::imputeCellGLoc(ref750$data, weights = "binary"))
+  expect_identical(fit14$converged, ref750$fit$converged)
+  expect_identical(fit14$iterations, ref750$fit$iterations)
+  for (k in c("B", "Sigma", "W", "U", "imputed", "cat_posterior", "criterion")) {
+    if (bitref750) expect_identical(fit14[[k]], ref750$fit[[k]], info = k)
+    else expect_equal(fit14[[k]], ref750$fit[[k]], tolerance = 1e-10, info = k)
+  }
+}
+
+# spec test 10 -- the flag lock (regression). A three-level factor shifts x1 by
+# +3, 0, -3 and x2 by +2, 0, 0; g shifts x3. In 7.5.0 detection in a row with f
+# missing ran at the expected design row, flagged the decisive cell x1 there, and
+# the E-step then dropped it, so the posterior could not move. On the rows with f
+# missing, (a) the posterior mode hits at least as often as the classifier that
+# uses the fit's own B, Sigma and prior on every observed continuous cell, less
+# 0.05, and (b) x1 has W < 0.5 in at most 8% of them. Both failed on 7.5.0
+# (hit 0.917 against 1.000, x1 flagged in 12.5%).
+if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
+  gen_lock <- function(n, seed) {
+    set.seed(seed)
+    f <- factor(sample(c("A", "B", "C"), n, TRUE, prob = c(0.5, 0.3, 0.2)),
+                levels = c("A", "B", "C"))
+    g <- factor(sample(c("u", "v"), n, TRUE))                  # independent of f
+    X <- matrix(rnorm(n * 4), n) %*% chol(0.5 * diag(4) + 0.5)
+    X[, 1] <- X[, 1] + c(3, 0, -3)[as.integer(f)]
+    X[, 2] <- X[, 2] + c(2, 0, 0)[as.integer(f)]
+    X[, 3] <- X[, 3] + (g == "v")
+    colnames(X) <- paste0("x", 1:4)
+    truth <- data.frame(X, f = f, g = g)
+    d <- truth
+    d$f[sample(n, round(0.12 * n))] <- NA
+    for (v in c("x2", "x3", "x4")) d[[v]][sample(n, round(0.10 * n))] <- NA   # x1 observed
+    list(d = d, truth = truth)
+  }
+  s10 <- gen_lock(400, 1)
+  f10 <- suppressWarnings(VIM::imputeCellGLoc(s10$d))
+  rows10 <- which(is.na(s10$d$f))
+  cp10 <- VIM:::.gloc_cat_prepare(s10$d, c("f", "g"))
+  lev10 <- cp10$levels$f
+  P10 <- VIM:::.gloc_cat_prior(f10$cat_priors$f, cp10$F[rows10, , drop = FALSE])
+  X10 <- as.matrix(s10$d[, paste0("x", 1:4)])
+  noflag10 <- vapply(seq_along(rows10), function(k) {
+    i <- rows10[k]; o <- which(!is.na(X10[i, ]))
+    Fi <- cp10$F[rep(i, length(lev10)), , drop = FALSE]
+    Fi$f <- factor(lev10, levels = lev10)
+    mu <- VIM:::.gloc_design_rows(Fi, ~ ., cp10$levels) %*% f10$B
+    So <- f10$Sigma[o, o, drop = FALSE]
+    s <- vapply(seq_along(lev10), function(l) {
+      r <- X10[i, o] - mu[l, o]
+      log(P10[k, l]) - 0.5 * (drop(r %*% solve(So, r)) +
+                                as.numeric(determinant(So)$modulus) + length(o) * log(2 * pi))
+    }, 0)
+    lev10[which.max(s)]
+  }, "")
+  truth10 <- as.character(s10$truth$f[rows10])
+  hit10 <- mean(as.character(f10$imputed$f[rows10]) == truth10)
+  expect_true(hit10 >= mean(noflag10 == truth10) - 0.05)
+  expect_true(mean(f10$W[rows10, "x1"] < 0.5) <= 0.08)
 }

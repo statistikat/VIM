@@ -1,3 +1,28 @@
+# VIM 7.5.1
+
+## Changes
+- **Per-level detection in `imputeCellGLoc(categorical = "em")`, soft corner.** A row with a missing
+  categorical cell now carries one row of cell weights per candidate level (per level combination
+  when several cells are missing), computed at that level's fitted mean and conditioned on the
+  cells that are clean under it. The E-step scores a level by the cellwise-penalised likelihood of
+  the binary corner: the Gaussian log-density of the cells retained under the level, minus a
+  cellMCD-type penalty for each cell flagged under it, with the penalty taken from the current
+  scatter. `B` and `Sigma` are updated with each candidate's own weights times its posterior. `W`
+  now reports the posterior mixture of the candidates' weights, and the new element `cat_weights`
+  holds the candidates' weights themselves. `criterion["weights"]` is the largest change of a
+  candidate's weights times its posterior probability. In 7.5.0 detection ran at the row's
+  expected design row, where the cell that decides the level looks outlying whenever the true level
+  is far from the prior mean. That cell was flagged, the E-step dropped it, and the posterior could
+  not move. On the datasets of the full simulation's categorical arms at eps = 0 (n = 200, 10
+  replicates per pattern) the decisive cell was flagged in 17.6-19.8% of the rows missing the
+  factor, and the imputed level was right in 0.809-0.861 of those rows, against 0.965-0.986 for the
+  fit's own parameters without flags. A contaminated cell is flagged under every level and pays the
+  same penalty under each, so it still does not steer the level. Results change for soft-corner
+  `"em"` fits with a missing categorical cell. The binary corner, `categorical = "level"` and fits
+  without a missing categorical cell are unchanged, bit for bit. The binary corner takes one weight
+  row per observation from `cellWise::cellMCD()`, so its detection stays at the expected design
+  row, and the lock can still occur there.
+
 # VIM 7.5.0
 
 ## Changes

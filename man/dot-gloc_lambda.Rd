@@ -22,7 +22,10 @@ others: flagging a cell costs what keeping it at the 99\\% cut-off would.
 function \pkg{cellWise} does not export. The two-start selection of
 \code{imputeCellGLoc(categorical = "em")} takes \eqn{S} from the first
 start's own \code{cellMCD} call (\code{.gloc_start_robust}) and holds it
-fixed for both candidates.
+fixed for both candidates. The per-level score of a candidate level
+(\code{.gloc_cat_score}, since 7.5.1) takes \eqn{S} from the scatter of the
+current iteration instead, so that the density it trades against the penalty
+sits on the same scale.
 }
 \details{
 A scatter that is singular, or whose inverse has a diagonal entry that is not

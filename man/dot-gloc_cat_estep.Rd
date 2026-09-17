@@ -15,12 +15,14 @@
   priors,
   w_min = 0.5,
   band = .gloc_peer_band,
-  sweeps = .gloc_cat_sweeps
+  sweeps = .gloc_cat_sweeps,
+  Wc = NULL
 )
 }
 \arguments{
 \item{X, M, W, B, Sigma}{the continuous data, mask, weights and current fit;
-\code{B = NULL} drops the density (prior-only E-step).}
+\code{B = NULL} drops the density (prior-only E-step). \code{W} is not used
+when \code{Wc} is given.}
 
 \item{catp, cand}{results of \code{.gloc_cat_prepare} and
 \code{.gloc_cat_candidates}.}
@@ -30,6 +32,10 @@
 \item{w_min, band}{the peer rule.}
 
 \item{sweeps}{see \code{.gloc_cat_sweeps}.}
+
+\item{Wc}{\code{NULL} (the 7.5.0 density term, one weight row per observation)
+or cell weights with one row per pseudo-row of \code{cand}, in its order;
+only the rows of candidates whose row misses a categorical cell are read.}
 }
 \value{
 \code{list(pr_row, pr_w, Fp, Up, Ubar, post, Umain_bar)}.
@@ -44,5 +50,19 @@ plus the expected log density over the other cells' current posteriors;
 the pseudo-row weights are then the products of the marginal posteriors.
 That is an approximation, because conditional models define no joint
 distribution.
+}
+\details{
+With per-candidate weights \code{Wc} (per-level detection, soft corner, since
+7.5.1) the density term of a pseudo-row \eqn{k} of a row with a missing cell is
+the cellwise-penalised score of \code{.gloc_cat_score},
+\eqn{\ell_k = -\frac{1}{2} [|K| \log 2\pi + \log\det G + y' G^{-1} y]
+- \frac{1}{2} \sum_{j \in K} (1 - r_j) p_j - \frac{1}{2} \sum_{j \in O
+\setminus K} \lambda_j}, computed under the candidate's own weights with
+\eqn{\lambda} from \code{Sigma}; the posterior and the mean-field sweeps are
+otherwise unchanged, with \eqn{\ell_k} in place of the density term per level
+combination. At the endpoints of the band \eqn{\ell_k} is minus one half times
+the row's term of the binary-corner objective (\code{.gloc_objective}); when
+every candidate carries its row's weight row, the posteriors are those without
+\code{Wc} up to rounding.
 }
 \keyword{internal}
