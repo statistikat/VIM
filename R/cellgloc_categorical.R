@@ -85,6 +85,69 @@
   })
 }
 
+#' Factors whose own contrasts attribute the design will not use
+#'
+#' A factor can carry its own \code{contrasts} attribute, and \code{imputeCellGLoc}
+#' loses it in two ways, both of which used to pass without a word the user could
+#' act on (R65, Ruling R79).
+#'
+#' \emph{An unused level.} \code{model.frame(drop.unused.levels = TRUE)} rebuilds
+#' the factor without that level and drops the attribute, matrix or character
+#' alike, with base R's warning "contrasts dropped from factor ... due to missing
+#' levels". That warning is muffled at every design site of the fit
+#' (\code{.gloc_no_contrasts_warning}), because the categorical EM builds designs
+#' that \code{categorical = "level"} does not -- on the completed copy, and again
+#' for the second start -- and would otherwise warn more often than \code{"level"}
+#' for the same data.
+#'
+#' \emph{A missing value that becomes a level.} Under \code{categorical = "level"}
+#' the design puts a missing categorical value into a level of its own, through
+#' \code{addNA()}, which goes through \code{factor()} and so drops the attribute
+#' \emph{silently}: 7.4.1 said nothing here at all.
+#'
+#' Either way the fit codes the factor with the default contrasts. Nothing the fit
+#' returns depends on the coding -- the fitted means, \eqn{\Sigma}, \eqn{W} and the
+#' imputations are the same under any full-rank coding of the same level sets, only
+#' \code{B}'s rows are named and parameterised differently -- so this reports, it
+#' does not repair.
+#'
+#' Only variables the design uses as bare names are examined. A term that sets a
+#' coding itself, such as \code{C(f, contr.sum)}, is not one, and neither is a
+#' factor without an attribute of its own, which takes the session's
+#' \code{options("contrasts")} as it always did.
+#' @param data the data frame of the fit.
+#' @param cat_vars names of the categorical columns.
+#' @param design one-sided formula.
+#' @param na_level \code{TRUE} when the design is the one that turns a missing
+#'   categorical value into a level, i.e. whenever the categorical EM does not run.
+#' @return a named list, one entry per such factor, holding the reason as a phrase.
+#'   Empty when there is nothing to report.
+#' @keywords internal
+.gloc_contrast_lost <- function(data, cat_vars, design, na_level) {
+  if (!length(cat_vars) || is.null(design) ||
+      identical(all.vars(design), character(0))) return(list())
+  df <- data[, cat_vars, drop = FALSE]
+  ve <- tryCatch(as.list(attr(stats::terms(design, data = df), "variables"))[-1L],
+                 error = function(e) NULL)
+  if (!length(ve)) return(list())
+  bare <- vapply(ve, function(e) if (is.name(e)) as.character(e) else NA_character_, "")
+  out <- list()
+  for (v in intersect(bare[!is.na(bare)], cat_vars)) {
+    x <- data[[v]]
+    if (!is.factor(x) || is.null(attr(x, "contrasts"))) next
+    why <- character(0)
+    if (na_level && anyNA(x))
+      why <- c(why, "its missing values enter the design as a level of their own")
+    unused <- setdiff(levels(x), as.character(x[!is.na(x)]))
+    if (length(unused))
+      why <- c(why, sprintf("it has the unused level%s %s",
+                            if (length(unused) > 1L) "s" else "",
+                            paste0("\"", unused, "\"", collapse = ", ")))
+    if (length(why)) out[[v]] <- paste(why, collapse = " and ")
+  }
+  out
+}
+
 #' Categorical columns as factors, their missing mask and their levels
 #'
 #' @param data a data frame.
@@ -134,9 +197,13 @@
     df[[v]] <- .gloc_keep_contrasts(
       factor(as.character(df[[v]]), levels = levels[[v]],
              ordered = is.ordered(Fr[[v]])), Fr[[v]])
-  mf <- stats::model.frame(design, data = df, na.action = stats::na.pass,
-                           drop.unused.levels = FALSE)
-  stats::model.matrix(design, mf)
+  # A design site of the fit, so base R's "contrasts dropped" is muffled here as
+  # well (R65); .gloc_contrast_lost reports the loss once per factor instead.
+  .gloc_no_contrasts_warning({
+    mf <- stats::model.frame(design, data = df, na.action = stats::na.pass,
+                             drop.unused.levels = FALSE)
+    stats::model.matrix(design, mf)
+  })
 }
 
 #' Give an imputed categorical column back the class of the original

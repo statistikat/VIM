@@ -31,9 +31,9 @@
   exact mixture expectation only while every level shared one weight row -- it no longer does, and
   conditioning at the expected design row on the mixture weights would condition on a cell with a
   weight that no candidate gave it. Only those cells change; every other cell of `imputed`, a row
-  above the combination cap included, is what 7.5.0 returned, bit for bit. Measured on two of the
-  test fixtures, 17 of 400 and 53 of 300 rows' cells move, by a median 0.017 and 0.012 of the
-  variables' scale and at most 0.31 and 0.26.
+  above the combination cap included, is what 7.5.0 returned, bit for bit. Measured on two test
+  fixtures with missing continuous cells in such rows, 17 cells move in one (n = 400) and 53 in the
+  other (n = 300), by a median 0.017 and 0.012 in the data's own units and by at most 0.31 and 0.26.
 - **Multiple imputation follows the same rule.** A draw takes the level, or level combination, from
   `cat_posterior` as before, and now imputes the row with the cell weights of the candidate it
   drew rather than with the row's own, which are the posterior mixture over the candidates. A row
@@ -43,6 +43,21 @@
   up to `eps` divided by that probability from its own fixed point, since the stopping rule weights
   a candidate's weight change by it, so a draw landing on such a candidate conditions on a slightly
   unsettled flag set.
+- **`imputeCellGLoc()` now says when the design does not use a factor's own `contrasts`
+  attribute**, once per factor, prefixed `cellGLoc:` like every other message of this function.
+  It happens in two ways. The factor has an unused level, where
+  `model.frame(drop.unused.levels = TRUE)` rebuilds it and drops the attribute -- base R warns
+  "contrasts dropped from factor ... due to missing levels", and that warning is now muffled at
+  every design site of the fit, since the categorical EM builds designs `categorical = "level"`
+  does not and would otherwise report the same loss more often for the same data. Or, under
+  `categorical = "level"`, a missing value of the factor becomes a level of its own through
+  `addNA()`, which goes through `factor()` and drops the attribute **silently**: 7.4.1 said nothing
+  at all in that case, so a user's own coding could be discarded without a word. Nothing the fit
+  returns depends on the coding -- the fitted means, `Sigma`, `W` and the imputations are the same
+  under any full-rank coding of the same levels, only `B`'s rows are named and parameterised
+  differently -- so **no number changes**, in either mode. A factor without an attribute of its own
+  keeps taking the session's `options("contrasts")`, silently, as before; so does a design term
+  that sets a coding itself, such as `C(f, contr.sum)`.
 
 # VIM 7.5.0
 

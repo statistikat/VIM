@@ -411,6 +411,14 @@ All convergence figures in this section were measured before 7.4.1, with
 the classical cold start (\code{start = "classical"}); the robust start has
 not been measured on that grid.
 
+When the design does not use a factor's own \code{contrasts} attribute -- the
+factor has an unused level, or, under \code{categorical = "level"}, its missing
+values become a level of their own -- the fit says so once for that factor
+(since 7.5.1; see \code{.gloc_contrast_lost}), and base R's own "contrasts
+dropped" warning is muffled at every design site here; the fitted means,
+\eqn{\Sigma}, \eqn{W} and the imputations are the same under any full-rank
+coding, so only \code{B}'s rows change.
+
 Continuous columns that are \code{integer} in \code{data} stay
 \code{integer} in \code{$imputed}; their conditional expectations are
 rounded.

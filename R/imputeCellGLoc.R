@@ -66,6 +66,14 @@
 #' the classical cold start (\code{start = "classical"}); the robust start has
 #' not been measured on that grid.
 #'
+#' When the design does not use a factor's own \code{contrasts} attribute -- the
+#' factor has an unused level, or, under \code{categorical = "level"}, its missing
+#' values become a level of their own -- the fit says so once for that factor
+#' (since 7.5.1; see \code{.gloc_contrast_lost}), and base R's own "contrasts
+#' dropped" warning is muffled at every design site here; the fitted means,
+#' \eqn{\Sigma}, \eqn{W} and the imputations are the same under any full-rank
+#' coding, so only \code{B}'s rows change.
+#'
 #' Continuous columns that are \code{integer} in \code{data} stay
 #' \code{integer} in \code{$imputed}; their conditional expectations are
 #' rounded.
@@ -501,6 +509,25 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # counts once whether it arrives as it is or labelled "(second start)"; see
   # .gloc_dedup_handler.
   dedup <- .gloc_dedup_handler()
+
+  # R65 (Ruling R79). A factor's own contrasts attribute is lost wherever the
+  # design rebuilds the factor: with an unused level base R says so, in a warning
+  # that is muffled at every design site here because the EM builds designs
+  # "level" does not and would otherwise warn more often for the same data; under
+  # "level" a missing value becomes a level through addNA(), which drops the
+  # attribute without a word, so 7.4.1 was silent there altogether. Say it once
+  # per factor instead. Nothing the fit returns depends on the coding, so no
+  # number changes. na_level = !em: the EM's design is built on a completed copy,
+  # where no missing value becomes a level.
+  lost_ct <- .gloc_contrast_lost(data, cat_vars, design, na_level = !em)
+  withCallingHandlers({
+    for (v in names(lost_ct))
+      warning(sprintf(paste("cellGLoc: the design does not use the contrasts attribute of",
+                            "factor '%s' (%s), so B uses the default contrasts for it.",
+                            "The fitted means, Sigma, W and the imputations are the",
+                            "same under any full-rank coding; only B's rows change."),
+                      v, lost_ct[[v]]), call. = FALSE)
+  }, warning = dedup)
 
   M <- !is.finite(X)                       # missing mask
   if (em) {

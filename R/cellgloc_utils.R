@@ -17,7 +17,11 @@
     return(matrix(1, nrow = nrow(data), ncol = 1,
                   dimnames = list(NULL, "(Intercept)")))
   }
-  stats::model.matrix(design, .gloc_model_frame(data, design, cat_vars))
+  # Base R's "contrasts dropped from factor ... due to missing levels" is muffled
+  # at every design site of the fit (R65, Ruling R79); .gloc_contrast_lost reports
+  # the loss once per factor, with the "cellGLoc: " prefix, instead.
+  .gloc_no_contrasts_warning(
+    stats::model.matrix(design, .gloc_model_frame(data, design, cat_vars)))
 }
 
 #' The model frame behind \code{.gloc_design}
@@ -32,8 +36,13 @@
     df[[v]] <- as.factor(df[[v]])
     if (anyNA(df[[v]])) df[[v]] <- addNA(df[[v]], ifany = TRUE)
   }
-  stats::model.frame(design, data = df, na.action = stats::na.pass,
-                     drop.unused.levels = TRUE)
+  # This is where base R drops a factor's contrasts attribute, and warns: the
+  # rebuild that removes an unused level, and, above, addNA(), which drops it
+  # without a word. Muffled here so that no cellGLoc design site can leak it
+  # (R65); .gloc_contrast_lost reports both losses once per factor instead.
+  .gloc_no_contrasts_warning(
+    stats::model.frame(design, data = df, na.action = stats::na.pass,
+                       drop.unused.levels = TRUE))
 }
 
 #' Main-effects design and level combinations for a cellGLoc design
@@ -95,7 +104,7 @@
       main_tt <- main_terms(vars_bt)
       mfm <- mf
       attr(mfm, "terms") <- main_tt
-      stats::model.matrix(main_tt, mfm)
+      .gloc_no_contrasts_warning(stats::model.matrix(main_tt, mfm))   # R65
     }, error = function(e) {
       warning(sprintf(paste("cellGLoc: the main-effects version of the design could",
                             "not be built (%s); a level combination that the data do",
@@ -174,11 +183,14 @@
   combos <- structure(cols, names = names(mf), class = "data.frame",
                       row.names = seq_len(nrow(grid)))
   attr(combos, "terms") <- tt
-  P <- stats::model.matrix(tt, combos)
+  # A design site of the fit: base R's "contrasts dropped" is muffled here too
+  # (R65). It cannot fire on a table that realises every level, but the rule is
+  # "every site", so that no new caller can leak one.
+  P <- .gloc_no_contrasts_warning(stats::model.matrix(tt, combos))
   P_main <- NULL
   if (!is.null(main_tt)) {
     attr(combos, "terms") <- main_tt
-    P_main <- stats::model.matrix(main_tt, combos)
+    P_main <- .gloc_no_contrasts_warning(stats::model.matrix(main_tt, combos))
     rownames(P_main) <- NULL
   }
   rownames(P) <- NULL

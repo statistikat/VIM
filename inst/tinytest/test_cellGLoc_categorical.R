@@ -1363,8 +1363,24 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
                    unname(VIM:::.gloc_impute(X21, fit21$U, fit21$B, fit21$Sigma, M21,
                                              W = fit21$W)[oth21, , drop = FALSE]))
 
+  # the same under design = ~ 1, which has no combination table, so the mixture's
+  # candidate design rows come from the other branch of .gloc_cat_candidates()
+  f21i <- suppressWarnings(VIM::imputeCellGLoc(d21, design = ~ 1))
+  cwi <- f21i$cat_weights
+  ki <- which(rowSums(M21[cwi$row, , drop = FALSE]) > 0L)
+  Xki <- VIM:::.gloc_impute(X21[cwi$row[ki], , drop = FALSE],
+                            matrix(1, length(ki), 1, dimnames = list(NULL, "(Intercept)")),
+                            f21i$B, f21i$Sigma, M21[cwi$row[ki], , drop = FALSE],
+                            W = cwi$W[ki, , drop = FALSE])
+  mixi <- rowsum(Xki * cwi$prob[ki], cwi$row[ki], reorder = TRUE)
+  ati <- as.integer(rownames(mixi)); mmi <- M21[ati, , drop = FALSE]
+  expect_true(max(abs(as.matrix(f21i$imputed[ati, c("x1", "x2", "x3")])[mmi] -
+                        mixi[mmi])) < 1e-10)
+
   # spec test 16, second bullet
   expect_identical(VIM:::.gloc_draw_mi(fit21, d21, noise = FALSE), fit21$imputed)
+  expect_identical(VIM:::.gloc_draw_mi(f21i, d21, design = ~ 1, noise = FALSE),
+                   f21i$imputed)
 
   # spec test 16, third bullet -- a draw with the levels fixed imputes each row
   # that misses a categorical cell with the weight row of the candidate drawn,
@@ -1433,4 +1449,50 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   bad21b <- cw21; bad21b$levels$f <- rev(bad21b$levels$f)
   expect_error(VIM:::.gloc_cat_posterior_for(fit21, d21, W = fit21$W, cat_weights = bad21b),
                "candidate table")
+}
+
+# spec test 17 -- R65 (Ruling R79): the design drops a factor's own contrasts
+# attribute whenever the factor has an unused level (both modes) or, under
+# "level", whenever a missing value of it becomes a level of its own through
+# addNA(). Both losses were silent to the user before 7.5.1: the first arrived
+# as base R's "contrasts dropped from factor ... due to missing levels", which
+# the EM's extra design sites had to muffle, the second not at all. The fit now
+# says so once per factor, with the "cellGLoc: " prefix, and no base-R copy
+# reaches the user. The data are the settling script's of the Task 13 fix wave.
+set.seed(1)
+n17 <- 300
+d17 <- data.frame(x1 = rnorm(n17), x2 = rnorm(n17), x3 = rnorm(n17),
+                  f = factor(sample(c("a", "b", "c"), n17, TRUE),
+                             levels = c("a", "b", "c", "z")),
+                  g = factor(sample(c("u", "v"), n17, TRUE)))
+contrasts(d17$f) <- contr.sum(4)
+cases17 <- list(A = local({ z <- d17; z$f[1:30] <- NA; z }),   # the factor's own cells
+                B = local({ z <- d17; z$g[1:30] <- NA; z }),   # another factor's
+                C = d17)                                       # neither
+if (requireNamespace("cellWise", quietly = TRUE)) {
+  strip17 <- function(dd) lapply(dd, function(z) if (is.factor(z)) as.character(z) else z)
+  for (nm17 in names(cases17)) for (md17 in c("em", "level")) {
+    inf17 <- paste(nm17, md17)
+    w17 <- collect_warnings(f17 <- VIM::imputeCellGLoc(cases17[[nm17]], categorical = md17))
+    hit17 <- grepl("^cellGLoc: .*contrasts", w17)
+    expect_identical(sum(hit17), 1L, info = inf17)
+    expect_true(all(grepl("'f'", w17[hit17], fixed = TRUE)), info = inf17)
+    expect_false(any(grepl("contrasts dropped", w17, fixed = TRUE)), info = inf17)
+    # The warning is true: if the design ignores the attribute, taking it away
+    # must change no number. This is the in-file form of "the numbers do not
+    # change"; the commit-to-commit form is the task's gate. A second fit per
+    # case, so it is at_home only.
+    if (at_home()) {
+      dz17 <- cases17[[nm17]]; attr(dz17$f, "contrasts") <- NULL
+      f17z <- suppressWarnings(VIM::imputeCellGLoc(dz17, categorical = md17))
+      for (k17 in c("B", "Sigma", "W", "U", "criterion"))
+        expect_identical(f17[[k17]], f17z[[k17]], info = paste(inf17, k17))
+      expect_identical(strip17(f17$imputed), strip17(f17z$imputed), info = inf17)
+    }
+  }
+  # a factor whose contrasts the design DOES use stays silent
+  d17ok <- d17; d17ok$f <- droplevels(d17ok$f); contrasts(d17ok$f) <- contr.sum(3)
+  w17ok <- collect_warnings(f17ok <- VIM::imputeCellGLoc(d17ok))
+  expect_false(any(grepl("contrasts", w17ok, fixed = TRUE)))
+  expect_identical(rownames(f17ok$B), c("(Intercept)", "f1", "f2", "gv"))
 }
