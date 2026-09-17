@@ -97,9 +97,10 @@
 #' E-step dropped it, and the posterior could not move, a self-locking fixed
 #' point. On the datasets of the categorical arms of the 7.5.0 simulation at
 #' \code{eps = 0} (n = 200, six continuous and six categorical variables, 10
-#' replicates per pattern), the decisive cell was flagged in 17.6-19.8\% of the
+#' replicates per pattern), the decisive cell was flagged in 17.6-19.8% of the
 #' rows missing the factor, and the imputed level was right in 0.809-0.861 of those
-#' rows, against 0.965-0.986 for the fit's own parameters without flags. A
+#' rows, against 0.965-0.986 for a classifier that uses the fit's own \eqn{B} and
+#' \eqn{\Sigma}, the true prior probabilities and every observed continuous cell. A
 #' contaminated cell is flagged under every level and pays the same penalty under
 #' each, so it still does not steer the level. The binary corner keeps one weight
 #' row per observation, since \code{cellWise::cellMCD} returns one: its detection
@@ -330,7 +331,10 @@
 #'   list with one entry per candidate of the rows below the combination cap that
 #'   miss a categorical cell, in the order of the candidate table: \code{row}, the
 #'   data row (integer); \code{levels}, a data frame of the candidate's values of
-#'   every categorical variable, observed values included; \code{prob}, the
+#'   every categorical variable, observed values included -- its columns are the
+#'   candidate table's factors, on the level sets the fit observed, so a
+#'   \code{character} or \code{logical} column of \code{data} comes back as a
+#'   factor; \code{prob}, the
 #'   candidate's posterior probability, the product of the marginal posteriors when
 #'   several cells are missing; and \code{W}, the candidates' cell weights, a
 #'   matrix with one row per candidate and one column per continuous variable.
@@ -507,8 +511,9 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
   # flagged the cell that decides the level wherever the true level is far from
   # the prior mean; the E-step then dropped that cell and the posterior could not
   # move, a self-locking fixed point (at eps = 0, x1 flagged in 17.6-19.8% of the
-  # rows with f1 missing, hit rate 0.809-0.861 against 0.965-0.986 without
-  # flags). The binary corner keeps 7.5.0's path (Ruling R72): cellMCD returns one
+  # rows with f1 missing, hit rate 0.809-0.861 against 0.965-0.986 for a
+  # classifier with the fit's own B and Sigma, the true prior and every observed
+  # continuous cell). The binary corner keeps 7.5.0's path (Ruling R72): cellMCD returns one
   # weight row per observation. Candidates 1..Np are the pseudo-rows, then the
   # capped rows.
   perlevel <- em && relax
@@ -745,19 +750,11 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
                                          "damping = %.3g"),
                                    it, dB, dS, dW, damp))
         # Progress is an improvement in EITHER residual that the stopping rule
-        # tests and the iteration can still move. dR joined that rule, so a fit
-        # whose weights have settled while its posteriors are still moving is
-        # converging, not stalling; keying the counter on dW alone would call it a
-        # cycle, and the cold restart below would then throw away every
-        # categorical iteration -- on real survey data at a tight eps, dR is a
-        # plausible last-to-converge component. The damping stays keyed on dW.
-        # Each best keeps its own 1% rule rather than a running minimum, so
-        # without the EM (dR is 0 at every iteration, and 0 < 0.99 * 0 is FALSE
-        # after the first) the counter follows exactly the pre-7.5.0 trajectory.
-        impr <- dW < 0.99 * dW_best || dR < 0.99 * dR_best
-        if (dW < 0.99 * dW_best) dW_best <- dW
-        if (dR < 0.99 * dR_best) dR_best <- dR
-        stall <- if (impr) 0L else stall + 1L
+        # tests and the iteration can still move, each against its own best; the
+        # rule itself, and why dR is in it, live in .gloc_stall_update, which a
+        # unit test pins. The damping stays keyed on dW.
+        prog <- .gloc_stall_update(dW, dR, dW_best, dR_best, stall)
+        dW_best <- prog$dW_best; dR_best <- prog$dR_best; stall <- prog$stall
         if (dB < eps && dS < eps && dW < eps && dR < eps) { converged <- TRUE; break }
 
         # Strengthen the relaxation only when the iteration stops contracting.
@@ -846,19 +843,26 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
 
       if (maxit >= 1L && !converged) {
         cycling <- stall >= .gloc_stall_iters
+        # Under per-level detection the weight residual is a maximum over the
+        # candidates, each weighted by its posterior probability, so the warning
+        # says which quantity it reports. The wording without it is unchanged, and
+        # "cycling" and "did not converge" stay in the message: the simulation
+        # scripts classify warnings by those two.
+        dw_what <- if (perlevel)
+          "max |dW| over the candidates weighted by their posteriors" else "max |dW|"
         diagnosis <- if (cycling)
-          sprintf(paste("max |dW| has not improved for %d iteration(s), so the",
+          sprintf(paste("%s has not improved for %d iteration(s), so the",
                         "iteration is cycling rather than converging slowly and",
                         "raising maxit will NOT help. The relaxation factor is",
                         "%.3g%s. Widen the conditioning set with a SMALLER",
                         "peer_w_min (larger values discard more peers), or pass",
                         "a smaller fixed damp."),
-                  stall, damp,
+                  dw_what, stall, damp,
                   if (adaptive && damp <= .gloc_damp)
                     sprintf(", already at the schedule's floor of %.3g",
                             .gloc_damp) else "")
         else
-          paste("max |dW| or, under the categorical EM, the largest posterior",
+          paste(dw_what, "or, under the categorical EM, the largest posterior",
                 "change is still improving, so this is the iteration limit and",
                 "not a cycle: raise maxit.")
         drift <- if (is.na(S_spread)) "" else sprintf(paste(
@@ -867,11 +871,11 @@ imputeCellGLoc <- function(data, design = ~ ., weights = c("soft", "binary"),
           min(maxit, .gloc_stall_iters), S_spread)
         warning(sprintf(paste("cellGLoc: did not converge in %d iteration(s)",
                               "(scaled change in fitted means %s, in scatter %s,",
-                              "max |dW| %s%s, tolerance %.3g). The estimates are",
+                              "%s %s%s, tolerance %.3g). The estimates are",
                               "still moving, so B, Sigma and W are only whatever",
                               "the last iteration produced. %s%s $criterion",
                               "carries %s."),
-                        maxit, .gloc_fmt(dB), .gloc_fmt(dS), .gloc_fmt(dW),
+                        maxit, .gloc_fmt(dB), .gloc_fmt(dS), dw_what, .gloc_fmt(dW),
                         if (em) paste0(", largest change in a categorical posterior ",
                                        .gloc_fmt(dR)) else "",
                         eps, drift,
@@ -1227,7 +1231,8 @@ NULL
 #' iteration limit (raise \code{maxit}) apart from a limit cycle (raising
 #' \code{maxit} cannot help). An iteration counts as progress when
 #' \code{max |dW|} improves or, under the categorical EM, when dR, the largest
-#' change of a categorical posterior, does; each has its own 1\% rule. A
+#' change of a categorical posterior, does; each has its own 1% rule, and
+#' \code{.gloc_stall_update} is the rule itself. A
 #' running best is compared rather than
 #' consecutive values, so a cycle of any period is caught, not just period 2.
 #' The warning's two labels are a heuristic and should be read as such: a run
@@ -1237,6 +1242,41 @@ NULL
 #' @format a length-one integer.
 #' @keywords internal
 .gloc_stall_iters <- 20L
+
+#' One step of the stall counter
+#'
+#' The rule the stall counter of \code{imputeCellGLoc} follows, kept in one place
+#' so that it can be tested on its own. An iteration counts as progress when the
+#' weights' fixed-point residual \code{dW} improves by more than 1% on its own
+#' best so far or, under the categorical EM, when \code{dR}, the largest change of
+#' a categorical posterior, does. Progress resets the counter, anything else
+#' increments it.
+#'
+#' Each residual keeps its own best rather than a joint one, so a fit whose
+#' weights have settled while its posteriors are still moving counts as
+#' converging and not as cycling. Keyed on \code{dW} alone it would count as a
+#' cycle, and the cold restart of \code{.gloc_damp_schedule} would then throw away
+#' every categorical iteration; on real survey data at a tight \code{eps} the
+#' posteriors are a plausible last-to-settle component. The relaxation schedule
+#' stays keyed on \code{dW} alone.
+#'
+#' Without the EM, \code{dR} is 0 at every iteration: \eqn{0 < 0.99 \cdot \infty}
+#' holds at the first iteration and \eqn{0 < 0.99 \cdot 0} never after, so the
+#' counter follows exactly the pre-7.5.0 rule, which read \code{dW} alone.
+#'
+#' @param dW,dR this iteration's weight and categorical-posterior residuals.
+#' @param dW_best,dR_best the best of each so far; \code{Inf} before the first
+#'   iteration.
+#' @param stall the counter as it stands before this iteration.
+#' @return \code{list(dW_best, dR_best, stall)}.
+#' @keywords internal
+.gloc_stall_update <- function(dW, dR, dW_best, dR_best, stall) {
+  impr <- dW < 0.99 * dW_best || dR < 0.99 * dR_best
+  if (dW < 0.99 * dW_best) dW_best <- dW
+  if (dR < 0.99 * dR_best) dR_best <- dR
+  list(dW_best = dW_best, dR_best = dR_best,
+       stall = if (impr) 0L else stall + 1L)
+}
 
 #' Gaussian consistency factor of a cell-weight function
 #'

@@ -10,13 +10,15 @@
   scatter. `B` and `Sigma` are updated with each candidate's own weights times its posterior. `W`
   now reports the posterior mixture of the candidates' weights, and the new element `cat_weights`
   holds the candidates' weights themselves. `criterion["weights"]` is the largest change of a
-  candidate's weights times its posterior probability. In 7.5.0 detection ran at the row's
+  candidate's weights times its posterior probability, divided by the relaxation factor, and the
+  non-convergence warning says so. In 7.5.0 detection ran at the row's
   expected design row, where the cell that decides the level looks outlying whenever the true level
   is far from the prior mean. That cell was flagged, the E-step dropped it, and the posterior could
   not move. On the datasets of the full simulation's categorical arms at eps = 0 (n = 200, 10
   replicates per pattern) the decisive cell was flagged in 17.6-19.8% of the rows missing the
-  factor, and the imputed level was right in 0.809-0.861 of those rows, against 0.965-0.986 for the
-  fit's own parameters without flags. A contaminated cell is flagged under every level and pays the
+  factor, and the imputed level was right in 0.809-0.861 of those rows, against 0.965-0.986 for a
+  classifier that uses the fit's own `B` and `Sigma`, the true prior probabilities and every
+  observed continuous cell. A contaminated cell is flagged under every level and pays the
   same penalty under each, so it still does not steer the level. Results change for soft-corner
   `"em"` fits with a missing categorical cell. The binary corner, `categorical = "level"` and fits
   without a missing categorical cell are unchanged, bit for bit. The binary corner takes one weight

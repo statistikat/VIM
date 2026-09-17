@@ -16,7 +16,8 @@ and it phrases the non-convergence warning, which must tell an exhausted
 iteration limit (raise \code{maxit}) apart from a limit cycle (raising
 \code{maxit} cannot help). An iteration counts as progress when
 \code{max |dW|} improves or, under the categorical EM, when dR, the largest
-change of a categorical posterior, does; each has its own 1\\% rule. A
+change of a categorical posterior, does; each has its own 1\% rule, and
+\code{.gloc_stall_update} is the rule itself. A
 running best is compared rather than
 consecutive values, so a cycle of any period is caught, not just period 2.
 The warning's two labels are a heuristic and should be read as such: a run

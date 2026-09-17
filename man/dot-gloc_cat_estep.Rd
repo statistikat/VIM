@@ -63,6 +63,8 @@ otherwise unchanged, with \eqn{\ell_k} in place of the density term per level
 combination. At the endpoints of the band \eqn{\ell_k} is minus one half times
 the row's term of the binary-corner objective (\code{.gloc_objective}); when
 every candidate carries its row's weight row, the posteriors are those without
-\code{Wc} up to rounding.
+\code{Wc} up to rounding, wherever the Cholesky factorisation of \eqn{G}
+succeeds (the two density routes fall back differently otherwise; see
+\code{.gloc_cat_score}).
 }
 \keyword{internal}

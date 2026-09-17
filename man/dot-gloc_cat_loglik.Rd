@@ -63,6 +63,9 @@ scores each candidate \eqn{k} with its own weight row instead
 (\code{.gloc_objective}). When every candidate of a row carries the row's weight
 row, \eqn{G}, \eqn{K} and the penalties are shared, so \eqn{\ell_k} and this
 function's value differ by one constant within the row and give the same
-posteriors.
+posteriors. That holds wherever the Cholesky factorisation of \eqn{G} succeeds,
+which is the ordinary case; on a \eqn{G} that is not positive definite the two
+fall back differently, this function to \code{MASS::ginv} and the score to the
+eigenvalues floored at 1e-8 times the largest.
 }
 \keyword{internal}

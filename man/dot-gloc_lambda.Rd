@@ -17,7 +17,7 @@ of its inverse is not finite and positive, or when a value is not finite.
 \description{
 \eqn{\lambda_j = \chi^2_{1;0.99} + \log 2\pi + \log c_j} with
 \eqn{c_j = 1 / (S^{-1})_{jj}}, the variance of column \eqn{j} given the
-others: flagging a cell costs what keeping it at the 99\\% cut-off would.
+others: flagging a cell costs what keeping it at the 99\% cut-off would.
 \code{cellWise::cellMCD()} takes \eqn{c_j} from its initial estimate, a
 function \pkg{cellWise} does not export. The two-start selection of
 \code{imputeCellGLoc(categorical = "em")} takes \eqn{S} from the first

@@ -292,7 +292,10 @@
 #' (\code{.gloc_objective}). When every candidate of a row carries the row's weight
 #' row, \eqn{G}, \eqn{K} and the penalties are shared, so \eqn{\ell_k} and this
 #' function's value differ by one constant within the row and give the same
-#' posteriors.
+#' posteriors. That holds wherever the Cholesky factorisation of \eqn{G} succeeds,
+#' which is the ordinary case; on a \eqn{G} that is not positive definite the two
+#' fall back differently, this function to \code{MASS::ginv} and the score to the
+#' eigenvalues floored at 1e-8 times the largest.
 #' @param X \eqn{n x p} continuous matrix.
 #' @param M \eqn{n x p} missing mask.
 #' @param W \eqn{n x p} cell weights, or \code{NULL} for every observed cell.
@@ -342,9 +345,12 @@
 #' Under per-level detection (\code{imputeCellGLoc(categorical = "em")}, soft
 #' corner, since 7.5.1) every candidate \eqn{k} of a row \eqn{i} with a missing
 #' categorical cell -- one level, or one level combination -- carries its own cell
-#' weights \eqn{W_k}, computed at its own design row \eqn{u_k}. The E-step scores
-#' the candidate by the cellwise-penalised likelihood of the binary corner, the
-#' posterior being proportional to the prior times \eqn{\exp(\ell_k)}:
+#' weights \eqn{W_k}, computed at its own design row \eqn{u_k}. This function
+#' returns the score \eqn{\ell_k} by which the E-step judges such a candidate: the
+#' cellwise-penalised likelihood of the binary corner, with the candidate's
+#' posterior proportional to its prior times \eqn{\exp(\ell_k)}.
+#'
+#' The score is
 #'
 #' \deqn{\ell_k = -\frac{1}{2} [ |K| \log 2\pi + \log\det G + y' G^{-1} y ]
 #'   - \frac{1}{2} \sum_{j \in K} (1 - r_j) p_j - \frac{1}{2}
@@ -374,7 +380,10 @@
 #' \eqn{\lambda_j / 2}. The E-step therefore stays continuous in \eqn{W}, which the
 #' fixed-point argument of the peer band needs. When every candidate of a row
 #' carries the row's weight row, \eqn{\ell_k} differs from
-#' \code{.gloc_cat_loglik} by one constant within the row.
+#' \code{.gloc_cat_loglik} by one constant within the row, wherever the Cholesky
+#' factorisation of \eqn{G} succeeds; on a \eqn{G} that is not positive definite
+#' the two fall back differently (\code{MASS::ginv} there, the eigenvalue floor
+#' here).
 #'
 #' \strong{Why.} A cell that fits candidate \eqn{c} is retained under \eqn{c} and
 #' flagged under a candidate it does not fit, so \eqn{c} gains up to
@@ -687,7 +696,9 @@
 #' combination. At the endpoints of the band \eqn{\ell_k} is minus one half times
 #' the row's term of the binary-corner objective (\code{.gloc_objective}); when
 #' every candidate carries its row's weight row, the posteriors are those without
-#' \code{Wc} up to rounding.
+#' \code{Wc} up to rounding, wherever the Cholesky factorisation of \eqn{G}
+#' succeeds (the two density routes fall back differently otherwise; see
+#' \code{.gloc_cat_score}).
 #' @param X,M,W,B,Sigma the continuous data, mask, weights and current fit;
 #'   \code{B = NULL} drops the density (prior-only E-step). \code{W} is not used
 #'   when \code{Wc} is given.

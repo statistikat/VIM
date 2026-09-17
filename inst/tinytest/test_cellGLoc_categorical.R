@@ -437,25 +437,25 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
                                     "categorical")] < 1e-5))
   expect_true(is.na(tight$criterion[["scatter_spread"]]))
 
-  # R46 item 7 -- pin the R40 stall-reset rule itself, not only that a fit at
-  # tight eps happens to converge. On this dataset dW alone (the pre-R40 rule)
-  # plateaus for .gloc_stall_iters iterations while dR is still improving, so
-  # the pre-R40 rule fires one cold restart (confirmed by temporarily
-  # reverting the rule locally: same run, 59 iterations and one "restarting
-  # from" message, against 38 iterations and none under the current rule).
-  # trace = TRUE's "restarting from" message is the observable signal.
-  # Those counts are the first start's run. The fit now runs from two starts
-  # (spec §12.2): the trace holds the first start's iterations, then a "second
-  # start" line and the second start's (13 iterations here, and it is the run
-  # returned), so the restart check reads the first start's part only, and a
-  # legitimate restart of the second start cannot break it (R64 M5).
-  # Since 7.5.1 (per-level detection) the plateau is gone, so this test no longer
-  # tells the two rules apart; the counts above are 7.5.0's. Both rules now converge
-  # in 25 iterations of the first start without a restart here, and the pre-R40 rule
+  # R46 item 7 -- a fit at a tight tolerance converges without a cold restart in
+  # its first start. Since 7.5.1 this test no longer pins the R40 stall-reset
+  # rule; the unit test of .gloc_stall_update in the Task 20 section does
+  # (Task 20 fix round, I1). It was written to pin it: on this dataset under
+  # 7.5.0, dW alone (the pre-R40 rule) plateaued for .gloc_stall_iters iterations
+  # while dR was still improving, so the pre-R40 rule fired one cold restart
+  # (confirmed by temporarily reverting the rule locally: same run, 59 iterations
+  # and one "restarting from" message, against 38 iterations and none under the
+  # current rule). trace = TRUE's "restarting from" message is the observable
+  # signal. Those counts are the first start's run. The fit now runs from two
+  # starts (spec §12.2): the trace holds the first start's iterations, then a
+  # "second start" line and the second start's (13 iterations here under 7.5.0,
+  # and it is the run returned), so the restart check reads the first start's part
+  # only, and a legitimate restart of the second start cannot break it (R64 M5).
+  # Under 7.5.1 (per-level detection) the plateau is gone: both rules converge in
+  # 25 iterations of the first start without a restart here, and the pre-R40 rule
   # fired no first-start restart on any of 275 datasets searched for a replacement
   # (this call with seeds 1 to 150, and 25 seeds each of five variants: weaker level
-  # shifts, more missing cells, both factors missing, n = 150). It still checks
-  # convergence at a tight tolerance.
+  # shifts, more missing cells, both factors missing, n = 150).
   s7t <- gen_cat(300, 5, miss_f = 0.25)
   msg_tight <- capture.output(
     tight_tr <- suppressWarnings(VIM::imputeCellGLoc(s7t$d, eps = 1e-5, trace = TRUE)),
@@ -662,7 +662,8 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_identical(attr(fo9, "dropped"), 0L)
   set.seed(909)
   bi <- sample(200, 200, TRUE)
-  fb9 <- suppressWarnings(VIM::imputeCellGLoc(s9$d[bi, ]))
+  # the bootstrap fit in the same corner, so the pairing mirrors bootstrap-proper MI
+  fb9 <- suppressWarnings(VIM::imputeCellGLoc(s9$d[bi, ], weights = "binary"))
   fo9b <- VIM:::.gloc_cat_posterior_for(fb9, s9$d, W = fit9$W)
   expect_equal(unname(rowSums(fo9b$cat_posterior$f)), rep(1, sum(is.na(s9$d$f))),
                tolerance = 1e-12)
@@ -1034,33 +1035,87 @@ expect_true(abs(sc12[1] - half_obj(2, c(1, 1, 0, 1))) < 1e-10)
 expect_true(abs(sc12[201] - half_obj(2, c(1, 1, 1, 1))) < 1e-10)
 expect_true(max(abs(diff(sc12))) <= 0.05 * diff(range(sc12)))
 
+# --- the score's fallbacks (fix round, M2). A singular scatter gives no penalty
+# from .gloc_lambda, so c_j = sigma_jj with one warning, and the Cholesky factor
+# of G fails, so log det G and G^-1 come from its eigenvalues floored at 1e-8
+# times the largest. Hand computations of both routes.
+floor_part <- function(G, y) {
+  ev <- eigen(G, symmetric = TRUE)
+  vals <- pmax(ev$values, 1e-8 * max(ev$values))
+  sum(drop(crossprod(ev$vectors, y))^2 / vals) + sum(log(vals))
+}
+# matrix(1, 2, 2), all weights 1: both cells retained, so no penalty enters
+Sfb2 <- matrix(1, 2, 2)
+wfb2 <- collect_warnings(scfb2 <- VIM:::.gloc_cat_score(matrix(c(0.3, -0.2), 1),
+                                                        matrix(FALSE, 1, 2), matrix(1, 1, 2),
+                                                        matrix(0, 1, 2), Sfb2, matrix(1, 1, 1), 1L))
+expect_equal(length(wfb2), 1L)
+expect_true(startsWith(wfb2[1], "cellGLoc: "))
+expect_true(is.finite(scfb2))
+expect_equal(scfb2, -0.5 * (floor_part(Sfb2, c(0.3, -0.2)) + 2 * log(2 * pi)), tolerance = 1e-10)
+# matrix(1, 3, 3), x3 flagged: the retained block is singular, and the flagged
+# cell pays lambda_3 = qchisq(0.99, 1) + log 2 pi + log sigma_33
+Sfb3 <- matrix(1, 3, 3)
+wfb3 <- collect_warnings(scfb3 <- VIM:::.gloc_cat_score(matrix(c(0.3, -0.2, 2.5), 1),
+                                                        matrix(FALSE, 1, 3), matrix(c(1, 1, 0), 1),
+                                                        matrix(0, 1, 3), Sfb3, matrix(1, 1, 1), 1L))
+expect_equal(length(wfb3), 1L)
+expect_true(startsWith(wfb3[1], "cellGLoc: "))
+expect_equal(scfb3, -0.5 * (floor_part(Sfb3[1:2, 1:2], c(0.3, -0.2)) + 2 * log(2 * pi)) -
+               0.5 * (qchisq(0.99, 1) + log(2 * pi) + log(1)), tolerance = 1e-10)
+
+# --- the R40 stall rule (fix round, I1): an iteration is progress when max |dW|
+# or dR improves by more than 1% on its own best; progress resets the counter,
+# anything else increments it
+expect_identical(VIM:::.gloc_stall_update(dW = 0.10, dR = 0.05, dW_best = 0.10, dR_best = 0.10,
+                                          stall = 7L),
+                 list(dW_best = 0.10, dR_best = 0.05, stall = 0L))     # dW flat, dR improving
+expect_identical(VIM:::.gloc_stall_update(dW = 0.05, dR = 0.10, dW_best = 0.10, dR_best = 0.10,
+                                          stall = 7L),
+                 list(dW_best = 0.05, dR_best = 0.10, stall = 0L))     # dW improving, dR flat
+expect_identical(VIM:::.gloc_stall_update(dW = 0.0995, dR = 0.0995, dW_best = 0.10,
+                                          dR_best = 0.10, stall = 7L),
+                 list(dW_best = 0.10, dR_best = 0.10, stall = 8L))     # both flat (within 1%)
+# without the EM dR is 0 at every iteration, and the counter follows the rule
+# before 7.5.0, which read dW alone (bbe7379)
+dW_seq <- c(1, 0.5, 0.498, 0.499, 0.3, 0.2985, 0.2984, 0.1)
+old_best <- Inf; old_stall <- 0L; traj_old <- integer(0)
+now <- list(dW_best = Inf, dR_best = Inf, stall = 0L); traj_now <- integer(0)
+for (x in dW_seq) {
+  if (x < 0.99 * old_best) { old_best <- x; old_stall <- 0L } else old_stall <- old_stall + 1L
+  now <- VIM:::.gloc_stall_update(x, 0, now$dW_best, now$dR_best, now$stall)
+  traj_old <- c(traj_old, old_stall); traj_now <- c(traj_now, now$stall)
+}
+expect_identical(traj_now, traj_old)
+expect_identical(traj_old, c(0L, 0L, 1L, 2L, 0L, 1L, 2L, 0L))
+
 if (requireNamespace("cellWise", quietly = TRUE)) {
-  s20 <- gen_cat(400, 5, miss_f = 0.2)
-  f20 <- suppressWarnings(VIM::imputeCellGLoc(s20$d))
-  X20 <- as.matrix(s20$d[, c("x1", "x2", "x3")])
+  # s5 and fit5 (spec test 4 above): gen_cat(400, 5, miss_f = 0.2), the default fit
+  X20 <- as.matrix(s5$d[, c("x1", "x2", "x3")])
   M20 <- is.na(X20)
-  cp20 <- VIM:::.gloc_cat_prepare(s20$d, c("f", "g"))
-  cand20 <- VIM:::.gloc_cat_candidates(cp20, s20$d, ~ .)
+  cp20 <- VIM:::.gloc_cat_prepare(s5$d, c("f", "g"))
+  cand20 <- VIM:::.gloc_cat_candidates(cp20, s5$d, ~ .)
   inc20 <- which(rowSums(cp20$Mc)[cand20$pr_row] > 0L)   # candidates of incomplete rows
   rows20 <- cand20$pr_row[inc20]
 
   # spec test 13 -- reduction: every candidate given its row's weight row, the
   # score differs from 7.5.0's density term by one constant within each row, and
   # the E-step's posteriors are 7.5.0's
-  sc13 <- VIM:::.gloc_cat_score(X20, M20, f20$W[rows20, , drop = FALSE], f20$B, f20$Sigma,
+  sc13 <- VIM:::.gloc_cat_score(X20, M20, fit5$W[rows20, , drop = FALSE], fit5$B, fit5$Sigma,
                                 cand20$Up[inc20, , drop = FALSE], rows20)
-  ll13 <- VIM:::.gloc_cat_loglik(X20, M20, f20$W, f20$B, f20$Sigma,
+  ll13 <- VIM:::.gloc_cat_loglik(X20, M20, fit5$W, fit5$B, fit5$Sigma,
                                  cand20$Up[inc20, , drop = FALSE], rows20)
   spread13 <- tapply(sc13 - ll13, rows20, function(z) max(z) - min(z))
   expect_true(max(spread13) < 1e-10)
-  es13a <- VIM:::.gloc_cat_estep(X20, M20, f20$W, f20$B, f20$Sigma, cp20, cand20, f20$cat_priors)
-  es13b <- VIM:::.gloc_cat_estep(X20, M20, f20$W, f20$B, f20$Sigma, cp20, cand20, f20$cat_priors,
-                                 Wc = f20$W[cand20$pr_row, , drop = FALSE])
+  es13a <- VIM:::.gloc_cat_estep(X20, M20, fit5$W, fit5$B, fit5$Sigma, cp20, cand20,
+                                 fit5$cat_priors)
+  es13b <- VIM:::.gloc_cat_estep(X20, M20, fit5$W, fit5$B, fit5$Sigma, cp20, cand20,
+                                 fit5$cat_priors, Wc = fit5$W[cand20$pr_row, , drop = FALSE])
   expect_true(max(abs(es13b$post$f - es13a$post$f)) < 1e-10)
 
   # spec test 15 -- the returned W is the posterior mixture of the candidates' weight
   # rows, and the candidates' posterior weights sum to 1 per row
-  cw15 <- f20$cat_weights
+  cw15 <- fit5$cat_weights
   expect_identical(names(cw15), c("row", "levels", "prob", "W"))
   expect_identical(cw15$row, rows20)                         # candidate-table order
   expect_identical(dim(cw15$W), c(length(rows20), 3L))
@@ -1068,22 +1123,113 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_true(max(abs(tapply(cw15$prob, cw15$row, sum) - 1)) < 1e-12)
   mix15 <- t(vapply(split(seq_along(cw15$row), cw15$row),
                     function(k) colSums(cw15$prob[k] * cw15$W[k, , drop = FALSE]), numeric(3)))
-  expect_true(max(abs(f20$W[as.integer(rownames(mix15)), ] - mix15)) < 1e-12)
+  expect_true(max(abs(fit5$W[as.integer(rownames(mix15)), ] - mix15)) < 1e-12)
   # levels: each candidate's level of f, and the row's observed g
   expect_true(is.data.frame(cw15$levels) && nrow(cw15$levels) == length(rows20))
   expect_identical(as.character(cw15$levels$f), as.character(cand20$Fp$f[inc20]))
-  expect_identical(as.character(cw15$levels$g), as.character(s20$d$g[rows20]))
+  expect_identical(as.character(cw15$levels$g), as.character(s5$d$g[rows20]))
   expect_true(all(tapply(as.character(cw15$levels$f), cw15$row,
                          function(z) identical(sort(z), c("a", "b", "c")))))
   # NULL, but present, in the binary corner, under "level" and without a missing
   # categorical cell
-  none15 <- list(binary   = suppressWarnings(VIM::imputeCellGLoc(s20$d, weights = "binary")),
-                 level    = suppressWarnings(VIM::imputeCellGLoc(s20$d, categorical = "level")),
-                 complete = suppressWarnings(VIM::imputeCellGLoc(s20$truth)))
+  none15 <- list(binary   = suppressWarnings(VIM::imputeCellGLoc(s5$d, weights = "binary")),
+                 level    = suppressWarnings(VIM::imputeCellGLoc(s5$d, categorical = "level")),
+                 complete = suppressWarnings(VIM::imputeCellGLoc(s5$truth)))
   for (nm in names(none15)) {
     expect_true("cat_weights" %in% names(none15[[nm]]), info = nm)
     expect_null(none15[[nm]]$cat_weights, info = nm)
   }
+
+  # spec tests 13 and 15 on rows missing both f and g (fix round, M3): s7 and fit7
+  # (spec test 7 above), gen_cat(300, 7, miss_f = 0.2, miss_g = 0.2), the data of
+  # the test-14 fixture, fitted in the soft corner. Such a row has one candidate per
+  # level combination, and the mean-field sweeps use the score per combination.
+  X7s <- as.matrix(s7$d[, c("x1", "x2", "x3")])
+  M7s <- is.na(X7s)
+  cp7s <- VIM:::.gloc_cat_prepare(s7$d, c("f", "g"))
+  cand7s <- VIM:::.gloc_cat_candidates(cp7s, s7$d, ~ .)
+  both7s <- which(rowSums(cp7s$Mc) == 2L)
+  k7s <- which(cand7s$pr_row %in% both7s)             # their candidates in the table
+  expect_true(length(both7s) > 0L && length(k7s) == 6L * length(both7s))
+  sc7s <- VIM:::.gloc_cat_score(X7s, M7s, fit7$W[cand7s$pr_row[k7s], , drop = FALSE], fit7$B,
+                                fit7$Sigma, cand7s$Up[k7s, , drop = FALSE], cand7s$pr_row[k7s])
+  ll7s <- VIM:::.gloc_cat_loglik(X7s, M7s, fit7$W, fit7$B, fit7$Sigma,
+                                 cand7s$Up[k7s, , drop = FALSE], cand7s$pr_row[k7s])
+  expect_true(max(tapply(sc7s - ll7s, cand7s$pr_row[k7s], function(z) max(z) - min(z))) < 1e-10)
+  es7a <- VIM:::.gloc_cat_estep(X7s, M7s, fit7$W, fit7$B, fit7$Sigma, cp7s, cand7s,
+                                fit7$cat_priors)
+  es7b <- VIM:::.gloc_cat_estep(X7s, M7s, fit7$W, fit7$B, fit7$Sigma, cp7s, cand7s,
+                                fit7$cat_priors, Wc = fit7$W[cand7s$pr_row, , drop = FALSE])
+  for (v in c("f", "g"))
+    expect_true(max(abs(es7b$post[[v]][as.character(both7s), ] -
+                          es7a$post[[v]][as.character(both7s), ])) < 1e-10, info = v)
+  cw7s <- fit7$cat_weights
+  kb7 <- which(cw7s$row %in% both7s)
+  expect_identical(length(kb7), 6L * length(both7s))
+  expect_true(max(abs(tapply(cw7s$prob[kb7], cw7s$row[kb7], sum) - 1)) < 1e-12)
+  mix7s <- t(vapply(split(kb7, cw7s$row[kb7]),
+                    function(k) colSums(cw7s$prob[k] * cw7s$W[k, , drop = FALSE]), numeric(3)))
+  expect_true(max(abs(fit7$W[as.integer(rownames(mix7s)), ] - mix7s)) < 1e-12)
+  # prob is the product of the marginal posteriors
+  rk7 <- as.character(cw7s$row[kb7])
+  expect_true(max(abs(cw7s$prob[kb7] -
+                        fit7$cat_posterior$f[cbind(rk7, as.character(cw7s$levels$f[kb7]))] *
+                        fit7$cat_posterior$g[cbind(rk7, as.character(cw7s$levels$g[kb7]))])) < 1e-12)
+
+  # the non-convergence warning names the posterior-weighted weight change under
+  # per-level detection (fix round, M4), and keeps the words the simulation scripts
+  # classify by; without per-level detection its wording is unchanged
+  expect_true(any(grepl("did not converge", w7, fixed = TRUE)))
+  expect_true(any(grepl("max |dW| over the candidates weighted by their posteriors", w7,
+                        fixed = TRUE)))
+  w7l <- collect_warnings(VIM::imputeCellGLoc(s7$d, maxit = 1, categorical = "level"))
+  expect_true(any(grepl("did not converge", w7l, fixed = TRUE)))
+  expect_false(any(grepl("over the candidates", w7l, fixed = TRUE)))
+
+  # per-level detection with rows above the combination cap (fix round, I2): three
+  # 7-level factors give 343 > 256 combinations, so a row missing all three keeps
+  # one weight row, at its mode design row, and enters no pseudo-row
+  set.seed(2020)
+  n_cap <- 300
+  Fcap <- data.frame(h1 = factor(sample(letters[1:7], n_cap, TRUE)),
+                     h2 = factor(sample(LETTERS[1:7], n_cap, TRUE)),
+                     h3 = factor(sample(paste0("t", 1:7), n_cap, TRUE)))
+  Xcap <- matrix(rnorm(n_cap * 3), n_cap) %*% chol(0.5 * diag(3) + 0.5)
+  Xcap[, 1] <- Xcap[, 1] + 0.8 * as.integer(Fcap$h1)
+  Xcap[, 2] <- Xcap[, 2] + 0.6 * as.integer(Fcap$h2)
+  Xcap[, 3] <- Xcap[, 3] - 0.5 * as.integer(Fcap$h3)
+  colnames(Xcap) <- paste0("x", 1:3)
+  dcap <- data.frame(Xcap, Fcap)
+  capped <- 1:4                                     # rows missing all three factors
+  dcap[capped, c("h1", "h2", "h3")] <- NA
+  dcap$x2[capped[1:2]] <- NA                         # and continuous cells in two of them
+  dcap$h1[11:40] <- NA; dcap$h2[41:60] <- NA; dcap$h3[61:75] <- NA   # one factor missing
+  wcap <- collect_warnings(fcap <- VIM::imputeCellGLoc(dcap))
+  expect_equal(sum(grepl("more than 256 combinations", wcap, fixed = TRUE)), 1L)
+  cwcap <- fcap$cat_weights
+  expect_false(any(capped %in% cwcap$row))
+  expect_identical(sort(unique(cwcap$row)), 11:75)
+  Wcap <- fcap$W[capped, , drop = FALSE]
+  expect_true(all(Wcap >= 0 & Wcap <= 1))
+  expect_true(all(Wcap[is.na(as.matrix(dcap[capped, c("x1", "x2", "x3")]))] == 0))
+  expect_true(max(abs(tapply(cwcap$prob, cwcap$row, sum) - 1)) < 1e-12)
+  mixcap <- t(vapply(split(seq_along(cwcap$row), cwcap$row),
+                     function(k) colSums(cwcap$prob[k] * cwcap$W[k, , drop = FALSE]), numeric(3)))
+  expect_true(max(abs(fcap$W[as.integer(rownames(mixcap)), ] - mixcap)) < 1e-12)
+  # maxit = 0 returns the start's W: the robust start on the prior-expected design
+  # rows (the capped rows at their mode rows), fitted on the complete-category rows
+  fcap0 <- suppressWarnings(VIM::imputeCellGLoc(dcap, maxit = 0))
+  Xc0 <- as.matrix(dcap[, c("x1", "x2", "x3")]); Mc0 <- is.na(Xc0)
+  cpc0 <- VIM:::.gloc_cat_prepare(dcap, c("h1", "h2", "h3"))
+  candc0 <- suppressWarnings(VIM:::.gloc_cat_candidates(cpc0, dcap, ~ .))
+  ccc0 <- rowSums(cpc0$Mc) == 0L
+  pric0 <- VIM:::.gloc_cat_fit_priors(cpc0$F[ccc0, , drop = FALSE], rep(1, sum(ccc0)),
+                                      cpc0$levels)
+  esc0 <- VIM:::.gloc_cat_estep(Xc0, Mc0, NULL, NULL, NULL, cpc0, candc0, pric0)
+  stc0 <- VIM:::.gloc_start_robust(Xc0, esc0$Ubar, Mc0, warn_design = FALSE,
+                                   patterns = candc0$pats_rows, fit_rows = ccc0)
+  expect_identical(fcap0$W, stc0$W)
+  expect_identical(fcap0$B, stc0$B)
 }
 
 # spec test 14 -- the binary corner under "em", with missing categorical cells,
@@ -1147,7 +1293,8 @@ if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
     i <- rows10[k]; o <- which(!is.na(X10[i, ]))
     Fi <- cp10$F[rep(i, length(lev10)), , drop = FALSE]
     Fi$f <- factor(lev10, levels = lev10)
-    mu <- VIM:::.gloc_design_rows(Fi, ~ ., cp10$levels) %*% f10$B
+    Ui <- VIM:::.gloc_design_rows(Fi, ~ ., cp10$levels)
+    mu <- Ui %*% f10$B[colnames(Ui), , drop = FALSE]      # by name, not by position
     So <- f10$Sigma[o, o, drop = FALSE]
     s <- vapply(seq_along(lev10), function(l) {
       r <- X10[i, o] - mu[l, o]

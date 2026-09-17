@@ -260,7 +260,10 @@ a row without one, and a row above the combination cap, reports its own.
 list with one entry per candidate of the rows below the combination cap that
 miss a categorical cell, in the order of the candidate table: \code{row}, the
 data row (integer); \code{levels}, a data frame of the candidate's values of
-every categorical variable, observed values included; \code{prob}, the
+every categorical variable, observed values included -- its columns are the
+candidate table's factors, on the level sets the fit observed, so a
+\code{character} or \code{logical} column of \code{data} comes back as a
+factor; \code{prob}, the
 candidate's posterior probability, the product of the marginal posteriors when
 several cells are missing; and \code{W}, the candidates' cell weights, a
 matrix with one row per candidate and one column per continuous variable.
@@ -426,9 +429,10 @@ whenever the true level is far from the prior mean. That cell was flagged, the
 E-step dropped it, and the posterior could not move, a self-locking fixed
 point. On the datasets of the categorical arms of the 7.5.0 simulation at
 \code{eps = 0} (n = 200, six continuous and six categorical variables, 10
-replicates per pattern), the decisive cell was flagged in 17.6-19.8\\% of the
+replicates per pattern), the decisive cell was flagged in 17.6-19.8\% of the
 rows missing the factor, and the imputed level was right in 0.809-0.861 of those
-rows, against 0.965-0.986 for the fit's own parameters without flags. A
+rows, against 0.965-0.986 for a classifier that uses the fit's own \eqn{B} and
+\eqn{\Sigma}, the true prior probabilities and every observed continuous cell. A
 contaminated cell is flagged under every level and pays the same penalty under
 each, so it still does not steer the level. The binary corner keeps one weight
 row per observation, since \code{cellWise::cellMCD} returns one: its detection
