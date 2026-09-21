@@ -5,8 +5,8 @@ approximation), builds the design rows for the drawn levels, and draws the
 missing continuous cells from their conditional normal given those levels
 and the unflagged peers (.gloc_impute with cov = TRUE). The
 draws use the caller's random-number stream. noise = FALSE returns
-the fit's own imputed: posterior modes and conditional expectations
-under the expected design rows."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
+the fit's own imputed: posterior modes and, for a row that misses a
+categorical cell, the posterior mixture of .gloc_impute_mix."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--></head><body data-spy="scroll" data-target="#toc">
@@ -24,7 +24,7 @@ under the expected design rows."><!-- mathjax --><script src="https://cdnjs.clou
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.1</span>
       </span>
     </div>
 
@@ -105,8 +105,8 @@ approximation), builds the design rows for the drawn levels, and draws the
 missing continuous cells from their conditional normal given those levels
 and the unflagged peers (<code>.gloc_impute</code> with <code>cov = TRUE</code>). The
 draws use the caller's random-number stream. <code>noise = FALSE</code> returns
-the fit's own <code>imputed</code>: posterior modes and conditional expectations
-under the expected design rows.</p>
+the fit's own <code>imputed</code>: posterior modes and, for a row that misses a
+categorical cell, the posterior mixture of <code>.gloc_impute_mix</code>.</p>
     </div>
 
     <div id="ref-usage">
@@ -125,7 +125,8 @@ under the expected design rows.</p>
 
 
 <dl><dt id="arg-fit">fit<a class="anchor" aria-label="anchor" href="#arg-fit"></a></dt>
-<dd><p>an <code>imputeCellGLoc</code> result.</p></dd>
+<dd><p>an <code>imputeCellGLoc</code> result, or the list
+<code>.gloc_cat_posterior_for</code> returns.</p></dd>
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
@@ -143,6 +144,21 @@ under the expected design rows.</p>
     <div id="value">
     <h2>Value</h2>
     <p>an imputed copy of <code>data</code>.</p>
+    </div>
+    <div id="details">
+    <h2>Details</h2>
+    <p>With <code>fit$cat_weights</code> (per-level detection, soft corner, since 7.5.1) a
+draw imputes each row that misses a categorical cell, and lies below the
+combination cap, with the cell weights of the candidate whose level
+combination was drawn for it, not with the row's own weights, which are the
+posterior mixture over the candidates (Ruling R74). A row above the cap, and a
+fit without <code>cat_weights</code> – the binary corner, <code>categorical =
+"level"</code>, or a <code>fit</code> assembled by <code>.gloc_cat_posterior_for</code> without
+them – keeps the 7.5.0 rule, one weight row per observation.</p>
+<p>A candidate's weight row whose posterior probability is small may sit up to
+<code>eps / prob</code> from its own fixed point, because the stopping rule weights a
+candidate's weight change by that probability (Ruling R73); a draw that lands
+on such a candidate therefore conditions on a slightly unsettled flag set.</p>
     </div>
 
   </div>

@@ -4,7 +4,15 @@ sample and imputes the original rows under that fit. This computes what
 .gloc_draw_mi needs for the rows of data: the fit's B
 aligned to data's design columns (0 where the fit lacks a column,
 counted in the attribute dropped), its Sigma, the cell weights
-W, and one E-step at the fit's parameters and prior models."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
+W, and one E-step at the fit's parameters and prior models.
+Under per-level detection (soft corner, since 7.5.1) the posteriors are a
+function of the candidates' own weight rows, not of W, so
+reproducing them needs cat_weights as well: the E-step then scores each
+candidate with .gloc_cat_score under those weights, with \(\lambda\)
+from fit$Sigma (Ruling R74). The original fit's cat_weights are
+returned with their prob recomputed under this fit, so that
+.gloc_draw_mi can impute a drawn row with its candidate's weights.
+Without them the 7.5.0 E-step runs, which is what the binary corner needs."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--></head><body data-spy="scroll" data-target="#toc">
@@ -22,7 +30,7 @@ W, and one E-step at the fit's parameters and prior models."><!-- mathjax --><sc
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.1</span>
       </span>
     </div>
 
@@ -102,7 +110,15 @@ sample and imputes the original rows under that fit. This computes what
 <code>.gloc_draw_mi</code> needs for the rows of <code>data</code>: the fit's <code>B</code>
 aligned to <code>data</code>'s design columns (0 where the fit lacks a column,
 counted in the attribute <code>dropped</code>), its <code>Sigma</code>, the cell weights
-<code>W</code>, and one E-step at the fit's parameters and prior models.</p>
+<code>W</code>, and one E-step at the fit's parameters and prior models.
+Under per-level detection (soft corner, since 7.5.1) the posteriors are a
+function of the <em>candidates'</em> own weight rows, not of <code>W</code>, so
+reproducing them needs <code>cat_weights</code> as well: the E-step then scores each
+candidate with <code>.gloc_cat_score</code> under those weights, with \(\lambda\)
+from <code>fit$Sigma</code> (Ruling R74). The original fit's <code>cat_weights</code> are
+returned with their <code>prob</code> recomputed under this fit, so that
+<code>.gloc_draw_mi</code> can impute a drawn row with its candidate's weights.
+Without them the 7.5.0 E-step runs, which is what the binary corner needs.</p>
     </div>
 
     <div id="ref-usage">
@@ -110,6 +126,7 @@ counted in the attribute <code>dropped</code>), its <code>Sigma</code>, the cell
 <span>  <span class="va">fit</span>,</span>
 <span>  <span class="va">data</span>,</span>
 <span>  W <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cat_weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  design <span class="op">=</span> <span class="op">~</span><span class="va">.</span>,</span>
 <span>  peer_w_min <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  peer_band <span class="op">=</span> <span class="va">.gloc_peer_band</span></span>
@@ -132,13 +149,20 @@ counted in the attribute <code>dropped</code>), its <code>Sigma</code>, the cell
 <dd><p>cell weights for <code>data</code>; <code>NULL</code> gives 1 on observed cells.</p></dd>
 
 
+<dt id="arg-cat-weights">cat_weights<a class="anchor" aria-label="anchor" href="#arg-cat-weights"></a></dt>
+<dd><p>the per-candidate cell weights of a fit on <em>these</em>
+rows (its <code>cat_weights</code>), or <code>NULL</code>. Its <code>row</code> and
+<code>levels</code> must match the candidate table of <code>data</code>, or this stops.</p></dd>
+
+
 <dt id="arg-design-peer-w-min-peer-band">design, peer_w_min, peer_band<a class="anchor" aria-label="anchor" href="#arg-design-peer-w-min-peer-band"></a></dt>
 <dd><p>as for the fit.</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p><code>list(B, Sigma, W, U, cat_posterior)</code>.</p>
+    <p><code>list(B, Sigma, W, U, cat_posterior, cat_weights)</code>;
+<code>cat_weights</code> is <code>NULL</code> unless it was passed in.</p>
     </div>
 
   </div>

@@ -25,7 +25,7 @@ distribution."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/li
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.1</span>
       </span>
     </div>
 
@@ -123,7 +123,8 @@ distribution.</p>
 <span>  <span class="va">priors</span>,</span>
 <span>  w_min <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  band <span class="op">=</span> <span class="va">.gloc_peer_band</span>,</span>
-<span>  sweeps <span class="op">=</span> <span class="va">.gloc_cat_sweeps</span></span>
+<span>  sweeps <span class="op">=</span> <span class="va">.gloc_cat_sweeps</span>,</span>
+<span>  Wc <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -133,7 +134,8 @@ distribution.</p>
 
 <dl><dt id="arg-x-m-w-b-sigma">X, M, W, B, Sigma<a class="anchor" aria-label="anchor" href="#arg-x-m-w-b-sigma"></a></dt>
 <dd><p>the continuous data, mask, weights and current fit;
-<code>B = NULL</code> drops the density (prior-only E-step).</p></dd>
+<code>B = NULL</code> drops the density (prior-only E-step). <code>W</code> is not used
+when <code>Wc</code> is given.</p></dd>
 
 
 <dt id="arg-catp-cand">catp, cand<a class="anchor" aria-label="anchor" href="#arg-catp-cand"></a></dt>
@@ -152,10 +154,33 @@ distribution.</p>
 <dt id="arg-sweeps">sweeps<a class="anchor" aria-label="anchor" href="#arg-sweeps"></a></dt>
 <dd><p>see <code>.gloc_cat_sweeps</code>.</p></dd>
 
+
+<dt id="arg-wc">Wc<a class="anchor" aria-label="anchor" href="#arg-wc"></a></dt>
+<dd><p><code>NULL</code> (the 7.5.0 density term, one weight row per observation)
+or cell weights with one row per pseudo-row of <code>cand</code>, in its order;
+only the rows of candidates whose row misses a categorical cell are read.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
     <p><code>list(pr_row, pr_w, Fp, Up, Ubar, post, Umain_bar)</code>.</p>
+    </div>
+    <div id="details">
+    <h2>Details</h2>
+    <p>With per-candidate weights <code>Wc</code> (per-level detection, soft corner, since
+7.5.1) the density term of a pseudo-row \(k\) of a row with a missing cell is
+the cellwise-penalised score of <code>.gloc_cat_score</code>,
+\(\ell_k = -\frac{1}{2} [|K| \log 2\pi + \log\det G + y' G^{-1} y]
+- \frac{1}{2} \sum_{j \in K} (1 - r_j) p_j - \frac{1}{2} \sum_{j \in O
+\setminus K} \lambda_j\), computed under the candidate's own weights with
+\(\lambda\) from <code>Sigma</code>; the posterior and the mean-field sweeps are
+otherwise unchanged, with \(\ell_k\) in place of the density term per level
+combination. At the endpoints of the band \(\ell_k\) is minus one half times
+the row's term of the binary-corner objective (<code>.gloc_objective</code>); when
+every candidate carries its row's weight row, the posteriors are those without
+<code>Wc</code> up to rounding, wherever the Cholesky factorisation of \(G\)
+succeeds (the two density routes fall back differently otherwise; see
+<code>.gloc_cat_score</code>).</p>
     </div>
 
   </div>

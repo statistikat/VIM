@@ -4,7 +4,8 @@ and it phrases the non-convergence warning, which must tell an exhausted
 iteration limit (raise maxit) apart from a limit cycle (raising
 maxit cannot help). An iteration counts as progress when
 max |dW| improves or, under the categorical EM, when dR, the largest
-change of a categorical posterior, does; each has its own 1\
+change of a categorical posterior, does; each has its own 1% rule, and
+.gloc_stall_update is the rule itself. A
 running best is compared rather than
 consecutive values, so a cycle of any period is caught, not just period 2.
 The warning's two labels are a heuristic and should be read as such: a run
@@ -27,7 +28,7 @@ contracting at a rate near 0.999 improves max |dW| by only 2% over
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.1</span>
       </span>
     </div>
 
@@ -107,7 +108,8 @@ and it phrases the non-convergence warning, which must tell an exhausted
 iteration limit (raise <code>maxit</code>) apart from a limit cycle (raising
 <code>maxit</code> cannot help). An iteration counts as progress when
 <code>max |dW|</code> improves or, under the categorical EM, when dR, the largest
-change of a categorical posterior, does; each has its own 1\<!-- % rule. A -->
+change of a categorical posterior, does; each has its own 1% rule, and
+<code>.gloc_stall_update</code> is the rule itself. A
 running best is compared rather than
 consecutive values, so a cycle of any period is caught, not just period 2.
 The warning's two labels are a heuristic and should be read as such: a run

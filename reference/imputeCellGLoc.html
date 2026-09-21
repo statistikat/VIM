@@ -21,7 +21,7 @@ and the row's categorical pattern."><!-- mathjax --><script src="https://cdnjs.c
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.1</span>
       </span>
     </div>
 
@@ -303,7 +303,10 @@ categorical variable gets a multinomial logistic regression on the other
 categorical variables. A row with a missing cell enters the estimation
 once per candidate level, weighted by that level's posterior probability,
 and the posterior combines the prior with the density of the row's
-unflagged continuous cells (the peer rule of detection and imputation). The
+unflagged continuous cells (the peer rule of detection and imputation). In
+the soft corner each level is judged with its own cell weights, and flagging a
+cell under a level costs a penalty (since 7.5.1; see "Per-level detection" in
+Details). The
 fit is an EM-type algorithm for a pseudo-likelihood, because conditional
 models define no joint distribution, and no monotonicity is claimed. A row
 missing several categorical cells is handled by mean-field sweeps, an
@@ -370,7 +373,38 @@ cell, where the estimation itself needs no priors at all.</p></dd>
     <p>a list with <code>B</code>, <code>Sigma</code>, <code>W</code>, <code>U</code>,
 <code>imputed</code>, <code>converged</code>, <code>iterations</code>, <code>criterion</code>,
 <code>cat_posterior</code>, <code>cat_prob_observed</code>, <code>cat_multi_missing</code>,
-<code>cat_priors</code> and <code>em_starts</code>.</p>
+<code>cat_priors</code>, <code>em_starts</code> and <code>cat_weights</code>.</p>
+<p><code>W</code> is the \(n x p\) matrix of cell weights of the continuous
+variables, 0 on missing cells. Under per-level detection (<code>"em"</code>, soft
+corner, a missing categorical cell; see Details) a row with a missing
+categorical cell reports the posterior mixture
+\(W_i = \sum_k r_k W_k\) of its candidates' weights under the final E-step;
+a row without one, and a row above the combination cap, reports its own.</p>
+<p><code>imputed</code> is <code>data</code> with its missing cells filled: a continuous
+cell by its conditional expectation given the unflagged cells of its row, a
+categorical cell (under <code>"em"</code>) by its posterior mode. Under per-level
+detection a missing continuous cell of a row that <em>also</em> misses a
+categorical cell is imputed instead by the posterior mixture
+\(\sum_k r_k E[x_{mis} | \textrm{cells clean under } k, u_k]\) over that
+row's candidates: each candidate contributes the conditional expectation at
+its own design row, conditioned on the cells that are clean under it, and the
+candidates are mixed by their posterior probabilities \(r_k\). That is the
+exact posterior mean of the cell. Every other row, a row above the
+combination cap included, is imputed at its expected design row with the
+returned <code>W</code>, as in 7.5.0.</p>
+<p><code>cat_weights</code> is <code>NULL</code> unless per-level detection ran. Then it is a
+list with one entry per candidate of the rows below the combination cap that
+miss a categorical cell, in the order of the candidate table: <code>row</code>, the
+data row (integer); <code>levels</code>, a data frame of the candidate's values of
+every categorical variable, observed values included – its columns are the
+candidate table's factors, on the level sets the fit observed, so a
+<code>character</code> or <code>logical</code> column of <code>data</code> comes back as a
+factor; <code>prob</code>, the
+candidate's posterior probability, the product of the marginal posteriors when
+several cells are missing; and <code>W</code>, the candidates' cell weights, a
+matrix with one row per candidate and one column per continuous variable.
+<code>W[i, ]</code> of the fit equals <code>colSums(prob * W)</code> over row <code>i</code>'s
+entries.</p>
 <p>Under <code>categorical = "em"</code>, <code>U</code> holds each row's expected design
 row, so <code>U %*% B</code> are the fitted means. <code>cat_posterior</code> is a
 list with one matrix per categorical variable that has a missing cell: its
@@ -383,7 +417,13 @@ missing: for every observed categorical cell, the posterior probability of its
 own level computed as if the cell were missing, without a refit. A small value
 points at a miscoded cell; the estimation does not use it. It is <code>NA</code> in
 every column of a row above the combination cap as well, since such a row has
-no pseudo-rows to compute it from.
+no pseudo-rows to compute it from. Under per-level detection it is not on the
+same scale as <code>cat_posterior</code>: the diagnostic keeps 7.5.0's un-penalised
+Gaussian density, evaluated at the returned (mixture) <code>W</code>, while the fit's
+own posteriors now come from the cellwise-penalised per-candidate score
+(<code>.gloc_cat_score</code>). Per-level scoring of observed cells is deliberately
+deferred, so compare a value of this matrix with other values of it and with
+the same fit's flagging rate, not with an entry of <code>cat_posterior</code>.
 <code>cat_multi_missing</code> is the share of rows with two or more missing
 categorical cells. <code>cat_priors</code> holds the final multinomial prior models,
 so that level posteriors for other rows can be computed under this fit (for
@@ -411,7 +451,13 @@ reports its amplitude, a run still drifting reports the drift – and a caller
 can test it instead of parsing a warning string. The fifth entry,
 <code>categorical</code>, is the largest change of a categorical posterior
 probability in the last iteration; it is 0 without the EM, <code>NA</code> when no
-iteration ran, and part of the stopping rule with the EM.</p>
+iteration ran, and part of the stopping rule with the EM. Under per-level
+detection <code>weights</code> is taken over the candidates: the largest change of a
+candidate's cell weight times the candidate's posterior probability (1 for a
+row that is a single candidate or lies above the combination cap), divided by
+the relaxation factor. The adaptive relaxation and the stall detector use the
+same number, so a candidate the posterior has all but ruled out cannot hold up
+convergence.</p>
 <p>It does not tell those two apart, and it is not an error estimate. On 10
 non-converged <code>weights = "binary"</code> fits it was positive for all 10,
 while raising <code>maxit</code> left 8 of them bit-identical and moved 2 (by
@@ -477,6 +523,13 @@ and above combined with 20% of cells contaminated.</p>
 <p>All convergence figures in this section were measured before 7.4.1, with
 the classical cold start (<code>start = "classical"</code>); the robust start has
 not been measured on that grid.</p>
+<p>When the design does not use a factor's own <code>contrasts</code> attribute – the
+factor has an unused level, or, under <code>categorical = "level"</code>, its missing
+values become a level of their own – the fit says so once for that factor
+(since 7.5.1; see <code>.gloc_contrast_lost</code>), and base R's own "contrasts
+dropped" warning is muffled at every design site here; the fitted means,
+\(\Sigma\), \(W\) and the imputations are the same under any full-rank
+coding, so only <code>B</code>'s rows change.</p>
 <p>Continuous columns that are <code>integer</code> in <code>data</code> stay
 <code>integer</code> in <code>$imputed</code>; their conditional expectations are
 rounded.</p>
@@ -487,6 +540,40 @@ uses (<code>peer_w_min</code> with the peer band), in both weight corners. Until
 included, so a grossly contaminated cell was carried into the imputation of
 its row-mates; <code>B</code>, <code>Sigma</code> and <code>W</code> were not affected. See
 <code>.gloc_impute</code>.</p>
+<p><strong>Per-level detection</strong> (since 7.5.1). Under <code>categorical = "em"</code>
+in the soft corner, a row with a missing categorical cell is judged once per
+candidate level, or per level combination when several cells are missing. Each
+candidate carries its own cell weights: its cells are compared with its own
+fitted mean and conditioned on the cells that are clean under it. The E-step
+scores a level by the cellwise-penalised likelihood of the binary corner, the
+Gaussian log-density of the cells retained under the level minus
+\(\lambda_j / 2\) for each cell flagged under it, with
+\(\lambda_j = \chi^2_{1;0.99} + \log 2\pi + \log c_j\),
+\(c_j = 1 / (\Sigma^{-1})_{jj}\) from the current scatter, and the peer band
+in between (see <code>.gloc_cat_score</code>). <code>B</code> and <code>Sigma</code> are updated
+with each candidate's weights times its posterior probability, and <code>W</code>
+reports the posterior mixture of the candidates' weights, which
+<code>cat_weights</code> returns. Why: until 7.5.0 detection in such a row ran at its
+expected design row, where a cell that decides the level looks outlying
+whenever the true level is far from the prior mean. That cell was flagged, the
+E-step dropped it, and the posterior could not move, a self-locking fixed
+point. On the datasets of the categorical arms of the 7.5.0 simulation at
+<code>eps = 0</code> (n = 200, six continuous and six categorical variables, 10
+replicates per pattern), the decisive cell was flagged in 17.6-19.8% of the
+rows missing the factor, and the imputed level was right in 0.809-0.861 of those
+rows, against 0.965-0.986 for a classifier that uses the fit's own \(B\) and
+\(\Sigma\), the true prior probabilities and every observed continuous cell. A
+contaminated cell is flagged under every level and pays the same penalty under
+each, so it still does not steer the level. The binary corner keeps one weight
+row per observation, since <code><a href="https://rdrr.io/pkg/cellWise/man/cellMCD.html" class="external-link">cellWise::cellMCD</a></code> returns one: its detection
+stays at the expected design row, and the lock can occur there. The soft corner
+is the default. The missing continuous cells of such a row are imputed by the
+posterior mixture of its candidates' conditional expectations, each taken at
+that candidate's design row and conditioned on the cells that are clean under
+it (<code>.gloc_impute_mix</code>); see <code>imputed</code> under Value. (Corrected: until
+7.5.0 they were imputed once, at the expected design row with the row's weights,
+which was the exact mixture expectation only while every level shared one
+weight row.)</p>
     </div>
     <div id="references">
     <h2>References</h2>

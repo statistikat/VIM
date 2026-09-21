@@ -25,7 +25,7 @@ fully in or out share one inversion per peer pattern."><!-- mathjax --><script s
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">VIM</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.0</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="Unreleased version">7.5.1</span>
       </span>
     </div>
 
@@ -167,6 +167,25 @@ fully in or out share one inversion per peer pattern.</p>
 usable peer – every continuous cell of it missing or flagged – gets 0 for
 every candidate, so the density says nothing there and the prior alone
 decides the level.</p>
+    </div>
+    <div id="details">
+    <h2>Details</h2>
+    <p>This is the density term of VIM 7.5.0, with one weight row per observation. It
+is still the E-step's term in the binary corner, and <code>cat_prob_observed</code>
+uses it with the returned <code>W</code>. Per-level detection (soft corner, 7.5.1)
+scores each candidate \(k\) with its own weight row instead
+(<code>.gloc_cat_score</code>):
+\(\ell_k = -\frac{1}{2} [|K| \log 2\pi + \log\det G + y' G^{-1} y]
+- \frac{1}{2} \sum_{j \in K} (1 - r_j) p_j - \frac{1}{2} \sum_{j \in O
+\setminus K} \lambda_j\), which at the endpoints of the band (every reliability
+0 or 1) is minus one half times the row's term of the binary-corner objective
+(<code>.gloc_objective</code>). When every candidate of a row carries the row's weight
+row, \(G\), \(K\) and the penalties are shared, so \(\ell_k\) and this
+function's value differ by one constant within the row and give the same
+posteriors. That holds wherever the Cholesky factorisation of \(G\) succeeds,
+which is the ordinary case; on a \(G\) that is not positive definite the two
+fall back differently, this function to <code><a href="https://rdrr.io/pkg/MASS/man/ginv.html" class="external-link">MASS::ginv</a></code> and the score to the
+eigenvalues floored at 1e-8 times the largest.</p>
     </div>
 
   </div>

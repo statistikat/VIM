@@ -49,16 +49,19 @@
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_cat_fit_priors.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_cat_identity.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_cat_loglik.html</loc></url>
+<url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_cat_mix_weights.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_cat_posterior_for.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_cat_prepare.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_cat_prior.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_cat_prob_observed.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_cat_restore.html</loc></url>
+<url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_cat_score.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_cat_sweeps.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_chol_psd.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_cond_resid.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_consistency.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_const_coef.html</loc></url>
+<url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_contrast_lost.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_correct_scatter.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_damp_schedule.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_dedup_handler.html</loc></url>
@@ -72,6 +75,7 @@
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_fill_null.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_fmt.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_impute.html</loc></url>
+<url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_impute_mix.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_keep_contrasts.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_label_second.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_lambda.html</loc></url>
@@ -97,6 +101,7 @@
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_shown.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_split_vars.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_stall_iters.html</loc></url>
+<url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_stall_update.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_start_alpha.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_start_robust.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/dot-gloc_start_seed.html</loc></url>
