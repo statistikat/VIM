@@ -1190,11 +1190,11 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   # 7-level factors give 343 > 256 combinations, so a row missing all three keeps
   # one weight row, at its mode design row, and enters no pseudo-row
   set.seed(2020)
-  n_cap <- 300
-  Fcap <- data.frame(h1 = factor(sample(letters[1:7], n_cap, TRUE)),
-                     h2 = factor(sample(LETTERS[1:7], n_cap, TRUE)),
-                     h3 = factor(sample(paste0("t", 1:7), n_cap, TRUE)))
-  Xcap <- matrix(rnorm(n_cap * 3), n_cap) %*% chol(0.5 * diag(3) + 0.5)
+  n_dcap <- 300
+  Fcap <- data.frame(h1 = factor(sample(letters[1:7], n_dcap, TRUE)),
+                     h2 = factor(sample(LETTERS[1:7], n_dcap, TRUE)),
+                     h3 = factor(sample(paste0("t", 1:7), n_dcap, TRUE)))
+  Xcap <- matrix(rnorm(n_dcap * 3), n_dcap) %*% chol(0.5 * diag(3) + 0.5)
   Xcap[, 1] <- Xcap[, 1] + 0.8 * as.integer(Fcap$h1)
   Xcap[, 2] <- Xcap[, 2] + 0.6 * as.integer(Fcap$h2)
   Xcap[, 3] <- Xcap[, 3] - 0.5 * as.integer(Fcap$h3)

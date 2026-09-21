@@ -30,10 +30,14 @@
   mean. Until 7.5.0 such a cell was imputed once, at the row's expected design row, which was the
   exact mixture expectation only while every level shared one weight row -- it no longer does, and
   conditioning at the expected design row on the mixture weights would condition on a cell with a
-  weight that no candidate gave it. Only those cells change; every other cell of `imputed`, a row
-  above the combination cap included, is what 7.5.0 returned, bit for bit. Measured on two test
-  fixtures with missing continuous cells in such rows, 17 cells move in one (n = 400) and 53 in the
-  other (n = 300), by a median 0.017 and 0.012 in the data's own units and by at most 0.31 and 0.26.
+  weight that no candidate gave it. **The rule changes only those cells**: every other cell of
+  `imputed`, a row above the combination cap included, is what the same fit with the old imputation
+  rule returns, bit for bit. That comparison is against per-level detection with 7.5.0's imputation,
+  not against 7.5.0 itself -- in a soft-corner `"em"` fit with a missing categorical cell the bullet
+  above has already moved `B`, `Sigma` and `W`, so against 7.5.0 *any* imputed cell of such a fit
+  can differ. Measured on two test fixtures with missing continuous cells in such rows, the
+  imputation rule alone moves 17 cells in one (n = 400) and 53 in the other (n = 300), by a median
+  0.017 and 0.012 in the data's own units and by at most 0.31 and 0.26.
 - **Multiple imputation follows the same rule.** A draw takes the level, or level combination, from
   `cat_posterior` as before, and now imputes the row with the cell weights of the candidate it
   drew rather than with the row's own, which are the posterior mixture over the candidates. A row
@@ -64,9 +68,10 @@
   (`cellWise::cwLocScat()`, about 95% of an iteration) already ran on the candidates in 7.5.0. Over
   60 `em` fits with a missing categorical cell (n = 200, six continuous and six categorical
   variables, 10 replicates at each of eps 0, eps 0.10 with a shift of 6, and eps 0.20 with a shift
-  of 6), 7.5.1 took **0.76 times** the total seconds of 7.5.0 -- 0.57, 0.73 and 0.96 by setting --
-  with a median per-fit ratio of 0.85 to 0.98, and 302/333/380 iterations against 538/385/414. The
-  design expected at most 1.2 times.
+  of 6), measured at the branch head with the mixture imputation's post-loop pass included, 7.5.1
+  took **0.76 times** the total seconds of 7.5.0 -- 0.56, 0.73 and 0.96 by setting -- with a median
+  per-fit ratio of 0.86 to 0.99, and 302/333/380 iterations against 538/385/414. The design expected
+  at most 1.2 times.
 
 # VIM 7.5.0
 

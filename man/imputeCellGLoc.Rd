@@ -295,7 +295,13 @@ missing: for every observed categorical cell, the posterior probability of its
 own level computed as if the cell were missing, without a refit. A small value
 points at a miscoded cell; the estimation does not use it. It is \code{NA} in
 every column of a row above the combination cap as well, since such a row has
-no pseudo-rows to compute it from.
+no pseudo-rows to compute it from. Under per-level detection it is not on the
+same scale as \code{cat_posterior}: the diagnostic keeps 7.5.0's un-penalised
+Gaussian density, evaluated at the returned (mixture) \code{W}, while the fit's
+own posteriors now come from the cellwise-penalised per-candidate score
+(\code{.gloc_cat_score}). Per-level scoring of observed cells is deliberately
+deferred, so compare a value of this matrix with other values of it and with
+the same fit's flagging rate, not with an entry of \code{cat_posterior}.
 \code{cat_multi_missing} is the share of rows with two or more missing
 categorical cells. \code{cat_priors} holds the final multinomial prior models,
 so that level posteriors for other rows can be computed under this fit (for
