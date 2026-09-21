@@ -1245,6 +1245,24 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
 #                            "criterion", "converged", "iterations")],
 #                vim = "7.5.0", commit = "15b08a3"),
 #           "inst/tinytest/gloc_em_binary_ref_750.rds")
+#
+# Correction, recorded rather than deleted: until 2026-09-21 this block
+# compared all seven components (B, Sigma, W, U, imputed, cat_posterior,
+# criterion) against the fixture with tolerance = 1e-10 outside
+# VIM_BITREF=true. On Linux, R 4.3.3, reference BLAS, 2026-09-21, that
+# tolerance was too tight: mean relative differences of B 2.8e-10, Sigma
+# 1.3e-10, U 1.9e-10, cat_posterior 3.2e-10 and 3.0e-10, and criterion 4.6e-6,
+# with equal iteration counts throughout. The gap is larger than the 4.4e-15
+# recorded in test_cellGLoc.R for the "classical" start because the
+# categorical step here fits nnet::multinom() with an iterative optimiser,
+# not a closed-form update. criterion reports stopping residuals of the
+# order of eps, so a platform-dependent last step moves it by a similar
+# order; test_cellGLoc.R excludes criterion from its non-bitref comparison
+# for the same reason. criterion is now compared only under VIM_BITREF=true,
+# where all seven components stay expect_identical(). The other six are
+# compared at tolerance = 1e-6, fixed before this rerun: more than 400 times
+# the largest cross-platform difference measured for this fix and 5000
+# times below the eps = 5e-3 stopping tolerance.
 if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
   ref750 <- readRDS("gloc_em_binary_ref_750.rds")
   bitref750 <- identical(Sys.getenv("VIM_BITREF"), "true")
@@ -1252,8 +1270,11 @@ if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
   expect_identical(fit14$converged, ref750$fit$converged)
   expect_identical(fit14$iterations, ref750$fit$iterations)
   for (k in c("B", "Sigma", "W", "U", "imputed", "cat_posterior", "criterion")) {
-    if (bitref750) expect_identical(fit14[[k]], ref750$fit[[k]], info = k)
-    else expect_equal(fit14[[k]], ref750$fit[[k]], tolerance = 1e-10, info = k)
+    if (bitref750) {
+      expect_identical(fit14[[k]], ref750$fit[[k]], info = k)
+    } else if (k != "criterion") {
+      expect_equal(fit14[[k]], ref750$fit[[k]], tolerance = 1e-6, info = k)
+    }
   }
 }
 
@@ -1539,11 +1560,34 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
 
 # the pre-R65 fixture (fix round, I1): every fit of the six cases is what the
 # commit before the warning returned
+#
+# Correction, recorded rather than deleted: until 2026-09-21 this block
+# compared ref65$cases against cases17 with expect_identical(), and each
+# fit's B, Sigma, W and imputed against the fixture with tolerance = 1e-10,
+# outside VIM_BITREF=true. On Linux, R 4.3.3, reference BLAS, 2026-09-21,
+# both comparisons failed. expect_identical(ref65$cases, cases17) fails
+# because cases17 is built through X %*% chol(...): chol() is itself
+# BLAS-dependent, so the "same" input data already differ at the float
+# level across platforms before any fit runs. The per-component comparison
+# failed too, for example B 2.3e-9 in case "A em", larger than the 4.4e-15
+# recorded in test_cellGLoc.R for the "classical" start because these fits
+# run nnet::multinom()'s iterative optimiser for the categorical step.
+# ref65$cases is now compared to cases17 with expect_identical() only under
+# VIM_BITREF=true, and with tolerance = 1e-12 otherwise, tight enough to
+# catch a real data mismatch while clearing plain BLAS summation-order
+# noise. The per-component comparison keeps expect_identical() under
+# VIM_BITREF=true and uses tolerance = 1e-6 otherwise, fixed before this
+# rerun: more than 400 times the largest cross-platform difference measured
+# for this fix and 5000 times below the eps = 5e-3 stopping tolerance.
 if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
   ref65 <- readRDS("gloc_r65_ref_pre.rds")
   bitref65 <- identical(Sys.getenv("VIM_BITREF"), "true")
   expect_identical(ref65$commit, "baccf09")
-  expect_identical(ref65$cases, cases17)          # the fixture's data are these data
+  if (bitref65) {
+    expect_identical(ref65$cases, cases17)        # the fixture's data are these data
+  } else {
+    expect_equal(ref65$cases, cases17, tolerance = 1e-12)
+  }
   for (nm65 in names(ref65$fits)) {
     md65 <- sub("^. ", "", nm65)
     f65 <- suppressWarnings(
@@ -1551,7 +1595,7 @@ if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
     for (k65 in c("B", "Sigma", "W", "imputed")) {
       if (bitref65) expect_identical(f65[[k65]], ref65$fits[[nm65]][[k65]],
                                      info = paste(nm65, k65))
-      else expect_equal(f65[[k65]], ref65$fits[[nm65]][[k65]], tolerance = 1e-10,
+      else expect_equal(f65[[k65]], ref65$fits[[nm65]][[k65]], tolerance = 1e-6,
                         info = paste(nm65, k65))
     }
   }

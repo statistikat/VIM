@@ -67,8 +67,9 @@
   number of candidates; but the returned run needs fewer iterations, and the scatter step
   (`cellWise::cwLocScat()`, about 95% of an iteration) already ran on the candidates in 7.5.0. Over
   60 `em` fits with a missing categorical cell (n = 200, six continuous and six categorical
-  variables, 10 replicates at each of eps 0, eps 0.10 with a shift of 6, and eps 0.20 with a shift
-  of 6), measured at the branch head with the mixture imputation's post-loop pass included, 7.5.1
+  variables, 10 replicates per missingness pattern (two patterns) at each of eps 0, eps 0.10 with
+  a shift of 6, and eps 0.20 with a shift of 6), measured at the branch head with the mixture
+  imputation's post-loop pass included, 7.5.1
   took **0.76 times** the total seconds of 7.5.0 -- 0.56, 0.73 and 0.96 by setting -- with a median
   per-fit ratio of 0.86 to 0.99, and 302/333/380 iterations against 538/385/414. The design expected
   at most 1.2 times.
