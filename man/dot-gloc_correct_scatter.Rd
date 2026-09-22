@@ -2,7 +2,8 @@
 % Please edit documentation in R/imputeCellGLoc.R
 \name{.gloc_correct_scatter}
 \alias{.gloc_correct_scatter}
-\title{Make a weighted scatter consistent at the Gaussian model}
+\title{Correct a weighted scatter for its downweighting, to first order, at the
+Gaussian model}
 \usage{
 .gloc_correct_scatter(S_raw, kappa)
 }

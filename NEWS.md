@@ -17,12 +17,11 @@
   against the same code with the old correction), the default `"em"` fits gained 0.011 in
   categorical hit rate and 0.006 in detection AUC (no cell fell), lost 3.6% of their imputation
   MSE, flagged 1.21% of the clean cells in complete rows instead of 2.33%, and took 0.59 times the
-  time; their scatter error rose by 0.007,
-  almost all at eps 0.20 with a shift of 3, and the simulation's misspecified comparison arms
-  reached a wrong fixed point more often (8 to 10 and 9 to 12 fits). **Every soft-corner result
-  changes.** The binary corner has no correction and does not change, bit for bit; only its
-  fallback for a failed `cellWise::cellMCD()` call, a hard-threshold weighted scatter, goes through
-  the new correction.
+  time; their scatter error rose by 0.007, almost all at eps 0.20 with a shift of 3, and the
+  simulation's misspecified comparison arms reached a wrong fixed point more often (8 to 10 and 9
+  to 12 fits). **Every soft-corner result changes.** The binary corner has no correction and does
+  not change, bit for bit; only its fallback for a failed `cellWise::cellMCD()` call, a
+  hard-threshold weighted scatter, goes through the new correction.
 - **Per-level detection in `imputeCellGLoc(categorical = "em")`, soft corner.** A row with a missing
   categorical cell now carries one row of cell weights per candidate level (per level combination
   when several cells are missing), computed at that level's fitted mean and conditioned on the

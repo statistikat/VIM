@@ -202,7 +202,8 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   # single-column test below is the clean demonstration.
   expect_true(mean(flagged[!inj & contam_row]) < 0.08)
 
-  # --- the soft corner must be consistent at the Gaussian model. The bisquare
+  # --- the soft corner's scatter must be corrected for its downweighting (to
+  # first order; S1 below). The bisquare
   # deflates a sum(w)-normalised weighted scatter, by a factor that is
   # kappa = E[w(Z)Z^2] / E[w(Z)] = 0.828 only when the columns are INDEPENDENT;
   # the weights act on conditional residuals, so with correlation a diagonal
@@ -296,7 +297,10 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   # Measured on this seed before the thresholds were fixed: the symmetric
   # rescaling used until 7.5.0 gives 0.857, +0.042, 0.049 and 1.97% and fails
   # S1 and S2; the additive correction gives 1.037, -0.017, 0.024 and 1.06%.
-  # at_home() only: one robust fit at n = 4000, p = 6.
+  # These were measured on the author's machine (macOS, Accelerate BLAS). S0
+  # has a fourfold eigenvalue, so MASS::mvrnorm's draw depends on the BLAS (as
+  # the peer-band block below records), and other platforms see other data
+  # and other numbers. at_home() only: one robust fit at n = 4000, p = 6.
   if (at_home()) {
     S0 <- matrix(0.1, 6, 6); S0[1:5, 1:5] <- 0.7; diag(S0) <- 1
     set.seed(24)
@@ -487,13 +491,13 @@ expect_true(mean(ff[ci, 1]) > 0.95)
 # clean rows (Ruling R99). The additive scatter correction of 7.5.1 (spec
 # §2.3) halves the false flags by design (spec S2): the clean-row rate is now
 # 0.95%, so twice the rate admits zero of 50 row-mates, while the expected
-# count under the stated claim is 0.48. Measured, row-mates flagged in x2 and
-# x3 against the clean-row rates of x2 and x3: with the symmetric correction
-# (VIM 7.5.1 at abc5266) 1/50 and 1/50 against 16/950 = 0.0168 and
-# 20/950 = 0.0211; with the additive correction 1/50 and 1/50 against
-# 9/950 = 0.0095 and 10/950 = 0.0105. This comment used to give "a clean-row
-# rate of 0.0189"; the asserted rate was 0.0168 at abc5266, and 0.0189 is the
-# clean-row rate of the teeth fit below.
+# count under the stated claim is 50 x 9/950 = 0.47. Measured, row-mates
+# flagged in x2 and x3 against the clean-row rates of x2 and x3: with the
+# symmetric correction (VIM 7.5.1 at abc5266) 1/50 and 1/50 against
+# 16/950 = 0.0168 and 20/950 = 0.0211; with the additive correction 1/50 and
+# 1/50 against 9/950 = 0.0095 and 10/950 = 0.0105. This comment used to give
+# "a clean-row rate of 0.0189"; the asserted rate was 0.0168 at abc5266, and
+# 0.0189 is the clean-row rate of the teeth fit below.
 expect_true(pbinom(sum(ff[ci, 2]) - 1, ncont, mean(ff[cl, 2]), lower.tail = FALSE) > 0.01)
 expect_true(pbinom(sum(ff[ci, 3]) - 1, ncont, mean(ff[cl, 3]), lower.tail = FALSE) > 0.01)
 expect_true(mean(ff[ci, 2]) < 0.05)
@@ -694,7 +698,8 @@ if (at_home()) {
   # hard-cut arm runs to maxit, so at_home() only.
   #
   # The hard cut does not cycle on every draw. At this configuration it cycled
-  # for 3 of the first 12 seeds, and seed 4 is used because its cycling
+  # for 3 of the first 12 seeds, and seed 4 was used (until 2026-09-22; see the
+  # correction below) because its cycling
   # survived three relative jitters of 1e-9 on the data. Until 2026-09-15 the
   # block used set.seed(5) with MASS::mvrnorm. That draw cycled only on the
   # author's machine: the matrix has a triple eigenvalue, mvrnorm's eigenbasis
@@ -851,7 +856,9 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
     VIM::imputeCellGLoc(dsb, design = ~ ., weights = "binary", start = "classical")[keep_b])
 }
 
-# --- start = "classical" reproduces VIM 7.4.0's ESTIMATES. The reference was
+# --- start = "classical" reproduces VIM 7.4.0's ESTIMATES in the binary
+# corner; since 2026-09-22 the soft entries pin 0f66b50 instead (see the second
+# correction below). The reference was
 # written by 7.4.0 (commit e8f204c) on fixed data, with Apple's Accelerate BLAS.
 # Since 7.4.1 a missing cell is imputed from the unflagged peers in its row
 # only, by the detection peer rule. B, Sigma and W do not depend on the
@@ -881,8 +888,11 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
 # that correction (Rulings R102, R103), and the object records it ($commit,
 # $vim, $rebuilt, $history). B, Sigma, W, U, converged, iterations and
 # criterion are that commit's fit; imputed is 7.4.0's all-peers rule at those
-# estimates on the missing continuous cells, so the peer-rule assertions below
-# keep their meaning. bin_dot is still 7.4.0's entry, carried over unchanged
+# estimates on the missing continuous cells. For the soft entries,
+# expect_equal(all_peers, ...) therefore holds by construction: it is a
+# regression pin on .gloc_impute() and the estimates, not evidence about
+# 7.4.0's imputation. The hit and same-cell assertions keep their meaning.
+# bin_dot is still 7.4.0's entry, carried over unchanged
 # (identical() checked at the rebuild). Generating code, with a library
 # installed from 0f66b50, run from the package root:
 #   ref <- readRDS("inst/tinytest/gloc_classical_ref_740.rds")   # 7.4.0's

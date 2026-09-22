@@ -1381,7 +1381,8 @@ NULL
   num / den
 }
 
-#' Make a weighted scatter consistent at the Gaussian model
+#' Correct a weighted scatter for its downweighting, to first order, at the
+#' Gaussian model
 #'
 #' Dividing the whole matrix by \code{kappa} is correct only when the columns
 #' are independent. The weights are functions of the \emph{conditional}

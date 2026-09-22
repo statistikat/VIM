@@ -533,7 +533,9 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_true(any(grepl("largest change in a categorical posterior", w7)))
 }
 
-# spec test 2 -- categorical = "level" reproduces VIM 7.4.1
+# spec test 2 -- categorical = "level" reproduces VIM 7.4.1 in the binary
+# corner; since 2026-09-22 the soft entries are a regression pin at 0f66b50
+# (see the correction below)
 #
 # Correction, recorded rather than deleted: until 2026-09-22 all three entries
 # were 7.4.1's, and this block pinned that categorical = "level" reproduces
@@ -544,8 +546,11 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
 # correction (Ruling R103), and the object records it ($commit, $vim,
 # $rebuilt, $history). The binary entry bin_dot is still 7.4.1's, carried over
 # unchanged (identical() checked at the rebuild), so for the binary corner the
-# block still pins 7.4.1. Generating code, with a library installed from
-# 0f66b50, run from the package root:
+# block still pins 7.4.1. Since then the soft entries are a regression pin:
+# they pin that a later edit cannot move a categorical = "level" soft-corner
+# fit of 0f66b50 unnoticed, not that "level" reproduces 7.4.1 there.
+# Generating code, with a library installed from 0f66b50, run from the
+# package root:
 #   ref <- readRDS("inst/tinytest/gloc_level_ref_741.rds")      # 7.4.1's
 #   cases <- list(soft_dot = list(design = ~ ., weights = "soft"),
 #                 soft_one = list(design = ~ 1, weights = "soft"))
@@ -1584,7 +1589,8 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
 }
 
 # the pre-R65 fixture (fix round, I1): every fit of the six cases is what the
-# commit before the warning returned
+# commit before the warning returned (until 2026-09-22; since then the fits
+# are a regression pin at 0f66b50, see the second correction below)
 #
 # Correction, recorded rather than deleted: until 2026-09-21 this block
 # compared ref65$cases against cases17 with expect_identical(), and each
