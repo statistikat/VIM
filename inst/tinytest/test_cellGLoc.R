@@ -870,7 +870,36 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
 # comparisons now run only with VIM_BITREF=true. Everywhere else the
 # iteration count and convergence flag are exact and B, Sigma, W and the
 # all-peers imputations agree to 1e-10, a tolerance fixed before the first run
-# and far above the measured cross-BLAS gap. ---
+# and far above the measured cross-BLAS gap.
+#
+# Correction, recorded rather than deleted: until 2026-09-22 all three entries
+# were 7.4.0's, and the block pinned that start = "classical" reproduces
+# 7.4.0's estimates in the soft corner as well. That was verified at its own
+# time, against this fixture, from 7.4.1 to 7.5.1 at abc5266. The additive
+# scatter correction of 7.5.1 (spec §2.3) changes every soft-corner fit by
+# design, so the soft entries were rebuilt at commit 0f66b50, the commit of
+# that correction (Rulings R102, R103), and the object records it ($commit,
+# $vim, $rebuilt, $history). B, Sigma, W, U, converged, iterations and
+# criterion are that commit's fit; imputed is 7.4.0's all-peers rule at those
+# estimates on the missing continuous cells, so the peer-rule assertions below
+# keep their meaning. bin_dot is still 7.4.0's entry, carried over unchanged
+# (identical() checked at the rebuild). Generating code, with a library
+# installed from 0f66b50, run from the package root:
+#   ref <- readRDS("inst/tinytest/gloc_classical_ref_740.rds")   # 7.4.0's
+#   cases <- list(soft_dot = list(design = ~ ., weights = "soft"),
+#                 soft_one = list(design = ~ 1, weights = "soft"))
+#   for (nm in names(cases)) {
+#     fit <- suppressWarnings(imputeCellGLoc(ref$data, design = cases[[nm]]$design,
+#              weights = cases[[nm]]$weights, start = "classical"))
+#     cont <- colnames(fit$W)
+#     X <- as.matrix(ref$data[, cont]); M <- is.na(X)
+#     A <- VIM:::.gloc_impute(X, fit$U, fit$B, fit$Sigma, M)   # all-peers rule
+#     for (jj in seq_along(cont)) fit$imputed[[cont[jj]]][M[, jj]] <- A[M[, jj], jj]
+#     ref$fits[[nm]] <- fit[names(ref$fits[[nm]])]
+#   }
+#   ref$vim <- "7.5.1"; ref$commit <- "0f66b50"; ref$rebuilt <- names(cases)
+#   ref$history <- "<what this comment says>"
+#   saveRDS(ref, "inst/tinytest/gloc_classical_ref_740.rds") ---
 if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
   ref740 <- readRDS("gloc_classical_ref_740.rds")
   bitref <- identical(Sys.getenv("VIM_BITREF"), "true")

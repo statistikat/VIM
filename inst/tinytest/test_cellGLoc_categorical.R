@@ -534,6 +534,29 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
 }
 
 # spec test 2 -- categorical = "level" reproduces VIM 7.4.1
+#
+# Correction, recorded rather than deleted: until 2026-09-22 all three entries
+# were 7.4.1's, and this block pinned that categorical = "level" reproduces
+# 7.4.1 in the soft corner as well. That was verified at its own time, against
+# this fixture, from 7.5.0 to 7.5.1 at abc5266. The additive scatter
+# correction of 7.5.1 (spec §2.3) changes every soft-corner fit by design, so
+# the soft entries were rebuilt at commit 0f66b50, the commit of that
+# correction (Ruling R103), and the object records it ($commit, $vim,
+# $rebuilt, $history). The binary entry bin_dot is still 7.4.1's, carried over
+# unchanged (identical() checked at the rebuild), so for the binary corner the
+# block still pins 7.4.1. Generating code, with a library installed from
+# 0f66b50, run from the package root:
+#   ref <- readRDS("inst/tinytest/gloc_level_ref_741.rds")      # 7.4.1's
+#   cases <- list(soft_dot = list(design = ~ ., weights = "soft"),
+#                 soft_one = list(design = ~ 1, weights = "soft"))
+#   for (nm in names(cases)) {
+#     fit <- suppressWarnings(imputeCellGLoc(ref$data, design = cases[[nm]]$design,
+#              weights = cases[[nm]]$weights, categorical = "level"))
+#     ref$fits[[nm]] <- fit[names(ref$fits[[nm]])]
+#   }
+#   ref$vim <- "7.5.1"; ref$commit <- "0f66b50"; ref$rebuilt <- names(cases)
+#   ref$history <- "<what this comment says>"
+#   saveRDS(ref, "inst/tinytest/gloc_level_ref_741.rds")
 if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
   ref741 <- readRDS("gloc_level_ref_741.rds")
   bitref <- identical(Sys.getenv("VIM_BITREF"), "true")
@@ -1515,6 +1538,8 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
 #   }
 #   saveRDS(list(cases = cases, fits = fits, vim = "7.5.1", commit = "baccf09"),
 #           "inst/tinytest/gloc_r65_ref_pre.rds")
+# That is the fixture's history: since 2026-09-22 its fits come from commit
+# 0f66b50 (the additive scatter correction); see the fixture block below.
 set.seed(1)
 n17 <- 300
 d17 <- data.frame(x1 = rnorm(n17), x2 = rnorm(n17), x3 = rnorm(n17),
@@ -1579,10 +1604,32 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
 # VIM_BITREF=true and uses tolerance = 1e-6 otherwise, fixed before this
 # rerun: more than 400 times the largest cross-platform difference measured
 # for this fix and 5000 times below the eps = 5e-3 stopping tolerance.
+#
+# Correction, recorded rather than deleted: until 2026-09-22 the fits were
+# those of baccf09, the commit before R65, and this block asserted
+# ref65$commit == "baccf09". That pinned that R65 moved no fitted number, and
+# it was verified at its own time, from R65 to 7.5.1 at abc5266. The additive
+# scatter correction of 7.5.1 (spec §2.3) changes every soft-corner fit by
+# design, and all six cases are soft, so every fit was rebuilt at commit
+# 0f66b50, the commit of that correction (Ruling R103). The cases are carried
+# over unchanged, "baccf09" moves into the object's $history, and $commit is
+# now "0f66b50". Since then the fixture pins that a later edit to
+# .gloc_contrast_lost() or to one of the muffled design sites cannot move a
+# fitted number unnoticed. Generating code, with a library installed from
+# 0f66b50, run from the package root:
+#   ref <- readRDS("inst/tinytest/gloc_r65_ref_pre.rds")        # baccf09's
+#   for (nm in names(ref$fits)) {
+#     f <- suppressWarnings(imputeCellGLoc(ref$cases[[substr(nm, 1L, 1L)]],
+#                                          categorical = sub("^. ", "", nm)))
+#     ref$fits[[nm]] <- f[c("B", "Sigma", "W", "imputed")]
+#   }
+#   ref$vim <- "7.5.1"; ref$commit <- "0f66b50"; ref$rebuilt <- names(ref$fits)
+#   ref$history <- "<what this comment says>"
+#   saveRDS(ref, "inst/tinytest/gloc_r65_ref_pre.rds")
 if (at_home() && requireNamespace("cellWise", quietly = TRUE)) {
   ref65 <- readRDS("gloc_r65_ref_pre.rds")
   bitref65 <- identical(Sys.getenv("VIM_BITREF"), "true")
-  expect_identical(ref65$commit, "baccf09")
+  expect_identical(ref65$commit, "0f66b50")
   if (bitref65) {
     expect_identical(ref65$cases, cases17)        # the fixture's data are these data
   } else {
