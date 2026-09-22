@@ -11,16 +11,20 @@
 #' \code{weights = "binary"}, and to the cellwise weighted maximum likelihood
 #' estimator of Rousseeuw (2026) with \code{weights = "soft"}.
 #'
-#' The soft corner rescales the weighted scatter so that it is
-#' Fisher-consistent at the Gaussian model. Without it the bisquare
-#' downweighting deflates the scatter by about 21% at the default tuning,
-#' which would inflate the standardised residuals and make the estimator
-#' over-flag. The correction is per column and depends on \eqn{\Sigma}, not a
-#' single constant: the weights act on \emph{conditional} residuals, so they
-#' shrink only the unpredictable part of each cell. See
-#' \code{.gloc_correct_scatter}. It is exact for the scale at any correlation
-#' and vanishes at \code{psi_c = Inf}. The correlations themselves stay mildly
-#' biased upward; see that function's note.
+#' The soft corner corrects the weighted scatter for its downweighting.
+#' Without a correction the bisquare downweighting deflates the scatter by
+#' about 21% at the default tuning, which would inflate the standardised
+#' residuals and make the estimator over-flag. The correction is per column
+#' and depends on \eqn{\Sigma}, not a single constant: the weights act on
+#' \emph{conditional} residuals, so they shrink only the unpredictable part of
+#' each cell, and they leave its covariances with the other cells unbiased to
+#' first order. Since 7.5.1 the correction therefore adds the missing part of
+#' each conditional variance to the diagonal and keeps the off-diagonals; see
+#' \code{.gloc_correct_scatter}. It vanishes at \code{psi_c = Inf}. It is a
+#' first-order correction: on clean data with five variables at correlation
+#' 0.7 (n = 10000) it returns conditional variances 4.5% too large and a block
+#' correlation of 0.682, where the symmetric rescaling used until 7.5.0 returned
+#' conditional variances 13% too small and a block correlation of 0.742.
 #'
 #' The estimator is the triple \eqn{(B, \Sigma, W)} and iteration stops only
 #' when all three have settled:
@@ -1343,11 +1347,18 @@ NULL
 #'
 #' Returns \eqn{E[w(Z) Z^2] / E[w(Z)]} for \eqn{Z \sim N(0, 1)}, the factor by
 #' which a \eqn{\sum w}-normalised weighted covariance under-states the scatter
-#' at the Gaussian model. Dividing by it makes the weighted scatter
-#' Fisher-consistent: at \eqn{\Sigma = \Sigma_0} the standardised conditional
-#' residuals are exactly standard normal, the weighted scatter has expectation
-#' \eqn{\kappa \Sigma_0}, and the corrected map therefore has \eqn{\Sigma_0} as
-#' its fixed point.
+#' at the Gaussian model when the columns are independent. Only then does
+#' dividing the weighted scatter by it make the scatter consistent: at
+#' \eqn{\Sigma = \Sigma_0} each cell's standardised conditional residual is the
+#' standardised cell itself, the weighted scatter has expectation
+#' \eqn{\kappa \Sigma_0}, and the corrected map has \eqn{\Sigma_0} as its fixed
+#' point. With correlated columns the weights deflate only the conditional part
+#' of each variance and leave the covariances unbiased to first order, so
+#' \code{.gloc_correct_scatter} uses the factor on the diagonal only.
+#'
+#' Correction, recorded rather than deleted: until 7.5.1 this documentation
+#' said, without the qualifier, that dividing by the factor "makes the weighted
+#' scatter Fisher-consistent".
 #'
 #' @param c tuning constant; \code{Inf} returns 1 (no downweighting).
 #' @param type \code{"bisquare"} for Tukey weights, \code{"hard"} for a 0/1
@@ -1370,34 +1381,116 @@ NULL
   num / den
 }
 
-#' Make a weighted scatter Fisher-consistent at the Gaussian model
+#' Make a weighted scatter consistent at the Gaussian model
 #'
 #' Dividing the whole matrix by \code{kappa} is correct only when the columns
 #' are independent. The weights are functions of the \emph{conditional}
-#' residual, and a residual splits as \eqn{R_j = m_j + s_j Z_j} with the
-#' predictable part \eqn{m_j} independent of \eqn{Z_j}. A weight
-#' \eqn{w(Z_j)} therefore downweights only the \eqn{s_j Z_j} part, so
+#' residual. Write \eqn{Z_k} for the standardised conditional residual of cell
+#' \eqn{k}; it is proportional to \eqn{(\Sigma^{-1}(x - \mu))_k}, and
+#' \eqn{\mathrm{Cov}(x, \Sigma^{-1}(x - \mu)) = I}, so under the Gaussian model
+#' \eqn{Z_k} is independent of every other cell \eqn{x_j}. A weight
+#' \eqn{w(Z_k)} therefore deflates cell \eqn{k}'s own second moment and leaves
+#' its cross-moments with the other cells unbiased to first order.
 #'
-#' \deqn{E[w R_j^2] / E[w] = (\sigma_j^2 - s_j^2) + \kappa s_j^2
-#'       = \sigma_j^2 \{1 - (s_j^2/\sigma_j^2)(1 - \kappa)\},}
+#' The residual splits as \eqn{R_k = m_k + s_k Z_k} with the predictable part
+#' \eqn{m_k} independent of \eqn{Z_k}, the weight downweights only the
+#' \eqn{s_k Z_k} part, and
 #'
-#' where \eqn{s_j^2 = 1 / (\Sigma^{-1})_{jj}} is the conditional variance. The
-#' per-column factor \eqn{\kappa_j = 1 - (s_j^2/\sigma_j^2)(1 - \kappa)}
-#' reduces to \eqn{\kappa} under independence (\eqn{s_j^2 = \sigma_j^2}) and to
-#' 1 when there is no downweighting. Because \eqn{\kappa_j} depends on
-#' \eqn{\Sigma}, it is solved for by a short fixed-point iteration.
+#' \deqn{E[w R_k^2] / E[w] = (\sigma_k^2 - s_k^2) + \kappa s_k^2,}
 #'
-#' The scaling is symmetric, \eqn{\Sigma \mapsto D \Sigma D} with
-#' \eqn{D = \mathrm{diag}(\kappa_j^{-1/2})}, so it fixes the \emph{scale} and
-#' leaves the correlation matrix alone. The correlations are themselves mildly
-#' biased upward by conditional-residual downweighting (cells inconsistent with
-#' their peers are exactly the ones removed); that bias is not corrected here.
+#' where \eqn{s_k^2 = 1 / (\Sigma^{-1})_{kk}} is the conditional variance. The
+#' correction therefore adds the missing part to the diagonal and keeps the
+#' raw off-diagonals:
+#'
+#' \deqn{\Sigma = \Sigma_{raw} + (1 - \kappa)\, \mathrm{diag}(s_k^2(\Sigma)).}
+#'
+#' Because \eqn{s_k^2} depends on \eqn{\Sigma}, the equation is solved by
+#' fixed-point iteration, starting from \eqn{\Sigma_{raw}} with its diagonal
+#' divided by \eqn{\kappa}, for at most 200 steps, stopping at a relative change
+#' below 1e-12. The result is positive definite whenever \eqn{\Sigma_{raw}} is,
+#' since a positive diagonal is added. Under independence it reduces to
+#' \eqn{\Sigma_{raw} / \kappa}, and with no downweighting to
+#' \eqn{\Sigma_{raw}}.
+#'
+#' The correction is first order, not exact. The raw covariances are
+#' themselves about 2.5% low (0.683 for a true 0.700 at n = 10000): several
+#' weights in one row interact, and \code{cellWise::cwLocScat} imputes the
+#' downweighted fraction with its own scatter. The correction therefore
+#' over-corrects slightly. Measured on clean data (five variables at
+#' correlation 0.7, a sixth at 0.1 to all, design \code{~ .}, n = 10000, three
+#' replicates), against the symmetric rescaling it replaced (see
+#' \code{.gloc_correct_scatter_sym}): conditional variances 1.045 of the truth
+#' (0.866 before), block correlation 0.682 (0.742 before; truth 0.700),
+#' marginal variances 0.996 (0.978), cells with \eqn{W < 0.5} 0.99% (1.86%;
+#' nominal 1.12%), and 15 against 26 iterations. A correlation bias of about
+#' -0.02 therefore remains. On the pilot grid of the categorical EM (900 paired
+#' fits, only this function differing) the default arm's categorical hit rate
+#' rose by 0.011 and its detection AUC by 0.006, its imputation MSE fell by
+#' 3.6%, its false flags in complete rows fell from 2.33% to 1.21%, and it took
+#' 0.59 times the time.
 #'
 #' @param S_raw the uncorrected weighted scatter.
-#' @param kappa the scalar consistency factor from \code{.gloc_consistency}.
-#' @return the corrected scatter.
+#' @param kappa the scalar consistency factor from \code{.gloc_consistency},
+#'   \eqn{E[w(Z) Z^2] / E[w(Z)]} for \eqn{Z \sim N(0, 1)}.
+#' @return the corrected scatter, with the dimnames of \code{S_raw}. A
+#'   \code{kappa} of 1 or more, or a non-finite one, returns \code{S_raw}; a
+#'   single column returns \code{S_raw / kappa}; if a Cholesky factorisation
+#'   fails during the iteration, the symmetric correction
+#'   \code{.gloc_correct_scatter_sym(S_raw, kappa)} is returned.
 #' @keywords internal
 .gloc_correct_scatter <- function(S_raw, kappa) {
+  if (!is.finite(kappa) || kappa >= 1) return(S_raw)
+  p <- ncol(S_raw)
+  if (p == 1L) return(S_raw / kappa)
+  S <- S_raw; diag(S) <- diag(S_raw) / kappa           # independence-case starting value
+  for (i in seq_len(200L)) {
+    Sinv <- tryCatch(chol2inv(chol(S)), error = function(e) NULL)
+    if (is.null(Sinv)) return(.gloc_correct_scatter_sym(S_raw, kappa))
+    Snew <- S_raw; diag(Snew) <- diag(S_raw) + (1 - kappa) / diag(Sinv)
+    done <- max(abs(Snew - S)) < 1e-12 * max(abs(S))
+    S <- Snew
+    if (done) break
+  }
+  dimnames(S) <- dimnames(S_raw)
+  S
+}
+
+#' Symmetric scatter correction, the fallback of the additive one
+#'
+#' The correction that \code{.gloc_correct_scatter} applied until VIM 7.5.0,
+#' kept as an internal helper for one purpose: \code{.gloc_correct_scatter}
+#' returns it when a Cholesky factorisation fails during its own iteration.
+#' It solves the same diagonal equation but rescales the whole matrix
+#' symmetrically, \eqn{\Sigma = D \Sigma_{raw} D} with
+#' \eqn{D = \mathrm{diag}(\kappa_j^{-1/2})} and the per-column factor
+#' \eqn{\kappa_j = 1 - (s_j^2/\sigma_j^2)(1 - \kappa)}, where
+#' \eqn{s_j^2 = 1 / (\Sigma^{-1})_{jj}}; \eqn{\kappa_j} reduces to
+#' \eqn{\kappa} under independence and to 1 when there is no downweighting.
+#' It is solved by a fixed-point iteration of at most 50 steps, and if a
+#' Cholesky factorisation fails it returns \eqn{\Sigma_{raw} / \kappa}.
+#'
+#' It was replaced because it restores the diagonal and multiplies every
+#' covariance by \eqn{d_j d_k > 1}, although the weights leave the
+#' cross-moments unbiased to first order (see \code{.gloc_correct_scatter}).
+#' On clean data with five variables at correlation 0.7 and a sixth at 0.1,
+#' at n = 20000, the soft corner's block correlation came out at 0.746 and its
+#' conditional variances, which detection and the conditional imputation use,
+#' at 0.86 of the truth, so clean cells were flagged at 1.8-1.9% against a
+#' nominal 1.12%.
+#'
+#' Correction, recorded rather than deleted: while this function was
+#' \code{.gloc_correct_scatter}, its documentation said that the scaling
+#' "leaves the correlation matrix alone" and that the correlations "are
+#' themselves mildly biased upward by conditional-residual downweighting",
+#' a bias "not corrected here". Most of that bias came from the scaling
+#' itself: it keeps the correlation matrix of \eqn{\Sigma_{raw}}, whose
+#' off-diagonals are close to unbiased while its diagonal is deflated, so the
+#' correlations it keeps are too large.
+#'
+#' @inheritParams .gloc_correct_scatter
+#' @return the symmetrically corrected scatter.
+#' @keywords internal
+.gloc_correct_scatter_sym <- function(S_raw, kappa) {
   if (!is.finite(kappa) || kappa >= 1) return(S_raw)
   p <- ncol(S_raw)
   if (p == 1L) return(S_raw / kappa)
@@ -1509,8 +1602,8 @@ NULL
 #' @param R \eqn{n x p} matrix of residuals from the mean structure.
 #' @param W \eqn{n x p} matrix of cell weights in \[0, 1\].
 #' @param M \eqn{n x p} logical mask of missing cells.
-#' @param kappa Gaussian consistency factor to divide by; see
-#'   \code{.gloc_consistency}.
+#' @param kappa Gaussian consistency factor, handed to
+#'   \code{.gloc_correct_scatter}; see \code{.gloc_consistency}.
 #' @param crit convergence tolerance handed to \code{cellWise::cwLocScat}'s
 #'   EM. This is an inner loop inside the outer cellGLoc iteration, and it is
 #'   the whole cost of a cellGLoc step: about 95% of an iteration against

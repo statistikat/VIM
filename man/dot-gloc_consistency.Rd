@@ -18,11 +18,19 @@ a scalar in (0, 1].
 \description{
 Returns \eqn{E[w(Z) Z^2] / E[w(Z)]} for \eqn{Z \sim N(0, 1)}, the factor by
 which a \eqn{\sum w}-normalised weighted covariance under-states the scatter
-at the Gaussian model. Dividing by it makes the weighted scatter
-Fisher-consistent: at \eqn{\Sigma = \Sigma_0} the standardised conditional
-residuals are exactly standard normal, the weighted scatter has expectation
-\eqn{\kappa \Sigma_0}, and the corrected map therefore has \eqn{\Sigma_0} as
-its fixed point.
+at the Gaussian model when the columns are independent. Only then does
+dividing the weighted scatter by it make the scatter consistent: at
+\eqn{\Sigma = \Sigma_0} each cell's standardised conditional residual is the
+standardised cell itself, the weighted scatter has expectation
+\eqn{\kappa \Sigma_0}, and the corrected map has \eqn{\Sigma_0} as its fixed
+point. With correlated columns the weights deflate only the conditional part
+of each variance and leave the covariances unbiased to first order, so
+\code{.gloc_correct_scatter} uses the factor on the diagonal only.
+}
+\details{
+Correction, recorded rather than deleted: until 7.5.1 this documentation
+said, without the qualifier, that dividing by the factor "makes the weighted
+scatter Fisher-consistent".
 }
 \seealso{
 \code{.gloc_correct_scatter}, which is what applies it, and which

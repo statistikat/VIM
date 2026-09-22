@@ -362,16 +362,20 @@ estimators: to the cellwise MCD of Raymaekers and Rousseeuw (2024) with
 \code{weights = "binary"}, and to the cellwise weighted maximum likelihood
 estimator of Rousseeuw (2026) with \code{weights = "soft"}.
 
-The soft corner rescales the weighted scatter so that it is
-Fisher-consistent at the Gaussian model. Without it the bisquare
-downweighting deflates the scatter by about 21\% at the default tuning,
-which would inflate the standardised residuals and make the estimator
-over-flag. The correction is per column and depends on \eqn{\Sigma}, not a
-single constant: the weights act on \emph{conditional} residuals, so they
-shrink only the unpredictable part of each cell. See
-\code{.gloc_correct_scatter}. It is exact for the scale at any correlation
-and vanishes at \code{psi_c = Inf}. The correlations themselves stay mildly
-biased upward; see that function's note.
+The soft corner corrects the weighted scatter for its downweighting.
+Without a correction the bisquare downweighting deflates the scatter by
+about 21\% at the default tuning, which would inflate the standardised
+residuals and make the estimator over-flag. The correction is per column
+and depends on \eqn{\Sigma}, not a single constant: the weights act on
+\emph{conditional} residuals, so they shrink only the unpredictable part of
+each cell, and they leave its covariances with the other cells unbiased to
+first order. Since 7.5.1 the correction therefore adds the missing part of
+each conditional variance to the diagonal and keeps the off-diagonals; see
+\code{.gloc_correct_scatter}. It vanishes at \code{psi_c = Inf}. It is a
+first-order correction: on clean data with five variables at correlation
+0.7 (n = 10000) it returns conditional variances 4.5\% too large and a block
+correlation of 0.682, where the symmetric rescaling used until 7.5.0 returned
+conditional variances 13\% too small and a block correlation of 0.742.
 
 The estimator is the triple \eqn{(B, \Sigma, W)} and iteration stops only
 when all three have settled:

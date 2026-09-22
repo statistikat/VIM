@@ -21,8 +21,8 @@
 
 \item{M}{\eqn{n x p} logical mask of missing cells.}
 
-\item{kappa}{Gaussian consistency factor to divide by; see
-\code{.gloc_consistency}.}
+\item{kappa}{Gaussian consistency factor, handed to
+\code{.gloc_correct_scatter}; see \code{.gloc_consistency}.}
 
 \item{crit}{convergence tolerance handed to \code{cellWise::cwLocScat}'s
 EM. This is an inner loop inside the outer cellGLoc iteration, and it is

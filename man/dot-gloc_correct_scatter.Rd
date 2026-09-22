@@ -2,39 +2,69 @@
 % Please edit documentation in R/imputeCellGLoc.R
 \name{.gloc_correct_scatter}
 \alias{.gloc_correct_scatter}
-\title{Make a weighted scatter Fisher-consistent at the Gaussian model}
+\title{Make a weighted scatter consistent at the Gaussian model}
 \usage{
 .gloc_correct_scatter(S_raw, kappa)
 }
 \arguments{
 \item{S_raw}{the uncorrected weighted scatter.}
 
-\item{kappa}{the scalar consistency factor from \code{.gloc_consistency}.}
+\item{kappa}{the scalar consistency factor from \code{.gloc_consistency},
+\eqn{E[w(Z) Z^2] / E[w(Z)]} for \eqn{Z \sim N(0, 1)}.}
 }
 \value{
-the corrected scatter.
+the corrected scatter, with the dimnames of \code{S_raw}. A
+\code{kappa} of 1 or more, or a non-finite one, returns \code{S_raw}; a
+single column returns \code{S_raw / kappa}; if a Cholesky factorisation
+fails during the iteration, the symmetric correction
+\code{.gloc_correct_scatter_sym(S_raw, kappa)} is returned.
 }
 \description{
 Dividing the whole matrix by \code{kappa} is correct only when the columns
 are independent. The weights are functions of the \emph{conditional}
-residual, and a residual splits as \eqn{R_j = m_j + s_j Z_j} with the
-predictable part \eqn{m_j} independent of \eqn{Z_j}. A weight
-\eqn{w(Z_j)} therefore downweights only the \eqn{s_j Z_j} part, so
+residual. Write \eqn{Z_k} for the standardised conditional residual of cell
+\eqn{k}; it is proportional to \eqn{(\Sigma^{-1}(x - \mu))_k}, and
+\eqn{\mathrm{Cov}(x, \Sigma^{-1}(x - \mu)) = I}, so under the Gaussian model
+\eqn{Z_k} is independent of every other cell \eqn{x_j}. A weight
+\eqn{w(Z_k)} therefore deflates cell \eqn{k}'s own second moment and leaves
+its cross-moments with the other cells unbiased to first order.
 }
 \details{
-\deqn{E[w R_j^2] / E[w] = (\sigma_j^2 - s_j^2) + \kappa s_j^2
-      = \sigma_j^2 \{1 - (s_j^2/\sigma_j^2)(1 - \kappa)\},}
+The residual splits as \eqn{R_k = m_k + s_k Z_k} with the predictable part
+\eqn{m_k} independent of \eqn{Z_k}, the weight downweights only the
+\eqn{s_k Z_k} part, and
 
-where \eqn{s_j^2 = 1 / (\Sigma^{-1})_{jj}} is the conditional variance. The
-per-column factor \eqn{\kappa_j = 1 - (s_j^2/\sigma_j^2)(1 - \kappa)}
-reduces to \eqn{\kappa} under independence (\eqn{s_j^2 = \sigma_j^2}) and to
-1 when there is no downweighting. Because \eqn{\kappa_j} depends on
-\eqn{\Sigma}, it is solved for by a short fixed-point iteration.
+\deqn{E[w R_k^2] / E[w] = (\sigma_k^2 - s_k^2) + \kappa s_k^2,}
 
-The scaling is symmetric, \eqn{\Sigma \mapsto D \Sigma D} with
-\eqn{D = \mathrm{diag}(\kappa_j^{-1/2})}, so it fixes the \emph{scale} and
-leaves the correlation matrix alone. The correlations are themselves mildly
-biased upward by conditional-residual downweighting (cells inconsistent with
-their peers are exactly the ones removed); that bias is not corrected here.
+where \eqn{s_k^2 = 1 / (\Sigma^{-1})_{kk}} is the conditional variance. The
+correction therefore adds the missing part to the diagonal and keeps the
+raw off-diagonals:
+
+\deqn{\Sigma = \Sigma_{raw} + (1 - \kappa)\, \mathrm{diag}(s_k^2(\Sigma)).}
+
+Because \eqn{s_k^2} depends on \eqn{\Sigma}, the equation is solved by
+fixed-point iteration, starting from \eqn{\Sigma_{raw}} with its diagonal
+divided by \eqn{\kappa}, for at most 200 steps, stopping at a relative change
+below 1e-12. The result is positive definite whenever \eqn{\Sigma_{raw}} is,
+since a positive diagonal is added. Under independence it reduces to
+\eqn{\Sigma_{raw} / \kappa}, and with no downweighting to
+\eqn{\Sigma_{raw}}.
+
+The correction is first order, not exact. The raw covariances are
+themselves about 2.5\% low (0.683 for a true 0.700 at n = 10000): several
+weights in one row interact, and \code{cellWise::cwLocScat} imputes the
+downweighted fraction with its own scatter. The correction therefore
+over-corrects slightly. Measured on clean data (five variables at
+correlation 0.7, a sixth at 0.1 to all, design \code{~ .}, n = 10000, three
+replicates), against the symmetric rescaling it replaced (see
+\code{.gloc_correct_scatter_sym}): conditional variances 1.045 of the truth
+(0.866 before), block correlation 0.682 (0.742 before; truth 0.700),
+marginal variances 0.996 (0.978), cells with \eqn{W < 0.5} 0.99\% (1.86\%;
+nominal 1.12\%), and 15 against 26 iterations. A correlation bias of about
+-0.02 therefore remains. On the pilot grid of the categorical EM (900 paired
+fits, only this function differing) the default arm's categorical hit rate
+rose by 0.011 and its detection AUC by 0.006, its imputation MSE fell by
+3.6\%, its false flags in complete rows fell from 2.33\% to 1.21\%, and it took
+0.59 times the time.
 }
 \keyword{internal}

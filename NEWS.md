@@ -1,6 +1,28 @@
 # VIM 7.5.1
 
 ## Changes
+- **The soft corner's scatter correction is now additive on the diagonal.** The bisquare weights act
+  on a cell's conditional residual, which under the Gaussian model is independent of every other
+  cell, so they deflate the cell's own variance and leave its covariances unbiased to first order.
+  `imputeCellGLoc(weights = "soft")` now adds `1 - kappa` times each conditional variance to the
+  diagonal of the weighted scatter and keeps the off-diagonals. Until 7.5.0 it rescaled the whole
+  matrix symmetrically, which restored the diagonal but multiplied every covariance by more than 1:
+  the correlations came out biased upward (0.746 for a true 0.700 in the limit) and the conditional
+  variances, which detection and the conditional imputation use, too small (0.86 of the truth). On
+  clean data (five variables at correlation 0.7, a sixth at 0.1, n = 10000) the conditional
+  variances are now 1.045 of the truth (0.866 before), the block correlation 0.682 (0.742), the
+  marginal variances 0.996 (0.978), and 0.99% of the cells have `W < 0.5` (1.86%; nominal 1.12%).
+  It is a first-order correction: the raw covariances are themselves about 2.5% low, so a
+  correlation bias of about -0.02 remains. On the pilot grid of the categorical EM (900 paired fits
+  against the same code with the old correction), the default `"em"` fits gained 0.011 in
+  categorical hit rate and 0.006 in detection AUC (no cell fell), lost 3.6% of their imputation
+  MSE, flagged 1.21% of the clean cells in complete rows instead of 2.33%, and took 0.59 times the
+  time; their scatter error rose by 0.007,
+  almost all at eps 0.20 with a shift of 3, and the simulation's misspecified comparison arms
+  reached a wrong fixed point more often (8 to 10 and 9 to 12 fits). **Every soft-corner result
+  changes.** The binary corner has no correction and does not change, bit for bit; only its
+  fallback for a failed `cellWise::cellMCD()` call, a hard-threshold weighted scatter, goes through
+  the new correction.
 - **Per-level detection in `imputeCellGLoc(categorical = "em")`, soft corner.** A row with a missing
   categorical cell now carries one row of cell weights per candidate level (per level combination
   when several cells are missing), computed at that level's fitted mean and conditioned on the

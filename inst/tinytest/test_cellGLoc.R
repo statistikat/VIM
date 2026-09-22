@@ -202,12 +202,16 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   # single-column test below is the clean demonstration.
   expect_true(mean(flagged[!inj & contam_row]) < 0.08)
 
-  # --- the soft corner must be Fisher-consistent at the Gaussian model. The
-  # bisquare deflates a sum(w)-normalised weighted scatter, by a factor that is
+  # --- the soft corner must be consistent at the Gaussian model. The bisquare
+  # deflates a sum(w)-normalised weighted scatter, by a factor that is
   # kappa = E[w(Z)Z^2] / E[w(Z)] = 0.828 only when the columns are INDEPENDENT;
-  # the weights act on conditional residuals, so with correlation the factor is
-  # 1 - (s_j^2 / sigma_j^2)(1 - kappa). Uncorrected the fixed point is 0.786, a
-  # ~21% under-estimate that inflates the standardised residuals and makes the
+  # the weights act on conditional residuals, so with correlation a diagonal
+  # entry is deflated by the factor 1 - (s_j^2 / sigma_j^2)(1 - kappa), and the
+  # covariances are left unbiased to first order. Since 7.5.1 the correction
+  # adds (1 - kappa) s_j^2 to the diagonal and keeps the off-diagonals (S3
+  # below); until then it rescaled the whole matrix symmetrically, which also
+  # restored the diagonal. Uncorrected the fixed point is 0.786, a ~21%
+  # under-estimate that inflates the standardised residuals and makes the
   # estimator over-flag. ---
   set.seed(15)
   Xf <- MASS::mvrnorm(4000, rep(0, 3), diag(3))
@@ -252,6 +256,69 @@ if (requireNamespace("cellWise", quietly = TRUE)) {
   expect_true(max(abs(VIM:::.gloc_correct_scatter(diag(3) * 0.828073, 0.828073) -
                         diag(3))) < 1e-8)
   expect_equal(VIM:::.gloc_correct_scatter(diag(3), 1), diag(3))
+
+  # --- S3 (spec §2.3, VIM 7.5.1): the correction itself. Under the Gaussian
+  # model a cell's standardised conditional residual is independent of every
+  # other cell, so its weight deflates the cell's own second moment and leaves
+  # its cross-moments unbiased to first order. The correction therefore keeps
+  # the raw off-diagonals exactly and solves the diagonal equation
+  # diag(Sigma) - diag(Sigma_raw) = (1 - kappa) / diag(solve(Sigma)). The
+  # symmetric rescaling it replaced satisfies the same diagonal equation but
+  # multiplies every covariance by d_j d_k > 1, so it fails the off-diagonal
+  # assertion and passes the others. ---
+  k3 <- VIM:::.gloc_consistency(4.685)
+  sd3 <- c(1, 1.5, 0.7, 1.2)
+  S3raw <- k3 * outer(sd3, sd3) * (0.3 * diag(4) + 0.7)      # correlated, unequal scales
+  dimnames(S3raw) <- list(paste0("x", 1:4), paste0("x", 1:4))
+  S3 <- VIM:::.gloc_correct_scatter(S3raw, k3)
+  off3 <- row(S3) != col(S3)
+  expect_identical(S3[off3], S3raw[off3])
+  expect_true(max(abs(diag(S3) - diag(S3raw) - (1 - k3) / diag(solve(S3)))) < 1e-10)
+  expect_true(min(eigen(S3, symmetric = TRUE, only.values = TRUE)$values) > 0)
+  expect_identical(dimnames(S3), dimnames(S3raw))
+  # independent columns with unequal variances, and a single column, reduce as
+  # before, to Sigma_raw / kappa
+  expect_true(max(abs(VIM:::.gloc_correct_scatter(diag(c(1, 2, 3)) * k3, k3) -
+                        diag(c(1, 2, 3)))) < 1e-12)
+  expect_equal(VIM:::.gloc_correct_scatter(matrix(2), k3), matrix(2) / k3)
+  # a Sigma_raw that is not positive definite returns the symmetric correction
+  S3bad <- matrix(c(1, 2, 2, 1), 2)
+  expect_identical(VIM:::.gloc_correct_scatter(S3bad, k3),
+                   VIM:::.gloc_correct_scatter_sym(S3bad, k3))
+
+  # --- S1 and S2 (spec §2.3, VIM 7.5.1): calibration at a correlated Sigma,
+  # the Part B scatter of the simulation (x1..x5 at 0.7, x6 at 0.1 to all). The
+  # reference is the Gaussian MLE on the same data (see REDUCTION 2), which
+  # cancels sampling. S1: the mean conditional-variance ratio lies in
+  # [0.95, 1.08], the mean correlation difference over the 0.7 block in
+  # [-0.03, 0.03], every marginal-variance ratio within 0.05 of 1, and the fit
+  # converges. S2: at most 1.5% of the cells have W < 0.5 (nominal 1.12%).
+  # Measured on this seed before the thresholds were fixed: the symmetric
+  # rescaling used until 7.5.0 gives 0.857, +0.042, 0.049 and 1.97% and fails
+  # S1 and S2; the additive correction gives 1.037, -0.017, 0.024 and 1.06%.
+  # at_home() only: one robust fit at n = 4000, p = 6.
+  if (at_home()) {
+    S0 <- matrix(0.1, 6, 6); S0[1:5, 1:5] <- 0.7; diag(S0) <- 1
+    set.seed(24)
+    X0 <- MASS::mvrnorm(4000, rep(0, 6), S0)
+    colnames(X0) <- paste0("x", 1:6)
+    d0 <- as.data.frame(X0)
+    f0 <- VIM::imputeCellGLoc(d0, design = ~ 1, weights = "soft")
+    m0 <- suppressWarnings(VIM::imputeCellGLoc(d0, design = ~ 1, weights = "soft",
+                                               psi_c = Inf, maxit = 1,
+                                               start = "classical"))$Sigma
+    cvar0 <- function(S) 1 / diag(solve(S))
+    blk0 <- upper.tri(S0) & S0 == 0.7
+    cv0 <- mean(cvar0(f0$Sigma) / cvar0(m0))
+    cd0 <- mean(cov2cor(f0$Sigma)[blk0] - cov2cor(m0)[blk0])
+    mv0 <- max(abs(diag(f0$Sigma) / diag(m0) - 1))
+    ff0 <- mean(f0$W < 0.5)
+    expect_true(cv0 >= 0.95 && cv0 <= 1.08, info = sprintf("S1 cvar ratio %.4f", cv0))
+    expect_true(cd0 >= -0.03 && cd0 <= 0.03, info = sprintf("S1 cor diff %+.4f", cd0))
+    expect_true(mv0 <= 0.05, info = sprintf("S1 max marginal error %.4f", mv0))
+    expect_true(f0$converged, info = "S1 converged")
+    expect_true(ff0 <= 0.015, info = sprintf("S2 W < 0.5 share %.4f", ff0))
+  }
 }
 
 # --- the mean structure is actually used: a strong group effect is absorbed ---
@@ -268,7 +335,7 @@ no_g   <- VIM::imputeCellGLoc(dg, design = ~ 1, weights = "soft")
 # ignoring the design inflates the scatter; modelling it recovers the identity
 expect_true(mean(diag(with_g$Sigma)) < mean(diag(no_g$Sigma)))
 # tightened from 0.35: that tolerance had been sized around the ~21% scatter
-# deflation of the uncorrected bisquare, which the consistency factor removes
+# deflation of the uncorrected bisquare, which the consistency correction removes
 expect_true(max(abs(diag(with_g$Sigma) - 1)) < 0.10)
 
 # --- missing continuous cells are filled by the model's conditional expectation ---
@@ -407,30 +474,54 @@ ci <- seq_len(ncont); cl <- (ncont + 1):np
 
 fixed <- VIM::imputeCellGLoc(dp, design = ~ 1, weights = "soft")
 ff <- fixed$W < 0.5
-clean_rate <- mean(ff[cl, 2])                          # clean rows, clean column
 
 # the contaminated cells are still all caught
 expect_true(mean(ff[ci, 1]) > 0.95)
-# and their clean row-mates are flagged at the clean-row rate, not above it
-# (measured 0.0200 and 0.0200 against a clean-row rate of 0.0189)
-expect_true(mean(ff[ci, 2]) < 2 * clean_rate)
-expect_true(mean(ff[ci, 3]) < 2 * clean_rate)
+# and their clean row-mates are flagged at the clean-row rate, not above it:
+# in each of x2 and x3, the number of the ncont row-mates flagged is not
+# improbably large for a binomial count at that column's own rate in the
+# clean rows (one-sided, at the 1% level), and the share stays below 0.05.
+#
+# Correction, recorded rather than deleted: until 2026-09-22 the first clause
+# was mean(ff[ci, k]) < 2 * clean_rate, with clean_rate the rate of x2 in the
+# clean rows (Ruling R99). The additive scatter correction of 7.5.1 (spec
+# §2.3) halves the false flags by design (spec S2): the clean-row rate is now
+# 0.95%, so twice the rate admits zero of 50 row-mates, while the expected
+# count under the stated claim is 0.48. Measured, row-mates flagged in x2 and
+# x3 against the clean-row rates of x2 and x3: with the symmetric correction
+# (VIM 7.5.1 at abc5266) 1/50 and 1/50 against 16/950 = 0.0168 and
+# 20/950 = 0.0211; with the additive correction 1/50 and 1/50 against
+# 9/950 = 0.0095 and 10/950 = 0.0105. This comment used to give "a clean-row
+# rate of 0.0189"; the asserted rate was 0.0168 at abc5266, and 0.0189 is the
+# clean-row rate of the teeth fit below.
+expect_true(pbinom(sum(ff[ci, 2]) - 1, ncont, mean(ff[cl, 2]), lower.tail = FALSE) > 0.01)
+expect_true(pbinom(sum(ff[ci, 3]) - 1, ncont, mean(ff[cl, 3]), lower.tail = FALSE) > 0.01)
 expect_true(mean(ff[ci, 2]) < 0.05)
 expect_true(mean(ff[ci, 3]) < 0.05)
 expect_true(fixed$converged)
 
 # Teeth: a negative peer_w_min conditions on every finite peer, which is the
-# old behaviour, and the propagation comes straight back (0.82 and 0.66).
+# old behaviour, and the propagation comes straight back.
 # It has to be negative, not 0. The damped weight update multiplies a weight
 # by (1 - d) each time the bisquare sends it to zero, so a contaminated weight
 # decays geometrically without ever reaching zero -- measured ~4e-6 at
 # convergence, with no cell exactly 0. A threshold of 0 therefore readmits
 # every one of those cells at full influence and reproduces the propagation
 # rather than preventing it.
+#
+# The teeth show that conditioning on every finite peer produces propagation
+# that the main assertion above rejects, so their bound is five times its
+# absolute 0.05. Correction, recorded rather than deleted: until 2026-09-22
+# the bound was 0.5 (Ruling R100). Measured, row-mates flagged in x2 and x3:
+# 0.82 and 0.66 with the symmetric correction (VIM 7.5.1 at abc5266), 0.68
+# and 0.48 with the additive correction of 7.5.1, which is still 46 times the
+# clean-row rate of 0.0105. The symmetric correction's conditional variances
+# were too small (0.86 of the truth), which inflated the standardised
+# residuals and so the propagation.
 prop <- VIM::imputeCellGLoc(dp, design = ~ 1, weights = "soft", peer_w_min = -1)
 fp <- prop$W < 0.5
-expect_true(mean(fp[ci, 2]) > 0.5)
-expect_true(mean(fp[ci, 3]) > 0.5)
+expect_true(mean(fp[ci, 2]) > 0.25)
+expect_true(mean(fp[ci, 3]) > 0.25)
 expect_true(mean(fp[cl, 2]) < 0.05)      # clean rows unaffected either way
 
 # --- .gloc_cond_resid honours the weights, and ignores them when W is NULL ---
@@ -609,7 +700,20 @@ if (at_home()) {
   # author's machine: the matrix has a triple eigenvalue, mvrnorm's eigenbasis
   # depends on the BLAS, and on all 6 GitHub check platforms the hard cut
   # converged. The Cholesky factor below is unique.
-  set.seed(4)
+  #
+  # Correction, recorded rather than deleted: from 2026-09-22 the seed is 58,
+  # not 4 (Ruling R101). Under the additive scatter correction of 7.5.1 (spec
+  # §2.3) the hard cut converges on seed 4, in 7 iterations. A scan at this
+  # configuration, each cycling seed re-run under three relative jitters of
+  # 1e-9: VIM 7.5.1 at abc5266 (symmetric correction) cycled on seeds 4, 10
+  # and 12 of 1-12; the additive correction on none of 1-12 and on 58, 64,
+  # 107, 129, 169 and 195 of 13-200, each 3/3 under the jitters. So the
+  # additive correction makes the hard cut cycle far less often here (about 3%
+  # of draws against 25%). Every assertion of this block passes on 58, 64,
+  # 107, 129 and 195; 169 fails zc$iterations < 50 (53). 58 is the smallest.
+  # If a platform does not cycle on 58, the candidates in order are 64, 107,
+  # 129 and 195.
+  set.seed(58)
   Xz <- matrix(rnorm(800 * 4), 800) %*% chol(0.2 * diag(4) + 0.8)
   inj <- matrix(FALSE, 800, 4)
   inj[sample.int(800 * 4, 160)] <- TRUE
@@ -619,7 +723,7 @@ if (at_home()) {
   # Both fits use start = "classical": this block pins a property of the peer
   # rule, and the start must not be allowed to change which state the hard cut
   # reaches. On this machine the robust start (7.4.1) happened to converge on
-  # these data, but that is one draw on one BLAS and is not asserted.
+  # the seed-4 data, but that is one draw on one BLAS and is not asserted.
   # (Corrected: this comment first said the robust start "avoids this cycle on
   # its own", a claim no test checks.)
   expect_warning(zh <- VIM::imputeCellGLoc(as.data.frame(Xz), design = ~ 1,
