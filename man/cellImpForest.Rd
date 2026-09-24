@@ -4,15 +4,26 @@
 \alias{cellImpForest}
 \title{Cellwise-robust imputation of mixed data with tree ensembles}
 \usage{
-cellImpForest(data, ...)
-}
-\arguments{
-\item{data}{a data.frame with numeric and categorical columns, NA allowed}
-
-\item{...}{further arguments (not yet used)}
-}
-\value{
-an object of class \code{cellImpForest}
+cellImpForest(
+  data,
+  engine = c("ranger", "xgboost"),
+  aggregate = c("median", "mean"),
+  psi_c = 4.685,
+  rho_min = 0.1,
+  maxit = 10,
+  maxit_detect = 3,
+  eps = 0.001,
+  K = 5,
+  residuals = c("oob", "insample"),
+  uncert = c("none", "pmm", "quantile"),
+  m = 1L,
+  num.trees = 500,
+  mtry = NULL,
+  min.node.size = 5,
+  num.threads = NULL,
+  trace = FALSE,
+  ...
+)
 }
 \description{
 Documentation is completed in Task 7.

@@ -168,3 +168,9 @@
   list(oob_pred = ctr + sc * cf, oob_prob = NULL, levels = NULL, rf = full,
        predict = pred, center = pred, predict_prob = NULL)
 }
+
+#' Stochastic output for imputed cells (implemented in Task 7)
+#' @noRd
+.cif_uncert <- function(X, df, M, Fl, rowflag, fits, is_cat, uncert, num.threads) {
+  stop("uncert != 'none' is not implemented yet")
+}
