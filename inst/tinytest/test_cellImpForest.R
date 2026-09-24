@@ -184,6 +184,16 @@ set.seed(7); rm2 <- suppressWarnings(cellImpForest(d, uncert = "pmm", m = 2L, nu
 expect_equal(length(rm2$imputed), 2L)
 expect_false(identical(rm2$imputed[[1]], rm2$imputed[[2]]))
 expect_error(cellImpForest(d, m = 2L), "uncert")
+# final review I7: argument checks, and the quantile -> pmm coercion is announced
+expect_error(cellImpForest(d, m = 0), "'m'")
+expect_error(cellImpForest(d, uncert = "pmm", m = 1.5), "'m'")
+expect_error(cellImpForest(d, maxit = 0), "'maxit'")
+expect_error(cellImpForest(d, maxit_detect = -1), "'maxit_detect'")
+expect_error(cellImpForest(d, rho_min = 0), "'rho_min'")
+expect_error(cellImpForest(d, rho_min = 1.5), "'rho_min'")
+expect_error(cellImpForest(d, psi_c = 0), "'psi_c'")
+expect_message(suppressWarnings(cellImpForest(d, engine = "xgboost", uncert = "quantile",
+                                              nrounds = 20, maxit = 2)), "pmm")
 
 set.seed(7); r <- suppressWarnings(cellImpForest(d, num.trees = 60, maxit = 2))
 expect_stdout(print(r), "cellImpForest")

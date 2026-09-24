@@ -32,12 +32,14 @@
 #'   (K-fold cross-fitting, pseudo-Huber loss)
 #' @param aggregate \code{"median"} (default) or \code{"mean"} of the per-tree predictions used
 #'   to impute continuous cells (ranger)
-#' @param psi_c bisquare tuning constant; the flag threshold is the weight 0.5, |z| > 2.535
+#' @param psi_c bisquare tuning constant (> 0); the flag threshold is the weight 0.5,
+#'   |z| > 2.535 at the default
 #' @param rho_min flag threshold for categorical cells, a share of the observed level's base
-#'   rate
-#' @param maxit maximum number of iterations
-#' @param maxit_detect number of initial iterations in which flags may be added, at most
-#'   \code{maxit - 1} (larger values are capped, with a message when supplied), so that the
+#'   rate, in (0, 1]
+#' @param maxit maximum number of iterations (a whole number >= 1)
+#' @param maxit_detect number of initial iterations in which flags may be added (a whole
+#'   number >= 0), at most \code{maxit - 1} (larger values are capped, with a message when
+#'   supplied), so that the
 #'   release pass judges every flagged cell with a fit that never saw it; \code{0} turns
 #'   detection off (a chained forest imputation, also the result of \code{maxit = 1}),
 #'   \code{1} is a single detection pass
@@ -51,10 +53,11 @@
 #'   masking
 #' @param uncert stochastic output for imputed cells: \code{"none"} (default), \code{"pmm"}
 #'   (one of the 5 nearest donors on the prediction scale) or \code{"quantile"} (a draw from the
-#'   forest's conditional quantiles, ranger only); categorical cells are drawn from the class
-#'   probabilities
-#' @param m number of stochastic completions drawn from one fit when \code{uncert != "none"};
-#'   \code{imputed} is then a list. These are not proper multiple imputations.
+#'   forest's conditional quantiles, ranger only: with \code{engine = "xgboost"} it becomes
+#'   \code{"pmm"}, with a message); categorical cells are drawn from the class probabilities
+#' @param m number of stochastic completions drawn from one fit (a whole number >= 1; values
+#'   above 1 need \code{uncert != "none"}); \code{imputed} is then a list. These are not
+#'   proper multiple imputations.
 #' @param num.trees,mtry,min.node.size passed to \code{ranger::ranger}
 #' @param num.threads number of threads, passed to \code{ranger::ranger} and as \code{nthread}
 #'   to xgboost. \code{NULL} (default) means ranger's own default (2 threads unless the
@@ -107,6 +110,13 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
   residuals <- match.arg(residuals)
   uncert <- match.arg(uncert)
   check_data(data)
+  is_num1 <- function(x) is.numeric(x) && length(x) == 1L && is.finite(x)
+  is_count <- function(x, lower) is_num1(x) && x == round(x) && x >= lower
+  if (!is_count(m, 1)) stop("'m' must be a whole number >= 1")
+  if (!is_count(maxit, 1)) stop("'maxit' must be a whole number >= 1")
+  if (!is_count(maxit_detect, 0)) stop("'maxit_detect' must be a whole number >= 0")
+  if (!(is_num1(rho_min) && rho_min > 0 && rho_min <= 1)) stop("'rho_min' must lie in (0, 1]")
+  if (!(is_num1(psi_c) && psi_c > 0)) stop("'psi_c' must be a positive number")
   if (m > 1L && uncert == "none") stop("m > 1 needs uncert = 'pmm' or 'quantile'")
   df <- as.data.frame(data, stringsAsFactors = FALSE)
   for (j in which(vapply(df, is.integer, logical(1)))) df[[j]] <- as.double(df[[j]])
@@ -133,7 +143,10 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
     }
     maxit_detect <- maxit - 1
   }
-  if (uncert == "quantile" && engine != "ranger") uncert <- "pmm"
+  if (uncert == "quantile" && engine != "ranger") {
+    message("cellImpForest(): uncert = \"quantile\" needs engine = \"ranger\"; using \"pmm\"")
+    uncert <- "pmm"
+  }
   nthr <- if (is.null(num.threads)) 1L else num.threads
 
   # ---- state ----

@@ -45,15 +45,17 @@ columns keep their declared levels; integer columns are returned as double.}
 \item{aggregate}{\code{"median"} (default) or \code{"mean"} of the per-tree predictions used
 to impute continuous cells (ranger)}
 
-\item{psi_c}{bisquare tuning constant; the flag threshold is the weight 0.5, |z| > 2.535}
+\item{psi_c}{bisquare tuning constant (> 0); the flag threshold is the weight 0.5,
+|z| > 2.535 at the default}
 
 \item{rho_min}{flag threshold for categorical cells, a share of the observed level's base
-rate}
+rate, in (0, 1]}
 
-\item{maxit}{maximum number of iterations}
+\item{maxit}{maximum number of iterations (a whole number >= 1)}
 
-\item{maxit_detect}{number of initial iterations in which flags may be added, at most
-\code{maxit - 1} (larger values are capped, with a message when supplied), so that the
+\item{maxit_detect}{number of initial iterations in which flags may be added (a whole
+number >= 0), at most \code{maxit - 1} (larger values are capped, with a message when
+supplied), so that the
 release pass judges every flagged cell with a fit that never saw it; \code{0} turns
 detection off (a chained forest imputation, also the result of \code{maxit = 1}),
 \code{1} is a single detection pass}
@@ -71,11 +73,12 @@ masking}
 
 \item{uncert}{stochastic output for imputed cells: \code{"none"} (default), \code{"pmm"}
 (one of the 5 nearest donors on the prediction scale) or \code{"quantile"} (a draw from the
-forest's conditional quantiles, ranger only); categorical cells are drawn from the class
-probabilities}
+forest's conditional quantiles, ranger only: with \code{engine = "xgboost"} it becomes
+\code{"pmm"}, with a message); categorical cells are drawn from the class probabilities}
 
-\item{m}{number of stochastic completions drawn from one fit when \code{uncert != "none"};
-\code{imputed} is then a list. These are not proper multiple imputations.}
+\item{m}{number of stochastic completions drawn from one fit (a whole number >= 1; values
+above 1 need \code{uncert != "none"}); \code{imputed} is then a list. These are not
+proper multiple imputations.}
 
 \item{num.trees, mtry, min.node.size}{passed to \code{ranger::ranger}}
 
