@@ -26,3 +26,28 @@ expect_equal(colnames(f4$oob_prob), levels(yc))
 expect_true(mean(f4$predict(X) == yc) > 0.85)
 expect_equal(levels(f4$predict(X[1:3, ])), levels(yc))
 expect_equal(dim(f4$predict_prob(X[1:3, ])), c(3L, 2L))
+
+# --- xgboost engine ---
+set.seed(43); n <- 300
+X <- data.frame(x1 = stats::rnorm(n), x2 = stats::rnorm(n),
+                g = factor(sample(c("a", "b", "c"), n, TRUE)))
+y <- X$x1^2 + (X$g == "b") + stats::rnorm(n)
+y[5] <- y[5] + 10
+f <- VIM:::.cif_fit_xgboost(y, X, K = 5, nrounds = 100)
+expect_true(y[5] - f$oob_pred[5] > 7)                 # cross-fitted: the fold never saw the cell
+expect_null(f$oob_prob)
+expect_equal(length(f$predict(X[1:4, ])), 4L)
+# review focus 5: a prediction set that lost a level keeps the training columns
+mm <- VIM:::.cif_onehot(X)
+sub <- X[X$g != "c", ]
+sub$g <- droplevels(sub$g)
+expect_equal(colnames(VIM:::.cif_onehot(sub, attr(mm, "template"))), colnames(mm))
+expect_true(all(VIM:::.cif_onehot(sub, attr(mm, "template"))[, "gc"] == 0))
+expect_equal(length(f$predict(sub[1:3, ])), 3L)
+X1 <- X; X1$one <- factor("z")                         # single-level factor predictors are dropped
+expect_false("onez" %in% colnames(VIM:::.cif_onehot(X1)))
+# categorical response
+yc <- factor(ifelse(X$x1 + stats::rnorm(n, sd = 0.3) > 0, "hi", "lo"))
+fc <- VIM:::.cif_fit_xgboost(yc, X, K = 3, nrounds = 50)
+expect_equal(colnames(fc$oob_prob), levels(yc))
+expect_true(mean(fc$predict(X) == yc) > 0.85)

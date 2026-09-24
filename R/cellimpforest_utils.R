@@ -92,3 +92,78 @@
   list(oob_pred = oob_pred, oob_prob = NULL, levels = NULL, rf = rf, predict = pred_fun,
        center = center, predict_prob = NULL)
 }
+
+#' One-hot design matrix (every level of every factor) with a stored column template
+#' @noRd
+.cif_onehot <- function(X, template = NULL) {
+  fac <- vapply(X, is.factor, logical(1))
+  keep <- !fac | vapply(X, nlevels, integer(1)) >= 2L
+  X <- X[, keep, drop = FALSE]
+  fac <- fac[keep]
+  ca <- if (any(fac)) lapply(X[fac], stats::contrasts, contrasts = FALSE) else NULL
+  mm <- stats::model.matrix(~ . - 1, data = X, contrasts.arg = ca)
+  if (is.null(template)) return(structure(mm, template = colnames(mm)))
+  out <- matrix(0, nrow(mm), length(template), dimnames = list(NULL, template))
+  common <- intersect(colnames(mm), template)
+  out[, common] <- mm[, common, drop = FALSE]
+  out
+}
+
+#' Fit xgboost for a column; K-fold cross-fitted predictions for the training rows
+#' @noRd
+.cif_fit_xgboost <- function(y, X, residuals = "oob", K = 5, nrounds = 200, eta = 0.1,
+                             max_depth = 4, nthread = 1, ...) {
+  mm <- .cif_onehot(X)
+  tpl <- attr(mm, "template")
+  n <- nrow(mm)
+  folds <- sample(rep(seq_len(K), length.out = n))
+  train_one <- function(params, rows, label) {
+    xgboost::xgb.train(params = params,
+                       data = xgboost::xgb.DMatrix(mm[rows, , drop = FALSE], label = label[rows]),
+                       nrounds = nrounds, verbose = 0)
+  }
+  if (is.factor(y)) {
+    lev <- levels(y)
+    yk <- as.integer(y) - 1L
+    params <- list(objective = "multi:softprob", num_class = length(lev), eta = eta,
+                   max_depth = max_depth, nthread = nthread, ...)
+    as_prob <- function(pr) {
+      pr <- if (is.matrix(pr)) pr else matrix(pr, ncol = length(lev), byrow = TRUE)
+      colnames(pr) <- lev
+      pr
+    }
+    cf <- matrix(NA_real_, n, length(lev), dimnames = list(NULL, lev))
+    for (k in seq_len(K)) {
+      tr <- folds != k
+      b <- train_one(params, which(tr), yk)
+      cf[!tr, ] <- as_prob(stats::predict(b, mm[!tr, , drop = FALSE]))
+    }
+    full <- train_one(params, seq_len(n), yk)
+    predict_prob <- function(newX) as_prob(stats::predict(full, .cif_onehot(newX, tpl)))
+    if (residuals == "insample") cf <- as_prob(stats::predict(full, mm))
+    return(list(oob_pred = NULL, oob_prob = cf, levels = lev, rf = full,
+                predict = function(newX) {
+                  pr <- predict_prob(newX)
+                  factor(lev[max.col(pr, ties.method = "first")], levels = lev)
+                },
+                center = NULL, predict_prob = predict_prob))
+  }
+  ctr <- stats::median(y)
+  sc <- stats::mad(y)
+  if (!is.finite(sc) || sc <= 0) sc <- stats::sd(y)
+  if (!is.finite(sc) || sc <= 0) sc <- 1
+  ys <- (y - ctr) / sc
+  params <- list(objective = "reg:pseudohubererror", eta = eta, max_depth = max_depth,
+                 nthread = nthread, ...)
+  cf <- rep(NA_real_, n)
+  for (k in seq_len(K)) {
+    tr <- folds != k
+    b <- train_one(params, which(tr), ys)
+    cf[!tr] <- stats::predict(b, mm[!tr, , drop = FALSE])
+  }
+  full <- train_one(params, seq_len(n), ys)
+  if (residuals == "insample") cf <- stats::predict(full, mm)
+  pred <- function(newX) ctr + sc * stats::predict(full, .cif_onehot(newX, tpl))
+  list(oob_pred = ctr + sc * cf, oob_prob = NULL, levels = NULL, rf = full,
+       predict = pred, center = pred, predict_prob = NULL)
+}
