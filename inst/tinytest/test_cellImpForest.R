@@ -89,8 +89,8 @@ auc6 <- function(score, lab) {                       # Mann-Whitney AUC
 }
 set.seed(6); rg <- cellImpForest(dcat, num.trees = 300)
 expect_true(auc6(-rg$P[, 4], lab) > 0.9)                # miscoded cells are the least plausible
-expect_true(sum(rg$flags[bad, 4]) >= 7)
-expect_true(mean(rg$flags[!lab, 4]) <= 0.05)
+expect_true(sum(rg$flags[bad, 4]) >= 6)                 # base-rate score: 7 of 10 on this seed
+expect_true(mean(rg$flags[!lab, 4]) <= 0.02)            # 3 of 390 on this seed
 expect_true(all(rg$imputed$g[bad][rg$flags[bad, 4]] != "low"))   # flagged cells repaired
 expect_true(all(rg$W[, 4] %in% c(0, 1)))               # categorical cells: no soft weight
 dm <- dcat; dm$g[1:40] <- NA
@@ -103,10 +103,11 @@ expect_true(is.character(rr$imputed$g)); expect_false(anyNA(rr$imputed$g))
 ds <- dcat; ds$one <- factor("a"); ds$flag <- x2 > 0; ds$flag[1:5] <- NA
 expect_message(rs <- suppressWarnings(cellImpForest(ds, num.trees = 50, maxit = 2, trace = TRUE)), "skipped")
 expect_true(is.logical(rs$imputed$flag)); expect_false(anyNA(rs$imputed))
-# xgboost engine on the categorical column (its probabilities are sharper: no false-flag bound here)
+# xgboost engine on the categorical column (sharper probabilities: more hits, more false flags)
 set.seed(6); rx <- suppressWarnings(cellImpForest(dcat, engine = "xgboost", nrounds = 80, maxit = 3))
 expect_true(auc6(-rx$P[, 4], lab) > 0.9)
-expect_true(sum(rx$flags[bad, 4]) >= 7)
+expect_true(sum(rx$flags[bad, 4]) >= 9)                 # 10 of 10 on this seed
+expect_true(mean(rx$flags[!lab, 4]) <= 0.05)            # 14 of 390 on this seed
 
 # fix round 1: a declared-but-unused level, and an ordered factor, survive unchanged
 du <- dcat; levels(du$g) <- c(levels(dcat$g), "unused")
@@ -116,6 +117,19 @@ dord <- dcat; dord$g <- factor(dcat$g, levels = c("low", "mid", "high"), ordered
 set.seed(6); rord <- cellImpForest(dord, num.trees = 300)
 expect_identical(levels(rord$imputed$g), levels(dord$g))
 expect_true(is.ordered(rord$imputed$g))
+
+# final review C1: with no signal a rare level is not flagged for being rare (base-rate score).
+# The old score (relative to the most probable level) flagged 40 of 40 and 15 of 25 cells here
+# and starved column b; the base-rate score flags 7 and 4 -- out-of-bag class probabilities of
+# a rare level are noisy under no signal, so the bound is not tighter
+set.seed(11); n <- 500
+dns <- data.frame(x1 = stats::rnorm(n), x2 = stats::rnorm(n), x3 = stats::rnorm(n),
+                  b = factor(sample(rep(c("common", "rare"), c(460, 40)))),       # 92/8
+                  f3 = factor(sample(rep(c("a", "b", "c"), c(250, 225, 25)))))    # a 5 % level
+set.seed(12); rns <- cellImpForest(dns, num.trees = 200)
+expect_true(mean(rns$flags[dns$b == "rare", "b"]) <= 0.25)
+expect_true(mean(rns$flags[dns$f3 == "c", "f3"]) <= 0.25)
+expect_equal(sum(rns$flags[dns$b == "common", "b"]), 0L)
 
 # --- uncertainty, m, methods, dispatcher ---
 d <- gen(); set.seed(9); d[cbind(sample(300, 30), sample(5, 30, TRUE))] <- NA

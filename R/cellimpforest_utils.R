@@ -25,14 +25,23 @@
   s
 }
 
-#' Relative cross-fitted probability of the observed level of a categorical cell
+#' Cross-fitted probability of the observed level of a categorical cell relative to that
+#' level's base rate: rho' = p_obs / base[level]. About 1 when the predictors carry no signal,
+#' near 0 when they contradict the observed level. A level with base rate 0 (absent from the
+#' training rows) scores 0; a row without a cross-fitted prediction (all NA) scores NA.
+#' @param prob n x L matrix of cross-fitted class probabilities, columns named by level
+#' @param y observed levels (factor or character)
+#' @param base named numeric vector: relative frequency of each level among the training rows
 #' @noRd
-.cif_rho <- function(prob, y) {
-  idx <- match(as.character(y), colnames(prob))
-  p_obs <- prob[cbind(seq_len(nrow(prob)), idx)]
-  p_max <- apply(prob, 1, function(v) if (all(is.na(v))) NA_real_ else max(v, na.rm = TRUE))
-  rho <- p_obs / p_max
-  rho[!is.finite(rho)] <- NA_real_
+.cif_rho <- function(prob, y, base) {
+  lev <- as.character(y)
+  p_obs <- prob[cbind(seq_len(nrow(prob)), match(lev, colnames(prob)))]
+  b <- unname(base[lev])
+  b[is.na(b)] <- 0
+  known <- rowSums(is.finite(prob)) > 0 & !is.na(lev)
+  rho <- p_obs / b
+  rho[known & b <= 0] <- 0
+  rho[!known | !is.finite(rho)] <- NA_real_
   rho
 }
 

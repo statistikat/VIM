@@ -47,7 +47,8 @@ to impute continuous cells (ranger)}
 
 \item{psi_c}{bisquare tuning constant; the flag threshold is the weight 0.5, |z| > 2.535}
 
-\item{rho_min}{flag threshold for categorical cells}
+\item{rho_min}{flag threshold for categorical cells, a share of the observed level's base
+rate}
 
 \item{maxit}{maximum number of iterations}
 
@@ -85,8 +86,9 @@ probabilities}
 \value{
 an object of class \code{cellImpForest}: \code{imputed} (data.frame, or a list for
 \code{m > 1}), \code{flags} (logical matrix), \code{W} (cell weights), \code{Z}
-(standardised residuals), \code{P} (two-sided normal tail probability, or \code{rho} for
-categorical cells), \code{scales} (per-column MAD), \code{rowflags}, \code{missing},
+(standardised residuals), \code{P} (two-sided normal tail probability; for categorical
+cells the ratio of the cross-fitted probability of the observed level to its base rate),
+\code{scales} (per-column MAD), \code{rowflags}, \code{missing},
 \code{iterations}, \code{converged}, \code{engine}, \code{call}.
 }
 \description{
@@ -96,8 +98,9 @@ Detection uses cross-fitted conditional residuals -- out-of-bag predictions for
 standardised by the MAD of the column's residuals. A continuous cell whose standardised
 residual exceeds 2.535 in absolute value (Tukey bisquare weight below 0.5 at
 \code{psi_c = 4.685}) is flagged; a categorical cell is flagged when the cross-fitted
-probability of its observed level is below \code{rho_min} times that of the most probable
-level. Flags are added in the first \code{maxit_detect} iterations and then frozen; flagged
+probability of its observed level is below \code{rho_min} times that level's base rate, its
+relative frequency among the column's training rows (observed, unflagged, row not flagged).
+Flags are added in the first \code{maxit_detect} iterations and then frozen; flagged
 cells are treated as missing and imputed, and a row with more than half of its cells flagged
 leaves all fits. After convergence, a release pass judges every flagged cell once more
 against the final fit of its column, which never saw it, and restores cells that pass.

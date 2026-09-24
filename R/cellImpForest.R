@@ -6,8 +6,9 @@
 #' standardised by the MAD of the column's residuals. A continuous cell whose standardised
 #' residual exceeds 2.535 in absolute value (Tukey bisquare weight below 0.5 at
 #' \code{psi_c = 4.685}) is flagged; a categorical cell is flagged when the cross-fitted
-#' probability of its observed level is below \code{rho_min} times that of the most probable
-#' level. Flags are added in the first \code{maxit_detect} iterations and then frozen; flagged
+#' probability of its observed level is below \code{rho_min} times that level's base rate, its
+#' relative frequency among the column's training rows (observed, unflagged, row not flagged).
+#' Flags are added in the first \code{maxit_detect} iterations and then frozen; flagged
 #' cells are treated as missing and imputed, and a row with more than half of its cells flagged
 #' leaves all fits. After convergence, a release pass judges every flagged cell once more
 #' against the final fit of its column, which never saw it, and restores cells that pass.
@@ -29,7 +30,8 @@
 #' @param aggregate \code{"median"} (default) or \code{"mean"} of the per-tree predictions used
 #'   to impute continuous cells (ranger)
 #' @param psi_c bisquare tuning constant; the flag threshold is the weight 0.5, |z| > 2.535
-#' @param rho_min flag threshold for categorical cells
+#' @param rho_min flag threshold for categorical cells, a share of the observed level's base
+#'   rate
 #' @param maxit maximum number of iterations
 #' @param maxit_detect number of initial iterations in which flags may be added; \code{0} turns
 #'   detection off (a chained forest imputation), \code{1} is a single detection pass
@@ -51,8 +53,9 @@
 #'   (e.g. \code{nrounds}, \code{eta}, \code{max_depth})
 #' @return an object of class \code{cellImpForest}: \code{imputed} (data.frame, or a list for
 #'   \code{m > 1}), \code{flags} (logical matrix), \code{W} (cell weights), \code{Z}
-#'   (standardised residuals), \code{P} (two-sided normal tail probability, or \code{rho} for
-#'   categorical cells), \code{scales} (per-column MAD), \code{rowflags}, \code{missing},
+#'   (standardised residuals), \code{P} (two-sided normal tail probability; for categorical
+#'   cells the ratio of the cross-fitted probability of the observed level to its base rate),
+#'   \code{scales} (per-column MAD), \code{rowflags}, \code{missing},
 #'   \code{iterations}, \code{converged}, \code{engine}, \code{call}.
 #' @seealso \code{\link{imputeCellGLoc}} for the parametric cellwise route,
 #'   \code{\link{rangerImpute}} for forest imputation without detection.
@@ -127,7 +130,7 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
       yj <- droplevels(yj)
       if (nlevels(yj) < 2L) return(NULL)
     }
-    if (engine == "ranger") {
+    fit <- if (engine == "ranger") {
       .cif_fit_ranger(yj, X[train, -j, drop = FALSE], aggregate = aggregate,
                       residuals = residuals, num.trees = num.trees, mtry = mtry,
                       min.node.size = min.node.size, num.threads = num.threads,
@@ -136,6 +139,9 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
       .cif_fit_xgboost(yj, X[train, -j, drop = FALSE], residuals = residuals, K = K,
                        nthread = nthr, ...)
     }
+    # base rates of the levels among the training rows: the reference of the categorical score
+    if (is_cat[j]) fit$base <- c(table(yj)) / length(yj)
+    fit
   }
 
   # ---- iterate: detection phase (it <= maxit_detect), then imputation only ----
@@ -153,7 +159,7 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
       last_fit[j] <- it
       if (is_cat[j]) {
         rho <- rep(NA_real_, n)
-        rho[train] <- .cif_rho(fit$oob_prob, X[train, j])
+        rho[train] <- .cif_rho(fit$oob_prob, X[train, j], fit$base)
         P[, j] <- rho
         cand[, j] <- !is.na(rho) & rho < rho_min
       } else {
@@ -209,7 +215,7 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
       idx <- which(Fl[, j] & !M[, j])
       Xi <- X[idx, -j, drop = FALSE]
       if (is_cat[j]) {
-        rho <- .cif_rho(f$predict_prob(Xi), df[idx, j])
+        rho <- .cif_rho(f$predict_prob(Xi), df[idx, j], f$base)
         P[idx, j] <- rho
         ok <- !is.na(rho) & rho >= rho_min
         rel <- idx[ok]

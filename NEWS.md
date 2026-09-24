@@ -3,9 +3,10 @@
 ## Changes
 - New `cellImpForest()`: cellwise-robust imputation of mixed data with tree ensembles.
   Cells are flagged from out-of-bag (ranger) or K-fold cross-fitted (xgboost) conditional
-  residuals on a robust scale during a short detection phase; flagged and missing cells are
-  imputed by the column's forest (median over trees), and a final release pass restores
-  flagged cells that the final fit does not confirm. Registered in
+  residuals on a robust scale during a short detection phase (categorical cells: the
+  cross-fitted probability of the observed level relative to its base rate); flagged and
+  missing cells are imputed by the column's forest (median over trees), and a final release
+  pass restores flagged cells that the final fit does not confirm. Registered in
   `imputeCellwise(method = "cellImpForest")`. `uncert = "pmm"` or `"quantile"` and `m` draw
   stochastic completions from one fit; `print()`, `summary()` and a cell-weight `plot()` method.
 
