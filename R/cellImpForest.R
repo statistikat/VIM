@@ -39,10 +39,9 @@
 #' @param maxit maximum number of iterations (a whole number >= 1)
 #' @param maxit_detect number of initial iterations in which flags may be added (a whole
 #'   number >= 0), at most \code{maxit - 1} (larger values are capped, with a message when
-#'   supplied), so that the
-#'   release pass judges every flagged cell with a fit that never saw it; \code{0} turns
-#'   detection off (a chained forest imputation, also the result of \code{maxit = 1}),
-#'   \code{1} is a single detection pass
+#'   supplied), so that the release pass judges every flagged cell with a fit that never saw
+#'   it; \code{0} turns detection off (a chained forest imputation, also the result of
+#'   \code{maxit = 1}), \code{1} is a single detection pass
 #' @param eps stopping tolerance, checked once no new flag appears. The stopping quantity is
 #'   the maximum over columns of each column's mean absolute change of its imputed (missing or
 #'   flagged) cells between two iterations, on that column's robust scale (the MAD of its
@@ -156,7 +155,7 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
   }
   dn <- dimnames(M)
   Fl <- matrix(FALSE, n, p, dimnames = dn)
-  Rel <- matrix(FALSE, n, p, dimnames = dn)        # flagged in the loop, restored by the release pass
+  Rel <- matrix(FALSE, n, p, dimnames = dn)   # flagged in the loop, restored by the release pass
   W <- matrix(1, n, p, dimnames = dn)
   Z <- P <- matrix(NA_real_, n, p, dimnames = dn)
   sg <- rep(NA_real_, p)
