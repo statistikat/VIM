@@ -48,6 +48,23 @@ expect_equal(sum(r4$flags), 0L)
 expect_false(anyNA(r4$imputed))
 expect_true(r4$converged)
 
+# final review I3: maxit_detect is capped at maxit - 1, so the release pass judges every flagged
+# cell with a fit that never saw it; maxit = 1 turns detection off
+d15 <- d; set.seed(21); c15 <- cbind(sample(300, 15), sample(5, 15, TRUE))
+d15[c15] <- d15[c15] + 4                                     # 15 cells shifted by 4 SD
+set.seed(2); r15 <- suppressWarnings(cellImpForest(d15, maxit = 2, num.trees = 200))
+expect_true(all(r15$flags[c15]))
+set.seed(2); r15a <- suppressWarnings(cellImpForest(d15, maxit = 1, num.trees = 200))
+expect_equal(sum(r15a$flags), 0L)
+expect_message(suppressWarnings(cellImpForest(d15, maxit = 2, maxit_detect = 3, num.trees = 50)),
+               "maxit_detect")
+msg15 <- character(0)                                         # the default is capped silently
+withCallingHandlers(suppressWarnings(cellImpForest(d15, maxit = 2, num.trees = 50)),
+                    message = function(m) {
+                      msg15 <<- c(msg15, conditionMessage(m)); invokeRestart("muffleMessage")
+                    })
+expect_false(any(grepl("maxit_detect", msg15)))
+
 # xgboost engine on the same gross cell
 set.seed(2); r5 <- cellImpForest(d1, engine = "xgboost", nrounds = 100)
 expect_true(r5$flags[7, 2])

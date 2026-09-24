@@ -52,8 +52,11 @@ rate}
 
 \item{maxit}{maximum number of iterations}
 
-\item{maxit_detect}{number of initial iterations in which flags may be added; \code{0} turns
-detection off (a chained forest imputation), \code{1} is a single detection pass}
+\item{maxit_detect}{number of initial iterations in which flags may be added, at most
+\code{maxit - 1} (larger values are capped, with a message when supplied), so that the
+release pass judges every flagged cell with a fit that never saw it; \code{0} turns
+detection off (a chained forest imputation, also the result of \code{maxit = 1}),
+\code{1} is a single detection pass}
 
 \item{eps}{stopping tolerance: the mean absolute change of the imputed cells on the column
 MAD scale (share of changed levels for categorical cells), once no new flag appears}

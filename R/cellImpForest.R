@@ -33,8 +33,11 @@
 #' @param rho_min flag threshold for categorical cells, a share of the observed level's base
 #'   rate
 #' @param maxit maximum number of iterations
-#' @param maxit_detect number of initial iterations in which flags may be added; \code{0} turns
-#'   detection off (a chained forest imputation), \code{1} is a single detection pass
+#' @param maxit_detect number of initial iterations in which flags may be added, at most
+#'   \code{maxit - 1} (larger values are capped, with a message when supplied), so that the
+#'   release pass judges every flagged cell with a fit that never saw it; \code{0} turns
+#'   detection off (a chained forest imputation, also the result of \code{maxit = 1}),
+#'   \code{1} is a single detection pass
 #' @param eps stopping tolerance: the mean absolute change of the imputed cells on the column
 #'   MAD scale (share of changed levels for categorical cells), once no new flag appears
 #' @param K folds for xgboost cross-fitting
@@ -101,6 +104,15 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
   M <- is.na(df)
   if (any(colSums(M) == n)) stop("column(s) ", paste(names(df)[colSums(M) == n], collapse = ", "),
                                  " are entirely missing")
+  # the release pass must judge flagged cells with fits that never saw them: at least one
+  # iteration without new flags follows the detection phase
+  if (maxit_detect > maxit - 1) {
+    if (!missing(maxit_detect)) {
+      message("cellImpForest(): maxit_detect = ", maxit_detect, " capped at maxit - 1 = ",
+              maxit - 1)
+    }
+    maxit_detect <- maxit - 1
+  }
   if (uncert == "quantile" && engine != "ranger") uncert <- "pmm"
   nthr <- if (is.null(num.threads)) 1L else num.threads
 
