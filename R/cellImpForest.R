@@ -128,8 +128,8 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
   Z <- P <- matrix(NA_real_, n, p, dimnames = dn)
   sg <- rep(NA_real_, p)
   rowflag <- rep(FALSE, n)
-  col_scale <- vapply(seq_len(p), function(j) {
-    if (is_cat[j]) 1 else max(stats::mad(df[[j]], na.rm = TRUE), 1e-8)
+  col_scale <- vapply(seq_len(p), function(j) {              # MAD, falling back to SD, then 1
+    if (is_cat[j]) 1 else .cif_scale(df[[j]], !is.na(df[[j]]))
   }, numeric(1))
   fits <- vector("list", p)
   last_fit <- integer(p)

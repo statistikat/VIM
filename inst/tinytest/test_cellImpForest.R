@@ -69,6 +69,21 @@ expect_false(any(grepl("maxit_detect", msg15)))
 set.seed(2); r5 <- cellImpForest(d1, engine = "xgboost", nrounds = 100)
 expect_true(r5$flags[7, 2])
 
+# final review I4: the change measure uses the MAD -> SD -> 1 scale of each column, so a column
+# whose MAD is 0 (60 % zeros) does not blow it up
+dz <- d; set.seed(31)
+dz$V6 <- exp(dz$V1 + stats::rnorm(300, sd = 0.3)); dz$V6[sample(300, 180)] <- 0
+dz$V6[sample(300, 30)] <- NA
+msgz <- character(0)
+set.seed(2)
+withCallingHandlers(suppressWarnings(cellImpForest(dz, num.trees = 100, trace = TRUE)),
+                    message = function(m) {
+                      msgz <<- c(msgz, conditionMessage(m)); invokeRestart("muffleMessage")
+                    })
+chg <- as.numeric(sub(".*change ", "", grep("change", msgz, value = TRUE)))
+expect_true(length(chg) > 0)
+expect_true(all(chg < 100))
+
 # review focus 1: constant column
 dc <- d; dc$V6 <- 1
 set.seed(2); rc <- suppressWarnings(cellImpForest(dc, num.trees = 50, maxit = 2))
