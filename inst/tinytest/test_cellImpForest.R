@@ -67,3 +67,37 @@ expect_false(anyNA(ra$imputed))
 dn <- d; dn$V3 <- NA
 expect_error(cellImpForest(dn), "entirely missing")
 expect_error(cellImpForest(d[, 1, drop = FALSE]), "two columns")
+
+# --- categorical cells ---
+set.seed(5); n <- 400
+z <- stats::rnorm(n)
+x1 <- z + 0.5 * stats::rnorm(n); x2 <- z + 0.5 * stats::rnorm(n); x3 <- z + 0.5 * stats::rnorm(n)
+g <- factor(ifelse(z > 0.3, "high", ifelse(z < -0.3, "low", "mid")))
+dcat <- data.frame(x1, x2, x3, g)
+bad <- sample(which(g == "high"), 10)
+dcat$g[bad] <- "low"                                   # miscoded: contradicts x1..x3
+lab <- seq_len(n) %in% bad
+auc6 <- function(score, lab) {                       # Mann-Whitney AUC
+  r <- rank(score)
+  (sum(r[lab]) - sum(lab) * (sum(lab) + 1) / 2) / (sum(lab) * sum(!lab))
+}
+set.seed(6); rg <- cellImpForest(dcat, num.trees = 300)
+expect_true(auc6(-rg$P[, 4], lab) > 0.9)                # miscoded cells are the least plausible
+expect_true(sum(rg$flags[bad, 4]) >= 7)
+expect_true(mean(rg$flags[!lab, 4]) <= 0.05)
+expect_true(all(rg$imputed$g[bad][rg$flags[bad, 4]] != "low"))   # flagged cells repaired
+expect_true(all(rg$W[, 4] %in% c(0, 1)))               # categorical cells: no soft weight
+dm <- dcat; dm$g[1:40] <- NA
+set.seed(6); rm_ <- cellImpForest(dm, num.trees = 100)
+expect_false(anyNA(rm_$imputed$g)); expect_equal(levels(rm_$imputed$g), levels(dcat$g))
+# review focus 4: rare level, single-level column, logical and character columns keep their type
+dr <- dcat; dr$g <- as.character(dr$g); dr$g[1] <- "rare"
+set.seed(6); rr <- suppressWarnings(cellImpForest(dr, num.trees = 100, maxit = 2))
+expect_true(is.character(rr$imputed$g)); expect_false(anyNA(rr$imputed$g))
+ds <- dcat; ds$one <- factor("a"); ds$flag <- x2 > 0; ds$flag[1:5] <- NA
+expect_message(rs <- suppressWarnings(cellImpForest(ds, num.trees = 50, maxit = 2, trace = TRUE)), "skipped")
+expect_true(is.logical(rs$imputed$flag)); expect_false(anyNA(rs$imputed))
+# xgboost engine on the categorical column (its probabilities are sharper: no false-flag bound here)
+set.seed(6); rx <- suppressWarnings(cellImpForest(dcat, engine = "xgboost", nrounds = 80, maxit = 3))
+expect_true(auc6(-rx$P[, 4], lab) > 0.9)
+expect_true(sum(rx$flags[bad, 4]) >= 7)
