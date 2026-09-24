@@ -47,6 +47,7 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
     if (is_cat[j]) 1 else max(stats::mad(df[[j]], na.rm = TRUE), 1e-8)
   }, numeric(1))
   fits <- vector("list", p)
+  last_fit <- integer(p)
   converged <- FALSE
   d_prev <- Inf
   X_prev <- X
@@ -87,6 +88,7 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
         if (trace) message("column ", names(df)[j], ": too few usable rows or one level, skipped")
         next
       }
+      last_fit[j] <- it
       if (is_cat[j]) {
         rho <- rep(NA_real_, n)
         rho[train] <- .cif_rho(fit$oob_prob, X[train, j])
@@ -170,11 +172,19 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
     rowflag <- rowSums(Fl) / p > 0.5
   }
 
-  never_fit <- vapply(fits, is.null, logical(1))
-  if (any(never_fit)) {
-    warning("cellImpForest(): column(s) ", paste(names(df)[never_fit], collapse = ", "),
+  never <- last_fit == 0L
+  starved <- !never & vapply(fits, is.null, logical(1))
+  if (any(never)) {
+    warning("cellImpForest(): column(s) ", paste(names(df)[never], collapse = ", "),
             " not modelled (too few usable rows or a single level): no detection, ",
             "missing cells keep the median/mode fill")
+  }
+  if (any(starved)) {
+    lbl <- paste0(names(df)[starved], " (after iteration ", last_fit[starved], ")")
+    warning("cellImpForest(): column(s) ", paste(lbl, collapse = ", "),
+            " not modelled (too few usable rows once cells were flagged): ",
+            "flagged and missing cells keep the values of that iteration's fit, ",
+            "and flags are not re-judged by the release pass")
   }
 
   # ---- output ----

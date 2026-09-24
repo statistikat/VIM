@@ -59,6 +59,11 @@ expect_warning(rt <- cellImpForest(dt, num.trees = 30), "not modelled")
 expect_false(anyNA(rt$imputed))
 expect_message(suppressWarnings(cellImpForest(dt, num.trees = 30, trace = TRUE)), "skipped")
 
+# fix round 2: a column that fits early, then starves once its own cells are flagged
+d10 <- gen(n = 10, p = 3, seed = 6); d10[1, 1] <- d10[1, 1] + 15
+set.seed(2); expect_warning(r10 <- cellImpForest(d10, num.trees = 80), "after iteration")
+expect_false(anyNA(r10$imputed))
+
 # review focus 3: a row with nothing observed
 da <- d; da[1, ] <- NA
 set.seed(2); ra <- suppressWarnings(cellImpForest(da, num.trees = 50, maxit = 2))
