@@ -23,9 +23,9 @@ The return value of the dispatched function. See the documentation
 of the individual methods for details.
 }
 \description{
-Convenience wrapper that dispatches to one of the three cellwise-robust
+Convenience wrapper that dispatches to one of the four cellwise-robust
 imputation methods: \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},
-or \code{\link{imputeCellEM}}.
+\code{\link{imputeCellEM}}, or \code{\link{cellImpForest}}.
 }
 \note{
 Model uncertainty via bootstrap (Rubin's combining rules for
@@ -44,7 +44,7 @@ head(result$data_imputed)
 }
 \seealso{
 \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},
-\code{\link{imputeCellEM}}
+\code{\link{imputeCellEM}}, \code{\link{cellImpForest}}
 
 Other imputation methods: 
 \code{\link{cellImpForest}()},

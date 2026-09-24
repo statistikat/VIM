@@ -101,6 +101,11 @@ d10 <- gen(n = 10, p = 3, seed = 6); d10[1, 1] <- d10[1, 1] + 15
 set.seed(2); expect_warning(r10 <- cellImpForest(d10, num.trees = 80), "after iteration")
 expect_false(anyNA(r10$imputed))
 
+# final review I6: integer columns are returned as double, also when none of their cells is imputed
+di <- d[1:100, 1:3]; di$k <- 1L + (seq_len(100) %% 3L)
+set.seed(2); ri <- suppressWarnings(cellImpForest(di, num.trees = 50, maxit_detect = 0))
+expect_true(is.double(ri$imputed$k))
+
 # review focus 3: a row with nothing observed
 da <- d; da[1, ] <- NA
 set.seed(2); ra <- suppressWarnings(cellImpForest(da, num.trees = 50, maxit = 2))

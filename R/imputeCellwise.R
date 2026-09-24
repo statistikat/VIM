@@ -1201,9 +1201,9 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
 
 #' Unified cellwise-robust imputation dispatcher
 #'
-#' Convenience wrapper that dispatches to one of the three cellwise-robust
+#' Convenience wrapper that dispatches to one of the four cellwise-robust
 #' imputation methods: \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},
-#' or \code{\link{imputeCellEM}}.
+#' \code{\link{imputeCellEM}}, or \code{\link{cellImpForest}}.
 #'
 #' @param data data.frame with missing values (mixed continuous + categorical).
 #' @param method imputation method: \code{"cellIRMI"} (default),
@@ -1222,7 +1222,7 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
 #' @author Matthias Templ
 #' @family imputation methods
 #' @seealso \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},
-#'   \code{\link{imputeCellEM}}
+#'   \code{\link{imputeCellEM}}, \code{\link{cellImpForest}}
 #'
 #' @examples
 #' \donttest{

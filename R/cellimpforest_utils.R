@@ -26,9 +26,10 @@
 }
 
 #' Cross-fitted probability of the observed level of a categorical cell relative to that
-#' level's base rate: rho' = p_obs / base[level]. About 1 when the predictors carry no signal,
-#' near 0 when they contradict the observed level. A level with base rate 0 (absent from the
-#' training rows) scores 0; a row without a cross-fitted prediction (all NA) scores NA.
+#' level's base rate (rho' = p_obs divided by the base rate of the observed level). About 1
+#' when the predictors carry no signal, near 0 when they contradict the observed level. A level
+#' with base rate 0 (absent from the training rows) scores 0; a row without a cross-fitted
+#' prediction (all NA) scores NA.
 #' @param prob n x L matrix of cross-fitted class probabilities, columns named by level
 #' @param y observed levels (factor or character)
 #' @param base named numeric vector: relative frequency of each level among the training rows

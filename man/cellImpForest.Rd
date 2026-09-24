@@ -37,7 +37,7 @@ cellImpForest(
 \arguments{
 \item{data}{a data.frame with numeric and categorical (factor, character, logical) columns;
 \code{NA} allowed. Logical and character columns are returned with their type; factor
-columns keep their declared levels.}
+columns keep their declared levels; integer columns are returned as double.}
 
 \item{engine}{\code{"ranger"} (out-of-bag residuals, default) or \code{"xgboost"}
 (K-fold cross-fitting, pseudo-Huber loss)}
@@ -58,8 +58,11 @@ release pass judges every flagged cell with a fit that never saw it; \code{0} tu
 detection off (a chained forest imputation, also the result of \code{maxit = 1}),
 \code{1} is a single detection pass}
 
-\item{eps}{stopping tolerance: the mean absolute change of the imputed cells on the column
-MAD scale (share of changed levels for categorical cells), once no new flag appears}
+\item{eps}{stopping tolerance, checked once no new flag appears. The stopping quantity is
+the maximum over columns of each column's mean absolute change of its imputed (missing or
+flagged) cells between two iterations, on that column's robust scale (the MAD of its
+observed values, falling back to the SD, then 1); for categorical columns the share of
+imputed cells whose level changed.}
 
 \item{K}{folds for xgboost cross-fitting}
 
@@ -74,8 +77,12 @@ probabilities}
 \item{m}{number of stochastic completions drawn from one fit when \code{uncert != "none"};
 \code{imputed} is then a list. These are not proper multiple imputations.}
 
-\item{num.trees, mtry, min.node.size, num.threads}{passed to \code{ranger::ranger}
-(\code{num.threads} also sets \code{nthread} for xgboost)}
+\item{num.trees, mtry, min.node.size}{passed to \code{ranger::ranger}}
+
+\item{num.threads}{number of threads, passed to \code{ranger::ranger} and as \code{nthread}
+to xgboost. \code{NULL} (default) means ranger's own default (2 threads unless the
+environment variable \code{R_RANGER_NUM_THREADS} or the option \code{ranger.num.threads}
+or \code{Ncpus} sets another number) and one thread for xgboost.}
 
 \item{trace}{print per-iteration progress}
 
@@ -90,11 +97,17 @@ probabilities}
 an object of class \code{cellImpForest}: \code{imputed} (data.frame, or a list for
 \code{m > 1}), \code{flags} (logical matrix of the cells flagged at the end),
 \code{released} (logical matrix of the cells flagged during the loop and restored by the
-release pass), \code{W} (cell weights), \code{Z}
-(standardised residuals), \code{P} (two-sided normal tail probability; for categorical
-cells the ratio of the cross-fitted probability of the observed level to its base rate),
-\code{scales} (per-column MAD), \code{rowflags}, \code{missing},
-\code{iterations}, \code{converged}, \code{engine}, \code{call}.
+release pass), \code{W} (cell weights: bisquare weights of the observed continuous cells,
+0 for flagged cells, 1 for missing and categorical cells), \code{Z} (standardised
+residuals), \code{P} (two-sided normal tail probability; for categorical cells the ratio of
+the cross-fitted probability of the observed level to its base rate), \code{scales}
+(per-column MAD of the residuals), \code{rowflags}, \code{missing}, \code{iterations},
+\code{converged}, \code{engine}, \code{call}. \code{converged} is \code{TRUE} when the
+change fell below \code{eps}, and also when it stopped decreasing (missForest's rule); the
+previous iteration's imputation is then returned. \code{W}, \code{Z} and \code{P}
+describe the last fit of each column, also after that revert; for the unflagged cells of a
+row-flagged row, \code{W} keeps the value of the last fit that used the row, and \code{Z}
+and \code{P} are \code{NA}.
 
 \code{summary()} returns a data.frame with one row per column: \code{column},
 \code{missing} (missing cells), \code{flagged} (cells flagged at the end), \code{released}
@@ -116,9 +129,12 @@ leaves all fits. After convergence, a release pass judges every flagged cell onc
 against the final fit of its column, which never saw it, and restores cells that pass.
 Missing and flagged continuous cells are imputed by the median of the per-tree predictions
 (ranger) or the booster prediction (xgboost), categorical cells by the most probable level.
-The cell weights \code{W} are a diagnostic; they do not enter the fits. A column that cannot
-be modelled (too few usable rows, or a single level) is reported in a warning, together with
-the iteration after which it stopped being modelled.
+The cell weights \code{W} are a diagnostic; they do not enter the fits. Columns that cannot
+be modelled (too few usable rows, or a single level) are reported in a warning: a column
+that was never modelled is named alone, a column that stopped being modelled is named with
+the iteration after which it stopped. Detection assumes roughly symmetric conditional
+residuals: strongly skewed or semicontinuous columns over-flag and should be transformed
+first (e.g. log), as in the example.
 }
 \details{
 The one-pass random-forest detector of the \pkg{outForest} package is the closest relative;
@@ -127,8 +143,12 @@ releases swamped cells and covers categorical cells.
 }
 \examples{
 data(sleep)
+# body and brain weight span six orders of magnitude: log-transform them first
+sl <- sleep
+sl$BodyWgt <- log(sl$BodyWgt)
+sl$BrainWgt <- log(sl$BrainWgt)
 set.seed(1)
-r <- cellImpForest(sleep, num.trees = 100)
+r <- cellImpForest(sl, num.trees = 100)
 r
 summary(r)
 }
