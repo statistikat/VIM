@@ -1207,7 +1207,7 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
 #'
 #' @param data data.frame with missing values (mixed continuous + categorical).
 #' @param method imputation method: \code{"cellIRMI"} (default),
-#'   \code{"cellM"}, or \code{"cellEM"}.
+#'   \code{"cellM"}, \code{"cellEM"}, or \code{"cellImpForest"}.
 #' @param ... additional arguments passed to the chosen method.
 #'
 #' @return The return value of the dispatched function. See the documentation
@@ -1232,11 +1232,12 @@ imputeCellM <- function(formula, data, method = "tukey", alpha = NULL,
 #' }
 #'
 #' @export
-imputeCellwise <- function(data, method = c("cellIRMI", "cellM", "cellEM"), ...) {
+imputeCellwise <- function(data, method = c("cellIRMI", "cellM", "cellEM", "cellImpForest"), ...) {
   method <- match.arg(method)
   switch(method,
     cellIRMI = imputeCellIRMI(data, ...),
     cellM = imputeCellM(data, ...),
-    cellEM = imputeCellEM(data, ...)
+    cellEM = imputeCellEM(data, ...),
+    cellImpForest = cellImpForest(data, ...)
   )
 }

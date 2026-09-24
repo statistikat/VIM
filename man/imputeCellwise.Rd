@@ -4,13 +4,17 @@
 \alias{imputeCellwise}
 \title{Unified cellwise-robust imputation dispatcher}
 \usage{
-imputeCellwise(data, method = c("cellIRMI", "cellM", "cellEM"), ...)
+imputeCellwise(
+  data,
+  method = c("cellIRMI", "cellM", "cellEM", "cellImpForest"),
+  ...
+)
 }
 \arguments{
 \item{data}{data.frame with missing values (mixed continuous + categorical).}
 
 \item{method}{imputation method: \code{"cellIRMI"} (default),
-\code{"cellM"}, or \code{"cellEM"}.}
+\code{"cellM"}, \code{"cellEM"}, or \code{"cellImpForest"}.}
 
 \item{...}{additional arguments passed to the chosen method.}
 }
@@ -43,6 +47,7 @@ head(result$data_imputed)
 \code{\link{imputeCellEM}}
 
 Other imputation methods: 
+\code{\link{cellImpForest}()},
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
 \code{\link{imputeCellEM}()},

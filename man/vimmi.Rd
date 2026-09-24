@@ -73,6 +73,7 @@ fits <- with(result, lm(Sleep ~ Dream + Span))
 \code{\link{plot.vimmi}}
 
 Other imputation methods: 
+\code{\link{cellImpForest}()},
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
 \code{\link{imputeCellEM}()},

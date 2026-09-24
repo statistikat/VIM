@@ -61,6 +61,7 @@ if (requireNamespace("mlr3", quietly = TRUE) &&
 }
 \seealso{
 Other imputation methods: 
+\code{\link{cellImpForest}()},
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
 \code{\link{imputeCellEM}()},

@@ -191,6 +191,7 @@ Statistics & Data Analysis}, Vol. 55, pp. 2793--2806.
 \code{\link{initialise}}, \code{\link{irmi}}
 
 Other imputation methods: 
+\code{\link{cellImpForest}()},
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
 \code{\link{imputeCellIRMI}()},

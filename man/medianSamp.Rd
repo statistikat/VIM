@@ -17,6 +17,7 @@ two levels.
 }
 \seealso{
 Other imputation methods: 
+\code{\link{cellImpForest}()},
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
 \code{\link{imputeCellEM}()},

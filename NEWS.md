@@ -6,7 +6,8 @@
   residuals on a robust scale during a short detection phase; flagged and missing cells are
   imputed by the column's forest (median over trees), and a final release pass restores
   flagged cells that the final fit does not confirm. Registered in
-  `imputeCellwise(method = "cellImpForest")`.
+  `imputeCellwise(method = "cellImpForest")`. `uncert = "pmm"` or `"quantile"` and `m` draw
+  stochastic completions from one fit; `print()`, `summary()` and a cell-weight `plot()` method.
 
 # VIM 7.5.1
 

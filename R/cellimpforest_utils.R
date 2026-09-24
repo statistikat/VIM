@@ -169,8 +169,43 @@
        predict = pred, center = pred, predict_prob = NULL)
 }
 
-#' Stochastic output for imputed cells (implemented in Task 7)
+#' Predictive-mean matching: one of the k donors with the closest predicted value
+#' @noRd
+.cif_pmm <- function(pred_need, pred_donor, y_donor, k = 5L) {
+  vapply(pred_need, function(v) {
+    o <- order(abs(pred_donor - v))[seq_len(min(k, length(pred_donor)))]
+    y_donor[o[sample.int(length(o), 1L)]]
+  }, numeric(1))
+}
+
+#' Stochastic values for imputed cells: PMM or a draw from the forest's conditional quantiles
+#' (continuous), a draw from the class probabilities (categorical)
 #' @noRd
 .cif_uncert <- function(X, df, M, Fl, rowflag, fits, is_cat, uncert, num.threads) {
-  stop("uncert != 'none' is not implemented yet")
+  for (j in seq_along(fits)) {
+    need <- M[, j] | Fl[, j]
+    f <- fits[[j]]
+    if (!any(need) || is.null(f)) next
+    Xn <- X[need, -j, drop = FALSE]
+    if (is_cat[j]) {
+      pr <- f$predict_prob(Xn)
+      pr[!is.finite(pr)] <- 0
+      draw <- apply(pr, 1, function(pv) {
+        if (sum(pv) > 0) sample(colnames(pr), 1L, prob = pv) else NA_character_
+      })
+      ok <- !is.na(draw)
+      X[which(need)[ok], j] <- draw[ok]
+    } else if (uncert == "quantile" && inherits(f$rf, "ranger")) {
+      qs <- seq(0.05, 0.95, by = 0.1)
+      qm <- stats::predict(f$rf, data = Xn, type = "quantiles", quantiles = qs,
+                           num.threads = num.threads)$predictions
+      X[need, j] <- qm[cbind(seq_len(nrow(qm)),
+                             sample.int(length(qs), nrow(qm), replace = TRUE))]
+    } else {
+      donor <- !M[, j] & !Fl[, j] & !rowflag
+      X[need, j] <- .cif_pmm(f$predict(Xn), f$predict(X[donor, -j, drop = FALSE]),
+                             df[donor, j])
+    }
+  }
+  X
 }

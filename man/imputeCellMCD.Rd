@@ -120,6 +120,7 @@ Statistical Association}, \strong{119}(548), 2610--2621.
 \code{\link{imputeCellEM}}
 
 Other imputation methods: 
+\code{\link{cellImpForest}()},
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
 \code{\link{imputeCellEM}()},

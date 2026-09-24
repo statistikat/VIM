@@ -17,6 +17,7 @@ occurrence of the level in the NNs.
 }
 \seealso{
 Other imputation methods: 
+\code{\link{cellImpForest}()},
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
 \code{\link{imputeCellEM}()},

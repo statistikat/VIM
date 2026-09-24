@@ -325,6 +325,7 @@ result2 <- vimpute(data = sleep, method = "robust", m = 5,
 }
 \seealso{
 Other imputation methods: 
+\code{\link{cellImpForest}()},
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
 \code{\link{imputeCellEM}()},

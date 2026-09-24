@@ -163,6 +163,7 @@ DOI: 10.1007/978-3-031-30073-8
 }
 \seealso{
 Other imputation methods: 
+\code{\link{cellImpForest}()},
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
 \code{\link{imputeCellEM}()},

@@ -116,3 +116,24 @@ dord <- dcat; dord$g <- factor(dcat$g, levels = c("low", "mid", "high"), ordered
 set.seed(6); rord <- cellImpForest(dord, num.trees = 300)
 expect_identical(levels(rord$imputed$g), levels(dord$g))
 expect_true(is.ordered(rord$imputed$g))
+
+# --- uncertainty, m, methods, dispatcher ---
+d <- gen(); set.seed(9); d[cbind(sample(300, 30), sample(5, 30, TRUE))] <- NA
+miss <- is.na(d)
+set.seed(7); rp <- suppressWarnings(cellImpForest(d, uncert = "pmm", num.trees = 100, maxit = 2))
+for (j in 1:5) expect_true(all(rp$imputed[miss[, j], j] %in% d[!miss[, j], j]))  # PMM: observed values
+set.seed(7); rq <- suppressWarnings(cellImpForest(d, uncert = "quantile", num.trees = 100, maxit = 2))
+expect_false(anyNA(rq$imputed))
+set.seed(7); rm2 <- suppressWarnings(cellImpForest(d, uncert = "pmm", m = 2L, num.trees = 60, maxit = 2))
+expect_equal(length(rm2$imputed), 2L)
+expect_false(identical(rm2$imputed[[1]], rm2$imputed[[2]]))
+expect_error(cellImpForest(d, m = 2L), "uncert")
+
+set.seed(7); r <- suppressWarnings(cellImpForest(d, num.trees = 60, maxit = 2))
+expect_stdout(print(r), "cellImpForest")
+s <- summary(r)
+expect_true(is.data.frame(s))
+expect_equal(nrow(s), 5L)
+pdf(NULL); expect_silent(plot(r)); dev.off()
+set.seed(7); rd <- suppressWarnings(imputeCellwise(d, method = "cellImpForest", num.trees = 60, maxit = 2))
+expect_true(inherits(rd, "cellImpForest"))

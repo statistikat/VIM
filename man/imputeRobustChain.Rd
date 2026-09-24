@@ -71,6 +71,7 @@ if(interactive()){
 \code{\link[robCompositions]{outCoDa}}
 
 Other imputation methods: 
+\code{\link{cellImpForest}()},
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
 \code{\link{imputeCellEM}()},

@@ -143,6 +143,7 @@ methods.  \emph{Computational Statistics & Data Analysis},
 \code{\link{initialise}}, \code{\link{irmi}}
 
 Other imputation methods: 
+\code{\link{cellImpForest}()},
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
 \code{\link{imputeCellEM}()},

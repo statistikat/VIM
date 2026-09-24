@@ -67,6 +67,7 @@ if(interactive()){
 \code{\link[pdist]{pdist}}
 
 Other imputation methods: 
+\code{\link{cellImpForest}()},
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
 \code{\link{imputeCellEM}()},

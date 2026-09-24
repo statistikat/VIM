@@ -2,6 +2,9 @@
 % Please edit documentation in R/cellImpForest.R
 \name{cellImpForest}
 \alias{cellImpForest}
+\alias{print.cellImpForest}
+\alias{summary.cellImpForest}
+\alias{plot.cellImpForest}
 \title{Cellwise-robust imputation of mixed data with tree ensembles}
 \usage{
 cellImpForest(
@@ -24,7 +27,121 @@ cellImpForest(
   trace = FALSE,
   ...
 )
+
+\method{print}{cellImpForest}(x, ...)
+
+\method{summary}{cellImpForest}(object, ...)
+
+\method{plot}{cellImpForest}(x, main = "cell weights (missing cells grey)", ...)
+}
+\arguments{
+\item{data}{a data.frame with numeric and categorical (factor, character, logical) columns;
+\code{NA} allowed. Logical and character columns are returned with their type; factor
+columns keep their declared levels.}
+
+\item{engine}{\code{"ranger"} (out-of-bag residuals, default) or \code{"xgboost"}
+(K-fold cross-fitting, pseudo-Huber loss)}
+
+\item{aggregate}{\code{"median"} (default) or \code{"mean"} of the per-tree predictions used
+to impute continuous cells (ranger)}
+
+\item{psi_c}{bisquare tuning constant; the flag threshold is the weight 0.5, |z| > 2.535}
+
+\item{rho_min}{flag threshold for categorical cells}
+
+\item{maxit}{maximum number of iterations}
+
+\item{maxit_detect}{number of initial iterations in which flags may be added; \code{0} turns
+detection off (a chained forest imputation), \code{1} is a single detection pass}
+
+\item{eps}{stopping tolerance: the mean absolute change of the imputed cells on the column
+MAD scale (share of changed levels for categorical cells), once no new flag appears}
+
+\item{K}{folds for xgboost cross-fitting}
+
+\item{residuals}{\code{"oob"} (default) or \code{"insample"}; the latter only to illustrate
+masking}
+
+\item{uncert}{stochastic output for imputed cells: \code{"none"} (default), \code{"pmm"}
+(one of the 5 nearest donors on the prediction scale) or \code{"quantile"} (a draw from the
+forest's conditional quantiles, ranger only); categorical cells are drawn from the class
+probabilities}
+
+\item{m}{number of stochastic completions drawn from one fit when \code{uncert != "none"};
+\code{imputed} is then a list. These are not proper multiple imputations.}
+
+\item{num.trees, mtry, min.node.size, num.threads}{passed to \code{ranger::ranger}
+(\code{num.threads} also sets \code{nthread} for xgboost)}
+
+\item{trace}{print per-iteration progress}
+
+\item{...}{further arguments to \code{ranger::ranger} or to the xgboost parameter list
+(e.g. \code{nrounds}, \code{eta}, \code{max_depth})}
+
+\item{x, object}{a \code{cellImpForest} object}
+
+\item{main}{plot title}
+}
+\value{
+an object of class \code{cellImpForest}: \code{imputed} (data.frame, or a list for
+\code{m > 1}), \code{flags} (logical matrix), \code{W} (cell weights), \code{Z}
+(standardised residuals), \code{P} (two-sided normal tail probability, or \code{rho} for
+categorical cells), \code{scales} (per-column MAD), \code{rowflags}, \code{missing},
+\code{iterations}, \code{converged}, \code{engine}, \code{call}.
 }
 \description{
-Documentation is completed in Task 7.
+Detects cellwise outliers and imputes missing cells with one tree ensemble per column.
+Detection uses cross-fitted conditional residuals -- out-of-bag predictions for
+\code{engine = "ranger"}, K-fold cross-fitted predictions for \code{engine = "xgboost"} --
+standardised by the MAD of the column's residuals. A continuous cell whose standardised
+residual exceeds 2.535 in absolute value (Tukey bisquare weight below 0.5 at
+\code{psi_c = 4.685}) is flagged; a categorical cell is flagged when the cross-fitted
+probability of its observed level is below \code{rho_min} times that of the most probable
+level. Flags are added in the first \code{maxit_detect} iterations and then frozen; flagged
+cells are treated as missing and imputed, and a row with more than half of its cells flagged
+leaves all fits. After convergence, a release pass judges every flagged cell once more
+against the final fit of its column, which never saw it, and restores cells that pass.
+Missing and flagged continuous cells are imputed by the median of the per-tree predictions
+(ranger) or the booster prediction (xgboost), categorical cells by the most probable level.
+The cell weights \code{W} are a diagnostic; they do not enter the fits. A column that cannot
+be modelled (too few usable rows, or a single level) is reported in a warning, together with
+the iteration after which it stopped being modelled.
 }
+\details{
+The one-pass random-forest detector of the \pkg{outForest} package is the closest relative;
+\code{cellImpForest()} standardises the residuals robustly, iterates detection with refits,
+releases swamped cells and covers categorical cells.
+}
+\examples{
+data(sleep)
+set.seed(1)
+r <- cellImpForest(sleep, num.trees = 100)
+r
+summary(r)
+}
+\seealso{
+\code{\link{imputeCellGLoc}} for the parametric cellwise route,
+\code{\link{rangerImpute}} for forest imputation without detection.
+
+Other imputation methods: 
+\code{\link{hotdeck}()},
+\code{\link{impPCA}()},
+\code{\link{imputeCellEM}()},
+\code{\link{imputeCellIRMI}()},
+\code{\link{imputeCellM}()},
+\code{\link{imputeCellMCD}()},
+\code{\link{imputeCellwise}()},
+\code{\link{imputeRobust}()},
+\code{\link{imputeRobustChain}()},
+\code{\link{irmi}()},
+\code{\link{kNN}()},
+\code{\link{matchImpute}()},
+\code{\link{medianSamp}()},
+\code{\link{rangerImpute}()},
+\code{\link{regressionImp}()},
+\code{\link{sampleCat}()},
+\code{\link{vimmi}},
+\code{\link{vimpute}()},
+\code{\link{xgboostImpute}()}
+}
+\concept{imputation methods}
