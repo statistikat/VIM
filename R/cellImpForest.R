@@ -22,7 +22,7 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
     if (is.logical(v)) "logical" else if (is.character(v)) "character" else "other"
   }, character(1))
   is_cat <- vapply(df, function(v) is.factor(v) || is.character(v) || is.logical(v), logical(1))
-  for (j in which(is_cat)) df[[j]] <- factor(df[[j]])
+  for (j in which(is_cat)) if (!is.factor(df[[j]])) df[[j]] <- factor(df[[j]])
   bad <- which(!is_cat & !vapply(df, is.numeric, logical(1)))
   if (length(bad)) stop("column(s) ", paste(names(df)[bad], collapse = ", "),
                         " are neither numeric nor categorical")
@@ -168,6 +168,13 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
       }
     }
     rowflag <- rowSums(Fl) / p > 0.5
+  }
+
+  never_fit <- vapply(fits, is.null, logical(1))
+  if (any(never_fit)) {
+    warning("cellImpForest(): column(s) ", paste(names(df)[never_fit], collapse = ", "),
+            " not modelled (too few usable rows or a single level): no detection, ",
+            "missing cells keep the median/mode fill")
   }
 
   # ---- output ----

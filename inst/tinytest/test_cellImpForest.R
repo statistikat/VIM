@@ -53,10 +53,11 @@ set.seed(2); rc <- suppressWarnings(cellImpForest(dc, num.trees = 50, maxit = 2)
 expect_false(anyNA(rc$imputed))
 expect_equal(sum(rc$flags[, 6]), 0L)
 
-# review focus 2: too few usable rows -> column skipped with a message, output complete
+# review focus 2: too few usable rows -> column not modelled, warned, output complete
 dt <- d[1:12, 1:3]; dt[1:3, 1] <- NA
-expect_message(rt <- cellImpForest(dt, num.trees = 30, trace = TRUE), "skipped")
+expect_warning(rt <- cellImpForest(dt, num.trees = 30), "not modelled")
 expect_false(anyNA(rt$imputed))
+expect_message(suppressWarnings(cellImpForest(dt, num.trees = 30, trace = TRUE)), "skipped")
 
 # review focus 3: a row with nothing observed
 da <- d; da[1, ] <- NA
@@ -101,3 +102,12 @@ expect_true(is.logical(rs$imputed$flag)); expect_false(anyNA(rs$imputed))
 set.seed(6); rx <- suppressWarnings(cellImpForest(dcat, engine = "xgboost", nrounds = 80, maxit = 3))
 expect_true(auc6(-rx$P[, 4], lab) > 0.9)
 expect_true(sum(rx$flags[bad, 4]) >= 7)
+
+# fix round 1: a declared-but-unused level, and an ordered factor, survive unchanged
+du <- dcat; levels(du$g) <- c(levels(dcat$g), "unused")
+set.seed(6); ru <- cellImpForest(du, num.trees = 300)
+expect_identical(levels(ru$imputed$g), levels(du$g))
+dord <- dcat; dord$g <- factor(dcat$g, levels = c("low", "mid", "high"), ordered = TRUE)
+set.seed(6); rord <- cellImpForest(dord, num.trees = 300)
+expect_identical(levels(rord$imputed$g), levels(dord$g))
+expect_true(is.ordered(rord$imputed$g))
