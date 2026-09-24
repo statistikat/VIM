@@ -101,7 +101,8 @@
   X <- X[, keep, drop = FALSE]
   fac <- fac[keep]
   ca <- if (any(fac)) lapply(X[fac], stats::contrasts, contrasts = FALSE) else NULL
-  mm <- stats::model.matrix(~ . - 1, data = X, contrasts.arg = ca)
+  mf <- stats::model.frame(~ ., data = X, na.action = stats::na.pass)
+  mm <- stats::model.matrix(~ . - 1, data = mf, contrasts.arg = ca)
   if (is.null(template)) return(structure(mm, template = colnames(mm)))
   out <- matrix(0, nrow(mm), length(template), dimnames = list(NULL, template))
   common <- intersect(colnames(mm), template)

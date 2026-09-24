@@ -51,3 +51,16 @@ yc <- factor(ifelse(X$x1 + stats::rnorm(n, sd = 0.3) > 0, "hi", "lo"))
 fc <- VIM:::.cif_fit_xgboost(yc, X, K = 3, nrounds = 50)
 expect_equal(colnames(fc$oob_prob), levels(yc))
 expect_true(mean(fc$predict(X) == yc) > 0.85)
+# review fix 1: a missing predictor cell must not shift row alignment
+set.seed(44); n <- 60
+X_na <- data.frame(x1 = stats::rnorm(n), x2 = stats::rnorm(n),
+                    g = factor(sample(c("a", "b", "c"), n, TRUE)))
+y_na <- X_na$x1^2 + (X_na$g == "b") + stats::rnorm(n)
+X_na$x1[3] <- NA                                       # NA in a numeric column
+X_na$g[7] <- NA                                        # NA in a factor column
+expect_equal(nrow(VIM:::.cif_onehot(X_na)), nrow(X_na))
+f_na <- VIM:::.cif_fit_xgboost(y_na, X_na, K = 3, nrounds = 30)
+expect_equal(length(f_na$oob_pred), length(y_na))
+complete <- stats::complete.cases(X_na)
+expect_false(anyNA(f_na$oob_pred[complete]))
+expect_equal(length(f_na$predict(X_na)), nrow(X_na))
