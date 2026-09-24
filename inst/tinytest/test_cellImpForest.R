@@ -27,6 +27,25 @@ expect_equal(dim(r1$released), dim(d1))
 expect_false(any(r1$released & (r1$flags | r1$missing)))
 expect_equal(r1$imputed[r1$released], d1[r1$released])       # restored cells hold their values
 
+# final review M9: the rowwise rule -- a row with more than half of its cells grossly shifted
+# is flagged as a row; its shifted cells stay flagged, its clean cell does not
+drow <- d; drow[11, 1:4] <- drow[11, 1:4] + 10
+set.seed(2); rrow <- cellImpForest(drow, num.trees = 200)
+expect_true(rrow$rowflags[11])
+expect_equal(sum(rrow$rowflags), 1L)
+expect_true(all(rrow$flags[11, 1:4]))
+expect_false(rrow$flags[11, 5])
+
+# final review M9: the release pass on a genuine swamping case -- a +10 culprit in column 1
+# drags the out-of-bag prediction of its row-mate in column 2, which is flagged during the loop
+# and restored once the culprit is imputed; without the culprit that cell is never flagged
+dsw <- d; dsw[257, 1] <- dsw[257, 1] + 10
+set.seed(2); rsw <- cellImpForest(dsw, num.trees = 200)
+expect_true(rsw$flags[257, 1])                                # the culprit stays flagged
+expect_true(rsw$released[257, 2])                             # the swamped row-mate is released
+expect_false(r0$flags[257, 2] || r0$released[257, 2])
+expect_equal(rsw$imputed[rsw$released], dsw[rsw$released])   # released cells hold their values
+
 # missing cells plus the gross cell
 d2 <- d1; set.seed(9); d2[cbind(sample(300, 30), sample(5, 30, TRUE))] <- NA
 set.seed(2); r2 <- cellImpForest(d2, num.trees = 200)
