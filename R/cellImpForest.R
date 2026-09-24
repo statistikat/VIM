@@ -52,11 +52,18 @@
 #' @param ... further arguments to \code{ranger::ranger} or to the xgboost parameter list
 #'   (e.g. \code{nrounds}, \code{eta}, \code{max_depth})
 #' @return an object of class \code{cellImpForest}: \code{imputed} (data.frame, or a list for
-#'   \code{m > 1}), \code{flags} (logical matrix), \code{W} (cell weights), \code{Z}
+#'   \code{m > 1}), \code{flags} (logical matrix of the cells flagged at the end),
+#'   \code{released} (logical matrix of the cells flagged during the loop and restored by the
+#'   release pass), \code{W} (cell weights), \code{Z}
 #'   (standardised residuals), \code{P} (two-sided normal tail probability; for categorical
 #'   cells the ratio of the cross-fitted probability of the observed level to its base rate),
 #'   \code{scales} (per-column MAD), \code{rowflags}, \code{missing},
 #'   \code{iterations}, \code{converged}, \code{engine}, \code{call}.
+#'
+#'   \code{summary()} returns a data.frame with one row per column: \code{column},
+#'   \code{missing} (missing cells), \code{flagged} (cells flagged at the end), \code{released}
+#'   (cells restored by the release pass) and \code{scale} (the residual scale; \code{NA} for
+#'   categorical columns and for columns never modelled).
 #' @seealso \code{\link{imputeCellGLoc}} for the parametric cellwise route,
 #'   \code{\link{rangerImpute}} for forest imputation without detection.
 #' @examples
@@ -104,6 +111,7 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
   }
   dn <- dimnames(M)
   Fl <- matrix(FALSE, n, p, dimnames = dn)
+  Rel <- matrix(FALSE, n, p, dimnames = dn)        # flagged in the loop, restored by the release pass
   W <- matrix(1, n, p, dimnames = dn)
   Z <- P <- matrix(NA_real_, n, p, dimnames = dn)
   sg <- rep(NA_real_, p)
@@ -221,6 +229,7 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
         rel <- idx[ok]
         if (length(rel)) {
           Fl[rel, j] <- FALSE
+          Rel[rel, j] <- TRUE
           X[rel, j] <- df[rel, j]
           W[rel, j] <- 1
         }
@@ -232,6 +241,7 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
         rel <- idx[ok]
         if (length(rel)) {
           Fl[rel, j] <- FALSE
+          Rel[rel, j] <- TRUE
           X[rel, j] <- df[rel, j]
           W[rel, j] <- .cif_bisquare(z[ok], psi_c)
         }
@@ -267,7 +277,7 @@ cellImpForest <- function(data, engine = c("ranger", "xgboost"), aggregate = c("
     D
   }
   X_out <- if (is.data.frame(X_out)) restore(X_out) else lapply(X_out, restore)
-  structure(list(imputed = X_out, flags = Fl, W = W, Z = Z, P = P, scales = sg,
+  structure(list(imputed = X_out, flags = Fl, released = Rel, W = W, Z = Z, P = P, scales = sg,
                  rowflags = rowflag, missing = M, iterations = it_done, converged = converged,
                  engine = engine, call = match.call()),
             class = "cellImpForest")
@@ -298,7 +308,7 @@ summary.cellImpForest <- function(object, ...) {
   data.frame(column = colnames(object$flags),
              missing = colSums(object$missing),
              flagged = colSums(object$flags),
-             downweighted = colSums(object$W < 1 & !object$flags & !object$missing),
+             released = colSums(object$released),
              scale = object$scales,
              row.names = NULL)
 }

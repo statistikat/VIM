@@ -21,6 +21,11 @@ set.seed(2); r1 <- cellImpForest(d1, num.trees = 200)
 expect_true(r1$flags[7, 2])
 expect_true(abs(r1$imputed[7, 2] - d[7, 2]) < 2)
 expect_true(all(abs(r1$Z[r1$flags & !r1$missing]) > 2.53))    # release pass: survivors are real
+# final review I2: `released` marks cells flagged in the loop and restored by the release pass
+expect_true(is.matrix(r1$released) && is.logical(r1$released))
+expect_equal(dim(r1$released), dim(d1))
+expect_false(any(r1$released & (r1$flags | r1$missing)))
+expect_equal(r1$imputed[r1$released], d1[r1$released])       # restored cells hold their values
 
 # missing cells plus the gross cell
 d2 <- d1; set.seed(9); d2[cbind(sample(300, 30), sample(5, 30, TRUE))] <- NA
@@ -148,6 +153,8 @@ expect_stdout(print(r), "cellImpForest")
 s <- summary(r)
 expect_true(is.data.frame(s))
 expect_equal(nrow(s), 5L)
+expect_equal(names(s), c("column", "missing", "flagged", "released", "scale"))
+expect_equal(s$released, unname(colSums(r$released)))
 pdf(NULL); expect_silent(plot(r)); dev.off()
 set.seed(7); rd <- suppressWarnings(imputeCellwise(d, method = "cellImpForest", num.trees = 60, maxit = 2))
 expect_true(inherits(rd, "cellImpForest"))

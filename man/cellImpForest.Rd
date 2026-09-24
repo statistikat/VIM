@@ -85,11 +85,18 @@ probabilities}
 }
 \value{
 an object of class \code{cellImpForest}: \code{imputed} (data.frame, or a list for
-\code{m > 1}), \code{flags} (logical matrix), \code{W} (cell weights), \code{Z}
+\code{m > 1}), \code{flags} (logical matrix of the cells flagged at the end),
+\code{released} (logical matrix of the cells flagged during the loop and restored by the
+release pass), \code{W} (cell weights), \code{Z}
 (standardised residuals), \code{P} (two-sided normal tail probability; for categorical
 cells the ratio of the cross-fitted probability of the observed level to its base rate),
 \code{scales} (per-column MAD), \code{rowflags}, \code{missing},
 \code{iterations}, \code{converged}, \code{engine}, \code{call}.
+
+\code{summary()} returns a data.frame with one row per column: \code{column},
+\code{missing} (missing cells), \code{flagged} (cells flagged at the end), \code{released}
+(cells restored by the release pass) and \code{scale} (the residual scale; \code{NA} for
+categorical columns and for columns never modelled).
 }
 \description{
 Detects cellwise outliers and imputes missing cells with one tree ensemble per column.
