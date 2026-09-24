@@ -84,6 +84,19 @@ withCallingHandlers(suppressWarnings(cellImpForest(d15, maxit = 2, num.trees = 5
                     })
 expect_false(any(grepl("maxit_detect", msg15)))
 
+# ruling R15: a cell flagged for the first time was part of the training rows of the fit that
+# flagged it, so that fit's own $predict() reproduces the near-contaminated value (masking); the
+# change this looks like is then tiny, and the honest out-of-sample value the next iteration's
+# refit produces looks like a big, spurious jump that missForest's rule used to revert away
+# from -- back onto the masked, still near-contaminated cells
+d16 <- d; set.seed(23); c16 <- cbind(sample(300, 10), sample(5, 10, TRUE))
+d16[c16] <- d16[c16] + 6                                       # 10 cells shifted by 6 SD
+set.seed(2); r16 <- suppressWarnings(cellImpForest(d16, maxit = 6, maxit_detect = 1,
+                                                   num.trees = 200))
+expect_true(all(r16$flags[c16]))                        # every shifted cell flagged in it. 1
+expect_true(max(abs(r16$imputed[c16] - d[c16])) < 2)    # repaired well below the shift of 6
+expect_true(r16$iterations > 2)                         # no revert-driven stop at iteration 2
+
 # xgboost engine on the same gross cell
 set.seed(2); r5 <- cellImpForest(d1, engine = "xgboost", nrounds = 100)
 expect_true(r5$flags[7, 2])

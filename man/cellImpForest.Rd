@@ -106,10 +106,12 @@ the cross-fitted probability of the observed level to its base rate), \code{scal
 (per-column MAD of the residuals), \code{rowflags}, \code{missing}, \code{iterations},
 \code{converged}, \code{engine}, \code{call}. \code{converged} is \code{TRUE} when the
 change fell below \code{eps}, and also when it stopped decreasing (missForest's rule); the
-previous iteration's imputation is then returned. \code{W}, \code{Z} and \code{P}
-describe the last fit of each column, also after that revert; for the unflagged cells of a
-row-flagged row, \code{W} keeps the value of the last fit that used the row, and \code{Z}
-and \code{P} are \code{NA}.
+previous iteration's imputation is then returned. That comparison is skipped once, right
+after an iteration that added flags, because the next iteration's change is then measured
+against a different set of imputed cells and is not comparable to the last one.
+\code{W}, \code{Z} and \code{P} describe the last fit of each column, also after that
+revert; for the unflagged cells of a row-flagged row, \code{W} keeps the value of the last
+fit that used the row, and \code{Z} and \code{P} are \code{NA}.
 
 \code{summary()} returns a data.frame with one row per column: \code{column},
 \code{missing} (missing cells), \code{flagged} (cells flagged at the end), \code{released}
@@ -127,8 +129,12 @@ probability of its observed level is below \code{rho_min} times that level's bas
 relative frequency among the column's training rows (observed, unflagged, row not flagged).
 Flags are added in the first \code{maxit_detect} iterations and then frozen; flagged
 cells are treated as missing and imputed, and a row with more than half of its cells flagged
-leaves all fits. After convergence, a release pass judges every flagged cell once more
-against the final fit of its column, which never saw it, and restores cells that pass.
+leaves all fits. A cell flagged for the first time is imputed with its cross-fitted
+prediction (the out-of-bag prediction for \code{engine = "ranger"}, the K-fold prediction for
+\code{engine = "xgboost"}) rather than that column's fit applied to it directly, because that
+fit was trained on the cell's own, still untreated value. After convergence, a release pass
+judges every flagged cell once more against the final fit of its column, which never saw it,
+and restores cells that pass.
 Missing and flagged continuous cells are imputed by the median of the per-tree predictions
 (ranger) or the booster prediction (xgboost), categorical cells by the most probable level.
 The cell weights \code{W} are a diagnostic; they do not enter the fits. Columns that cannot
