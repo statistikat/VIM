@@ -42,3 +42,53 @@
   tab <- table(v, useNA = "no")
   names(tab)[which.max(tab)]
 }
+
+#' Fit one ranger forest for a column; out-of-bag predictions for the training rows
+#' @return list(oob_pred, oob_prob, levels, rf, predict, center, predict_prob)
+#' @noRd
+.cif_fit_ranger <- function(y, X, aggregate = "median", residuals = "oob", num.trees = 500,
+                            mtry = NULL, min.node.size = 5, num.threads = NULL,
+                            quantreg = FALSE, ...) {
+  df <- X
+  df[["..y.."]] <- y
+  args <- list(dependent.variable.name = "..y..", data = df, num.trees = num.trees,
+               mtry = mtry, min.node.size = min.node.size, num.threads = num.threads,
+               respect.unordered.factors = "order", ...)
+  if (is.factor(y)) {
+    lev <- levels(y)
+    rf <- do.call(ranger::ranger, c(args, list(probability = TRUE)))
+    as_prob <- function(pr) {
+      out <- matrix(0, nrow(pr), length(lev), dimnames = list(NULL, lev))
+      common <- intersect(colnames(pr), lev)
+      out[, common] <- pr[, common, drop = FALSE]
+      out[!is.finite(out)] <- NA_real_
+      out
+    }
+    predict_prob <- function(newX) {
+      as_prob(stats::predict(rf, data = newX, num.threads = num.threads)$predictions)
+    }
+    prob <- if (residuals == "insample") predict_prob(X) else as_prob(rf$predictions)
+    return(list(oob_pred = NULL, oob_prob = prob, levels = lev, rf = rf,
+                predict = function(newX) {
+                  pr <- predict_prob(newX)
+                  pr[is.na(pr)] <- 0
+                  factor(lev[max.col(pr, ties.method = "first")], levels = lev)
+                },
+                center = NULL, predict_prob = predict_prob))
+  }
+  rf <- do.call(ranger::ranger, c(args, list(quantreg = quantreg)))
+  center <- function(newX) stats::predict(rf, data = newX, num.threads = num.threads)$predictions
+  pred_fun <- function(newX) {
+    if (aggregate == "median") {
+      pa <- stats::predict(rf, data = newX, predict.all = TRUE,
+                           num.threads = num.threads)$predictions
+      apply(pa, 1, stats::median)
+    } else {
+      center(newX)
+    }
+  }
+  oob_pred <- if (residuals == "insample") center(X) else rf$predictions
+  oob_pred[!is.finite(oob_pred)] <- NA_real_
+  list(oob_pred = oob_pred, oob_prob = NULL, levels = NULL, rf = rf, predict = pred_fun,
+       center = center, predict_prob = NULL)
+}
