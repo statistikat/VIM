@@ -4,7 +4,7 @@ uci_config <- function(full = FALSE) {
   list(n = if (full) 2000L else 240L, rates = c(.1, .2, .4),
        repetitions = if (full) 10L else 3L, mechanisms = c("MCAR", "MAR"),
        seed = 20261010L,
-       methods = c("transformerImpute", "tabular", "shared", "kNN", "ranger", "xgboost"),
+       methods = c("transformerImpute", "tabular", "shared", "kNN", "ranger", "ranger_seq10", "xgboost"),
        transformer = list(epochs = if (full) 30L else 5L, batch_size = 64L,
                           patience = 3L, embedding_dim = 16L, num_heads = 2L),
        trees = 100L, boosting_rounds = 30L)
@@ -78,7 +78,7 @@ uci_methods <- function(config) {
   exports <- getNamespaceExports("VIM")
   need <- c(transformerImpute = "transformerImpute", tabular = "fit_tabular_transformer",
             shared = "fit_shared_transformer", kNN = "kNN", ranger = "rangerImpute",
-            xgboost = "xgboostImpute")
+            ranger_seq10 = "vimpute", xgboost = "xgboostImpute")
   if (any(!config$methods %in% names(need))) stop("Unknown benchmark method")
   setNames(lapply(config$methods, function(method) {
     function(d, targets, seed) {
@@ -89,6 +89,12 @@ uci_methods <- function(config) {
         keras::k_clear_session()
         # Seeds Python random, numpy and TF/keras initialization, in addition to R.
         reticulate::import("tf_keras")$utils$set_random_seed(as.integer(seed))
+      }
+      if (method == "ranger_seq10") {
+        return(as.data.frame(VIM::vimpute(d, method = "ranger",
+          sequential = TRUE, nseq = 10L, pmm = FALSE, uncert = "none",
+          learner_params = list(ranger = list(num.trees = config$trees, num.threads = 1L)),
+          seed = seed, tune = FALSE, imp_var = FALSE, verbose = FALSE)))
       }
       pars <- config$transformer
       if (method == "shared") {
@@ -275,4 +281,64 @@ uci_distribution_summary <- function(output, repetition = 1L, mechanism = "MAR",
   result <- do.call(rbind, rows)
   if (!is.null(result)) utils::write.csv(result, file.path(output, "distributions.csv"), row.names = FALSE)
   invisible(result)
+}
+
+# Add a method to a completed local experiment without retraining competitors.
+# Requires the full local artifacts.rds, intentionally not bundled with VIM.
+uci_extend <- function(output, methods = "ranger_seq10") {
+  config <- readRDS(file.path(output, "config.rds"))
+  if (any(methods %in% config$methods)) stop("Method already present in this run")
+  artifacts <- readRDS(file.path(output, "artifacts.rds"))
+  runs <- utils::read.csv(file.path(output, "runs.csv"), stringsAsFactors = FALSE)
+  metrics <- utils::read.csv(file.path(output, "metrics.csv"), stringsAsFactors = FALSE)
+  extra <- config; extra$methods <- methods
+  functions <- uci_methods(extra)
+  for (key in names(artifacts)) {
+    a <- artifacts[[key]]
+    fields <- strsplit(key, "-", fixed = TRUE)[[1L]]
+    reference <- runs[runs$dataset == fields[1L] & runs$repetition == as.integer(fields[2L]) &
+      runs$mechanism == fields[3L] & runs$rate == as.numeric(fields[4L]), , drop = FALSE][1L, ]
+    targets <- names(which(colSums(a$mask) > 0L))
+    incomplete <- a$truth
+    for (v in targets) incomplete[[v]][a$mask[, v]] <- NA
+    incomplete <- droplevels(incomplete)
+    for (method in methods) {
+      message(key, " / ", method)
+      warnings <- character(); started <- proc.time()[["elapsed"]]
+      value <- tryCatch(withCallingHandlers({
+        completed <- functions[[method]](incomplete, targets, reference$seed)
+        scores <- uci_score(a$truth, completed, a$mask, targets)
+        list(completed = completed, scores = scores)
+      }, warning = function(w) {
+        warnings <<- unique(c(warnings, conditionMessage(w)))
+        invokeRestart("muffleWarning")
+      }), error = identity)
+      row <- reference
+      rownames(row) <- NULL
+      row$method <- method; row$elapsed <- proc.time()[["elapsed"]] - started
+      row$status <- if (inherits(value, "error")) "failed" else "ok"
+      row$error <- if (inherits(value, "error")) conditionMessage(value) else ""
+      row$warnings <- paste(warnings, collapse = " | ")
+      runs <- rbind(runs, row)
+      if (!inherits(value, "error")) {
+        metrics <- rbind(metrics, cbind(row, value$scores))
+        artifacts[[key]]$completed[[method]] <- value$completed
+      }
+    }
+  }
+  for (v in c("error", "warnings")) {
+    runs[[v]][is.na(runs[[v]])] <- ""
+    metrics[[v]][is.na(metrics[[v]])] <- ""
+  }
+  config$methods <- c(config$methods, methods)
+  saveRDS(config, file.path(output, "config.rds"))
+  saveRDS(artifacts, file.path(output, "artifacts.rds"), compress = "xz")
+  utils::write.csv(runs, file.path(output, "runs.csv"), row.names = FALSE, na = "")
+  utils::write.csv(metrics, file.path(output, "metrics.csv"), row.names = FALSE)
+  provenance <- capture.output(list(added_methods = methods, config = config,
+    system = Sys.info()[c("sysname", "release", "machine")], session = utils::sessionInfo()))
+  writeLines(trimws(paste(sub("[ \t]+$", "", provenance), collapse = "\n"), which = "right"),
+             file.path(output, "session-extension.txt"))
+  uci_distribution_summary(output)
+  invisible(list(runs = runs, metrics = metrics))
 }

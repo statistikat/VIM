@@ -147,12 +147,14 @@ config <- uci_config()
 config$n <- 240L
 config$rates <- c(.1, .2, .4)
 config$repetitions <- 3L
-config$methods <- c("transformerImpute", "tabular", "shared", "kNN", "ranger", "xgboost")
+config$methods <- c("transformerImpute", "tabular", "shared", "kNN", "ranger", "ranger_seq10", "xgboost")
 # Training parameters, e.g. config$transformer$epochs, can be changed here.
 uci_run(config, cache = "uci-cache", output = "uci-results", download = TRUE)
 uci_distribution_summary("uci-results")
 # Reuse the archives offline:
 # uci_run(config, cache = "uci-cache", output = "uci-results-offline", download = FALSE)
+# Extend an older six-method local run while reusing its full artifacts:
+# uci_extend("uci-results-original", methods = "ranger_seq10")
 # Optional larger experiment (not the source of the displayed results):
 # uci_run(uci_config(full = TRUE), "uci-cache", "uci-results-full", FALSE)
 ```
@@ -210,17 +212,25 @@ knitr::kable(aggregate(realized_rate ~ dataset + mechanism + rate + variable,
 * **kNN**: `k = 5`, all other columns as distance variables, default range
   standardization, median numeric aggregation and categorical mode.
 * **ranger**: `rangerImpute()` with 100 trees and one worker.
+* **ranger_seq10**: `vimpute(method = "ranger", sequential = TRUE, nseq = 10)`
+  with 100 trees and one worker. Both incomplete targets are updated in a
+  joint sequential run. Ten is the maximum iteration count; the default
+  `eps = 0.005` convergence rule can stop earlier. PMM and uncertainty draws
+  are disabled (`pmm = FALSE`, `uncert = "none"`) to match the other tree
+  comparisons; tuning is disabled.
 * **xgboost**: `xgboostImpute()` with 30 boosting rounds and one worker.
 
-The latter two formula interfaces currently use VIM's suggested mlr3 stack.
+The ranger and XGBoost formula interfaces, and sequential `vimpute()`, use
+VIM's suggested mlr3 stack.
 The runner checks exported function availability and records errors, including
-missing dependencies, rather than silently omitting a method. Their formulas
+missing dependencies, rather than silently omitting a method. The formula wrappers
 name all other columns explicitly. All methods receive identical incomplete
 values. Single-target calls always restart from the original incomplete table;
 they do not receive the other target's completed values from earlier calls.
 The tree wrappers may internally initialize missing predictors through
 `vimpute()`, while kNN uses incomplete distances and neural encoders have their
-own handling. The shared model can exploit joint training. These architectural
+own handling. The shared model can exploit joint training, and sequential ranger can use
+updated imputations of the other target across iterations. These architectural
 differences cannot be equated by merely matching a predictor list.
 
 ```{r example, eval=FALSE}
@@ -265,6 +275,10 @@ validation and initialization; it excludes download, preprocessing and result
 writing, but includes scoring. It is measured once per method/scenario, not
 summed over duplicated per-target rows. Method order is randomized within
 scenarios. There is no hardware-normalized speed or peak-memory claim.
+The sequential-ranger comparison was added in a separate execution using the
+original saved samples, masks and seeds. Its timing was measured in that later
+execution, rather than interleaved with the six original methods; those methods
+were not retrained. A fresh `uci_run()` includes all seven in randomized order.
 
 ## Results
 
@@ -416,7 +430,7 @@ are not established by this experiment.
 
 The per-scenario tables and plots above use each method's successful runs.
 The following paired sensitivity summary instead retains only scenarios
-completed by **all six methods**, so a method cannot benefit from omitting a
+completed by **all seven methods**, so a method cannot benefit from omitting a
 harder scenario. Neither these averages nor the plots imply universal
 transformer superiority.
 
@@ -437,7 +451,7 @@ knitr::kable(findings, digits = 3,
 ```
 
 In this recorded five-epoch experiment, the token transformer has higher mean
-numeric NRMSE and lower categorical accuracy than the three established
+numeric NRMSE and lower categorical accuracy than the four established
 baselines on both datasets. The direct and shared models are closer to the
 baselines on Bank, but do not establish a consistent advantage across datasets.
 The shared fit is faster than fitting two separate direct models here; all
@@ -451,7 +465,9 @@ current mixed-predictor encoding.
 
 The installed `benchmarks/uci-results` directory contains `metrics.csv`
 (per target), `runs.csv` (including failures and warnings), `config.rds`,
-`preprocessing.csv`, `sources.csv`, `distributions.csv` and `session.txt`. The full regeneration
+`preprocessing.csv`, `sources.csv`, `distributions.csv`, `session.txt` and
+`session-extension.txt`. The original session records the initial six-method
+run; the extension session records sequential ranger and the combined configuration. The full regeneration
 artifact is intentionally kept outside the package. To update the vignette,
 rerun the script and replace these compact files together; do not hand-edit
 numbers. The test suite checks mask reproducibility, MAR's dependence only on
@@ -466,4 +482,6 @@ Experiment environment (not the environment rendering this document):
 
 ```{r experiment-session, echo=FALSE, results='verbatim'}
 cat(readLines(file.path(result_dir, "session.txt")), sep = "\n")
+cat("\n\nSequential ranger extension:\n")
+cat(readLines(file.path(result_dir, "session-extension.txt")), sep = "\n")
 ```
