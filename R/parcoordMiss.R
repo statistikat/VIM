@@ -98,7 +98,7 @@
 #' **85 (411)**, 664--675.
 #' 
 #' M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete data using
-#' visualization tools.  *Journal of Advances in Data Analysis and
+#' visualization tools.  *Advances in Data Analysis and
 #' Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #' @keywords hplot
 #' @family plotting functions

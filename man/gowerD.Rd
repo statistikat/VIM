@@ -52,6 +52,26 @@ The function gowerD is used by kNN to compute the distances for numerical,
 factor ordered and semi-continous variables.
 }
 \details{
+Numerical and semi-continuous (mixed) variables are standardised by
+their range (or IQR, see \code{methodStand}) before the distance is computed; for
+mixed variables the point mass (\code{mixed.constant}) is excluded from the range
+estimate and scaled along with the data.
+
+Missing values in a distance variable are replaced by a sentinel (the pooled
+column maximum plus one) after standardisation. Two records both missing the
+same variable therefore have distance 0 on it, and a missing-vs-observed pair
+contributes up to about 2 (rather than a variable's nominal maximum of 1).
+This sentinel convention departs from Gower's (1971) omit-and-renormalise
+rule and biases nearest-neighbour selection towards records that share the
+same missingness pattern.
+
+The distance computation is parallelised with OpenMP where R was built with
+OpenMP support. The number of threads is \code{getOption("VIM.ncores")}; if the
+option is unset, at most 2 threads are used while the package is checked
+(\verb{R CMD check} sets \verb{_R_CHECK_LIMIT_CORES_}; CRAN policy allows at most two
+cores) and OpenMP's default -- typically all cores, or \code{OMP_NUM_THREADS} --
+otherwise. Results do not depend on the number of threads.
+
 returnIndex=FALSE: a numerical matrix n x m with the computed distances
 returnIndex=TRUE: a named list with "ind" containing the requested indices and "mins" the computed distances
 }

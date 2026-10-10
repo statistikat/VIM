@@ -11,6 +11,8 @@ imputeCellEM(
   gamma_init = 3,
   eps_init = 0.1,
   uncert = "conditional",
+  conditioning = "weighted",
+  trust_min = 0.5,
   trace = FALSE
 )
 }
@@ -32,6 +34,19 @@ distribution. Contaminated cells are modeled as having variance
 \item{uncert}{imputation uncertainty method: \code{"conditional"}
 (default) draws from the conditional normal distribution, or
 \code{"pmm"} uses predictive mean matching.}
+
+\item{conditioning}{how observed cells enter the E-step conditional
+moments. \code{"weighted"} (default) multiplies each conditioning
+deviation \eqn{x_{ik} - \mu_k} by its current cell weight
+\eqn{w_{ik}} -- the posterior-expected clean deviation, so likely
+contaminated cells are shrunk towards the mean before they enter
+the conditional. \code{"trust"} conditions only on trusted cells:
+deviations with \eqn{w_{ik} < } \code{trust_min} are set to zero
+(hard threshold). \code{"unweighted"} uses the raw deviations
+(all observed cells fully trusted, as in early versions).}
+
+\item{trust_min}{trust threshold in \eqn{(0, 1)} used when
+\code{conditioning = "trust"} (default: 0.5). Ignored otherwise.}
 
 \item{trace}{logical; if \code{TRUE}, print progress information.}
 }
@@ -159,17 +174,17 @@ Statistical Society: Series B}, 39(1), 1--38.
 C.F.J. Wu (1983) On the Convergence Properties of the EM Algorithm.
 \emph{The Annals of Statistics}, 11(1), 95--103.
 
-C. Raymaekers, P.J. Rousseeuw (2024) The cellwise minimum covariance
+J. Raymaekers, P.J. Rousseeuw (2024) The cellwise minimum covariance
 determinant estimator. \emph{Journal of the American Statistical
-Association}, 119(545), 576--588.
+Association}, 119(548), 2610--2621.
 
-G. Zaccaria, L. Insolia, A. Farcomeni (2025) Robust model-based
-clustering with cellwise contamination. \emph{Technometrics},
-forthcoming.
+G. Zaccaria, L.A. Garcia-Escudero, F. Greselin, A. Mayo-Iscar (2025)
+Cellwise outlier detection in heterogeneous populations.
+\emph{Technometrics}, 67(4), 643--654.
 
 M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
-imputation using standard and robust methods. \emph{Journal of
-Computational Statistics and Data Analysis}, Vol. 55, pp. 2793--2806.
+imputation using standard and robust methods. \emph{Computational
+Statistics & Data Analysis}, Vol. 55, pp. 2793--2806.
 }
 \seealso{
 \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},

@@ -1,3 +1,16 @@
+## VIM suggests the mlr3 stack rather than importing it: it backs vimpute()
+## alone, and a hard dependency would put every reverse dependency of VIM at
+## the mercy of the mlr3 chain. This file exercises that path, so it cannot
+## run when the stack is absent -- e.g. under _R_CHECK_DEPENDS_ONLY_=true.
+if (!all(vapply(c("mlr3", "mlr3learners", "mlr3pipelines", "mlr3tuning",
+                  "paradox", "R6", "future"),
+                requireNamespace, logical(1), quietly = TRUE)))
+  exit_file("mlr3 stack not installed (VIM only suggests it)")
+
+## Skipped on CRAN -- check-time budget (10-min cap). The full suite runs
+## whenever NOT_CRAN=true: devtools::check()/test() and the CI workflow set it.
+if (!at_home()) exit_file("at_home only (CRAN check-time budget)")
+
 library(VIM)
 
 # vimpute returns imputed data and *_imp indicators", {
@@ -8,7 +21,7 @@ library(VIM)
   expect_identical(nrow(out), nrow(sleep))
   expect_true(all(colnames(sleep) %in% colnames(out)))
   expect_true(any(grepl("_imp$", colnames(out))))
-  expect_equal(sum(is.na(out[, colnames(sleep), with = FALSE])), 0)
+  expect_equal(sum(is.na(as.data.frame(out)[, colnames(sleep)])), 0)
 # 
 
 # vimpute without imp_var returns no *_imp columns", {
@@ -65,12 +78,13 @@ library(VIM)
     pred_history = TRUE
   )
 
-  expect_true(is.list(out))
-  expect_true(all(c("data", "pred_history") %in% names(out)))
-  expect_true(inherits(out$data, "data.frame"))
-  expect_true(all(c("iteration", "variable", "index", "predicted_values") %in% names(out$pred_history)))
-  expect_true(nrow(out$pred_history) > 0)
-  expect_equal(max(out$pred_history$iteration), 1)
+  # type-stable contract: the result IS the data; history is an attribute
+  expect_true(inherits(out, "data.frame"))
+  ph <- attr(out, "pred_history")
+  expect_true(!is.null(ph))
+  expect_true(all(c("iteration", "variable", "index", "predicted_values") %in% names(ph)))
+  expect_true(nrow(ph) > 0)
+  expect_equal(max(ph$iteration), 1)
 # 
 
 # vimpute imputes mixed numeric and factor targets", {
@@ -124,9 +138,23 @@ library(VIM)
   )
 
   expect_true(all(vars %in% names(out)))
-  expect_false(any(c("BodyWgt", "BrainWgt") %in% names(out)))
-  expect_equal(sum(is.na(out[, vars, with = FALSE])), 0)
-# 
+  # non-considered columns are preserved by default (keep_all_columns = TRUE)
+  expect_true(all(c("BodyWgt", "BrainWgt") %in% names(out)))
+  expect_equal(sum(is.na(as.data.frame(out)[, vars])), 0)
+
+  # opt out: keep_all_columns = FALSE returns only the considered subset
+  set.seed(1)
+  out_lean <- vimpute(
+    sleep,
+    considered_variables = vars,
+    method = "ranger",
+    sequential = FALSE,
+    imp_var = TRUE,
+    keep_all_columns = FALSE
+  )
+  expect_false(any(c("BodyWgt", "BrainWgt") %in% names(out_lean)))
+  expect_true(all(vars %in% names(out_lean)))
+#
 
 # vimpute accepts pmm list named for NA variables only", {
   pmm_na_vars <- setNames(
@@ -157,8 +185,9 @@ library(VIM)
     pred_history = TRUE
   )
 
-  expect_equal(max(out$pred_history$iteration), 2)
-  expect_equal(length(unique(out$pred_history$iteration)), 2)
+  ph2 <- attr(out, "pred_history")
+  expect_equal(max(ph2$iteration), 2)
+  expect_equal(length(unique(ph2$iteration)), 2)
 # 
 
 # vimpute rejects formulas for unsupported methods", {
@@ -204,25 +233,29 @@ library(VIM)
 # 
 
 # vimpute returns tuning_log output when tune is requested", {
-  d <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
-  method_all <- setNames(as.list(rep("ranger", ncol(d))), names(d))
-  pmm_all <- setNames(as.list(rep(TRUE, ncol(d))), names(d))
+## (skipped on CRAN -- check-time budget: tuning is long-running; runs with NOT_CRAN=true)
+if (at_home()) {
+    d <- sleep[, c("Sleep", "Dream", "Span", "BodyWgt")]
+    method_all <- setNames(as.list(rep("ranger", ncol(d))), names(d))
+    pmm_all <- setNames(as.list(rep(TRUE, ncol(d))), names(d))
 
-  set.seed(1)
-  out <- suppressWarnings(vimpute(
-    d,
-    method = method_all,
-    pmm = pmm_all,
-    sequential = TRUE,
-    nseq = 2,
-    tune = TRUE,
-    imp_var = FALSE
-  ))
+    set.seed(1)
+    out <- suppressWarnings(vimpute(
+      d,
+      method = method_all,
+      pmm = pmm_all,
+      sequential = TRUE,
+      nseq = 2,
+      tune = TRUE,
+      imp_var = FALSE
+    ))
 
-  expect_true(is.list(out))
-  expect_true(all(c("data", "tuning_log") %in% names(out)))
-  expect_true(length(out$tuning_log) > 0)
-  expect_true(all(c("variable", "tuned_better") %in% names(out$tuning_log[[1]])))
+    # type-stable contract: data returned, tuning report as an attribute
+    expect_true(inherits(out, "data.frame"))
+    tl <- attr(out, "tuning_log")
+    expect_true(length(tl) > 0)
+    expect_true(all(c("variable", "tuned_better") %in% names(tl[[1]])))
+}
 # 
 
 # vimpute runs robust method without leaving missings", {

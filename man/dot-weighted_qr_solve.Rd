@@ -2,7 +2,7 @@
 % Please edit documentation in R/cellwise_utils.R
 \name{.weighted_qr_solve}
 \alias{.weighted_qr_solve}
-\title{QR-based weighted least squares with cell-level weights}
+\title{QR-based weighted least squares with cell-derived row weights}
 \usage{
 .weighted_qr_solve(X_int, y, w_cell_int, w_response, w_psi)
 }
@@ -21,11 +21,13 @@
 numeric (p+1)-vector of regression coefficients
 }
 \description{
-Solves the weighted least squares problem where each cell
-\eqn{(i, k)} in the design matrix has its own weight. The
-effective weight for cell \eqn{(i, k)} is
-\eqn{w^{cell}_{ik} \cdot w^{\psi}_i \cdot w^{resp}_i}.
-Uses QR decomposition for numerical stability.
+Solves \eqn{\min_\beta \sum_i w_i (y_i - X_i \beta)^2} on the unweighted
+design, where the row weight \eqn{w_i = w^{cellrow}_i \cdot w^{\psi}_i \cdot
+w^{resp}_i} and \eqn{w^{cellrow}_i} is the geometric mean of the predictor
+cell weights of row \eqn{i}. Cell weights thus downweight the influence of
+rows with contaminated cells without distorting the design values, so the
+returned \eqn{\beta} is a valid coefficient for \eqn{X \beta}. Uses QR
+decomposition for numerical stability.
 }
 \author{
 Matthias Templ

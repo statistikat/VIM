@@ -45,14 +45,19 @@ Impute missing values based on a random forest model using \code{\link[xgboost:x
 }
 \examples{
 data(sleep)
-xgboostImpute(Dream~BodyWgt+BrainWgt,data=sleep)
-xgboostImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
-xgboostImpute(Dream+NonD+Gest~BodyWgt+BrainWgt,data=sleep)
-
 sleepx <- sleep
 sleepx$Pred <- as.factor(LETTERS[sleepx$Pred])
 sleepx$Pred[1] <- NA
-xgboostImpute(Pred~BodyWgt+BrainWgt,data=sleepx)
+# a numeric and a factor target imputed at once; nrounds = 30 keeps the
+# example fast (the default is 100 boosting rounds)
+# xgboostImpute() runs on vimpute(), which VIM backs with the suggested
+# mlr3 stack -- skip the example where that stack is not installed.
+if (requireNamespace("mlr3", quietly = TRUE) &&
+    requireNamespace("mlr3learners", quietly = TRUE) &&
+    requireNamespace("mlr3pipelines", quietly = TRUE)) {
+  imp <- xgboostImpute(Dream + Pred ~ BodyWgt + BrainWgt, data = sleepx, nrounds = 30)
+  head(imp)
+}
 }
 \seealso{
 Other imputation methods: 

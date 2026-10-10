@@ -9,8 +9,6 @@
 #' @import grid
 #' @import robustbase
 #' @import colorspace
-#' @importFrom car bcPower
-#' @importFrom car powerTransform
 #' @importFrom vcd mosaic
 #' @importFrom vcd labeling_border
 #' @importFrom laeken weightedMedian
@@ -20,25 +18,25 @@
 #' @importFrom utils capture.output flush.console head modifyList
 #' @importFrom ranger ranger importance
 #' @importFrom MASS stepAIC lqs polr rlm
-#' @importFrom mlr3 LearnerRegr PredictionRegr LearnerClassif PredictionClassif lrn TaskRegr TaskClassif as_task_regr as_task_classif rsmp msr resample
-#' @importFrom mlr3pipelines PipeOpModelMatrix %>>% GraphLearner po
-#' @importFrom paradox ps p_fct p_dbl p_int
-#' @importFrom mlr3tuning tnr trm TuningInstanceBatchSingleCrit
-#' @importFrom mlr3learners LearnerRegrCVGlmnet
+#'
+#' The mlr3 stack (mlr3, mlr3pipelines, mlr3tuning, mlr3learners, paradox) plus
+#' R6, future and lgr back vimpute() and nothing else, so they sit in Suggests
+#' and are reached with `::` behind require_vimpute_deps(). VIM installs and
+#' loads without them; only vimpute() and register_vimpute_method() need them.
 #' @useDynLib VIM
 NULL
 utils::globalVariables(c("self", "super"))
 #' Animals_na
 #'
 #' @description Average log brain and log body weights for 28 Species
-#' @details The original data can be found in package MASS. 
+#' @details The original data can be found in package MASS.
 #' 10 values on brain weight are set to be missing.
 #'
 #' @name Animals_na
 #' @docType data
 #' @source P. J. Rousseeuw and A. M. Leroy (1987) Robust Regression and Outlier Detection. Wiley, p. 57.
 #' @references Venables, W. N. and Ripley, B. D. (1999) Modern Applied Statistics with S-PLUS. Third Edition. Springer.
-#' 
+#'
 #' Templ, M. (2022) Visualization and Imputation of Missing Values. Springer Publishing. Upcoming book.
 #' @keywords datasets
 #' @format A data frame with 28 observations on the following 2 variables.
@@ -99,7 +97,6 @@ NULL
 #' aggr(bcancer)
 #'
 NULL
-
 
 
 #' Brittleness index data set
@@ -193,7 +190,7 @@ NULL
 
 #' C-horizon of the Kola data with missing values
 #'
-#' This data set is the same as 
+#' This data set is the same as
 #' in package `mvoutlier`, except that values below the detection limit
 #' are coded as `NA`.
 #'
@@ -293,43 +290,100 @@ NULL
 NULL
 
 
-#' Indian Prime Diabetes Data
+#' Synthetic Pima Indians Diabetes Data
 #'
-#' The datasets consists of several medical predictor variables and
-#' one target variable, Outcome. Predictor variables includes the number of pregnancies
-#' the patient has had, their BMI, insulin level, age, and so on.
+#' A synthetic replacement for the Pima Indians Diabetes data: 768 observations
+#' on 9 variables, a binary target (`Outcome`) and medical predictors such as
+#' the number of pregnancies, plasma glucose, BMI, insulin level and age.
+#' Every value is synthetic; no row corresponds to a real person.
 #'
-#' This dataset is originally from the National Institute of Diabetes and
-#' Digestive and Kidney Diseases. The objective of the dataset is to
-#' diagnostically predict whether or not a patient has diabetes, based
-#' on certain diagnostic measurements included in the dataset.
-#' Several constraints were placed on the selection of these instances
-#' from a larger database. In particular, all patients here are females
-#' at least 21 years old of Pima Indian heritage.
+#' The original data were collected by the National Institute of Diabetes and
+#' Digestive and Kidney Diseases from female patients of Pima Indian heritage
+#' aged at least 21. The team that collected them has stated that the data
+#' should not have been distributed and has asked for redistribution to stop,
+#' while a large body of teaching material and package examples depends on
+#' them. This synthetic version exists so that such material keeps working
+#' without real patient records being circulated.
 #'
+#' The schema follows `PimaIndiansDiabetes2` from package \pkg{mlbench}:
+#' physically impossible values (a zero glucose level, blood pressure, skin
+#' fold thickness, insulin level or BMI) are coded as `NA`, whereas 0
+#' pregnancies is a valid value. Column names, types and the levels of
+#' `Outcome` are those VIM has used since version 6, so existing code runs
+#' unchanged; only the values differ from the real data shipped before
+#' VIM 7.3.0.
+#'
+#' Missing values in the original are not scattered at random: `BloodPressure`,
+#' `SkinThickness` and `Insulin` are frequently missing together, and the
+#' pattern is age-related. The pattern itself was synthesised as a variable
+#' and the missing values imposed from it, so that complete-case and
+#' imputation examples behave as they did before (placing missing values
+#' independently would produce the joint pattern about five times instead of
+#' the observed 19 to 24).
+#'
+#' Results computed on these data resemble published analyses of the original
+#' without matching them: a logistic regression reaches an AUC of 0.868
+#' against 0.862 on the original, and a model fitted only on the synthetic
+#' data reaches 0.854 on the real records. Individual correlations are less
+#' reliable -- most come out slightly weaker than in the original, but the
+#' association between number of pregnancies and age is considerably stronger
+#' (0.74 against 0.54). Use the data for teaching, examples and method
+#' demonstrations; any result computed on them describes the synthesis, not
+#' the Pima population, and must not be read as evidence about diabetes.
 #'
 #' @name diabetes
 #' @docType data
-#' @source <https://www.kaggle.com/uciml/pima-indians-diabetes-database/data>
+#' @author Matthias Templ \email{matthias.templ@fhnw.ch} (synthetic version)
+#' @source Synthetic. Generated by Matthias Templ from `PimaIndiansDiabetes2`
+#' (package \pkg{mlbench}) with the \pkg{synvey} package -- sequential robust
+#' synthesis with a random-forest backend and the missingness pattern treated
+#' as a structural variable (synvey 0.1.0, R 4.5.2, seed 20260804):
+#'
+#' ```
+#' SynthDiabetes <- synvey::robsynth(PimaIndiansDiabetes2,
+#'                                   method      = "robust_rf",
+#'                                   missingness = "structural",
+#'                                   coarsen     = "age",
+#'                                   target      = "sample",
+#'                                   seed        = 20260804)$synth
+#' ```
+#'
+#' This configuration was selected from a comparison of five synthesis
+#' packages under two designs for the missingness mechanism. Candidates
+#' reproducing any original record verbatim were excluded; the data set
+#' contains no such record. \pkg{synvey} is not on CRAN; it is available from
+#' <https://github.com/matthias-da/synvey>. For VIM the columns were renamed to
+#' the historical names (`pregnant`, `glucose`, `pressure`, `triceps`,
+#' `insulin`, `mass`, `pedigree`, `age`, `diabetes` became `Pregnancies`,
+#' `Glucose`, `BloodPressure`, `SkinThickness`, `Insulin`, `BMI`,
+#' `DiabetesPedigreeFunction`, `Age`, `Outcome`), counts are stored as
+#' integers and the `Outcome` levels `neg`/`pos` as `no`/`yes`. The original
+#' data are neither distributed with VIM nor needed to use this data set.
 #' @references Smith, J.W., Everhart, J.E., Dickson, W.C., Knowler, W.C., & Johannes, R.S. (1988).
 #' Using the ADAP learning algorithm to forecast the onset of diabetes mellitus.
 #' In Proceedings of the Symposium on Computer Applications and Medical Care (pp. 261--265). IEEE Computer Society Press.
+#' <https://pmc.ncbi.nlm.nih.gov/articles/PMC2245318/>
+#' (The study behind the original data; the original data are not
+#' redistributed here.)
 #' @keywords datasets
 #' @format A data frame with 768 observations on the following 9 variables.
 #' \describe{
-#' \item{Pregnancies}{Number of times pregnant}
-#' \item{Glucose}{Plasma glucose concentration a 2 hours in an oral glucose tolerance test}
+#' \item{Pregnancies}{Number of times pregnant (0 is a valid value)}
+#' \item{Glucose}{Plasma glucose concentration at 2 hours in an oral glucose tolerance test}
 #' \item{BloodPressure}{Diastolic blood pressure (mm Hg)}
 #' \item{SkinThickness}{Triceps skin fold thickness (mm)}
 #' \item{Insulin}{2-Hour serum insulin (mu U/ml)}
 #' \item{BMI}{Body mass index (weight in kg/(height in m)^2)}
 #' \item{DiabetesPedigreeFunction}{Diabetes pedigree function}
 #' \item{Age}{Age in years}
-#' \item{Outcome}{Diabetes (yes or no)}
+#' \item{Outcome}{Diabetes (`yes` or `no`)}
 #' }
 #' @examples
 #'
 #' data(diabetes)
+#' summary(diabetes)
+#'
+#' # missingness is structured rather than scattered
 #' aggr(diabetes)
 #'
 NULL
@@ -402,7 +456,6 @@ NULL
 NULL
 
 
-
 #' Synthetic subset of the Austrian structural business statistics data
 #'
 #' Synthetic subset of the Austrian structural business statistics (SBS) data,
@@ -429,7 +482,65 @@ NULL
 NULL
 
 
+#' Synthetic Austrian Structural Business Survey data
+#'
+#' A synthetic, non-confidential enterprise-level data set inspired by the
+#' Austrian Leistungs- und Strukturstatistik from reporting years 2021 onward.
+#'
+#' The variables cover the main dimensions described in the Statistik Austria
+#' standard documentation: economic activity, NUTS2 region, data source,
+#' employment structure, turnover, intermediate consumption, gross value added,
+#' personnel costs, gross operating surplus, and tangible investment.
+#'
+#' The monetary variables are expressed in thousand euros. The observations are
+#' generated synthetically and do not contain real enterprise records.
+#' Companion validation rules are available as [lse_synthetic_rules].
+#'
+#' @name lse_synthetic
+#' @docType data
+#' @format A data frame with 10000 observations and 38 variables.
+#' @source Statistik Austria, Standard-Dokumentation zur Leistungs- und
+#' Strukturstatistik ab 2021,
+#' \url{https://www.statistik.at/fileadmin/shared/QM/Standarddokumentationen/U/std_u_ls_ab_2021.pdf}
+#' @keywords datasets
+#' @examples
+#'
+#' data(lse_synthetic)
+#' str(lse_synthetic)
+#'
+NULL
 
+
+#' Validation rules for the synthetic LSE data
+#'
+#' Accounting, additional edit, and combined validation rules for
+#' [lse_synthetic]. The rules are stored as plain data frames of rule text so
+#' that the data set does not depend on the `validate` package; build the
+#' corresponding `validate::validator` objects with
+#' `validate::validator(.data = lse_synthetic_rules$edit)` before passing them
+#' to `vimpute(method = "restricted")`.
+#'
+#' @name lse_synthetic_rules
+#' @docType data
+#' @format A named list with three data frames: `accounting` (36 rules),
+#' `extra` (56 rules), and `edit` (92 rules, the combination of both). Each
+#' has the columns
+#' \describe{
+#' \item{name}{rule name (`V01`, `V02`, ...)}
+#' \item{rule}{the rule as R code, as accepted by `validate::validator(.data = )`}
+#' }
+#' @keywords datasets
+#' @examples
+#'
+#' data(lse_synthetic_rules)
+#' names(lse_synthetic_rules)
+#' head(lse_synthetic_rules$edit)
+#' if (requireNamespace("validate", quietly = TRUE)) {
+#'   edit_rules <- validate::validator(.data = lse_synthetic_rules$edit)
+#'   length(edit_rules)
+#' }
+#'
+NULL
 
 
 #' Mammal sleep data
@@ -458,9 +569,6 @@ NULL
 #' aggr(sleep)
 #'
 NULL
-
-
-
 
 
 #' Tropical Atmosphere Ocean (TAO) project data
@@ -504,7 +612,6 @@ NULL
 #' data(toydataMiss)
 #'
 NULL
-
 
 
 #' Simulated data set for testing purpose
@@ -605,33 +712,32 @@ NULL
 #' @name VIM-package
 #' @aliases VIM-package VIM
 #' @description
-#' VIM provides tools for visualization, imputation, and exploration of missing 
+#' VIM provides tools for visualization, imputation, and exploration of missing
 #' and multivariate data.
 #' @details
-#' This package includes advanced imputation methods, robust statistics, 
+#' This package includes advanced imputation methods, robust statistics,
 #' and tools for data preprocessing and diagnostics.
 #' @author Matthias Templ, Andreas Alfons, Alexander Kowarik, Bernd Prantner
 #'
 #' Maintainer: Matthias Templ <matthias.templ@@gmail.com>
-#' @references 
+#' @references
 #' M. Templ (2023) *Visualization and Imputation of Missing Values*. Springer Publishing.
-#' Series in Computational Statistics. Cham. Switzerland. 463 pages. 
+#' Series in Computational Statistics. Cham. Switzerland. 463 pages.
 #' DOI: 10.1007/978-3-031-30073-8
-#' 
+#'
 #' A. Kowarik, M. Templ (2016) Imputation with
 #' R package VIM.  *Journal of
 #' Statistical Software*, 74(7), 1-16.
-#' 
+#'
 #' M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete
-#' data using visualization tools.  *Journal of Advances in Data Analysis
+#' data using visualization tools.  *Advances in Data Analysis
 #' and Classification*, Online first. DOI: 10.1007/s11634-011-0102-y.
 #'
 #' M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
-#' imputation using standard and robust methods.  *Journal of
-#' Computational Statistics and Data Analysis*, Vol. 55, pp. 2793-2806.
+#' imputation using standard and robust methods.  *Computational
+#' Statistics & Data Analysis*, Vol. 55, pp. 2793-2806.
 #' @keywords internal
 "_PACKAGE"
-
 
 
 setGeneric("plot")

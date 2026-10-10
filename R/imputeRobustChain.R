@@ -138,7 +138,16 @@ imputeRobustChain <- function(formulas = vector("list", ncol(data)),
       class(res) <- "outCoDa"
       invisible(res)
     }
-    out_index <- outCoDa(data[, types %in% c("integer", "numeric", "count")])$outlierIndex
+    num_cols <- types %in% c("integer", "numeric", "count")
+    out_index <- if (sum(num_cols) >= 2) {
+      # coda = FALSE: no compositional pivot transform (robCompositions is not a
+      # dependency, so pivotCoord() is unavailable); detect row outliers on the
+      # raw numeric block. Defensive: fall back to no outlier flags on failure.
+      tryCatch(outCoDa(data[, num_cols], coda = FALSE)$outlierIndex,
+               error = function(e) NULL)
+    } else {
+      NULL
+    }
   } else{
     out_index <- NULL
   }
@@ -202,9 +211,8 @@ imputeRobustChain <- function(formulas = vector("list", ncol(data)),
         boot = boot,
         robustboot = robustboot,
         uncert = uncert,
-        outIndex = out_index
-        #force = force, robMethod, form = active_formula,
-        #multinom.method = multinom.method
+        outIndex = out_index,
+        alpha = alpha
       )
       #if(!testdigits(x$x5)) stop()
       
@@ -227,16 +235,17 @@ imputeRobustChain <- function(formulas = vector("list", ncol(data)),
 }
 
 ## switch function to automatically select methods
-imp <- function(form, data, type, method, multinom.method, index, factors, boot, robustboot, uncert, outIndex) {
+imp <- function(form, data, type, method, multinom.method, index, factors, boot, robustboot, uncert, outIndex, alpha) {
   switch(
     type,
-    numeric = useRobustNumeric(form, data, method, index, factors, boot, robustboot, uncert),
-    nominal =   useRobustMN(form, data, index, factors, boot, robustboot, uncert, 
-                            multinom.method = multinom.method, outIndex),
-    bin = useLogistic(x_reg, ndata, index, factors, step, robust, form = form),
-    count   = useGLMpoisson(x_reg, ndata, index, factors, step, robust,
-                            form = form)#,
-    #ordered  = useOrd(x_reg, ndata, index, factors, step, robust, form = form),
+    numeric = useRobustNumeric(form, data, method, index, factors, boot, robustboot, uncert, alpha),
+    integer = useRobustNumeric(form, data, method, index, factors, boot, robustboot, uncert, alpha),
+    nominal = useRobustMN(form, data, index, factors, boot, robustboot, uncert,
+                          multinom.method = multinom.method, outIndex),
+    binary  = useLogistic(form, data, index, boot, robustboot, uncert, outIndex),
+    logical = useLogistic(form, data, index, boot, robustboot, uncert, outIndex),
+    count   = useGLMpoisson(form, data, index, boot, robustboot, uncert, outIndex),
+    stop("unsupported response type: ", type)
   )
 }
 
@@ -262,23 +271,37 @@ useRobustMN <- function(form, data, index, factors, boot, robustboot, uncert, mu
   # }
   # form <- form[form %in% names(x_reg)]
   if (multinom.method == "multinom") {
-    # browser()
-    co <- capture.output(multimod <- nnet::multinom(
-      form, data = data, summ = 2, maxit = 50, trace = FALSE, MaxNWts = 50000))
-    if(boot){
-      if(robustboot){
-        boot_idx <- sample(x = which(outIndex), size = n, replace = TRUE)
-      } else {
-        boot_idx <- sample(x = 1:n, size = n, replace = TRUE)       
-      }
-      boot_dat <- data[boot_idx, ]
-      mod <- lm(form, data = boot_dat)
-    } else {
-      mod <- lm(form, data = data[mod$best, ])  
+    fit_multinom <- function(dat) {
+      utils::capture.output(mm <- nnet::multinom(
+        form, data = dat, summ = 2, maxit = 50, trace = FALSE, MaxNWts = 50000))
+      mm
     }
-    # impnew <- predict(multimod, newdata = data[index, ])
-    prob_predictions <- predict(multimod, newdata = data[index, ], type = "probs")
-    impnew <- apply(prob_predictions, 1, function(x) sample(names(x), 1, prob = x))
+    multimod <- fit_multinom(data)
+    if (boot) {
+      # bootstrap for between-imputation variability; robustboot excludes flagged
+      # outlier rows (via outIndex) from the resample when available.
+      pr <- if (robustboot && !is.null(outIndex) && any(!outIndex)) {
+        as.numeric(!outIndex)
+      } else {
+        NULL
+      }
+      boot_idx <- sample.int(n, size = n, replace = TRUE, prob = pr)
+      multimod <- fit_multinom(data[boot_idx, ])
+    }
+    prob_predictions <- predict(multimod, newdata = data[index, , drop = FALSE],
+                                type = "probs")
+    if (is.null(dim(prob_predictions))) {
+      # a single missing case (or 2-level factor) yields a vector, not a matrix
+      lv <- if (!is.null(names(prob_predictions))) names(prob_predictions) else levels(y)
+      if (sum(index) == 1L) {
+        impnew <- sample(lv, 1, prob = prob_predictions)
+      } else {
+        impnew <- vapply(prob_predictions, function(p1)
+          sample(lv, 1, prob = c(1 - p1, p1)), character(1))
+      }
+    } else {
+      impnew <- apply(prob_predictions, 1, function(x) sample(names(x), 1, prob = x))
+    }
   } else if(multinom.method == "enetLTS"){
     stop("enetLTS not implemented yet.")
     multimod <- enetLTS::enetLTS(xx = mf[, 2:ncol(mf)], yy = mf[, 1])
@@ -290,9 +313,8 @@ useRobustMN <- function(form, data, index, factors, boot, robustboot, uncert, mu
 }
 
 
-useRobustNumeric <- function(form, data, method, index, factors, boot, robustboot, uncert) 
-  #            mixed_tf, mixed_constant, factors, step,
-  # robust, noise, noise.factor, force, robMethod, form) 
+useRobustNumeric <- function(form, data, method, index, factors, boot, robustboot, uncert,
+                             alpha = 0.5)
 {
   n <- nrow(data)
   mf <- model.frame(form, data = data)
@@ -341,24 +363,18 @@ useRobustNumeric <- function(form, data, method, index, factors, boot, robustboo
     }
     sdev <- summary(mod)$scale
   } else if(method == "gam"){
-    if (requireNamespace("mgcv", quietly = TRUE)) {
-      mgcv::gam(form, data = data)
-    } else {
-      stop("Package 'mgcv' is required for this function.")
-    }
+    if (!requireNamespace("mgcv", quietly = TRUE))
+      stop("Package 'mgcv' is required for method = 'gam'.")
+    mod <- mgcv::gam(form, data = data)
     if(boot){
       idx <- which(resid(mod) < quantile(resid(mod), 0.5))
       if(robustboot){
-        boot_idx <- sample(x = idx, size = n, replace = TRUE)       
+        boot_idx <- sample(x = idx, size = n, replace = TRUE)
       } else{
-        boot_idx <- sample(x = 1:n, size = n, replace = TRUE)         
+        boot_idx <- sample(x = 1:n, size = n, replace = TRUE)
       }
       boot_dat <- data[boot_idx, ]
-      if (requireNamespace("mgcv", quietly = TRUE)) {
-        mgcv::gam(form, data = boot_dat)  
-      } else {
-        stop("Package 'mgcv' is required for this function.")
-      }
+      mod <- mgcv::gam(form, data = boot_dat)
     }
     sdev <- summary(mod)$scale
   } else {
@@ -413,29 +429,18 @@ useRobustNumeric <- function(form, data, method, index, factors, boot, robustboo
     }
   }
   if(uncert == "pmm"){
-    selectDonor <- function(y, val){
-      donors <- numeric(length(val))
-      for(i in 1:length(val)){
-        # donors[i] <- sample(y[sort(abs(val - y), index.return  = TRUE)$ix 
-        #                       %in% 1:5], 1)
-        #donors[i] <- sample(y[sort(dist(c(val[i], y))[1:sum(index)], index.return  = TRUE)$ix 
-        #                      %in% 1:5], 1)
-        #donors[i] <- sample(y[sort(pdist::pdist(matrix(val[i], ncol = 1), matrix(y, ncol = 1))@dist,
-        #                          index.return  = TRUE)$ix %in% 1:5], 1)
-        my_distance_function <- function(x, y) {
-          if (!requireNamespace("pdist", quietly = TRUE)) {
-            stop("Package 'pdist' must be installed to use this function.")
-          }
-          donors[i] <- sample(y[order(pdist::pdist(matrix(val[i], ncol = 1), matrix(y, ncol = 1))@dist)[1:5]], 1)        
-          
-        }
-
-      }
-      donors 
-    }
-    residuals <- selectDonor(na.omit(y), val = pred[index]) - pred[index] 
-    ymiss <- pred[index] + residuals  
-    
+    # predictive mean matching: for each missing case, match its prediction to
+    # the k observed cases with the nearest prediction and donate one of their
+    # observed values at random. (The previous donor loop assigned inside an
+    # inner function that was never called, so every donor stayed 0 and the
+    # imputations collapsed to pred + (0 - pred) = 0.)
+    yhat_obs <- pred[!index]
+    y_obs <- y[!index]
+    k <- min(5L, length(y_obs))
+    ymiss <- vapply(pred[index], function(v) {
+      pool <- y_obs[order(abs(yhat_obs - v))[seq_len(k)]]
+      pool[sample.int(length(pool), 1L)]
+    }, numeric(1))
   }
   value_back <- "ymiss" # currently the only option
   
@@ -449,6 +454,51 @@ useRobustNumeric <- function(form, data, method, index, factors, boot, robustboo
     return(ymiss)
   } else{
     rownames(data) <- rn
-    return(data) 
+    return(data)
   }
+}
+
+
+# binary response: robust logistic regression (glmrob), falling back to glm
+useLogistic <- function(form, data, index, boot, robustboot, uncert, outIndex) {
+  n <- nrow(data)
+  yname <- all.vars(form)[1]
+  ylev <- levels(factor(data[[yname]]))
+  dat0 <- data
+  dat0[[yname]] <- as.integer(factor(data[[yname]])) - 1L   # 0/1 coding
+  fit_fun <- function(dat) {
+    tryCatch(
+      robustbase::glmrob(form, data = dat, family = stats::binomial()),
+      error = function(e) stats::glm(form, data = dat, family = stats::binomial())
+    )
+  }
+  fit <- fit_fun(dat0)
+  if (boot) {
+    pr <- if (robustboot && !is.null(outIndex) && any(!outIndex)) as.numeric(!outIndex) else NULL
+    boot_idx <- sample.int(n, n, replace = TRUE, prob = pr)
+    fit <- fit_fun(dat0[boot_idx, ])
+  }
+  prob <- stats::predict(fit, newdata = data[index, , drop = FALSE], type = "response")
+  draws <- stats::rbinom(length(prob), 1L, pmin(pmax(prob, 0), 1))
+  factor(ylev[draws + 1L], levels = ylev)
+}
+
+
+# count response: Poisson regression (robust glmrob), falling back to glm
+useGLMpoisson <- function(form, data, index, boot, robustboot, uncert, outIndex) {
+  n <- nrow(data)
+  fit_fun <- function(dat) {
+    tryCatch(
+      robustbase::glmrob(form, data = dat, family = stats::poisson()),
+      error = function(e) stats::glm(form, data = dat, family = stats::poisson())
+    )
+  }
+  fit <- fit_fun(data)
+  if (boot) {
+    pr <- if (robustboot && !is.null(outIndex) && any(!outIndex)) as.numeric(!outIndex) else NULL
+    boot_idx <- sample.int(n, n, replace = TRUE, prob = pr)
+    fit <- fit_fun(data[boot_idx, ])
+  }
+  lambda <- stats::predict(fit, newdata = data[index, , drop = FALSE], type = "response")
+  stats::rpois(length(lambda), pmax(lambda, 0))
 }

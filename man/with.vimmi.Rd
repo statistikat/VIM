@@ -14,13 +14,17 @@
 \item{...}{Currently unused}
 }
 \value{
-A list of length \code{m} containing the result of evaluating
-\code{expr} on each completed dataset
+An object of class \code{mira}: the \code{m} results are in
+\code{$analyses} (extract with \code{mice::getfit()})
 }
 \description{
 Applies an expression (typically a model fit) to each completed dataset
-in a \code{vimmi} object. The results can be pooled using
-\code{mice::pool()} or \code{mitools::MIcombine()}.
+in a \code{vimmi} object. The return is a mice-compatible \code{mira}
+object (elements \code{call}, \code{call1}, \code{nmis}, \code{analyses}),
+so the standard mice pipeline runs unchanged: \code{mice::pool()},
+\code{summary(mice::pool(fits))}, \code{mice::getfit(fits)}. The mice
+package is not needed to create the object, only to pool it; for
+\code{mitools::MIcombine()} pass the fit list \code{fits$analyses}.
 }
 \examples{
 \dontrun{

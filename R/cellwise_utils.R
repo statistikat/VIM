@@ -83,6 +83,24 @@ tukey_weight <- function(u, k = 4.685) {
 }
 
 
+#' Internal positional column names for cellwise model fits
+#'
+#' Model formulas inside the cellwise family are built by pasting column
+#' names. Duplicated column names (e.g. after truncation with
+#' \code{substr()}) or non-syntactic names then resolve the response or
+#' predictors to the wrong column, which silently corrupts the imputation.
+#' The df-interface cellwise functions therefore rename the data to these
+#' safe positional names on entry and restore the original names on exit.
+#'
+#' @param p number of columns
+#' @return character vector of length \code{p}
+#' @keywords internal
+#' @noRd
+.cw_safe_names <- function(p) {
+  sprintf(".cwV%d", seq_len(p))
+}
+
+
 #' Compute per-cell contamination weights
 #'
 #' For each continuous column, standardize by median and MAD,
@@ -151,6 +169,21 @@ cellWeightsMCD <- function(X, method = "tukey", alpha = NULL) {
   W <- matrix(1, nrow = n, ncol = p)
   colnames(W) <- colnames(X_mat)
 
+  # exact-constant columns make every MCD subsample singular (covMcd()
+  # then warns repeatedly); they carry no outlyingness information, so
+  # they keep weight 1 and the MCD runs on the varying columns only
+  varying <- vapply(seq_len(p), function(j) {
+    v <- X_mat[!is.na(X_mat[, j]), j]
+    length(unique(v)) >= 2L
+  }, logical(1))
+  if (!all(varying)) {
+    if (any(varying)) {
+      W[, varying] <- cellWeightsMCD(X_mat[, varying, drop = FALSE],
+                                     method = method, alpha = alpha)
+    }
+    return(W)
+  }
+
   if (p < 2 || n < 2 * p) {
     # Not enough data for MCD; fall back to univariate
     for (j in seq_len(p)) {
@@ -170,9 +203,12 @@ cellWeightsMCD <- function(X, method = "tukey", alpha = NULL) {
     if (any(na_j)) X_complete[na_j, j] <- stats::median(X_complete[, j], na.rm = TRUE)
   }
 
-  # Robust covariance via MCD
+  # Robust covariance via MCD. Heavily tied (discrete-ish) columns make
+  # covMcd() warn about singular subsamples while still returning a usable
+  # estimate; suppress that noise -- the error path falls back to
+  # univariate weights below.
   mcd <- tryCatch(
-    robustbase::covMcd(X_complete, alpha = 0.75),
+    suppressWarnings(robustbase::covMcd(X_complete, alpha = 0.75)),
     error = function(e) NULL
   )
 
@@ -373,14 +409,22 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
 
   # --- Step 1: initial fit ---
   if (init == "s-estimator" && n > 2 * p_int &&
+      qr(X_int)$rank == p_int &&
       requireNamespace("robustbase", quietly = TRUE)) {
     # Use S-estimator via lmrob.S for high-breakdown initialization
     # Apply to unweighted X to preserve S-estimator's breakdown properties;
     # cell weights are incorporated in the subsequent IRWLS iterations.
+    # Rank-deficient designs (e.g. a constant column aliased with the
+    # intercept) are excluded above: every elemental subsample would be
+    # singular, so lmrob.S warns repeatedly and fails; the cell-weighted
+    # OLS fallback below ridge-regularises those instead. The S-init is
+    # best-effort, so remaining subsample warnings are suppressed.
     s_fit <- tryCatch({
-      robustbase::lmrob.S(X_int, y, control = robustbase::lmrob.control(
-        method = "S", k.max = 200, refine.tol = 1e-7
-      ))
+      suppressWarnings(
+        robustbase::lmrob.S(X_int, y, control = robustbase::lmrob.control(
+          method = "S", k.max = 200, refine.tol = 1e-7
+        ))
+      )
     }, error = function(e) NULL)
 
     if (!is.null(s_fit)) {
@@ -467,13 +511,15 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
 }
 
 
-#' QR-based weighted least squares with cell-level weights
+#' QR-based weighted least squares with cell-derived row weights
 #'
-#' Solves the weighted least squares problem where each cell
-#' \eqn{(i, k)} in the design matrix has its own weight. The
-#' effective weight for cell \eqn{(i, k)} is
-#' \eqn{w^{cell}_{ik} \cdot w^{\psi}_i \cdot w^{resp}_i}.
-#' Uses QR decomposition for numerical stability.
+#' Solves \eqn{\min_\beta \sum_i w_i (y_i - X_i \beta)^2} on the unweighted
+#' design, where the row weight \eqn{w_i = w^{cellrow}_i \cdot w^{\psi}_i \cdot
+#' w^{resp}_i} and \eqn{w^{cellrow}_i} is the geometric mean of the predictor
+#' cell weights of row \eqn{i}. Cell weights thus downweight the influence of
+#' rows with contaminated cells without distorting the design values, so the
+#' returned \eqn{\beta} is a valid coefficient for \eqn{X \beta}. Uses QR
+#' decomposition for numerical stability.
 #'
 #' @param X_int \eqn{n \times (p+1)} design matrix with intercept
 #' @param y numeric n-vector
@@ -487,15 +533,30 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
   n <- nrow(X_int)
   p_int <- ncol(X_int)
 
-  # Row weights from psi and response weights
-  w_row <- w_psi * w_response  # n-vector
-  sqrt_w_row <- sqrt(pmax(w_row, 0))
+  # Cell weights enter the LOSS as per-row reliability, never the design values.
+  # A row is downweighted by the average contamination of its predictor cells:
+  # the arithmetic mean of the non-intercept cell weights. (A geometric mean lets
+  # a single near-zero false-positive flag collapse an otherwise-clean row, which
+  # destroys the fit on clean data; the residual psi-weights below still catch
+  # gross per-row corruption.) Folding cell weights into the design instead
+  # (X_tilde = sqrt(w_row) * w_cell * X) biases beta, because prediction uses the
+  # UNWEIGHTED design cbind(1, X) %*% beta.
+  if (p_int > 1L) {
+    w_cell_row <- rowMeans(w_cell_int[, -1L, drop = FALSE])
+  } else {
+    w_cell_row <- rep(1, n)
+  }
 
-  # Cell weights enter LINEARLY in the design matrix:
-  #   X_tilde[i, k] = sqrt(w_row[i]) * w_cell[i, k] * X[i, k]
-  #   y_tilde[i]    = sqrt(w_row[i]) * y[i]
-  # This solves: min sum_i w_row_i * (y_i - sum_k w_cell_{ik} X_{ik} beta_k)^2
-  X_tilde <- sqrt_w_row * w_cell_int * X_int
+  # Genuine weighted least squares on the unweighted design:
+  #   min sum_i w_row_i * (y_i - X_i beta)^2 ,
+  #   w_row_i = w_psi_i * w_response_i * w_cell_row_i
+  w_row <- w_psi * w_response * w_cell_row
+  # Guard total-weight collapse (e.g. a near-exact fit drives the robust scale,
+  # and thus all psi-weights, to ~0): fall back to unweighted least squares
+  # rather than solving a singular system.
+  if (sum(w_row) < 1e-8) w_row <- rep(1, n)
+  sqrt_w_row <- sqrt(pmax(w_row, 0))
+  X_tilde <- sqrt_w_row * X_int
   y_tilde <- sqrt_w_row * y
 
   # solve via QR decomposition
@@ -503,10 +564,15 @@ cellIRWLS <- function(X, y, w_cell = NULL, w_response = NULL,
 
   # check for rank deficiency
   if (qr_obj$rank < p_int) {
-    # fall back to ridge-regularised normal equations
-    XtX <- crossprod(X_tilde) + diag(1e-10, p_int)
+    # rank-deficient: ridge-regularised normal equations with a scale-aware
+    # ridge, backstopped by a pseudo-inverse for numerically singular XtX.
+    XtX <- crossprod(X_tilde)
+    ridge <- 1e-8 * mean(diag(XtX)) + 1e-12
     Xty <- crossprod(X_tilde, y_tilde)
-    beta <- as.numeric(solve(XtX, Xty))
+    beta <- tryCatch(
+      as.numeric(solve(XtX + diag(ridge, p_int), Xty)),
+      error = function(e) as.numeric(MASS::ginv(XtX + diag(ridge, p_int)) %*% Xty)
+    )
   } else {
     beta <- as.numeric(qr.coef(qr_obj, y_tilde))
   }

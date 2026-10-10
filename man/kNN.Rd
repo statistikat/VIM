@@ -2,6 +2,27 @@
 % Please edit documentation in R/kNN.R
 \name{kNN}
 \alias{kNN}
+\alias{Distances}
+\alias{are}
+\alias{computed}
+\alias{by}
+\alias{[gowerD()],}
+\alias{whose}
+\alias{OpenMP}
+\alias{threads}
+\alias{governed}
+\alias{`options(VIM.ncores}
+\alias{=}
+\alias{)`}
+\alias{(at}
+\alias{most}
+\alias{2}
+\alias{during}
+\alias{`R}
+\alias{CMD}
+\alias{check`);}
+\alias{see}
+\alias{there.}
 \title{k-Nearest Neighbour Imputation}
 \usage{
 kNN(
@@ -97,6 +118,24 @@ the imputed data set.
 \description{
 k-Nearest Neighbour Imputation based on a variation of the Gower Distance
 for numerical, categorical, ordered and semi-continous variables.
+}
+\details{
+Numerical and semi-continuous (mixed) distance variables are standardised by
+their range (or IQR, see \code{methodStand}) so that each variable contributes on
+a comparable scale; for mixed variables the point mass (\code{mixed.constant}) is
+excluded from the range estimate.
+
+Missing values in the distance variables (\code{dist_var}) are handled with a
+sentinel: after standardisation an \code{NA} is replaced by the maximum of the
+pooled column plus one. As a consequence two records that are both missing
+the same distance variable have distance 0 on that variable (they are treated
+as identical there), while a record missing the variable and one observing it
+contribute up to about twice a normal variable's share. In effect kNN is
+drawn towards donors that share the recipient's pattern of missingness in the
+distance variables; under a MAR mechanism this can select unrepresentative
+donors. This departs from Gower's (1971) convention of omitting
+non-comparable variables and renormalising the remaining weights. To limit
+the effect, prefer \code{dist_var} variables with few or no missing values.
 }
 \examples{
 

@@ -19,6 +19,17 @@
 #' @param uncert imputation uncertainty method: \code{"conditional"}
 #'   (default) draws from the conditional normal distribution, or
 #'   \code{"pmm"} uses predictive mean matching.
+#' @param conditioning how observed cells enter the E-step conditional
+#'   moments. \code{"weighted"} (default) multiplies each conditioning
+#'   deviation \eqn{x_{ik} - \mu_k} by its current cell weight
+#'   \eqn{w_{ik}} -- the posterior-expected clean deviation, so likely
+#'   contaminated cells are shrunk towards the mean before they enter
+#'   the conditional. \code{"trust"} conditions only on trusted cells:
+#'   deviations with \eqn{w_{ik} < } \code{trust_min} are set to zero
+#'   (hard threshold). \code{"unweighted"} uses the raw deviations
+#'   (all observed cells fully trusted, as in early versions).
+#' @param trust_min trust threshold in \eqn{(0, 1)} used when
+#'   \code{conditioning = "trust"} (default: 0.5). Ignored otherwise.
 #' @param trace logical; if \code{TRUE}, print progress information.
 #'
 #' @return A list with components:
@@ -111,17 +122,17 @@
 #' C.F.J. Wu (1983) On the Convergence Properties of the EM Algorithm.
 #' \emph{The Annals of Statistics}, 11(1), 95--103.
 #'
-#' C. Raymaekers, P.J. Rousseeuw (2024) The cellwise minimum covariance
+#' J. Raymaekers, P.J. Rousseeuw (2024) The cellwise minimum covariance
 #' determinant estimator. \emph{Journal of the American Statistical
-#' Association}, 119(545), 576--588.
+#' Association}, 119(548), 2610--2621.
 #'
-#' G. Zaccaria, L. Insolia, A. Farcomeni (2025) Robust model-based
-#' clustering with cellwise contamination. \emph{Technometrics},
-#' forthcoming.
+#' G. Zaccaria, L.A. Garcia-Escudero, F. Greselin, A. Mayo-Iscar (2025)
+#' Cellwise outlier detection in heterogeneous populations.
+#' \emph{Technometrics}, 67(4), 643--654.
 #'
 #' M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise regression
-#' imputation using standard and robust methods. \emph{Journal of
-#' Computational Statistics and Data Analysis}, Vol. 55, pp. 2793--2806.
+#' imputation using standard and robust methods. \emph{Computational
+#' Statistics & Data Analysis}, Vol. 55, pp. 2793--2806.
 #'
 #' @family imputation methods
 #' @seealso \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},
@@ -156,7 +167,9 @@
 #' @importFrom stats dnorm rnorm cov median mad model.matrix predict
 imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
                          gamma_init = 3, eps_init = 0.1,
-                         uncert = "conditional", trace = FALSE) {
+                         uncert = "conditional",
+                         conditioning = "weighted", trust_min = 0.5,
+                         trace = FALSE) {
 
   ## ---- input validation ----
   check_data(data)
@@ -167,6 +180,11 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
       stop("data must be a data.frame or matrix")
   }
   uncert <- match.arg(uncert, c("conditional", "pmm"))
+  conditioning <- match.arg(conditioning,
+                            c("weighted", "trust", "unweighted"))
+  if (!is.numeric(trust_min) || length(trust_min) != 1L ||
+      trust_min <= 0 || trust_min >= 1)
+    stop("trust_min must be a single number in (0, 1)")
 
   if (gamma_init <= 1)
     stop("gamma_init must be > 1")
@@ -263,6 +281,12 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
                 pseudo_loglik = numeric(0)))
   }
 
+  ## work under safe positional names: pasted model formulas break with
+  ## duplicated or non-syntactic column names (the response can resolve
+  ## to the wrong column); original names are restored on exit
+  cn_int <- .cw_safe_names(p)
+  colnames(data) <- cn_int
+
   ## ---- step 1: initialise missing values ----
   data <- initialise(data, mixed = NULL, method = "median")
 
@@ -358,10 +382,18 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
         X_other <- X_cont[, other_cont, drop = FALSE]
         mu_other <- mu[other_cont]
 
-        # Cell-weight-adjusted deviations (use previous weights)
+        # Conditioning deviations, adjusted by the previous cell weights.
+        # "weighted": posterior-expected clean deviation w * (x - mu);
+        # "trust": hard threshold -- untrusted cells conditioned at the mean;
+        # "unweighted": raw deviations (all observed cells fully trusted).
         W_other <- W_prev[, cont_idx[other_cont], drop = FALSE]
         dev_other <- sweep(X_other, 2, mu_other, "-")
-        dev_weighted <- dev_other * W_other
+        cond_w <- switch(conditioning,
+          weighted   = W_other,
+          trust      = (W_other >= trust_min) * 1,
+          unweighted = matrix(1, nrow(W_other), ncol(W_other))
+        )
+        dev_weighted <- dev_other * cond_w
 
         mu_cond <- mu[jj] + as.numeric(dev_weighted %*%
                                          as.numeric(Sigma_mjmj_inv %*% Sigma_mjj))
@@ -459,8 +491,8 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
 
         pred_cols <- setdiff(seq_len(p), j_global)
         form_j <- stats::as.formula(
-          paste0(cn[j_global], " ~ ",
-                 paste(cn[pred_cols], collapse = " + "))
+          paste0(cn_int[j_global], " ~ ",
+                 paste(cn_int[pred_cols], collapse = " + "))
         )
 
         multimod <- tryCatch({
@@ -726,6 +758,7 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
 
   ## ---- prepare output ----
   rownames(data) <- rn
+  colnames(data) <- cn
 
   list(
     data_imputed = data,
@@ -939,8 +972,14 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
 #'   \code{"median"} (default), \code{"knn"}, or \code{"irmi"}.
 #' @param m number of multiple imputations (default: 1). If \code{m > 1},
 #'   a list of imputed datasets is returned.
-#' @param boot logical; if \code{TRUE}, bootstrap resampling propagates
-#'   parameter uncertainty across the \code{m} imputations.
+#' @param boot logical; intended to add bootstrap parameter uncertainty across
+#'   the \code{m} imputations. \strong{Currently ineffective}: the imputation
+#'   step is a per-variable robust regression (\code{cellIRWLS}), so resampling
+#'   the location/covariance estimate leaves the imputations essentially
+#'   unchanged (measured between-imputation variance is not inflated relative to
+#'   \code{boot = FALSE}). Proper parameter-uncertainty propagation requires
+#'   bootstrapping the per-variable regression coefficients and is not yet
+#'   implemented; see the note below. Default \code{FALSE}.
 #' @param trace logical; if \code{TRUE}, print progress information.
 #'
 #' @return A list with components:
@@ -954,11 +993,18 @@ imputeCellEM <- function(data, maxit_em = 100, eps_em = 5e-3,
 #'   \item{converged}{logical indicating convergence.}
 #'   \item{iterations}{number of iterations performed.}
 #'
+#' @note Multiple imputation with proper parameter-uncertainty propagation is
+#'   not yet implemented for this method (see \code{boot}). \code{m > 1} returns
+#'   repeated imputations whose between-imputation variability comes only from
+#'   the stochastic uncertainty step (\code{uncert}) and estimator randomness,
+#'   so downstream Rubin pooling understates total variance. Treat the current
+#'   \code{m > 1} output as approximate.
+#'
 #' @author Matthias Templ
 #' @references
-#' Raymaekers, C. and Rousseeuw, P.J. (2024).  The cellwise minimum
+#' Raymaekers, J. and Rousseeuw, P.J. (2024).  The cellwise minimum
 #' covariance determinant estimator.  \emph{Journal of the American
-#' Statistical Association}, \strong{119}(545), 576--588.
+#' Statistical Association}, \strong{119}(548), 2610--2621.
 #'
 #' @family imputation methods
 #' @seealso \code{\link{imputeCellIRMI}}, \code{\link{imputeCellM}},
@@ -989,6 +1035,20 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
                            uncert = "conditional",
                            m = 1L, boot = FALSE,
                            trace = FALSE) {
+  # Warn once per user call. The m > 1 branch below recurses into this same
+  # function -- twice per draw when boot = TRUE -- so an unconditional notice
+  # emits m + 1 warnings at m > 1 (four at m = 3), which is noise and hides
+  # any real warning the imputation raises.
+  .from_self <- {
+    pf <- sys.parent()
+    pf > 0L && identical(sys.function(pf), sys.function())
+  }
+  if (!.from_self)
+    .Deprecated("imputeCellGLoc",
+                msg = paste("imputeCellMCD() is deprecated and will be removed in a",
+                            "future release. Use imputeCellGLoc(design = ~ 1) for the",
+                            "same continuous-only behaviour, or imputeCellGLoc() to",
+                            "model the categorical mean structure."))
   # Multiple imputation wrapper
   m <- as.integer(m)
   if (m > 1L) {
@@ -996,7 +1056,13 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
     for (mi in seq_len(m)) {
       if (trace) message(sprintf("=== Multiple imputation: run %d / %d ===", mi, m))
       if (boot) {
-        # Bootstrap: resample rows, fit on bootstrap, predict on original
+        # NOTE: boot = TRUE is currently ineffective (see ?imputeCellMCD). It
+        # fits on a bootstrap sample but the imputation is a per-variable robust
+        # regression that does not depend on the resampled location/covariance,
+        # so res_boot below does not actually change res_orig's imputations.
+        # Proper propagation needs bootstrapping the cellIRWLS regression
+        # coefficients (deferred). res_boot is kept as a placeholder for that
+        # refactor; res_orig is the imputation returned.
         boot_idx <- sample(nrow(data), replace = TRUE)
         data_boot <- data[boot_idx, , drop = FALSE]
         res_boot <- imputeCellMCD(data_boot, maxit = maxit, eps = eps,
@@ -1004,7 +1070,6 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
           hard_threshold = hard_threshold, mcd_observed = mcd_observed,
           init_method = init_method, uncert = uncert,
           m = 1L, boot = FALSE, trace = trace)
-        # Use bootstrapped parameters to impute original data
         res_orig <- imputeCellMCD(data, maxit = maxit, eps = eps,
           method = method, alpha = alpha, mcd_alpha = mcd_alpha,
           hard_threshold = hard_threshold, mcd_observed = mcd_observed,
@@ -1083,6 +1148,12 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
 
   M <- is.na(data)
   vars_miss <- which(colMeans(M) > 0)
+
+  ## work under safe positional names: pasted model formulas break with
+  ## duplicated or non-syntactic column names (the response can resolve
+  ## to the wrong column); original names are restored on exit
+  cn_int <- .cw_safe_names(p)
+  colnames(data) <- cn_int
 
   ## ---- initialize missing values ----
   if (init_method == "knn") {
@@ -1356,8 +1427,8 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
         miss_j <- which(M[, j_global])
         if (length(miss_j) == 0) next
         pred_cols <- setdiff(seq_len(p), j_global)
-        form_j <- as.formula(paste0(cn[j_global], " ~ ",
-                                     paste(cn[pred_cols], collapse = " + ")))
+        form_j <- as.formula(paste0(cn_int[j_global], " ~ ",
+                                     paste(cn_int[pred_cols], collapse = " + ")))
         multimod <- tryCatch(
           suppressMessages(nnet::multinom(form_j, data = data,
                                           weights = w_row_cat,
@@ -1473,6 +1544,7 @@ imputeCellMCD <- function(data, maxit = 50, eps = 5e-3,
   }
 
   rownames(data) <- rn
+  colnames(data) <- cn
   list(data_imputed = data, cellweights = W, mu = mu, Sigma = Sigma,
        converged = converged, iterations = iterations)
 }

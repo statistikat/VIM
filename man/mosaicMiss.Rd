@@ -89,7 +89,7 @@ Meyer, D., Zeileis, A. and Hornik, K. (2006) The
 \pkg{vcd}. \emph{Journal of Statistical Software}, \strong{17 (3)}, 1--48.
 
 M. Templ, A. Alfons, P. Filzmoser (2012) Exploring incomplete data using
-visualization tools.  \emph{Journal of Advances in Data Analysis and
+visualization tools.  \emph{Advances in Data Analysis and
 Classification}, Online first. DOI: 10.1007/s11634-011-0102-y.
 }
 \seealso{

@@ -18,14 +18,19 @@
 #' @family imputation methods
 #' @examples 
 #' data(sleep)
-#' xgboostImpute(Dream~BodyWgt+BrainWgt,data=sleep)
-#' xgboostImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
-#' xgboostImpute(Dream+NonD+Gest~BodyWgt+BrainWgt,data=sleep)
-#' 
 #' sleepx <- sleep
 #' sleepx$Pred <- as.factor(LETTERS[sleepx$Pred])
 #' sleepx$Pred[1] <- NA
-#' xgboostImpute(Pred~BodyWgt+BrainWgt,data=sleepx)
+#' # a numeric and a factor target imputed at once; nrounds = 30 keeps the
+#' # example fast (the default is 100 boosting rounds)
+#' # xgboostImpute() runs on vimpute(), which VIM backs with the suggested
+#' # mlr3 stack -- skip the example where that stack is not installed.
+#' if (requireNamespace("mlr3", quietly = TRUE) &&
+#'     requireNamespace("mlr3learners", quietly = TRUE) &&
+#'     requireNamespace("mlr3pipelines", quietly = TRUE)) {
+#'   imp <- xgboostImpute(Dream + Pred ~ BodyWgt + BrainWgt, data = sleepx, nrounds = 30)
+#'   head(imp)
+#' }
 #' @importFrom xgboost xgboost
 #' @export
 xgboostImpute <- function(formula, data, imp_var = TRUE,
@@ -40,10 +45,9 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
   if (!is.null(objective)) {
     stopifnot(length(objective) == length(lhs))
   }
+  # nrounds, objective, and additional xgboost hyperparameters are forwarded to
+  # the xgboost learner via vimpute()'s learner_params below.
   dots <- list(...)
-  if (nrounds != 100 || !is.null(objective) || length(dots) > 0) {
-    warning("`nrounds`, `objective`, and additional xgboost arguments are ignored; xgboostImpute() delegates to vimpute().")
-  }
 
   data_out <- data
   for (lhsV in lhs) {
@@ -73,16 +77,21 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
       message("Evaluating model for ", lhsV, " on ", sum(!rhs_na & lhs_na), " observations")
     }
 
+    xgb_params <- c(list(nrounds = nrounds), dots)
+    if (!is.null(objective)) xgb_params$objective <- objective[match(lhsV, lhs)]
+
     out <- vimpute(
       data = data_out[, considered, drop = FALSE],
       considered_variables = considered,
       method = method,
       pmm = pmm,
+      learner_params = list(xgboost = xgb_params),
       sequential = FALSE,
       nseq = 1,
       imp_var = imp_var,
       pred_history = FALSE,
       tune = FALSE,
+      uncert = "none",
       verbose = verbose
     )
 

@@ -36,12 +36,18 @@ with \code{nmis} rows and \code{m} columns of imputed values.}
 \item{\code{boot}}{Logical: was bootstrap resampling used?}
 \item{\code{uncert}}{Character: uncertainty method used.}
 \item{\code{call}}{The original function call.}
+\item{\code{tuning_log}}{Tuning report of the (single) tuning run, or NULL.}
+\item{\code{chain}}{Per-iteration chain statistics (\code{mean}/\code{var}
+arrays \code{[variable, iteration, imputation]}) behind
+\code{\link{plot.vimmi}} trace plots.}
+\item{\code{seed}}{The seed applied at entry, or NULL.}
 }
 
-Use \code{\link{complete.vimmi}} to extract completed datasets,
-\code{\link{with.vimmi}} to fit models across imputations, and
-\code{\link{as.mids.vimmi}} to convert to a mice \code{mids} object
-for pooling with \code{mice::pool()}.
+Use \code{\link{vim_complete}} to extract completed datasets,
+\code{\link{with.vimmi}} to fit models across imputations (returns a
+mice-compatible \code{mira}), \code{\link{vim_as_mids}} to convert to a
+mice \code{mids} object for pooling with \code{mice::pool()}, and
+\code{\link{plot.vimmi}} for convergence trace plots.
 }
 \examples{
 \dontrun{
@@ -52,8 +58,9 @@ print(result)
 summary(result)
 
 # Extract completed datasets
-d1 <- complete(result, 1)
-all_d <- complete(result, "all")
+d1 <- vim_complete(result, 1)
+all_d <- vim_complete(result, "all")
+# complete(result, 1) does the same when mice or tidyr is attached
 
 # Fit models and pool
 fits <- with(result, lm(Sleep ~ Dream + Span))
@@ -61,8 +68,9 @@ fits <- with(result, lm(Sleep ~ Dream + Span))
 }
 }
 \seealso{
-\code{\link{vimpute}}, \code{\link{complete.vimmi}},
-\code{\link{with.vimmi}}, \code{\link{as.mids.vimmi}}
+\code{\link{vimpute}}, \code{\link{vim_complete}},
+\code{\link{with.vimmi}}, \code{\link{vim_as_mids}},
+\code{\link{plot.vimmi}}
 
 Other imputation methods: 
 \code{\link{hotdeck}()},

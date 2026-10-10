@@ -6,9 +6,9 @@
 # usethis::use_github_action("check-standard") will install it.
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, devel]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, devel]
 
 name: R-CMD-check
 
@@ -34,6 +34,8 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      # run the full test suite (the CRAN-time-budget gate in tests/tinytest.R)
+      NOT_CRAN: true
 
     steps:
       - uses: actions/checkout@v3

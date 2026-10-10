@@ -149,8 +149,8 @@ irmi(td)
 }
 \references{
 M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
-regression imputation using standard and robust methods.  \emph{Journal of
-Computational Statistics and Data Analysis}, Vol. 55, pp. 2793-2806.
+regression imputation using standard and robust methods.  \emph{Computational
+Statistics & Data Analysis}, Vol. 55, pp. 2793-2806.
 
 A. Kowarik, M. Templ (2016) Imputation with
 R package VIM.  \emph{Journal of

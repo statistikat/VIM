@@ -53,6 +53,9 @@ imputeRobust <- function(form,
       stop(sprintf("Package '%s' is required but not installed. Please install it to use this function.", pkg), call. = FALSE)
     }
   }
+  ## Validate the uncertainty method up front, so a typo fails with a clear
+  ## message instead of a downstream "object 'ymiss' not found" crash.
+  uncert <- match.arg(uncert, c("pmm", "normalerror", "resid", "wresid"))
   if(method == "gam" | method == "gamRob"){
     if(inherits(form, "formula")){
       y <- all.vars(form)
@@ -211,29 +214,23 @@ imputeRobust <- function(form,
       ymiss <- pred[missindex] + sample(resid(mod), size = sum(missindex)) 
   }
   if(uncert == "wresid"){
-    ymiss <- rep(NA, sum(missindex))
-    cnt <- 0
+    check_suggested("pdist")
+    ymiss <- rep(NA_real_, sum(missindex))
     if(length(resid(mod)) < n){
       resi <- rep(resid(mod), length.out = n)
     } else{
       resi <- resid(mod)
     }
+    cnt <- 0
     for(i in (1:n)[missindex]){
       cnt <- cnt + 1
-      my_distance_function <- function(x, y) {
-        if (!requireNamespace("pdist", quietly = TRUE)) {
-          stop("Package 'pdist' must be installed to use this function.")
-        }
-        d <- pdist::pdist(as.matrix(data[i, x_vars, drop = FALSE]), 
-                          as.matrix(data[, x_vars, drop = FALSE]))
-      }
-
-      d <- 1 - d@dist / max(d@dist)
-      d <- sqrt(d)
-      p <- pred[i]
-      ymiss[cnt] <- pred[i] + 
-        sample(resi, 
-        size = 1, prob = d)     
+      ## distances from the missing row to every row in predictor space;
+      ## draw a residual weighted by predictor similarity (closer -> heavier).
+      dd <- pdist::pdist(as.matrix(data[i, x_vars, drop = FALSE]),
+                         as.matrix(data[, x_vars, drop = FALSE]))@dist
+      mx <- max(dd)
+      w <- if (mx > 0) sqrt(1 - dd / mx) else rep(1, length(dd))
+      ymiss[cnt] <- pred[i] + sample(resi, size = 1, prob = w)
     }
   }
   if(uncert == "pmm"){
@@ -251,8 +248,12 @@ imputeRobust <- function(form,
       }
       donors
     }
-    residuals <- selectDonor(na.omit(data[, ynam]), val = pred[missindex]) - pred[missindex] 
-    ymiss <- pred[missindex] + residuals  
+    ## Donor pool = originally-observed y only. After takeAll, data[, ynam] has
+    ## no NAs (kNN-initialised), so na.omit() would leak initialised rows into
+    ## the pool; missindex was captured before initialisation.
+    donor_pool <- data[!missindex, ynam]
+    residuals <- selectDonor(donor_pool, val = pred[missindex]) - pred[missindex]
+    ymiss <- pred[missindex] + residuals
     
   }
 
@@ -261,8 +262,37 @@ imputeRobust <- function(form,
   } else{
     rownames(data) <- rn
     data[missindex, ynam] <- ymiss
-    return(data) 
+    return(data)
   }
+}
+
+## Robust GAM for numeric (Gaussian) responses by residual trimming: fit an
+## initial GAM, keep the `fraction` of rows with the smallest absolute
+## residuals as "good", and refit on them. Returns the refit model together
+## with the good/bad row indices, which imputeRobust() uses for its robust
+## bootstrap. Kept internal and self-contained (mgcv only) rather than routed
+## through the mlr3 robgam learner. Not exported.
+robGAM <- function(form, data, fraction = 0.75){
+  if (!requireNamespace("mgcv", quietly = TRUE)) {
+    stop("Package 'mgcv' is required for robust GAM imputation (method = 'gamRob').",
+         call. = FALSE)
+  }
+  mod_init <- mgcv::gam(form, data = data)
+  res <- residuals(mod_init)
+  cutoff <- stats::quantile(abs(res), probs = fraction, na.rm = TRUE)
+  subset_good <- which(abs(res) <= cutoff)
+  subset_bad <- which(abs(res) > cutoff)
+  if (length(subset_good) < 2L) {
+    ## degenerate trim: keep the initial fit and treat all rows as good
+    return(list(mod = mod_init,
+                subset_good = seq_len(nrow(data)),
+                subset_bad = integer(0)))
+  }
+  mod <- tryCatch(
+    mgcv::gam(form, data = data[subset_good, , drop = FALSE]),
+    error = function(e) mod_init
+  )
+  list(mod = mod, subset_good = subset_good, subset_bad = subset_bad)
 }
 
 getOrigName <- function(tname){

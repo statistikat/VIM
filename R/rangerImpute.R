@@ -6,8 +6,8 @@
 #' @param imp_var `TRUE`/`FALSE` if a `TRUE`/`FALSE` variables for each imputed
 #' variable should be created show the imputation status
 #' @param imp_suffix suffix used for TF imputation variables
-#' @param ... Additional arguments. Currently ignored because
-#'   `rangerImpute()` delegates to [vimpute()].
+#' @param ... Additional ranger hyperparameters (e.g. `num.trees`, `mtry`,
+#'   `min.node.size`), forwarded to the ranger learner via [vimpute()].
 #' @param verbose Show the number of observations used for training
 #'   and evaluating the RF-Model.
 #' @param median `TRUE`/`FALSE`. If `TRUE`, ranger regression predictions are
@@ -16,7 +16,13 @@
 #' @family imputation methods
 #' @examples 
 #' data(sleep)
-#' rangerImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
+#' # rangerImpute() runs on vimpute(), which VIM backs with the suggested
+#' # mlr3 stack -- skip the example where that stack is not installed.
+#' if (requireNamespace("mlr3", quietly = TRUE) &&
+#'     requireNamespace("mlr3learners", quietly = TRUE) &&
+#'     requireNamespace("mlr3pipelines", quietly = TRUE)) {
+#'   rangerImpute(Dream+NonD~BodyWgt+BrainWgt,data=sleep)
+#' }
 #' @export
 rangerImpute <- function(formula, data, imp_var = TRUE,
                          imp_suffix = "imp", ..., verbose = FALSE,
@@ -27,10 +33,9 @@ rangerImpute <- function(formula, data, imp_var = TRUE,
   rhs <- formchar[3]
   rhs2 <- gsub(" ", "", strsplit(rhs, "\\+")[[1]])
   rhs2 <- rhs2[rhs2 != "1"]
+  # ranger hyperparameters (e.g. num.trees, mtry, min.node.size) are forwarded
+  # to the ranger learner via vimpute()'s learner_params below.
   dots <- list(...)
-  if (length(dots) > 0) {
-    warning("Additional ranger arguments are ignored; only `median` is passed to vimpute().")
-  }
 
   data_out <- data
   data_out_df <- as.data.frame(data_out)
@@ -72,12 +77,13 @@ rangerImpute <- function(formula, data, imp_var = TRUE,
       considered_variables = considered,
       method = method,
       pmm = pmm,
-      learner_params = list(ranger = list(predict_median = median)),
+      learner_params = list(ranger = c(list(predict_median = median), dots)),
       sequential = FALSE,
       nseq = 1,
       imp_var = imp_var,
       pred_history = FALSE,
       tune = FALSE,
+      uncert = "none",
       verbose = verbose
     )
 

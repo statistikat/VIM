@@ -53,6 +53,12 @@ imputeCellMM <- function(data, maxit = 50, eps = 5e-3,
   M <- is.na(data)
   vars_miss <- which(colMeans(M) > 0)
 
+  ## work under safe positional names: pasted model formulas break with
+  ## duplicated or non-syntactic column names (the response can resolve
+  ## to the wrong column); original names are restored on exit
+  cn_int <- .cw_safe_names(p)
+  colnames(data) <- cn_int
+
   data <- initialise(data, mixed = NULL, method = "median")
 
   # Initial cell weights
@@ -81,7 +87,8 @@ imputeCellMM <- function(data, maxit = 50, eps = 5e-3,
       pred_cols <- setdiff(seq_len(p), j)
 
       if (is_continuous[j]) {
-        form <- as.formula(paste0(cn[j], " ~ ", paste(cn[pred_cols], collapse = " + ")))
+        form <- as.formula(paste0(cn_int[j], " ~ ",
+                                  paste(cn_int[pred_cols], collapse = " + ")))
 
         ## ---- S-step: unweighted, high breakdown ----
         # Use lmrob with MM method (S-init + M-refinement)
@@ -129,7 +136,8 @@ imputeCellMM <- function(data, maxit = 50, eps = 5e-3,
             exp(mean(log(pmax(ww, 1e-10)))))
         } else rep(1, n)
 
-        form <- as.formula(paste0(cn[j], " ~ ", paste(cn[pred_cols], collapse = " + ")))
+        form <- as.formula(paste0(cn_int[j], " ~ ",
+                                  paste(cn_int[pred_cols], collapse = " + ")))
         multimod <- tryCatch(
           suppressMessages(nnet::multinom(form, data = data, weights = w_row,
                                           maxit = 50, trace = FALSE)),
@@ -192,7 +200,8 @@ imputeCellMM <- function(data, maxit = 50, eps = 5e-3,
       if (!is_continuous[j]) next
       miss_j <- M[, j]; obs_j <- !miss_j
       if (!any(miss_j)) next
-      form <- as.formula(paste0(cn[j], " ~ ", paste(cn[setdiff(seq_len(p), j)], collapse = " + ")))
+      form <- as.formula(paste0(cn_int[j], " ~ ",
+                                paste(cn_int[setdiff(seq_len(p), j)], collapse = " + ")))
       fit <- tryCatch(suppressWarnings(robustbase::lmrob(form, data = data)),
                        error = function(e) stats::lm(form, data = data))
       pred_all <- predict(fit, newdata = data)
@@ -207,6 +216,7 @@ imputeCellMM <- function(data, maxit = 50, eps = 5e-3,
   }
 
   rownames(data) <- rn
+  colnames(data) <- cn
   list(data_imputed = data, cellweights = W,
        converged = converged, iterations = iterations)
 }

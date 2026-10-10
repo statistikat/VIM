@@ -1,3 +1,12 @@
+## VIM suggests the mlr3 stack rather than importing it: it backs vimpute()
+## alone, and a hard dependency would put every reverse dependency of VIM at
+## the mercy of the mlr3 chain. This file exercises that path, so it cannot
+## run when the stack is absent -- e.g. under _R_CHECK_DEPENDS_ONLY_=true.
+if (!all(vapply(c("mlr3", "mlr3learners", "mlr3pipelines", "mlr3tuning",
+                  "paradox", "R6", "future"),
+                requireNamespace, logical(1), quietly = TRUE)))
+  exit_file("mlr3 stack not installed (VIM only suggests it)")
+
 library(VIM)
 
 # --- Constructor ---
@@ -24,7 +33,7 @@ expect_equal(nrow(obj$data), 5)
 
 # --- complete() single dataset ---
 
-c1 <- complete(obj, action = 1)
+c1 <- vim_complete(obj, action = 1)
 expect_true(is.data.frame(c1))
 expect_equal(nrow(c1), 5)
 expect_equal(sum(is.na(c1)), 0)
@@ -34,20 +43,20 @@ expect_equal(c1$x[4], 4.2)
 expect_equal(c1$y[1], 1.0)
 expect_equal(c1$y[3], 3.1)
 
-c2 <- complete(obj, action = 2)
+c2 <- vim_complete(obj, action = 2)
 expect_equal(c2$x[2], 1.9)
 expect_equal(c2$x[4], 3.8)
 
 # --- complete() all datasets ---
 
-all_datasets <- complete(obj, action = "all")
+all_datasets <- vim_complete(obj, action = "all")
 expect_true(is.list(all_datasets))
 expect_equal(length(all_datasets), 2)
 expect_true(all(sapply(all_datasets, function(d) sum(is.na(d)) == 0)))
 
 # --- complete() long format ---
 
-long <- complete(obj, action = "long")
+long <- vim_complete(obj, action = "long")
 expect_true(".imp" %in% names(long))
 expect_true(".id" %in% names(long))
 expect_equal(nrow(long), 5 * 2)  # n_rows * m
@@ -55,18 +64,21 @@ expect_true(all(long$.imp %in% 1:2))
 
 # --- complete() validates action ---
 
-expect_error(complete(obj, action = 0))
-expect_error(complete(obj, action = 3))
-expect_error(complete(obj, action = "invalid"))
+expect_error(vim_complete(obj, action = 0))
+expect_error(vim_complete(obj, action = 3))
+expect_error(vim_complete(obj, action = "invalid"))
 
 # --- with.vimmi ---
 
 fits <- with(obj, lm(y ~ x))
-expect_true(is.list(fits))
-expect_equal(length(fits), 2)
-expect_true(all(sapply(fits, inherits, "lm")))
+# 7.3.0 contract: with() returns a mice-compatible mira; the raw fit list
+# lives in $analyses (mice::getfit(fits) is the same thing)
+expect_true(inherits(fits, "mira"))
+fit_list <- fits$analyses
+expect_equal(length(fit_list), 2)
+expect_true(all(sapply(fit_list, inherits, "lm")))
 # Coefficients should differ between imputations
-expect_true(!identical(coef(fits[[1]]), coef(fits[[2]])))
+expect_true(!identical(coef(fit_list[[1]]), coef(fit_list[[2]])))
 
 # --- print.vimmi ---
 
@@ -81,20 +93,23 @@ s <- capture.output(summary(obj))
 expect_true(length(s) > 0)
 expect_true(any(grepl("m = 2", s)))
 
-# --- vimpute robust MI regression ---
+## skipped on CRAN (check-time budget): robust MI with m = 5 takes ~25 s
+if (at_home()) {
+  # --- vimpute robust MI regression ---
 
-set.seed(1)
-robust_mi <- suppressWarnings(
-  vimpute(
-    data = sleep,
-    method = "robust",
-    m = 5,
-    boot = TRUE,
-    robustboot = "stratified",
-    uncert = "normalerror"
+  set.seed(1)
+  robust_mi <- suppressWarnings(
+    vimpute(
+      data = sleep,
+      method = "robust",
+      m = 5,
+      boot = TRUE,
+      robustboot = "stratified",
+      uncert = "normalerror"
+    )
   )
-)
 
-expect_true(inherits(robust_mi, "vimmi"))
-expect_equal(robust_mi$m, 5L)
-expect_equal(sum(is.na(complete(robust_mi, 1))), 0)
+  expect_true(inherits(robust_mi, "vimmi"))
+  expect_equal(robust_mi$m, 5L)
+  expect_equal(sum(is.na(vim_complete(robust_mi, 1))), 0)
+}

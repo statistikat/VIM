@@ -16,7 +16,27 @@
 #' @param nMin integer number of values with smallest distance to be returned
 #' @param returnMin logical if the computed distances for the indices should be returned
 #' @param methodStand character either "range" or "iqr", iqr is more robust for outliers
-#' @details returnIndex=FALSE: a numerical matrix n x m with the computed distances
+#' @details Numerical and semi-continuous (mixed) variables are standardised by
+#' their range (or IQR, see `methodStand`) before the distance is computed; for
+#' mixed variables the point mass (`mixed.constant`) is excluded from the range
+#' estimate and scaled along with the data.
+#'
+#' Missing values in a distance variable are replaced by a sentinel (the pooled
+#' column maximum plus one) after standardisation. Two records both missing the
+#' same variable therefore have distance 0 on it, and a missing-vs-observed pair
+#' contributes up to about 2 (rather than a variable's nominal maximum of 1).
+#' This sentinel convention departs from Gower's (1971) omit-and-renormalise
+#' rule and biases nearest-neighbour selection towards records that share the
+#' same missingness pattern.
+#'
+#' The distance computation is parallelised with OpenMP where R was built with
+#' OpenMP support. The number of threads is `getOption("VIM.ncores")`; if the
+#' option is unset, at most 2 threads are used while the package is checked
+#' (`R CMD check` sets `_R_CHECK_LIMIT_CORES_`; CRAN policy allows at most two
+#' cores) and OpenMP's default -- typically all cores, or `OMP_NUM_THREADS` --
+#' otherwise. Results do not depend on the number of threads.
+#'
+#' returnIndex=FALSE: a numerical matrix n x m with the computed distances
 #' returnIndex=TRUE: a named list with "ind" containing the requested indices and "mins" the computed distances
 #' @examples
 #' data(sleep)
@@ -113,6 +133,29 @@ gowerD <- function(data.x, data.y = data.x,
       data.y[,numerical[i]] <- data.y[,numerical[i]]/r[i]
     }
   }
+  # Semi-continuous (mixed) columns need the same range/IQR scaling as numeric
+  # columns; otherwise their raw magnitude dominates the Gower distance (the C++
+  # kernel uses raw |x-y| for two non-spike values, exactly like the numeric
+  # branch that IS scaled). The point mass (mixed.constant) is excluded from the
+  # scale estimate and scaled along, so the kernel's spike comparison is kept.
+  if(length(mixed)>0){
+    pooled_mixed <- rbind(data.x[,mixed,drop=FALSE], data.y[,mixed,drop=FALSE])
+    for(i in seq_along(mixed)){
+      col <- pooled_mixed[,i]
+      nonspike <- col[!is.na(col) & col != mixed.constant[i]]
+      if(length(nonspike) > 0){
+        if(methodStand == "range"){
+          rr <- max(nonspike) - min(nonspike)
+        }else{
+          rr <- as.numeric(diff(quantile(nonspike, probs = c(.25, .75), na.rm = TRUE)))
+        }
+        if(is.na(rr) || rr == 0) rr <- 1
+        data.x[,mixed[i]] <- data.x[,mixed[i]]/rr
+        data.y[,mixed[i]] <- data.y[,mixed[i]]/rr
+        mixed.constant[i] <- mixed.constant[i]/rr
+      }
+    }
+  }
   justone <- FALSE
   if(nrow(data.y)==1){
     data.y <- rbind(data.y,data.y)
@@ -128,6 +171,7 @@ gowerD <- function(data.x, data.y = data.x,
   levOrders <- as.numeric(levOrders)
   if(returnIndex){
     out <- gowerDind( as.matrix(data.x), as.matrix(data.y),weights[weightind],
+        nthreads = vim_ncores(),
         c(length(numerical),length(factors),length(orders),length(mixed)),
         levOrders,mixed.constant,nMin,as.integer(returnMin))
     out <- list(ind=out$ind,mins=out$min)
@@ -138,6 +182,7 @@ gowerD <- function(data.x, data.y = data.x,
 
   }else{
     out <- gowerd(as.matrix(data.x), as.matrix(data.y),weights[weightind],
+        nthreads = vim_ncores(),
         c(length(numerical),length(factors),length(orders),length(mixed)),
         levOrders,mixed.constant)
     if(justone)

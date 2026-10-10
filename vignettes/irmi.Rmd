@@ -25,7 +25,7 @@ In addition to Model based Imputation Methods (see `vignette("modelImp")`) the `
   
 This vignette showcases the function `irmi()`. **IRMI** is short for **I**terative **R**obust **M**odel-based **I**mputation. This method can be used to generate imputations for several variables in a dataset.  
   
-Basically `irmi()` mimics the functionality of IVEWARE [(Raghunathan et al., 2001)](https://www150.statcan.gc.ca/n1/pub/12-001-x/2001001/article/5857-eng.pdf), but there are several improvements with respect to the stability of the initialized values, or the robustness of the imputed values. In contrast to other imputation methods, the IRMI algorithm does not require at least one fully observed variable. In each step of the iteration, one variable is used as a response variable and the remaining variables serve as the regressors. Thus the "whole" multivariate information will be used for imputation in the response variable. For more details, please see [IRMI Imputation](http://file.statistik.tuwien.ac.at/filz/papers/CSDA11TKF.pdf).
+Basically `irmi()` mimics the functionality of IVEWARE (Raghunathan et al., 2001), but there are several improvements with respect to the stability of the initialized values, or the robustness of the imputed values. In contrast to other imputation methods, the IRMI algorithm does not require at least one fully observed variable. In each step of the iteration, one variable is used as a response variable and the remaining variables serve as the regressors. Thus the "whole" multivariate information will be used for imputation in the response variable. For more details, please see Templ, Kowarik and Filzmoser (2011).
 
 ## Data
 
@@ -146,3 +146,13 @@ reactable(results, columns = list(
 ```
 
 
+
+## References
+
+Raghunathan, T. E., Lepkowski, J. M., Van Hoewyk, J., and Solenberger, P. (2001). A multivariate
+technique for multiply imputing missing values using a sequence of regression models. *Survey
+Methodology*, 27(1), 85--95.
+
+Templ, M., Kowarik, A., and Filzmoser, P. (2011). Iterative stepwise regression imputation using
+standard and robust methods. *Computational Statistics & Data Analysis*, 55(10), 2793--2806.
+doi:10.1016/j.csda.2011.04.012

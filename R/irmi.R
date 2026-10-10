@@ -59,8 +59,8 @@
 #' @return the imputed data set.
 #' @author Matthias Templ, Alexander Kowarik
 #' @references M. Templ, A. Kowarik, P. Filzmoser (2011) Iterative stepwise
-#' regression imputation using standard and robust methods.  *Journal of
-#' Computational Statistics and Data Analysis*, Vol. 55, pp. 2793-2806.
+#' regression imputation using standard and robust methods.  *Computational
+#' Statistics & Data Analysis*, Vol. 55, pp. 2793-2806.
 #' @references A. Kowarik, M. Templ (2016) Imputation with
 #' R package VIM.  *Journal of
 #' Statistical Software*, 74(7), 1-16.
@@ -599,7 +599,14 @@ irmi <- function(x, eps = 5, maxit = 100, mixed = NULL, mixed.constant = NULL,
       message(paste("The variables", paste(colnames(imp_vardf), collapse = ","),
                     "are added to the data set."))
     }
-    x <- cbind(x, imp_vardf)
+    if (mi > 1) {
+      ## x is a list of `mi` completed data.frames; append the indicator columns
+      ## to each. Plain cbind(x, imp_vardf) would flatten the list via
+      ## cbind.data.frame into one wide frame with duplicated column names.
+      x <- lapply(x, function(xi) cbind(xi, imp_vardf))
+    } else {
+      x <- cbind(x, imp_vardf)
+    }
   }
   invisible(x)
 

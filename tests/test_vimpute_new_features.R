@@ -1,3 +1,11 @@
+## Long-running integration script: skipped on CRAN (check-time budget). It
+## runs whenever NOT_CRAN=true -- devtools::check()/test() and the GitHub
+## Actions workflow set it -- see tests/tinytest.R.
+if (!identical(Sys.getenv("NOT_CRAN"), "true")) {
+  message("Skipping the vimpute new-features script on CRAN (set NOT_CRAN=true to run it).")
+  quit(save = "no", status = 0L)
+}
+
 required_pkgs <- c(
   "data.table",
   "future",
@@ -22,10 +30,13 @@ loadable <- vapply(required_pkgs, function(pkg) {
 unloadable_pkgs <- required_pkgs[!loadable]
 
 if (length(missing_pkgs) > 0L || length(unloadable_pkgs) > 0L) {
-  stop(
-    "Cannot run tests. Missing or unloadable packages: ",
+  # These are Suggests-only packages; skip gracefully rather than erroring the
+  # R CMD check under the CRAN noSuggests / _R_CHECK_DEPENDS_ONLY_ flavor.
+  message(
+    "Skipping vimpute new-features tests. Missing or unloadable packages: ",
     paste(unique(c(missing_pkgs, unloadable_pkgs)), collapse = ", ")
   )
+  quit(save = "no", status = 0L)
 }
 
 suppressPackageStartupMessages({
@@ -117,24 +128,27 @@ check(inherits(res2, "vimmi"), "m > 1 sollte ein vimmi-Objekt zurueckgeben.")
 check(identical(res2$m, 3L), "vimmi sollte m = 3 speichern.")
 cat("Rueckgabe:", class(res2)[1], "| m =", res2$m, "\n")
 
-show_test("3) complete() auf vimmi")
-d1 <- complete(res2, 1L)
-dall <- complete(res2, "all")
-dlong <- complete(res2, "long")
+show_test("3) vim_complete() auf vimmi")
+d1 <- vim_complete(res2, 1L)
+dall <- vim_complete(res2, "all")
+dlong <- vim_complete(res2, "long")
 
-check(is.data.frame(d1), "complete(res, 1) sollte einen Datensatz liefern.")
-check(length(dall) == 3L, "complete(res, 'all') sollte drei Datensaetze liefern.")
-check(nrow(dlong) == 3L * nrow(dt2), "complete(res, 'long') sollte alle Imputationen stapeln.")
+check(is.data.frame(d1), "vim_complete(res, 1) sollte einen Datensatz liefern.")
+check(length(dall) == 3L, "vim_complete(res, 'all') sollte drei Datensaetze liefern.")
+check(nrow(dlong) == 3L * nrow(dt2), "vim_complete(res, 'long') sollte alle Imputationen stapeln.")
 check(!anyNA(d1$y_num), "Im kompletterten Datensatz darf y_num keine NAs mehr haben.")
 check(!anyNA(d1$y_pos), "Im kompletterten Datensatz darf y_pos keine NAs mehr haben.")
-cat("complete() funktioniert.\n")
+cat("vim_complete() funktioniert.\n")
 
 show_test("4) with() auf vimmi")
 shift <- 5
 with_res <- with(res2, y_num + x2 + shift)
 
-check(length(with_res) == 3L, "with(vimmi, ...) sollte ein Ergebnis pro Imputation liefern.")
-check(all(vapply(with_res, length, integer(1)) == nrow(dt2)), "with(vimmi, ...) hat unerwartete Laengen geliefert.")
+# Seit 7.3.0 liefert with() ein mice-kompatibles mira-Objekt; die m
+# Einzelergebnisse stehen in $analyses.
+check(inherits(with_res, "mira"), "with(vimmi, ...) sollte ein mira-Objekt liefern.")
+check(length(with_res$analyses) == 3L, "with(vimmi, ...) sollte ein Ergebnis pro Imputation liefern.")
+check(all(vapply(with_res$analyses, length, integer(1)) == nrow(dt2)), "with(vimmi, ...) hat unerwartete Laengen geliefert.")
 cat("with() funktioniert.\n")
 
 show_test("5) uncert = 'normalerror'")
@@ -167,7 +181,7 @@ res4 <- vimpute(
 check(!anyNA(res4$y_num), "uncert = 'midastouch' sollte y_num imputieren.")
 cat("uncert = 'midastouch' funktioniert.\n")
 
-show_test("7) robuster Bootstrap mit robustboot = 'psi'")
+show_test("7) robuster Bootstrap mit robustboot = 'residual'")
 dt5 <- make_data(100L)
 res5 <- vimpute(
   data = dt5,
@@ -175,12 +189,12 @@ res5 <- vimpute(
   method = list(y_num = "robust"),
   sequential = FALSE,
   boot = TRUE,
-  robustboot = "psi",
+  robustboot = "residual",
   uncert = "normalerror",
   verbose = TRUE
 )
 
-check(!anyNA(res5$y_num), "robust + boot + robustboot = 'psi' sollte y_num imputieren.")
+check(!anyNA(res5$y_num), "robust + boot + robustboot = 'residual' sollte y_num imputieren.")
 cat("robustboot funktioniert.\n")
 
 show_test("8) Methode gam fuer numerisches Ziel")

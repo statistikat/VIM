@@ -22,7 +22,25 @@ knitr::opts_chunk$set(
   fig.height=4,
   fig.align = "center"
 )
+
+# vimpute() and the wrappers built on it run on the mlr3 stack, which VIM
+# suggests rather than imports (it backs vimpute() alone, and a hard
+# dependency would tie every reverse dependency of VIM to the mlr3 chain).
+# Where the stack is absent -- notably a check run with
+# _R_CHECK_DEPENDS_ONLY_=true -- skip the chunks instead of failing the build.
+has_mlr3 <- all(vapply(c("mlr3", "mlr3learners", "mlr3pipelines", "mlr3tuning",
+                         "paradox", "R6", "future"),
+                       requireNamespace, logical(1), quietly = TRUE))
+knitr::opts_chunk$set(eval = has_mlr3)
 ```
+
+```{r mlr3-message, echo=FALSE, eval=TRUE, results='asis'}
+if (!has_mlr3) {
+  cat("This vignette needs the mlr3 stack, which VIM suggests rather than ",
+      "imports; the runnable examples are skipped because it is unavailable.")
+}
+```
+
 
 
 This vignette showcases the function `xgboostImpute()`, which can be used to impute missing values based on a random forest model using `[xgboost::xgboost()]. 
