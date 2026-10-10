@@ -1,7 +1,7 @@
 # Source this file, then call uci_run(). Nothing downloads or trains on source().
 # See vignettes/transformerImpute-benchmark.Rmd for the protocol.
 uci_config <- function(full = FALSE) {
-  list(n = if (full) 2000L else 240L, rates = c(.1, .2, .4),
+  list(protocol = "makeMissing-evaluation-v1", n = if (full) 2000L else 240L, rates = c(.1, .2, .4),
        repetitions = if (full) 10L else 3L, mechanisms = c("MCAR", "MAR"),
        seed = 20261010L,
        methods = c("transformerImpute", "tabular", "shared", "kNN", "ranger", "ranger_seq10", "xgboost"),
@@ -54,24 +54,6 @@ uci_prepare <- function(cache, download = FALSE) {
   })
   list(data = data, audit = audit,
        sources = data.frame(url = unname(urls), md5 = unname(tools::md5sum(archives))))
-}
-
-# Bernoulli probabilities calibrated to the nominal expected rate. All drivers
-# are fully observed. Realized rates vary; do not redraw inconvenient masks.
-uci_mask <- function(truth, targets, rate, mechanism, seed) {
-  stopifnot(!anyNA(truth), rate > 0, rate < 1, all(targets %in% names(truth)),
-            !"age" %in% targets, mechanism %in% c("MCAR", "MAR"))
-  set.seed(seed)
-  z <- as.numeric(scale(truth$age))
-  if (any(!is.finite(z))) stop("Age must have nonzero variance")
-  p <- if (mechanism == "MCAR") rep(rate, nrow(truth)) else {
-    intercept <- stats::uniroot(function(a) mean(stats::plogis(a + z)) - rate,
-                                c(-30, 30))$root
-    stats::plogis(intercept + z)
-  }
-  mask <- matrix(FALSE, nrow(truth), ncol(truth), dimnames = list(NULL, names(truth)))
-  for (v in targets) mask[, v] <- stats::runif(nrow(truth)) < p
-  list(mask = mask, probability = p)
 }
 
 uci_methods <- function(config) {
@@ -147,6 +129,15 @@ uci_score <- function(truth, completed, mask, targets) {
     if (!numeric && any(!as.character(b) %in% levels(a))) stop("Invalid category: ", v)
     delta <- if (numeric) b[take] - a[take] else NULL
     sd_ref <- if (numeric) stats::sd(a) else NA_real_
+    # evaluation() sums errors over its input table. Restrict that table to
+    # masked cells explicitly, rather than relying on observed values matching.
+    pointwise <- if (any(take)) VIM::evaluation(
+      data.frame(value = if (numeric) a[take] else as.character(a[take])),
+      data.frame(value = if (numeric) b[take] else as.character(b[take])),
+      where = matrix(TRUE, sum(take), 1L),
+      vartypes = if (numeric) "numeric" else "factor") else NULL
+    rmse <- if (numeric && any(take)) sqrt(pointwise$err_num) else NA_real_
+    sd_masked <- if (numeric && sum(take) > 1L) stats::sd(a[take]) else NA_real_
     # Numeric ECDF sup distance and categorical total variation, whole table.
     dist <- if (numeric) {
       points <- sort(unique(c(a, b)))
@@ -164,11 +155,13 @@ uci_score <- function(truth, completed, mask, targets) {
     }
     data.frame(variable = v, type = if (numeric) "numeric" else "categorical",
       n_masked = sum(take), realized_rate = mean(take),
-      rmse = if (numeric && any(take)) sqrt(mean(delta^2)) else NA_real_,
+      rmse = rmse,
       mae = if (numeric && any(take)) mean(abs(delta)) else NA_real_,
-      nrmse = if (numeric && any(take) && sd_ref > 0) sqrt(mean(delta^2))/sd_ref else NA_real_,
-      accuracy = if (!numeric && any(take)) mean(as.character(a[take]) == as.character(b[take])) else NA_real_,
-      misclassification = if (!numeric && any(take)) mean(as.character(a[take]) != as.character(b[take])) else NA_real_,
+      nrmse = if (numeric && is.finite(sd_masked) && sd_masked > 0)
+        VIM::nrmse(x = a, y = b, m = take) else NA_real_,
+      nrmse_reference = if (numeric && sd_ref > 0) rmse/sd_ref else NA_real_,
+      accuracy = if (!numeric && any(take)) 1 - pointwise$err_cat else NA_real_,
+      misclassification = if (!numeric && any(take)) pointwise$err_cat else NA_real_,
       mean_difference = if (numeric) mean(b) - mean(a) else NA_real_,
       sd_difference = if (numeric) stats::sd(b) - sd_ref else NA_real_,
       marginal_distance = dist, correlation_reference = relationship(a),
@@ -199,21 +192,24 @@ uci_run <- function(config = uci_config(), cache = "uci-cache", output = "uci-re
     for (mi in seq_along(config$mechanisms)) for (ri in seq_along(config$rates)) {
       mechanism <- config$mechanisms[mi]; rate <- config$rates[ri]
       seed <- sample_seed + mi * 10L + ri
-      amputation <- uci_mask(truth, targets, rate, mechanism, seed)
-      mask <- amputation$mask; incomplete <- truth
-      for (v in targets) incomplete[[v]][mask[, v]] <- NA
+      # Independent stream: otherwise makeMissing's MCAR rows can coincide
+      # exactly with a model's random validation split at the same seed.
+      model_seed <- seed + 1000000L
+      incomplete <- VIM::makeMissing(truth, prop = rate, mechanism = mechanism,
+        vars = targets, weights = if (mechanism == "MAR") c(age = 1) else NULL, seed = seed)
+      mask <- attr(incomplete, "where")
       # Do not supply category levels learned only from the withheld cells.
       incomplete <- droplevels(incomplete)
       key <- paste(dataset, rep, mechanism, rate, sep = "-")
       artifacts[[key]] <- list(truth = truth, row_ids = row_ids, mask = mask,
-                               probabilities = amputation$probability, completed = list())
+                               completed = list())
       # Randomize method order to reduce systematic warm-cache/order effects.
       set.seed(seed)
       for (method in sample(names(methods))) {
         message(key, " / ", method)
         warnings <- character(); started <- proc.time()[["elapsed"]]
         value <- tryCatch(withCallingHandlers({
-          completed <- methods[[method]](incomplete, targets, seed)
+          completed <- methods[[method]](incomplete, targets, model_seed)
           scores <- uci_score(truth, completed, mask, targets)
           list(completed = completed, scores = scores)
         }, warning = function(w) {
@@ -221,7 +217,7 @@ uci_run <- function(config = uci_config(), cache = "uci-cache", output = "uci-re
           invokeRestart("muffleWarning")
         }), error = identity)
         meta <- data.frame(dataset, repetition = rep, mechanism, rate, method,
-          sample_seed, seed, elapsed = proc.time()[["elapsed"]] - started,
+          sample_seed, seed, model_seed, elapsed = proc.time()[["elapsed"]] - started,
           status = if (inherits(value, "error")) "failed" else "ok",
           error = if (inherits(value, "error")) conditionMessage(value) else "",
           warnings = paste(warnings, collapse = " | "))
@@ -287,6 +283,8 @@ uci_distribution_summary <- function(output, repetition = 1L, mechanism = "MAR",
 # Requires the full local artifacts.rds, intentionally not bundled with VIM.
 uci_extend <- function(output, methods = "ranger_seq10") {
   config <- readRDS(file.path(output, "config.rds"))
+  if (!identical(config$protocol, uci_config()$protocol))
+    stop("Different benchmark protocol; regenerate with uci_run() instead of mixing results")
   if (any(methods %in% config$methods)) stop("Method already present in this run")
   artifacts <- readRDS(file.path(output, "artifacts.rds"))
   runs <- utils::read.csv(file.path(output, "runs.csv"), stringsAsFactors = FALSE)
@@ -306,7 +304,7 @@ uci_extend <- function(output, methods = "ranger_seq10") {
       message(key, " / ", method)
       warnings <- character(); started <- proc.time()[["elapsed"]]
       value <- tryCatch(withCallingHandlers({
-        completed <- functions[[method]](incomplete, targets, reference$seed)
+        completed <- functions[[method]](incomplete, targets, reference$model_seed)
         scores <- uci_score(a$truth, completed, a$mask, targets)
         list(completed = completed, scores = scores)
       }, warning = function(w) {

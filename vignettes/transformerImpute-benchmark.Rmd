@@ -27,7 +27,10 @@ table { display: block; max-width: 100%; overflow-x: auto; }
 ## Introduction
 
 Imputation accuracy and preservation of statistical structure are different
-objectives. This reproducible, small benchmark compares three transformer
+objectives. This vignette reuses `makeMissing()`, `evaluation()` and `nrmse()`
+from [Benchmarking imputation methods](vimpute-benchmark.html), rather than
+implementing another missingness generator or duplicating the core error
+metrics. This reproducible, small benchmark compares three transformer
 interfaces in VIM with nearest-neighbour, random-forest and gradient-boosting
 imputation on two mixed-type datasets. Results below are **computed results**,
 not expectations about which method should win. This vignette reads bundled
@@ -36,7 +39,7 @@ when the package is built or checked.
 
 The default regeneration experiment uses `r config$n` rows per dataset and
 `r config$repetitions` repetitions, with MCAR and MAR at 10%, 20% and 40%
-expected missingness in **each of two selected columns**, not across the whole
+missingness in **each of two selected columns**, not across the whole
 table. All original predictor columns are retained. Small samples and limited
 training make this a demonstration, not a definitive method ranking.
 
@@ -131,8 +134,8 @@ The installed script defines functions without performing work on `source()`.
 Choose a fresh output directory for each run; the script refuses to overwrite
 an existing run. Run the following **outside routine package checks**, after configuring the
 Python environment. The default experiment takes substantially longer than
-rendering this vignette. It saves full truth, sample indices, masks, MAR
-probabilities and completed tables locally in `artifacts.rds`; only compact
+rendering this vignette. It saves full truth, sample indices, `makeMissing()` masks
+and completed tables locally in `artifacts.rds`; only compact
 metrics and provenance are shipped with the package.
 
 ```{r regenerate, eval=FALSE}
@@ -153,8 +156,8 @@ uci_run(config, cache = "uci-cache", output = "uci-results", download = TRUE)
 uci_distribution_summary("uci-results")
 # Reuse the archives offline:
 # uci_run(config, cache = "uci-cache", output = "uci-results-offline", download = FALSE)
-# Extend an older six-method local run while reusing its full artifacts:
-# uci_extend("uci-results-original", methods = "ranger_seq10")
+# To add an omitted method to a local run made with this same protocol:
+# uci_extend("uci-results-subset", methods = "ranger_seq10")
 # Optional larger experiment (not the source of the displayed results):
 # uci_run(uci_config(full = TRUE), "uci-cache", "uci-results-full", FALSE)
 ```
@@ -165,7 +168,12 @@ str(config)
 
 For the recorded run, `OMP_NUM_THREADS=1`, `TF_NUM_INTRAOP_THREADS=2`,
 `TF_NUM_INTEROP_THREADS=2` and `TF_DETERMINISTIC_OPS=1` were set before starting R.
-The script seeds R and Python/NumPy/TensorFlow/Keras, clears Keras sessions
+The script records distinct sample, mask (`seed`) and model (`model_seed`)
+seeds. Model seeds use a separate deterministic offset from mask seeds:
+reusing the same seed for fixed-count MCAR sampling and a validation split
+can select exactly the same rows, leaving no validation labels. All methods
+receive the same model seed within a scenario. The script seeds R and
+Python/NumPy/TensorFlow/Keras, clears Keras sessions
 between methods, and records versions and thread settings. Exact floating-point
 results and timing can still differ across hardware or library versions.
 
@@ -176,21 +184,29 @@ complete-case dataset. All methods share that sample and each scenario's mask.
 The targets are Adult `hours_per_week` and `income`, and Bank `balance` and `y`.
 Other columns stay observed, including the MAR driver `age`.
 
-For MCAR, each target cell is independently deleted with probability `rate`.
-For MAR, let `z` be standardized, fully observed age, and set
-`p_i = plogis(a + z_i)`. A numerical root search chooses `a` so the mean
-probability equals the requested rate. Higher age increases deletion odds;
-no missing target value enters this calculation. Conditional on age, draws for
-the two targets are independent. Realized proportions fluctuate. We do not
-redraw masks to obtain convenient rates or remove difficult cases.
+`makeMissing()` selects exactly `round(rate * nrow(truth))` cells per
+target, without replacement. MCAR uses uniform sampling. MAR uses
+`weights = c(age = 1)` explicitly: the sampling weights are the logistic
+transform of standardized observed age. These weights are **not** marginal
+cell-deletion probabilities; the requested number of rows is sampled using
+those relative weights. Higher age favours selection. Age is never masked,
+and no target's hidden value drives another target's missingness. Using the
+default MAR drivers instead could include the other incomplete numeric target,
+so specifying the observed driver matters here.
+
+The `where` attribute supplies the common mask for every competing method
+and for scoring. We retain the original reference separately. With 240 rows,
+the three requested rates correspond to 24, 48 and 96 masked cells in each
+target. With other sample sizes the fractions may differ slightly due to
+rounding. Masks are never redrawn to remove difficult cases.
 
 ```{r masks, eval=FALSE}
 prepared <- uci_prepare("uci-cache", download = FALSE)
 set.seed(config$seed)
 truth <- prepared$data$Adult[sample(nrow(prepared$data$Adult), config$n), ]
-a <- uci_mask(truth, c("hours_per_week", "income"), .2, "MAR", config$seed)
-incomplete <- truth
-for (v in c("hours_per_week", "income")) incomplete[[v]][a$mask[, v]] <- NA
+incomplete <- makeMissing(truth, prop = .2, mechanism = "MAR",
+  vars = c("hours_per_week", "income"), weights = c(age = 1), seed = config$seed)
+mask <- attr(incomplete, "where")
 incomplete <- droplevels(incomplete) # no levels learned solely from masked values
 # truth is passed only to evaluation, never to a learner.
 ```
@@ -251,13 +267,46 @@ for transductive imputation. Sample/reference statistics used below are for
 
 ## Evaluation
 
-For artificially masked numeric cells only, report RMSE, MAE and
-`NRMSE = RMSE / sd(reference column)`. The denominator uses the full sampled
-complete reference, consistently for every method. For categorical masked
-cells report accuracy and `1 - accuracy`. This is single-imputation scoring;
-it does not estimate uncertainty coverage or proper multiple-imputation quality.
-The runner verifies that observed cells have not changed and rejects missing,
-non-finite or out-of-domain predictions. It does not clip extreme predictions.
+The pointwise metrics reuse VIM's existing tools and score artificially
+masked cells only:
+
+* `evaluation()` supplies numeric mean squared error (`err_num`) and the
+  fraction of incorrect categories (`err_cat`). We report RMSE as
+  `sqrt(err_num)`, misclassification as `err_cat`, and accuracy as
+  `1 - err_cat`. Because the current implementation of `evaluation()` sums
+  errors over the supplied table, the runner **subsets its inputs to masked
+  cells for each target** and passes an all-TRUE `where` matrix. This makes
+  the scoring boundary explicit. Whole-table calls are equivalent only when
+  observed values are preserved, which the runner also checks.
+* `nrmse(x, y, m = mask)` supplies **NRMSE**, using the standard deviation of
+  the **masked true values**, as implemented by VIM. This is the convention
+  used by the companion benchmark. Fewer than two masked values or zero
+  masked-reference variance gives an undefined score, recorded as NA.
+* **NRMSE_ref** (`nrmse_reference` in the CSV) retains the alternative
+  `RMSE / sd(full sampled reference column)` requested for this UCI
+  benchmark. It is separate from VIM's masked-reference NRMSE; under MAR the
+  two denominators can differ substantially. Both denominators are common
+  across methods within a scenario and are used only for evaluation.
+* MAE, whole-table marginal distances and relationship diagnostics supplement
+  these existing tools; they are not available from `evaluation()` itself.
+
+For example, after the single-target imputation above:
+
+```{r scoring-tools, eval=FALSE}
+take <- mask[, "hours_per_week"]
+errors <- evaluation(
+  truth[take, "hours_per_week", drop = FALSE],
+  as.data.frame(completed)[take, "hours_per_week", drop = FALSE],
+  where = matrix(TRUE, sum(take), 1L), vartypes = "numeric")
+sqrt(errors$err_num) # RMSE on artificially removed cells
+nrmse(truth$hours_per_week, completed$hours_per_week, m = take)
+sqrt(errors$err_num) / sd(truth$hours_per_week) # NRMSE_ref
+```
+
+The runner rejects changed observed cells and missing, non-finite or
+out-of-domain predictions. It does not clip extreme numeric predictions.
+This is single-imputation scoring; it does not estimate uncertainty coverage
+or proper multiple-imputation quality.
 
 Whole-completed-table diagnostics serve a different purpose:
 
@@ -275,12 +324,17 @@ validation and initialization; it excludes download, preprocessing and result
 writing, but includes scoring. It is measured once per method/scenario, not
 summed over duplicated per-target rows. Method order is randomized within
 scenarios. There is no hardware-normalized speed or peak-memory claim.
-The sequential-ranger comparison was added in a separate execution using the
-original saved samples, masks and seeds. Its timing was measured in that later
-execution, rather than interleaved with the six original methods; those methods
-were not retrained. A fresh `uci_run()` includes all seven in randomized order.
+All seven methods, including sequential ranger, were rerun together using
+the `makeMissing()` masks. Earlier results from the custom Bernoulli generator
+are not mixed into these tables. Random seeds reproduce this protocol, but
+using the same seed with a different generator does not reproduce old masks.
 
 ## Results
+
+The saved run contains `r nrow(runs)` method/scenario attempts,
+`r sum(runs$status == "ok")` successful completions and
+`r sum(runs$status != "ok")` recorded failures. Every method in a scenario
+uses the same `makeMissing()` mask.
 
 ```{r status, echo=FALSE}
 knitr::kable(as.data.frame(table(runs$dataset, runs$method, runs$status)),
@@ -313,7 +367,7 @@ for (ds in unique(runs$dataset)) for (mech in unique(runs$mechanism)) {
                    runs$rate == rate & runs$method == method, ]
       data.frame(Rate = rate, Method = method,
         Success = paste(sum(rr$status == "ok"), nrow(rr), sep = "/"),
-        RMSE = fmt(x$rmse), MAE = fmt(x$mae), NRMSE = fmt(x$nrmse),
+        RMSE = fmt(x$rmse), MAE = fmt(x$mae), NRMSE = fmt(x$nrmse), NRMSE_ref = fmt(x$nrmse_reference),
         Accuracy = fmt(x$accuracy), Misclassification = fmt(x$misclassification),
         Seconds = fmt(rr$elapsed[rr$status == "ok"]))
     }))
@@ -331,7 +385,7 @@ ggplot(numeric_scores, aes(factor(rate), nrmse, colour = method, group = method)
   geom_point(position = position_dodge(width = .25), alpha = .65) +
   facet_grid(dataset ~ mechanism, scales = "free_y") +
   scale_y_continuous(trans = "log1p") +
-  labs(x = "Nominal missing fraction", y = "Numeric NRMSE (log1p scale)",
+  labs(x = "Nominal missing fraction", y = "VIM masked-reference NRMSE (log1p scale)",
        colour = "Method", caption = "Points: repetitions; lines: means. Lower is better.") +
   theme_minimal()
 ```
@@ -397,19 +451,19 @@ properties <- do.call(rbind, lapply(split(x, keys), function(z) {
     correlation_difference = fmt(z$correlation_difference))
 }))
 knitr::kable(properties, row.names = FALSE,
-             caption = "Whole-table differences at 40% expected target missingness")
+             caption = "Whole-table differences at 40% target missingness")
 ```
 
 ## Discussion and limitations
 
-The recorded token-transformer failure on Bank at repetition 2, 40% MCAR
-reported `invalid 'ncol' value (< 0)`: the prediction sequence was wider than
-its fitted input, so left padding required a negative width. Training and
-prediction currently construct/drop token positions separately. This remaining
-encoder limitation is retained as a failed run rather than silently shortening
-sequences or changing the predictor set. A failed two-target run contributes no
-pointwise scores for either target, even if one target finished first. The
-status table and per-scenario success counts show its impact.
+The token encoder constructs/drops token positions separately for training
+and prediction. This can produce incompatible sequence widths or lose
+positions for rare or unseen categories. Any failures in the current run are
+listed above; they are not repaired by silently changing masks or predictors.
+A failed two-target run contributes no pointwise scores for either target,
+even if one target finished first. The per-scenario success counts show its
+impact. The paired summary below excludes an entire scenario from all methods
+if any competitor fails.
 
 Interpret the results in the context of small, unbalanced samples: accuracy on
 income/subscription can be high by predicting the majority class. Categorical
@@ -458,20 +512,19 @@ The shared fit is faster than fitting two separate direct models here; all
 three neural approaches are slower than the established methods at this small
 sample size. These findings support using the configurable benchmark to check
 accuracy and cost on the intended data, rather than choosing an architecture
-from its name alone. The token failure also limits its reliability under the
-current mixed-predictor encoding.
+from its name alone. The current token encoding also has the limitations described above.
 
 ## Reproducibility information
 
 The installed `benchmarks/uci-results` directory contains `metrics.csv`
 (per target), `runs.csv` (including failures and warnings), `config.rds`,
 `preprocessing.csv`, `sources.csv`, `distributions.csv`, `session.txt` and
-`session-extension.txt`. The original session records the initial six-method
-run; the extension session records sequential ranger and the combined configuration. The full regeneration
+an optional `session-extension.txt` for any later additions. The current
+`session.txt` records the unified seven-method run. The full regeneration
 artifact is intentionally kept outside the package. To update the vignette,
 rerun the script and replace these compact files together; do not hand-edit
 numbers. The test suite checks mask reproducibility, MAR's dependence only on
-observed age, scoring denominators, unchanged observed cells and offline
+observed age, VIM's masked-reference and full-reference scoring denominators, unchanged observed cells and offline
 behaviour without invoking TensorFlow.
 
 ```{r source-checksums, echo=FALSE}
@@ -482,6 +535,8 @@ Experiment environment (not the environment rendering this document):
 
 ```{r experiment-session, echo=FALSE, results='verbatim'}
 cat(readLines(file.path(result_dir, "session.txt")), sep = "\n")
-cat("\n\nSequential ranger extension:\n")
-cat(readLines(file.path(result_dir, "session-extension.txt")), sep = "\n")
+if (file.exists(file.path(result_dir, "session-extension.txt"))) {
+  cat("\n\nAdditional methods:\n")
+  cat(readLines(file.path(result_dir, "session-extension.txt")), sep = "\n")
+}
 ```
