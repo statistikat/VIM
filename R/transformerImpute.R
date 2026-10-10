@@ -73,6 +73,10 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
                               save_model=FALSE,
                               model_folder="",
                               model_name="tf_impute_model", head_dim=NULL, pooling=c("masked", "legacy")){
+  if (inherits(model, "vim_transformer_model")) {
+    if (!identical(target, model$target)) stop("Target differs from fitted model")
+    return(predict(model, data, imp_col=imp_col))
+  }
   pooling <- match.arg(pooling)
   TOKEN <- TOKEN_sep <- Word_ngram <- last_digit <- last_digit_flag <- NULL
   column <- help_position <- column_help <- imp <- NULL
@@ -108,10 +112,10 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
                            target,
                            decimal_points_target,
                            decimal_points,
-                           round_long_decs)
+                           round_long_decs, fixed_lens=if (!is.null(model$schema)) model$lens else NULL)
   dat_str <- dat_text$dat
   lens <- dat_text$len
-  
+  target_example <- if (!is.null(model$target_example)) model$target_example else NULL
   test <- dat_str[na_idx,] #unvollständige Zeilen
   
   if(is.null(model)){
@@ -167,6 +171,9 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
   if(!is_target_categorical){
     if("." %in% target_tok$Word_ngram){
       s <- dat_str[which(!is.na(get(target)))[1L],get(target)]
+      if (is.na(s) && !is.null(target_example))
+        s <- col_to_string(target_example, decimal_points_target, round_long_decs,
+                           width=lens[[target]])$x
       pos_period <- which(strsplit(s, "")[[1]]==".")
       if(length(pos_period)==0L){
         pos_period <- NA_integer_
@@ -508,7 +515,7 @@ train_transformer <- function(data,target,cat_vars,
   if(save_model){
     keras::save_model_tf(model,paste0(model_folder,"/",model_name))
     saveRDS(list(tok=tok,target_tok=target_tok,lens=lens,input_shape=input_shape),
-            paste0(model_folder,"model_params.RDS"))
+            file.path(model_folder,"model_params.RDS"))
   }
   
   return(list(model=model,tok=tok,target_tok=target_tok,lens=lens,input_shape=input_shape,
@@ -694,7 +701,7 @@ generate_tok <- function(dat_str,lens,cat_vars=NULL, hier_cat = NULL){
 # convert all columns to character of same shape
 # dat: a data frame or data table containing all variables to use as predictors/ target for imputation
 # cat_vars: vector of categorical variables in dat 
-data_to_text <- function(dat,cat_vars,hier_cat,target,decimal_points_target,decimal_points,round_long_decs){
+data_to_text <- function(dat,cat_vars,hier_cat,target,decimal_points_target,decimal_points,round_long_decs, fixed_lens=NULL){
   
   len <- list()
   for(i in 1:ncol(dat)){
@@ -715,7 +722,7 @@ data_to_text <- function(dat,cat_vars,hier_cat,target,decimal_points_target,deci
     }else{
       dec_points <- ifelse(names(dat)[i]==target,decimal_points_target,decimal_points)
       str_col <- col_to_string(dat[,get(names(dat)[i])],decimal_points=dec_points,
-                                   round_long_decs=round_long_decs)
+                                   round_long_decs=round_long_decs, width=fixed_lens[[names(dat)[i]]])
       if(i==1){
         dat_str <- data.table(str_col$x)
       }else{
@@ -815,7 +822,7 @@ move_neg_to_front <- function(exp){
 # round_long_decs automatically rounds numbers with over 5 decimal points to only three decimal points (only if decimal_points is not supplied)
 # outputs a list where x: vector of uniform strings
 #                     decimal_points: number of decimal points used for values
-col_to_string <- function(x,decimal_points=NULL, round_long_decs = TRUE){
+col_to_string <- function(x,decimal_points=NULL, round_long_decs = TRUE, width=NULL){
   na_idx <- which(is.na(x))
   if(!is.null(decimal_points)){
     x <- round(x,decimal_points)
@@ -847,7 +854,10 @@ col_to_string <- function(x,decimal_points=NULL, round_long_decs = TRUE){
     x <- paste(sprintf(round_expr, x))
   }
   
-  max_str_size <- max(nchar(x)) #größte Zahl (. und nachkommastellen sind für alle gleich)
+  observed <- setdiff(seq_along(x),na_idx)
+  needed <- if (length(observed)) max(nchar(x[observed])) else 1L
+  if (!is.null(width) && needed > width) stop("Numeric value exceeds fitted token width")
+  max_str_size <- if (is.null(width)) needed else width # #größte Zahl (. und nachkommastellen sind für alle gleich)
   
   x <- stringr::str_pad(x,max_str_size,side = "left","0") #zero padding links damit alle die gleiche anzahl an chars haben
   
