@@ -1,0 +1,25 @@
+library(VIM)
+d <- data.frame(x=c(-1,0,1,NA),constant=rep(2,4),cat=c("a","b",NA,"a"))
+s <- VIM:::.tabular_fit_schema(d)
+e <- VIM:::.tabular_encode(d,s)
+expect_equal(e[4,1:2],c(0,1))
+expect_equal(e[,3],rep(0,4))
+new <- d; new$cat[1] <- "unknown"
+expect_equal(VIM:::.tabular_encode(new,s)[1,5],1)
+expect_error(VIM:::.tabular_fit_schema(data.frame(x=c(NA_real_,NA_real_))))
+expect_error(fit_tabular_transformer(d,"x",predictors="x"))
+if (identical(Sys.getenv("VIM_RUN_TRANSFORMER_TESTS"),"true")) {
+  set.seed(1); d <- data.frame(x=rnorm(40)); d$y <- 2*d$x+rnorm(40,sd=.1)
+  fit <- fit_tabular_transformer(d,"y",seed=2,epochs=2,embedding_dim=8,num_heads=2)
+  expect_equal(fit$schema$x$center,mean(d$x[fit$provenance$train_rows]))
+  new <- d; new$y[1:3] <- NA
+  p <- predict(fit,new)
+  expect_false(anyNA(p)); expect_identical(p$y[-(1:3)],d$y[-(1:3)])
+  path <- tempfile(); save_transformer(fit,path)
+  expect_equal(predict(load_transformer(path),new),p,tolerance=1e-6)
+  unlink(path,recursive=TRUE)
+  d$y <- factor(ifelse(d$y>0,"a","b"))
+  fit <- fit_tabular_transformer(d,"y",seed=2,epochs=1,embedding_dim=8,num_heads=2)
+  d$y[1:3] <- NA; p <- predict(fit,d)
+  expect_false(anyNA(p)); expect_identical(levels(p$y),levels(d$y))
+}

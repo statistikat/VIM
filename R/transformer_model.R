@@ -67,6 +67,7 @@ fit_transformer <- function(data, target, cat_vars = NULL, hier_cat = NULL,
 #' @export
 predict.vim_transformer_model <- function(object, newdata, imp_col=FALSE, seed=NULL, ...) {
   if (length(list(...))) stop("Preprocessing cannot be overridden during prediction")
+  if (identical(object$kind,"tabular")) return(.predict_tabular_transformer(object,newdata,imp_col))
   .transformer_validate_schema(object,newdata)
   .transformer_seed(seed, {
     if (!is.null(seed)) tensorflow::tf$random$set_seed(as.integer(seed))
