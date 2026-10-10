@@ -34,7 +34,8 @@ transformerImpute(
   save_model = FALSE,
   model_folder = "",
   model_name = "tf_impute_model",
-  head_dim = NULL
+  head_dim = NULL,
+  pooling = c("masked", "legacy")
 )
 }
 \arguments{
@@ -98,6 +99,10 @@ transformerImpute(
 
 \item{head_dim}{Per-head attention width: NULL preserves the legacy embedding
 width, 'compact' uses embedding_dim / num_heads, or supply a positive integer.}
+
+\item{pooling}{'masked' averages valid sequence positions; 'legacy' retains
+the original channels-first pooling and positional encoding. New masked
+models require retraining; existing model objects keep their architecture.}
 }
 \value{
 Imputed dataset.

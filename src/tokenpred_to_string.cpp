@@ -8,6 +8,11 @@ List tokenpred_to_string_cpp(NumericVector probs, DataFrame target_tok, bool sam
   IntegerVector TOKEN = target_tok["TOKEN"];
   CharacterVector Word_ngram = target_tok["Word_ngram"];
   int n = target_tok.nrows();
+  if (n == 0 || probs.size() != n) stop("Probability/token dimensions do not match");
+  for (int i = 0; i < n; ++i) {
+    if (!R_finite(probs[i]) || probs[i] < 0) stop("Invalid token probability");
+  }
+  if (sum(probs) <= 0) stop("Token probabilities must have positive mass");
   int token_idx;
   
   if (sample_tok_probs) {
@@ -33,7 +38,7 @@ List parallel_tokenpred_to_string(NumericMatrix probs, DataFrame target_tok, boo
   int n = probs.nrow();
   List results(n);
   
-#pragma omp parallel for
+// Rcpp allocation and R RNG calls must remain on the R main thread.
   for (int i = 0; i < n; i++) {
     results[i] = tokenpred_to_string_cpp(probs(i, _), target_tok, sample_tok_probs);
   }

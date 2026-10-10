@@ -10,7 +10,7 @@ expect_error(resolve(1.5, 128, 8))
 expect_error(resolve(16, 128, 0))
 if (identical(Sys.getenv("VIM_RUN_TRANSFORMER_TESTS"), "true")) {
   build <- function(h) VIM:::build_model_cLM(5L, 16L, 4L, 32L, 1L, 5L,
-    10L, 0, 8L, 3L, head_dim = h)
+    10L, 0, 8L, 3L, head_dim = h, pooling = "legacy")
   legacy <- build(NULL); compact <- build("compact")
   expect_true(keras::count_params(compact) < keras::count_params(legacy))
   for (model in list(legacy, compact, build(8))) {

@@ -22,6 +22,9 @@
 #' @param dropout1 Dropout rate in transformer heads.
 #' @param dropout2 Dropout rate in feed forward network.
 #' @param num_heads Number of attention heads per transformer block.
+#' @param pooling 'masked' averages valid sequence positions; 'legacy' retains
+#'   the original channels-first pooling and positional encoding. New masked
+#'   models require retraining; existing model objects keep their architecture.
 #' @param head_dim Per-head attention width: NULL preserves the legacy embedding
 #'   width, 'compact' uses embedding_dim / num_heads, or supply a positive integer.
 #' @param num_transformer_blocks Number of transformer blocks.
@@ -69,7 +72,8 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
                               round_long_decs=TRUE,
                               save_model=FALSE,
                               model_folder="",
-                              model_name="tf_impute_model", head_dim=NULL){
+                              model_name="tf_impute_model", head_dim=NULL, pooling=c("masked", "legacy")){
+  pooling <- match.arg(pooling)
   TOKEN <- TOKEN_sep <- Word_ngram <- last_digit <- last_digit_flag <- NULL
   column <- help_position <- column_help <- imp <- NULL
   dat <- copy(data)
@@ -138,7 +142,7 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
                                    save_model=save_model,
                                    model_folder=model_folder,
                                    model_name=model_name,
-                                   head_dim=head_dim)
+                                   head_dim=head_dim, pooling=pooling)
     
     
     tok <- model_out$tok
@@ -325,7 +329,8 @@ train_transformer <- function(data,target,cat_vars,
                               verbose=0,
                               save_model=FALSE,
                               model_folder="",
-                              model_name="tf_impute_model", head_dim=NULL){
+                              model_name="tf_impute_model", head_dim=NULL, pooling=c("masked", "legacy")){
+  pooling <- match.arg(pooling)
   column <- Word_ngram <- help_position <- column_help <- TOKEN <- TOKEN_sep <- NULL
   last_digit <- last_digit_flag <- NULL
   dat <- copy(data)
@@ -472,7 +477,7 @@ train_transformer <- function(data,target,cat_vars,
     regularization = FLAGS$regularization,
     dense_dim=FLAGS$dense_dim,
     num_toks_out = num_toks_out,
-    head_dim = head_dim
+    head_dim = head_dim, pooling = pooling
   )
   
   model |> keras::compile(
@@ -507,7 +512,7 @@ train_transformer <- function(data,target,cat_vars,
   }
   
   return(list(model=model,tok=tok,target_tok=target_tok,lens=lens,input_shape=input_shape,
-              architecture=list(version=1L, head_dim=.transformer_head_dim(head_dim, embedding_dim, num_heads))))
+              architecture=list(version=if (pooling == "masked") 2L else 1L, pooling=pooling, head_dim=.transformer_head_dim(head_dim, embedding_dim, num_heads))))
 }
 
 
@@ -520,7 +525,7 @@ transformer_encoder <- function(inputs,
                                 embed_dim,
                                 num_heads,
                                 ff_dim,
-                                dropout = 0, head_dim = NULL) {
+                                dropout = 0, head_dim = NULL, attention_mask = NULL) {
   # Attention and Normalization
   attention_layer <-
     keras::layer_multi_head_attention(key_dim = .transformer_head_dim(head_dim, embed_dim, num_heads),
@@ -528,7 +533,7 @@ transformer_encoder <- function(inputs,
                                dropout = dropout)
   
   
-  x <- attention_layer(inputs, inputs) |> 
+  x <- attention_layer(inputs, inputs, attention_mask = attention_mask) |>
     keras::layer_dropout(dropout)
   
   res <- x + inputs   |> 
@@ -559,7 +564,8 @@ build_model_cLM <- function(input_shape,
                             dense_dim,
                             num_toks_out,
                             dropout1 = 0,
-                            dropout2 = 0, head_dim = NULL) {
+                            dropout2 = 0, head_dim = NULL, pooling = c("masked", "legacy")) {
+  pooling <- match.arg(pooling)
   head_dim <- .transformer_head_dim(head_dim, embed_dim, num_heads)
   
   inputs <- keras::layer_input(shape=input_shape)
@@ -569,14 +575,18 @@ build_model_cLM <- function(input_shape,
                                  ,mask_zero = TRUE
   )
   
-  positions  <- tensorflow::tf$range(start=0, limit = maxlen, delta = 1)
-  positions <- positions |> keras::layer_embedding(input_dim = maxlen, 
-                                            output_dim = embed_dim
-                                            ,mask_zero = TRUE
-  )
-  
+  attention_mask <- NULL
+  if (pooling == "legacy") {
+    positions <- tensorflow::tf$range(start=0, limit=maxlen, delta=1)
+    positions <- keras::layer_embedding(positions, input_dim=maxlen,
+                                        output_dim=embed_dim, mask_zero=TRUE)
+  } else {
+    layers <- .transformer_layers()
+    positions <- layers$ValidPositionEmbedding(as.integer(maxlen), as.integer(embed_dim))(inputs)
+    attention_mask <- layers$ValidAttentionMask()(inputs)
+  }
   x <- x + positions
-  
+
   for (i in 1:num_transformer_blocks) {
     x <- x |>
       keras::layer_layer_normalization() |>
@@ -585,12 +595,15 @@ build_model_cLM <- function(input_shape,
         num_heads = num_heads,
         ff_dim = ff_dim,
         dropout = dropout1,
-        head_dim = head_dim
+        head_dim = head_dim, attention_mask = attention_mask
       )
   }
   
-  x <- x |> 
-    keras::layer_global_average_pooling_1d(data_format = "channels_first")
+  x <- if (pooling == "legacy") {
+    keras::layer_global_average_pooling_1d(x, data_format = "channels_first")
+  } else {
+    layers$MaskedMean()(list(x, inputs))
+  }
   
   x <- x |>
     keras::layer_dense(dense_dim,activation = "relu") |>
@@ -873,4 +886,9 @@ col_to_string <- function(x,decimal_points=NULL, round_long_decs = TRUE){
   }
   if (!positive_integer(head_dim)) stop("head_dim must be NULL, 'compact', or a positive integer")
   as.integer(head_dim)
+}
+
+.transformer_layers <- function() {
+  reticulate::import_from_path("vim_transformer_layers",
+    path = system.file("python", package = "VIM"), convert = TRUE)
 }
