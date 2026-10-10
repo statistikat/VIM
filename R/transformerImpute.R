@@ -442,7 +442,9 @@ train_transformer <- function(data,target,cat_vars,
   test_seqs <- training_seq_cpp(lens[[target]], train_emb[-train_idx,])
   
   input_shape <- ncol(t_seqs)-1
-  num_words <- nrow(tok) #number tokens in tokenizer
+  # Removing the target NA token can leave gaps in the zero-based IDs.
+  # Predictor missing-value tokens can therefore have IDs >= nrow(tok).
+  num_words <- max(tok$TOKEN) + 1L
   
   num_toks_out <- nrow(target_tok)
   yLev <- levels(as.factor(matrix(train_emb[,(ncol(train_emb)-lens[[target]]+1):ncol(train_emb)])))

@@ -130,3 +130,22 @@ no_missing_out <- transformerImpute(
 
 expect_identical(as.character(no_missing_out$y), as.character(no_missing_df$y))
 expect_identical(unused_model$model$state$call, 0L)
+
+# An incomplete predictor retains a high-ID NA token after target NA removal.
+# This used to exceed the embedding input dimension (nrow of filtered tokens).
+if (identical(Sys.getenv("VIM_RUN_TRANSFORMER_TESTS"), "true")) {
+  set.seed(901)
+  reticulate::import("tf_keras")$utils$set_random_seed(901L)
+  mixed <- data.frame(y = rep(c(10, 20, 30, 40), 10),
+                      predictor = factor(rep(c("a", "b", NA, "a"), 10)))
+  mixed$y[c(2, 7)] <- NA
+  fitted <- VIM:::train_transformer(mixed, target = "y", cat_vars = "predictor", hier_cat = NULL,
+    epochs = 1L, verbose = 0L, decimal_points = 0L, decimal_points_target = 0L,
+    embedding_dim = 8L, num_heads = 2L, feed_forward_dim = 16L, dense_dim = 8L,
+    head_dim = "compact", pooling = "masked")
+  expect_true(max(fitted$tok$TOKEN) >= nrow(fitted$tok))
+  out <- transformerImpute(mixed, "y", cat_vars = "predictor", model = fitted,
+                            decimal_points = 0L, decimal_points_target = 0L)
+  expect_false(anyNA(out$y))
+  expect_equal(out$y[!is.na(mixed$y)], mixed$y[!is.na(mixed$y)])
+}
