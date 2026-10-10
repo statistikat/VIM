@@ -48,6 +48,7 @@ Suggests:
     dplyr,
     tinytest,
     knitr,
+    ggplot2,
     mgcv,
     rmarkdown,
     reactable,

@@ -1,0 +1,469 @@
+---
+title: "Transformer imputation on Adult and Bank Marketing"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Transformer imputation on Adult and Bank Marketing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
+                      fig.height = 5, fig.align = "center")
+result_dir <- system.file("benchmarks", "uci-results", package = "VIM")
+if (!file.exists(file.path(result_dir, "metrics.csv")))
+  result_dir <- file.path("..", "inst", "benchmarks", "uci-results")
+stopifnot(file.exists(file.path(result_dir, "metrics.csv")))
+metrics <- read.csv(file.path(result_dir, "metrics.csv"))
+runs <- read.csv(file.path(result_dir, "runs.csv"))
+config <- readRDS(file.path(result_dir, "config.rds"))
+has_ggplot <- requireNamespace("ggplot2", quietly = TRUE)
+```
+
+<style>
+table { display: block; max-width: 100%; overflow-x: auto; }
+</style>
+
+## Introduction
+
+Imputation accuracy and preservation of statistical structure are different
+objectives. This reproducible, small benchmark compares three transformer
+interfaces in VIM with nearest-neighbour, random-forest and gradient-boosting
+imputation on two mixed-type datasets. Results below are **computed results**,
+not expectations about which method should win. This vignette reads bundled
+summaries: it neither downloads data nor initializes Python nor trains models
+when the package is built or checked.
+
+The default regeneration experiment uses `r config$n` rows per dataset and
+`r config$repetitions` repetitions, with MCAR and MAR at 10%, 20% and 40%
+expected missingness in **each of two selected columns**, not across the whole
+table. All original predictor columns are retained. Small samples and limited
+training make this a demonstration, not a definitive method ranking.
+
+## Transformer interfaces and training
+
+`transformerImpute(data, target, ...)` fits a new model unless `model` is supplied.
+It predicts one target per call. Numeric values are represented by digit tokens;
+categories by tokens. Training uses observed target rows, with an internal
+80/20 training/validation split and early stopping. Numeric decoding and
+categorical token sampling differ: the latter need not maximize classification
+accuracy. Predictors with missing values and categories unseen among observed
+target rows can lose token positions in the current encoder. This is a
+limitation of this implementation, especially with rare categories.
+
+We set `cat_vars` explicitly from factors, rather than using the default
+low-cardinality heuristic, which can mistake integers for categories. These
+datasets have integer-valued numeric variables, so `decimal_points = 0` and
+`decimal_points_target = 0` preserve their precision. `pooling = "masked"` and
+`head_dim = "compact"` use valid-position pooling and smaller attention heads.
+Other settings are documented in the configuration below. They are fixed
+before evaluating held-out values; no tuning uses benchmark truth.
+
+The experimental `fit_tabular_transformer()` uses numeric value/missingness
+channels and categorical embeddings with a direct regression or classification
+head. We fit one model per target and apply `predict()`. The experimental
+`fit_shared_transformer()` jointly learns the selected targets using masked-cell
+training and one shared encoder. Both have an internal validation partition;
+numeric scaling is fitted on training rows. Neither is a pretrained foundation
+model. Reusable token models are also available via `fit_transformer()`,
+`save_transformer()` and `load_transformer()`. We deliberately refit for every
+scenario; reusing a model trained on another mask could reveal held-out values.
+
+These interfaces require R **keras**, **tensorflow** and **reticulate**, plus a
+compatible Python TensorFlow/legacy Keras environment. Numeric and unordered
+factor columns are used here. Dates, arbitrary objects, hierarchical categories,
+multiple imputation and out-of-sample generalization are outside this experiment.
+Foundation adapters (`tabimpute`, `tabiclImpute`, `tabpfnImpute`) require separate
+Python dependencies and checkpoints and are not part of this TensorFlow vignette.
+
+A mixed-data pilot exposed an embedding-size bug: deleting the target NA token
+left nonconsecutive IDs, but the embedding was sized by token count. The size
+now uses the largest ID plus one. A regression test covers an incomplete
+categorical predictor. This is the only imputation functionality changed for
+this benchmark; the reported experiment uses the corrected implementation.
+
+## Datasets and preprocessing
+
+* [Adult / Census Income](https://archive.ics.uci.edu/dataset/2/adult),
+  Becker and Kohavi (1996), [DOI:10.24432/C5XW20](https://doi.org/10.24432/C5XW20):
+  combine `adult.data` and `adult.test` (48,842 rows). Skip the test-file header,
+  trim whitespace, remove the final period from test income labels, and parse
+  `?` as missing. Combining the published splits is intentional: this is
+  transductive reconstruction of missing cells, not a supervised income test.
+* [Bank Marketing](https://archive.ics.uci.edu/dataset/222/bank+marketing),
+  Moro, Rita and Cortez (2014), [DOI:10.24432/C5K306](https://doi.org/10.24432/C5K306):
+  use `bank-full.csv` (45,211 rows), not the smaller sample or the different
+  `bank-additional-full.csv`. Keep `unknown` as an observed category. It encodes
+  recorded lack of knowledge; equating it with an artificially deleted value
+  would change the evaluation target. Keep `pdays = -1` (no prior contact) as
+  a structural sentinel in its original numeric column. Do not interpret it
+  as a literal negative duration.
+
+Both UCI datasets are distributed under CC BY 4.0. The script stores archive
+URLs and MD5 checksums for provenance. Raw records are downloaded only with
+explicit `download = TRUE` and are not bundled with VIM.
+
+All character columns become unordered factors and all numeric measurements
+remain numeric. No clipping, logarithms, balancing, rare-level pooling or
+one-hot conversion is applied in shared preprocessing. Adult's `fnlwgt` remains
+a predictor, not a survey weight; these are unweighted sample diagnostics.
+Both education representations are retained. Bank's call duration is retained:
+it is available for retrospective imputation, but would be inappropriate in a
+pre-call subscription prediction task.
+
+Remove rows with any existing NA to obtain complete references. Consequently,
+Adult results describe its complete-case population and need not transfer to
+people with naturally missing occupation or workclass. No correctness claim
+is made for the unobserved true values in those removed rows.
+
+```{r preprocessing, echo=FALSE}
+audit <- read.csv(file.path(result_dir, "preprocessing.csv"))
+knitr::kable(unique(audit[c("dataset", "rows", "complete_rows")]),
+             caption = "Rows before and after complete-case selection")
+knitr::kable(audit[audit$existing_na > 0 | audit$unknown > 0,
+                   c("dataset", "variable", "existing_na", "unknown")],
+             caption = "Existing missing values and retained unknown categories")
+```
+
+## Configuration and independent regeneration
+
+The installed script defines functions without performing work on `source()`.
+Choose a fresh output directory for each run; the script refuses to overwrite
+an existing run. Run the following **outside routine package checks**, after configuring the
+Python environment. The default experiment takes substantially longer than
+rendering this vignette. It saves full truth, sample indices, masks, MAR
+probabilities and completed tables locally in `artifacts.rds`; only compact
+metrics and provenance are shipped with the package.
+
+```{r regenerate, eval=FALSE}
+Sys.setenv(OMP_NUM_THREADS = "1", TF_NUM_INTRAOP_THREADS = "2",
+           TF_NUM_INTEROP_THREADS = "2", TF_DETERMINISTIC_OPS = "1")
+library(VIM)
+source(system.file("benchmarks", "uci-transformer.R", package = "VIM"))
+# Set RETICULATE_PYTHON before Python is initialized if selecting an environment.
+# For the tested legacy Keras environment:
+keras::py_require_legacy_keras(FALSE)
+config <- uci_config()
+config$n <- 240L
+config$rates <- c(.1, .2, .4)
+config$repetitions <- 3L
+config$methods <- c("transformerImpute", "tabular", "shared", "kNN", "ranger", "xgboost")
+# Training parameters, e.g. config$transformer$epochs, can be changed here.
+uci_run(config, cache = "uci-cache", output = "uci-results", download = TRUE)
+uci_distribution_summary("uci-results")
+# Reuse the archives offline:
+# uci_run(config, cache = "uci-cache", output = "uci-results-offline", download = FALSE)
+# Optional larger experiment (not the source of the displayed results):
+# uci_run(uci_config(full = TRUE), "uci-cache", "uci-results-full", FALSE)
+```
+
+```{r configuration, echo=FALSE}
+str(config)
+```
+
+For the recorded run, `OMP_NUM_THREADS=1`, `TF_NUM_INTRAOP_THREADS=2`,
+`TF_NUM_INTEROP_THREADS=2` and `TF_DETERMINISTIC_OPS=1` were set before starting R.
+The script seeds R and Python/NumPy/TensorFlow/Keras, clears Keras sessions
+between methods, and records versions and thread settings. Exact floating-point
+results and timing can still differ across hardware or library versions.
+
+## Missingness simulation
+
+Each repetition draws a new simple random sample without replacement from each
+complete-case dataset. All methods share that sample and each scenario's mask.
+The targets are Adult `hours_per_week` and `income`, and Bank `balance` and `y`.
+Other columns stay observed, including the MAR driver `age`.
+
+For MCAR, each target cell is independently deleted with probability `rate`.
+For MAR, let `z` be standardized, fully observed age, and set
+`p_i = plogis(a + z_i)`. A numerical root search chooses `a` so the mean
+probability equals the requested rate. Higher age increases deletion odds;
+no missing target value enters this calculation. Conditional on age, draws for
+the two targets are independent. Realized proportions fluctuate. We do not
+redraw masks to obtain convenient rates or remove difficult cases.
+
+```{r masks, eval=FALSE}
+prepared <- uci_prepare("uci-cache", download = FALSE)
+set.seed(config$seed)
+truth <- prepared$data$Adult[sample(nrow(prepared$data$Adult), config$n), ]
+a <- uci_mask(truth, c("hours_per_week", "income"), .2, "MAR", config$seed)
+incomplete <- truth
+for (v in c("hours_per_week", "income")) incomplete[[v]][a$mask[, v]] <- NA
+incomplete <- droplevels(incomplete) # no levels learned solely from masked values
+# truth is passed only to evaluation, never to a learner.
+```
+
+```{r realized-rates, echo=FALSE}
+mask_rates <- unique(metrics[c("dataset", "repetition", "mechanism", "rate",
+                               "variable", "realized_rate")])
+knitr::kable(aggregate(realized_rate ~ dataset + mechanism + rate + variable,
+                       mask_rates, mean), digits = 3,
+             caption = "Mean realized target-specific missing fractions")
+```
+
+## Competing methods and comparability
+
+* **transformerImpute**: token transformer with compact attention and masked
+  pooling; a separate call per target.
+* **tabular**: separate direct tabular models per target.
+* **shared**: one joint model with the two targets.
+* **kNN**: `k = 5`, all other columns as distance variables, default range
+  standardization, median numeric aggregation and categorical mode.
+* **ranger**: `rangerImpute()` with 100 trees and one worker.
+* **xgboost**: `xgboostImpute()` with 30 boosting rounds and one worker.
+
+The latter two formula interfaces currently use VIM's suggested mlr3 stack.
+The runner checks exported function availability and records errors, including
+missing dependencies, rather than silently omitting a method. Their formulas
+name all other columns explicitly. All methods receive identical incomplete
+values. Single-target calls always restart from the original incomplete table;
+they do not receive the other target's completed values from earlier calls.
+The tree wrappers may internally initialize missing predictors through
+`vimpute()`, while kNN uses incomplete distances and neural encoders have their
+own handling. The shared model can exploit joint training. These architectural
+differences cannot be equated by merely matching a predictor list.
+
+```{r example, eval=FALSE}
+completed <- transformerImpute(incomplete, target = "hours_per_week",
+  cat_vars = names(incomplete)[vapply(incomplete, is.factor, logical(1))],
+  decimal_points = 0, decimal_points_target = 0,
+  embedding_dim = 16, num_heads = 2, head_dim = "compact", pooling = "masked",
+  feed_forward_dim = 32, dense_dim = 16, epochs = 5, patience = 3,
+  batch_size = 64, learning_rate = .001, verbose = 0)
+# The runner also fits/imputes income independently from 'incomplete'.
+```
+
+Internal validation is for early stopping only. No artificially hidden target
+is used in training, predictor preprocessing, validation, tuning or model
+selection. Fully observed predictors of masked rows are available, as is usual
+for transductive imputation. Sample/reference statistics used below are for
+**evaluation only**, never fed back into fitted models.
+
+## Evaluation
+
+For artificially masked numeric cells only, report RMSE, MAE and
+`NRMSE = RMSE / sd(reference column)`. The denominator uses the full sampled
+complete reference, consistently for every method. For categorical masked
+cells report accuracy and `1 - accuracy`. This is single-imputation scoring;
+it does not estimate uncertainty coverage or proper multiple-imputation quality.
+The runner verifies that observed cells have not changed and rejects missing,
+non-finite or out-of-domain predictions. It does not clip extreme predictions.
+
+Whole-completed-table diagnostics serve a different purpose:
+
+* mean and standard-deviation differences from the complete reference;
+* maximum numeric empirical-CDF difference (KS distance, no hypothesis test)
+  or categorical total-variation distance between marginal proportions;
+* correlation with observed age, compared with the complete reference.
+  For binary outcomes this is point-biserial correlation, with the second
+  factor level coded one. A constant completion gives an undefined correlation.
+
+These diagnostics can look reassuring when most cells remain observed even
+if imputation error is large. They are not substitutes for masked-cell scores.
+Elapsed wall time includes fitting and prediction of both targets, internal
+validation and initialization; it excludes download, preprocessing and result
+writing, but includes scoring. It is measured once per method/scenario, not
+summed over duplicated per-target rows. Method order is randomized within
+scenarios. There is no hardware-normalized speed or peak-memory claim.
+
+## Results
+
+```{r status, echo=FALSE}
+knitr::kable(as.data.frame(table(runs$dataset, runs$method, runs$status)),
+             col.names = c("Dataset", "Method", "Status", "Runs"))
+failed <- runs[runs$status != "ok", c("dataset", "repetition", "mechanism", "rate", "method", "error")]
+if (nrow(failed)) knitr::kable(failed)
+```
+
+The following tables retain dataset, mechanism and nominal rate. Scores are
+means across successful repetitions, with their sample standard deviations in
+parentheses. Counts are shown so failures cannot improve a ranking invisibly.
+With three repetitions, standard deviations describe variation only roughly;
+they are not confidence intervals or significance tests. Methods are paired by
+sample and mask, so formal comparisons would require paired analysis and more
+repetitions. Empty cells indicate unavailable metrics.
+
+```{r result-tables, echo=FALSE, results='asis'}
+fmt <- function(x) {
+  x <- x[is.finite(x)]
+  if (!length(x)) return("—")
+  sprintf("%.3f (%.3f)", mean(x), if (length(x) > 1) sd(x) else NA_real_)
+}
+for (ds in unique(runs$dataset)) for (mech in unique(runs$mechanism)) {
+  cat("\n\n### ", ds, ": ", mech, "\n\n", sep = "")
+  tab <- do.call(rbind, lapply(config$rates, function(rate) {
+    do.call(rbind, lapply(config$methods, function(method) {
+      x <- metrics[metrics$dataset == ds & metrics$mechanism == mech &
+                     metrics$rate == rate & metrics$method == method, ]
+      rr <- runs[runs$dataset == ds & runs$mechanism == mech &
+                   runs$rate == rate & runs$method == method, ]
+      data.frame(Rate = rate, Method = method,
+        Success = paste(sum(rr$status == "ok"), nrow(rr), sep = "/"),
+        RMSE = fmt(x$rmse), MAE = fmt(x$mae), NRMSE = fmt(x$nrmse),
+        Accuracy = fmt(x$accuracy), Misclassification = fmt(x$misclassification),
+        Seconds = fmt(rr$elapsed[rr$status == "ok"]))
+    }))
+  }))
+  print(knitr::kable(tab, row.names = FALSE))
+  cat("\n\n")
+}
+```
+
+```{r error-plot, echo=FALSE, eval=has_ggplot}
+library(ggplot2)
+numeric_scores <- subset(metrics, type == "numeric")
+ggplot(numeric_scores, aes(factor(rate), nrmse, colour = method, group = method)) +
+  stat_summary(fun = mean, geom = "line") +
+  geom_point(position = position_dodge(width = .25), alpha = .65) +
+  facet_grid(dataset ~ mechanism, scales = "free_y") +
+  scale_y_continuous(trans = "log1p") +
+  labs(x = "Nominal missing fraction", y = "Numeric NRMSE (log1p scale)",
+       colour = "Method", caption = "Points: repetitions; lines: means. Lower is better.") +
+  theme_minimal()
+```
+
+```{r categorical-plot, echo=FALSE, eval=has_ggplot}
+ggplot(subset(metrics, type == "categorical"),
+       aes(factor(rate), accuracy, colour = method, group = method)) +
+  stat_summary(fun = mean, geom = "line") +
+  geom_point(position = position_dodge(width = .25), alpha = .65) +
+  facet_grid(dataset ~ mechanism) + ylim(0, 1) +
+  labs(x = "Nominal missing fraction", y = "Masked-cell accuracy", colour = "Method") +
+  theme_minimal()
+```
+
+```{r runtime-plot, echo=FALSE, eval=has_ggplot}
+ggplot(subset(runs, status == "ok"), aes(method, elapsed, colour = factor(rate))) +
+  geom_point(position = position_jitter(width = .15, height = 0, seed = 1)) +
+  facet_grid(dataset ~ mechanism) + scale_y_log10() + coord_flip() +
+  labs(x = NULL, y = "Seconds for both targets (log scale)", colour = "Missing fraction") +
+  theme_minimal()
+```
+
+```{r structure-plot, echo=FALSE, eval=has_ggplot}
+ggplot(metrics, aes(factor(rate), marginal_distance, colour = method, group = method)) +
+  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "point") +
+  facet_grid(dataset + type ~ mechanism) +
+  labs(x = "Nominal missing fraction", y = "Whole-table marginal distance",
+       colour = "Method", caption = "Numeric: ECDF distance; categorical: total variation. Lower is better.") +
+  theme_minimal()
+```
+
+For a predeclared illustrative scenario (repetition 1, MAR, 20%), the next
+plots show whole-table numeric deciles and categorical proportions. The
+reference is the complete sampled data. This scenario is illustrative and
+was not selected because a particular method performed well.
+
+```{r marginal-plot, echo=FALSE, eval=has_ggplot}
+distributions <- read.csv(file.path(result_dir, "distributions.csv"))
+ggplot(subset(distributions, type == "numeric"),
+       aes(position, value, colour = method, linetype = method == "Reference")) +
+  geom_line() + geom_point(size = 1) + facet_wrap(~dataset + variable, scales = "free_y") +
+  scale_y_continuous(trans = "asinh") +
+  labs(x = "Quantile probability", y = "Whole-table quantile (asinh scale)",
+       colour = "Method", linetype = "Complete reference") + theme_minimal()
+```
+
+```{r proportions-plot, echo=FALSE, eval=has_ggplot}
+ggplot(subset(distributions, type == "categorical"), aes(method, value, fill = category)) +
+  geom_col() + facet_wrap(~dataset + variable) + coord_flip() +
+  labs(x = NULL, y = "Whole-table category proportion", fill = "Category") + theme_minimal()
+```
+
+```{r statistical-properties, echo=FALSE}
+# Full target/scenario/repetition diagnostics are in metrics.csv.
+# Here show the hardest nominal rate, still separating mechanisms and datasets.
+x <- subset(metrics, rate == max(config$rates))
+keys <- interaction(x$dataset, x$mechanism, x$method, x$variable, drop = TRUE)
+properties <- do.call(rbind, lapply(split(x, keys), function(z) {
+  cbind(z[1, c("dataset", "mechanism", "method", "variable")],
+    mean_difference = fmt(z$mean_difference), sd_difference = fmt(z$sd_difference),
+    marginal_distance = fmt(z$marginal_distance),
+    correlation_difference = fmt(z$correlation_difference))
+}))
+knitr::kable(properties, row.names = FALSE,
+             caption = "Whole-table differences at 40% expected target missingness")
+```
+
+## Discussion and limitations
+
+The recorded token-transformer failure on Bank at repetition 2, 40% MCAR
+reported `invalid 'ncol' value (< 0)`: the prediction sequence was wider than
+its fitted input, so left padding required a negative width. Training and
+prediction currently construct/drop token positions separately. This remaining
+encoder limitation is retained as a failed run rather than silently shortening
+sequences or changing the predictor set. A failed two-target run contributes no
+pointwise scores for either target, even if one target finished first. The
+status table and per-scenario success counts show its impact.
+
+Interpret the results in the context of small, unbalanced samples: accuracy on
+income/subscription can be high by predicting the majority class. Categorical
+sampling may preserve a marginal distribution while reducing exact-match
+accuracy. Conversely, conditional-mean regression can score well on RMSE while
+shrinking variance. Bank balances are skewed; a few large errors can dominate
+RMSE. There is no imputation-range constraint on numeric token decoding.
+
+Five training epochs are a limited budget, not a claim of convergence. Direct
+and shared transformers encode numbers more naturally than digit prediction,
+but they still learn from scratch. Early stopping, per-target training and
+Python initialization affect runtime. Equal epoch counts do not imply equal
+work or equal tuning quality across architectures. A larger sample, more
+repetitions, separate tuning data and a predeclared training budget are needed
+before choosing a method for production. Sparse or very high-cardinality
+categorical targets, missingness in all predictors, other MAR drivers and MNAR
+are not established by this experiment.
+
+The per-scenario tables and plots above use each method's successful runs.
+The following paired sensitivity summary instead retains only scenarios
+completed by **all six methods**, so a method cannot benefit from omitting a
+harder scenario. Neither these averages nor the plots imply universal
+transformer superiority.
+
+```{r findings, echo=FALSE}
+scenario_key <- function(d) paste(d$dataset, d$repetition, d$mechanism, d$rate)
+all_ok <- vapply(split(runs, scenario_key(runs)), function(z)
+  nrow(z) == length(config$methods) && all(z$status == "ok"), logical(1))
+common <- names(all_ok)[all_ok]
+paired_metrics <- metrics[scenario_key(metrics) %in% common, ]
+paired_runs <- runs[scenario_key(runs) %in% common, ]
+findings <- merge(
+  aggregate(nrmse ~ dataset + method, paired_metrics, mean),
+  aggregate(accuracy ~ dataset + method, paired_metrics, mean))
+findings <- merge(findings, aggregate(elapsed ~ dataset + method, paired_runs, median))
+knitr::kable(findings, digits = 3,
+  caption = paste("Paired descriptive averages on", length(common),
+                  "common successful scenarios; median runtime in seconds"))
+```
+
+In this recorded five-epoch experiment, the token transformer has higher mean
+numeric NRMSE and lower categorical accuracy than the three established
+baselines on both datasets. The direct and shared models are closer to the
+baselines on Bank, but do not establish a consistent advantage across datasets.
+The shared fit is faster than fitting two separate direct models here; all
+three neural approaches are slower than the established methods at this small
+sample size. These findings support using the configurable benchmark to check
+accuracy and cost on the intended data, rather than choosing an architecture
+from its name alone. The token failure also limits its reliability under the
+current mixed-predictor encoding.
+
+## Reproducibility information
+
+The installed `benchmarks/uci-results` directory contains `metrics.csv`
+(per target), `runs.csv` (including failures and warnings), `config.rds`,
+`preprocessing.csv`, `sources.csv`, `distributions.csv` and `session.txt`. The full regeneration
+artifact is intentionally kept outside the package. To update the vignette,
+rerun the script and replace these compact files together; do not hand-edit
+numbers. The test suite checks mask reproducibility, MAR's dependence only on
+observed age, scoring denominators, unchanged observed cells and offline
+behaviour without invoking TensorFlow.
+
+```{r source-checksums, echo=FALSE}
+knitr::kable(read.csv(file.path(result_dir, "sources.csv")))
+```
+
+Experiment environment (not the environment rendering this document):
+
+```{r experiment-session, echo=FALSE, results='verbatim'}
+cat(readLines(file.path(result_dir, "session.txt")), sep = "\n")
+```
