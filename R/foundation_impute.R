@@ -80,3 +80,37 @@ tabiclImpute <- function(data,variables=NULL,id_vars=NULL,n_estimators=4L,n_iter
   tabimpute(data,variables=variables,id_vars=id_vars,seed=seed,
     imp_var=imp_var,tabimpute_module=adapter)
 }
+
+#' Impute with optional TabPFN model checkpoints
+#'
+#' Experimental local adapter for tabpfn 6.0.0 / tabpfn-extensions 0.2.0.
+#' Offline mode requires explicit checkpoints for the variable types present.
+#' With downloads enabled, `model_version` selects the upstream release;
+#' model licenses/access requirements are handled by the upstream package.
+#' VIM neither bundles weights nor accepts license terms on the user's behalf.
+#' @inheritParams tabiclImpute
+#' @param n_permutations Number of conditional imputation orderings.
+#' @param classifier_path Local classifier checkpoint, or NULL.
+#' @param regressor_path Local regressor checkpoint, or NULL.
+#' @param model_version Upstream checkpoint family ('v2' or 'v2.5').
+#' @return Completed data; these are single imputations, not validated multiple imputations.
+#' @export
+tabpfnImpute <- function(data,variables=NULL,id_vars=NULL,n_estimators=4L,n_permutations=1L,
+    temperature=1e-9,seed=42L,device="cpu",allow_download=FALSE,
+    classifier_path=NULL,regressor_path=NULL,model_version=c("v2","v2.5"),
+    python=NULL,imp_var=TRUE,backend=NULL) {
+  model_version <- match.arg(model_version)
+  .foundation_controls(n_estimators,n_permutations,temperature,allow_download)
+  for(path in list(classifier_path,regressor_path))
+    if(!is.null(path) && (length(path)!=1L || !file.exists(path))) stop("Checkpoint path does not exist")
+  engine <- if(!is.null(backend)) backend else function(x,categorical,seed) {
+    if(!allow_download && ((length(categorical)>0L && is.null(classifier_path)) ||
+        (length(categorical)<ncol(x) && is.null(regressor_path))))
+      stop("Offline TabPFN requires local checkpoints for each used variable type")
+    .foundation_python(python)$tabpfn_impute(x,as.list(as.integer(categorical)),
+      as.integer(n_estimators),as.integer(n_permutations),temperature,
+      if(is.null(seed)) NULL else as.integer(seed),device,allow_download,
+      classifier_path,regressor_path,model_version)
+  }
+  .foundation_apply(data,variables,id_vars,seed,imp_var,engine)
+}
