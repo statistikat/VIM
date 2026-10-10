@@ -23,3 +23,13 @@ if (identical(Sys.getenv("VIM_RUN_TRANSFORMER_TESTS"),"true")) {
   expect_error(save_transformer(fit,path))
   unlink(path,recursive=TRUE)
 }
+
+expect_error(fit_transformer(data.frame(x=1:10,y=1:10),"y",decimal_points=NULL))
+expect_error(fit_transformer(data.frame(x=1:10,y=1:10),"y",decimal_points_target=1.5))
+
+fake <- structure(list(schema=list(x=list(class="numeric",levels=NULL)),
+  options=list(cat_vars=character(),decimal_points=0,round_long_decs=TRUE),
+  target="y",lens=list(x=1),tok=data.frame(column="x",Word_ngram="1")),
+  class="vim_transformer_model")
+expect_error(VIM:::.transformer_validate_schema(fake,data.frame(x=2)))
+expect_true(VIM:::.transformer_validate_schema(fake,data.frame(x=1)))

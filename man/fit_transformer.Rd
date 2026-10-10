@@ -29,7 +29,9 @@ and logical columns (numeric columns remain numeric).}
 \item{seed}{Optional non-negative integer seed. R RNG state is restored;
 backend/device operations may still be nondeterministic.}
 
-\item{...}{Training arguments passed to the transformer training helper.}
+\item{...}{Training arguments passed to the transformer training helper.
+Reusable token models require fixed integer decimal precision; NULL
+precision inference is only supported by the legacy convenience API.}
 
 \item{object}{Fitted transformer model.}
 

@@ -10,6 +10,8 @@
 #' @param seed Optional non-negative integer seed. R RNG state is restored;
 #'   backend/device operations may still be nondeterministic.
 #' @param ... Training arguments passed to the transformer training helper.
+#'   Reusable token models require fixed integer decimal precision; NULL
+#'   precision inference is only supported by the legacy convenience API.
 #' @return A `vim_transformer_model` used with `predict()` or saved to disk.
 #' @export
 fit_transformer <- function(data, target, cat_vars = NULL, hier_cat = NULL,
@@ -18,6 +20,14 @@ fit_transformer <- function(data, target, cat_vars = NULL, hier_cat = NULL,
     stop("data must be a nonempty data frame with unique column names")
   if (length(target) != 1L || !target %in% names(data)) stop("Unknown target")
   args <- list(...)
+  # Auto-inferred precision depends on the data being predicted. A reusable
+  # token schema therefore requires explicit fixed precision (defaults: one).
+  for (nm in intersect(names(args), c("decimal_points", "decimal_points_target"))) {
+    value <- args[[nm]]
+    if (is.null(value) || !is.numeric(value) || length(value)!=1L ||
+        !is.finite(value) || value<0 || value!=floor(value))
+      stop("Reusable token models require fixed non-negative integer ",nm)
+  }
   if (any(c("data", "target", "cat_vars", "hier_cat", "save_model") %in% names(args)))
     stop("Reserved training argument; use save_transformer() to save a fitted bundle")
   if (!is.null(args$include_cols)) data <- as.data.frame(data)[, args$include_cols, drop=FALSE]
@@ -56,6 +66,23 @@ fit_transformer <- function(data, target, cat_vars = NULL, hier_cat = NULL,
     if (!is.null(meta$levels) && any(!as.character(x[!is.na(x)]) %in% as.character(meta$levels)))
       stop("Unknown category in column: ", nm)
     if (is.numeric(x) && any(!is.finite(x[!is.na(x)]))) stop("Non-finite values in column: ", nm)
+    if (!is.null(object$tok) && any(!is.na(x))) {
+      values <- x[!is.na(x)]
+      if (nm %in% object$options$cat_vars) {
+        values <- as.character(values)
+        hierarchy <- object$options$hier_cat[[nm]]
+        if (!is.null(hierarchy)) {
+          ends <- cumsum(hierarchy); starts <- c(1L, head(ends,-1L)+1L)
+          values <- unlist(Map(function(a,b) substr(values,a,b),starts,ends),use.names=FALSE)
+        }
+      } else {
+        precision <- if (nm==object$target) object$options$decimal_points_target else object$options$decimal_points
+        text <- col_to_string(values,precision,object$options$round_long_decs,width=object$lens[[nm]])$x
+        values <- unlist(strsplit(text,"",fixed=TRUE),use.names=FALSE)
+      }
+      allowed <- object$tok$Word_ngram[object$tok$column==nm]
+      if (any(!values %in% allowed)) stop("Value contains tokens absent from fitted vocabulary: ",nm)
+    }
   }
   invisible(TRUE)
 }
