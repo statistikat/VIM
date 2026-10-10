@@ -648,6 +648,7 @@ tabimpute <- function(
   x_num <- as.data.frame(lapply(x, as.numeric), stringsAsFactors = FALSE)
   mat <- as.matrix(x_num)
   storage.mode(mat) <- "double"
+  mat[is.na(mat)] <- NaN # canonical quiet NaN, not R's signaling NA payload
   np$array(mat, dtype = "float64")
 }
 

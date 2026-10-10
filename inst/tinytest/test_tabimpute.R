@@ -146,6 +146,20 @@ if (run_real_backend) {
   expect_false(anyNA(out_real$a))
   expect_false(anyNA(out_real$b))
   expect_equal(out_real[!is.na(x_real)], x_real[!is.na(x_real)])
+  mixed <- data.frame(x=as.numeric(1:30),g=factor(rep(c("a","b"),15)))
+  mixed$g[2] <- NA
+  cat_session <- tabimpute_backend("categorical",checkpoint_path=checkpoint,allow_download=FALSE)
+  mixed_out <- tabimpute(mixed,tabimpute_module=cat_session,imp_var=FALSE)
+  expect_false(anyNA(mixed_out))
+  expect_identical(mixed_out$x,mixed$x)
+  expect_identical(levels(mixed_out$g),levels(mixed$g))
+  checkpoint_v2 <- Sys.getenv("VIM_TABIMPUTE_V2_CHECKPOINT")
+  if(nzchar(checkpoint_v2)) {
+    v2 <- tabimpute_backend("v2",checkpoint_path=checkpoint_v2,allow_download=FALSE)
+    result_v2 <- tabimpute(x_real,tabimpute_module=v2,imp_var=FALSE)
+    expect_false(anyNA(result_v2))
+    expect_equal(result_v2[!is.na(x_real)],x_real[!is.na(x_real)])
+  }
 } else {
   message("Skipping real TabImpute backend tests. Set VIM_RUN_TABIMPUTE_BACKEND_TESTS=true to enable them.")
 }
