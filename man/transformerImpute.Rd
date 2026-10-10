@@ -33,7 +33,8 @@ transformerImpute(
   round_long_decs = TRUE,
   save_model = FALSE,
   model_folder = "",
-  model_name = "tf_impute_model"
+  model_name = "tf_impute_model",
+  head_dim = NULL
 )
 }
 \arguments{
@@ -94,10 +95,26 @@ transformerImpute(
 \item{model_folder}{string of folder to save model to if save_model==TRUE}
 
 \item{model_name}{string of name to assign to model when saving}
+
+\item{head_dim}{Per-head attention width: NULL preserves the legacy embedding
+width, 'compact' uses embedding_dim / num_heads, or supply a positive integer.}
 }
 \value{
 Imputed dataset.
 }
 \description{
 Impute missing values using a transformer model.
+}
+\examples{
+# minimal examples
+testdat <- data.table(x = rnorm(10), y = rnorm(10),
+  cat1 = sample(rep(c("A", "B"),5)),
+  cathier = sample(rep(c("AABB","AACC","BBDD","BBEE","CCFF"),2)))
+testdat[10, cathier:=NA]
+transformerImpute(testdat, target = "cathier",
+  cat_vars = c("cat1","cathier"),
+  hier_cat=list(cathier=c(2,2)),epochs=1, decimal_points = 3)
+}
+\author{
+Nina Niederhametner
 }

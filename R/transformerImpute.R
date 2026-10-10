@@ -22,6 +22,8 @@
 #' @param dropout1 Dropout rate in transformer heads.
 #' @param dropout2 Dropout rate in feed forward network.
 #' @param num_heads Number of attention heads per transformer block.
+#' @param head_dim Per-head attention width: NULL preserves the legacy embedding
+#'   width, 'compact' uses embedding_dim / num_heads, or supply a positive integer.
 #' @param num_transformer_blocks Number of transformer blocks.
 #' @param feed_forward_dim Dimension of feed forward network.
 #' @param embedding_dim Dimension of embedding layer.
@@ -67,7 +69,7 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
                               round_long_decs=TRUE,
                               save_model=FALSE,
                               model_folder="",
-                              model_name="tf_impute_model"){
+                              model_name="tf_impute_model", head_dim=NULL){
   TOKEN <- TOKEN_sep <- Word_ngram <- last_digit <- last_digit_flag <- NULL
   column <- help_position <- column_help <- imp <- NULL
   dat <- copy(data)
@@ -135,7 +137,8 @@ transformerImpute <- function(data,target,cat_vars=NULL,hier_cat=NULL,model=NULL
                                    verbose = verbose,
                                    save_model=save_model,
                                    model_folder=model_folder,
-                                   model_name=model_name)
+                                   model_name=model_name,
+                                   head_dim=head_dim)
     
     
     tok <- model_out$tok
@@ -322,7 +325,7 @@ train_transformer <- function(data,target,cat_vars,
                               verbose=0,
                               save_model=FALSE,
                               model_folder="",
-                              model_name="tf_impute_model"){
+                              model_name="tf_impute_model", head_dim=NULL){
   column <- Word_ngram <- help_position <- column_help <- TOKEN <- TOKEN_sep <- NULL
   last_digit <- last_digit_flag <- NULL
   dat <- copy(data)
@@ -468,7 +471,8 @@ train_transformer <- function(data,target,cat_vars,
     num_words = num_words,
     regularization = FLAGS$regularization,
     dense_dim=FLAGS$dense_dim,
-    num_toks_out = num_toks_out
+    num_toks_out = num_toks_out,
+    head_dim = head_dim
   )
   
   model |> keras::compile(
@@ -502,7 +506,8 @@ train_transformer <- function(data,target,cat_vars,
             paste0(model_folder,"model_params.RDS"))
   }
   
-  return(list(model=model,tok=tok,target_tok=target_tok,lens=lens,input_shape=input_shape))
+  return(list(model=model,tok=tok,target_tok=target_tok,lens=lens,input_shape=input_shape,
+              architecture=list(version=1L, head_dim=.transformer_head_dim(head_dim, embedding_dim, num_heads))))
 }
 
 
@@ -515,10 +520,10 @@ transformer_encoder <- function(inputs,
                                 embed_dim,
                                 num_heads,
                                 ff_dim,
-                                dropout = 0) {
+                                dropout = 0, head_dim = NULL) {
   # Attention and Normalization
   attention_layer <-
-    keras::layer_multi_head_attention(key_dim = embed_dim,
+    keras::layer_multi_head_attention(key_dim = .transformer_head_dim(head_dim, embed_dim, num_heads),
                                num_heads = num_heads,
                                dropout = dropout)
   
@@ -554,7 +559,8 @@ build_model_cLM <- function(input_shape,
                             dense_dim,
                             num_toks_out,
                             dropout1 = 0,
-                            dropout2 = 0) {
+                            dropout2 = 0, head_dim = NULL) {
+  head_dim <- .transformer_head_dim(head_dim, embed_dim, num_heads)
   
   inputs <- keras::layer_input(shape=input_shape)
   
@@ -578,7 +584,8 @@ build_model_cLM <- function(input_shape,
         embed_dim = embed_dim,
         num_heads = num_heads,
         ff_dim = ff_dim,
-        dropout = dropout1
+        dropout = dropout1,
+        head_dim = head_dim
       )
   }
   
@@ -852,3 +859,18 @@ col_to_string <- function(x,decimal_points=NULL, round_long_decs = TRUE){
 #   token_id <- target_tok[token_idx,TOKEN]
 #   return(list(token_id=token_id,token=token))
 # }
+
+# Resolve capacity independently of the external embedding width.
+.transformer_head_dim <- function(head_dim, embed_dim, num_heads) {
+  positive_integer <- function(x) is.numeric(x) && length(x) == 1L &&
+    !is.na(x) && is.finite(x) && x > 0 && x == floor(x) && x <= .Machine$integer.max
+  if (!positive_integer(embed_dim) || !positive_integer(num_heads))
+    stop("embedding_dim and num_heads must be positive integers")
+  if (is.null(head_dim)) return(as.integer(embed_dim))
+  if (identical(head_dim, "compact")) {
+    if (embed_dim %% num_heads != 0) stop("Compact attention requires embedding_dim divisible by num_heads")
+    return(as.integer(embed_dim / num_heads))
+  }
+  if (!positive_integer(head_dim)) stop("head_dim must be NULL, 'compact', or a positive integer")
+  as.integer(head_dim)
+}
