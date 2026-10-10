@@ -113,19 +113,21 @@ out_dt <- tabimpute(
 )
 expect_true(data.table::is.data.table(out_dt))
 
-# vimpute can dispatch explicitly to tabimpute
-out_vimpute <- vimpute(
-  x_select,
-  method = "tabimpute",
-  variables = "a",
-  tabimpute_module = overwrite_backend,
-  imp_var = FALSE
-)
-expect_equal(out_vimpute$a, c(1, 100, 3))
-expect_equal(out_vimpute$b, x_select$b)
+# Whole-table backends use their dedicated API; vimpute's registry requires
+# mlr3 learners and must not silently reinterpret backend arguments.
+expect_error(vimpute(x_select, method="tabimpute", variables="a",
+                     tabimpute_module=overwrite_backend, imp_var=FALSE))
+expect_error(tabimpute_backend(allow_download=FALSE))
+expect_error(tabimpute_backend(checkpoint_path=tempfile()))
+expect_error(tabimpute(x_missing,seed=-1,tabimpute_module=overwrite_backend))
+expect_error(tabimpute(data.frame(a=c(NA_real_,NA_real_)),tabimpute_module=overwrite_backend))
+expect_error(tabimpute(x_missing,tabimpute_module=function(x,...) {x$a[]<-Inf;x}))
+set.seed(3); saved_seed <- .Random.seed
+invisible(tabimpute(x_missing,seed=8,tabimpute_module=function(x,...) {x$a[is.na(x$a)]<-runif(1);x}))
+expect_identical(.Random.seed,saved_seed)
 
-run_real_backend <- isTRUE(tabimpute_available()) &&
-  identical(tolower(Sys.getenv("VIM_RUN_TABIMPUTE_BACKEND_TESTS")), "true")
+run_real_backend <- identical(tolower(Sys.getenv("VIM_RUN_TABIMPUTE_BACKEND_TESTS")), "true") &&
+  isTRUE(tabimpute_available())
 
 if (run_real_backend) {
   x_real <- data.frame(
@@ -133,7 +135,11 @@ if (run_real_backend) {
     b = c(2, NA, 6, 8, 10)
   )
 
-  out_real <- tabimpute(x_real, imp_var = FALSE)
+  checkpoint <- Sys.getenv("VIM_TABIMPUTE_CHECKPOINT")
+  if (!nzchar(checkpoint)) stop("Real tests require VIM_TABIMPUTE_CHECKPOINT; tests never download weights")
+  session <- tabimpute_backend(checkpoint_path=checkpoint,allow_download=FALSE)
+  out_real <- tabimpute(x_real, tabimpute_module=session, imp_var = FALSE)
+  expect_equal(tabimpute(x_real,tabimpute_module=session,imp_var=FALSE),out_real)
   expect_true(inherits(out_real, "data.frame"))
   expect_identical(dim(out_real), dim(x_real))
   expect_identical(names(out_real), names(x_real))

@@ -2,11 +2,8 @@
 % Please edit documentation in R/tabimpute.R
 \name{tabimpute}
 \alias{tabimpute}
-\alias{tabimpute_available}
 \title{Impute missing values using TabImpute}
 \usage{
-tabimpute_available()
-
 tabimpute(
   data,
   variables = NULL,
@@ -52,9 +49,9 @@ passed to the backend. If \code{FALSE}, non-numeric backend columns are rejected
 testing, used instead of importing the default Python module.}
 
 \item{backend}{Character string selecting the Python backend. \code{"auto"} uses
-\code{TabImputeCategorical} when categorical columns are present and
-\code{ImputePFN} otherwise. \code{"v2"} selects \code{TabImputeV2} and currently
-supports numeric data only.}
+\code{TabImputeCategorical} when categorical columns are present and \code{ImputePFN}
+otherwise. \code{"v2"} selects \code{TabImputeV2} and currently supports numeric data
+only.}
 
 \item{device}{Device string passed to the Python backend, for example
 \code{"cpu"} or \code{"cuda"}.}
@@ -83,9 +80,8 @@ constructor.}
 \item{...}{Additional arguments passed to the backend adapter.}
 }
 \value{
-For \code{tabimpute_available()}, a logical scalar. For \code{tabimpute()}, an
-imputed data set. \code{data.table} inputs return a \code{data.table}; other
-inputs return a \code{data.frame}.
+An imputed data set. \code{data.table} inputs return a \code{data.table};
+other inputs return a \code{data.frame}.
 }
 \description{
 \code{tabimpute()} provides an experimental interface to a Python TabImpute
@@ -101,11 +97,10 @@ preserved, and only originally missing values in selected variables are
 replaced.
 
 The adapter targets the Python package \code{tabimpute} and its
-\code{tabimpute.interface.ImputePFN},
-\code{tabimpute.interface.TabImputeCategorical}, and
-\code{tabimpute.tabimpute_v2.TabImputeV2} classes. The Python package downloads
-model checkpoints from Hugging Face when no \code{checkpoint_path} is supplied,
-so pass \code{checkpoint_path} for offline or production use.
+\code{tabimpute.interface.ImputePFN}, \code{tabimpute.interface.TabImputeCategorical},
+and \code{tabimpute.tabimpute_v2.TabImputeV2} classes. The Python package
+downloads model checkpoints from Hugging Face when no \code{checkpoint_path} is
+supplied, so pass \code{checkpoint_path} for offline or production use.
 }
 \examples{
 \dontrun{
@@ -119,6 +114,11 @@ if (tabimpute_available()) {
 Other imputation methods:
 \code{\link{hotdeck}()},
 \code{\link{impPCA}()},
+\code{\link{imputeCellEM}()},
+\code{\link{imputeCellIRMI}()},
+\code{\link{imputeCellM}()},
+\code{\link{imputeCellMCD}()},
+\code{\link{imputeCellwise}()},
 \code{\link{imputeRobust}()},
 \code{\link{imputeRobustChain}()},
 \code{\link{irmi}()},
@@ -128,6 +128,7 @@ Other imputation methods:
 \code{\link{rangerImpute}()},
 \code{\link{regressionImp}()},
 \code{\link{sampleCat}()},
+\code{\link{vimmi}},
 \code{\link{vimpute}()},
 \code{\link{xgboostImpute}()}
 }

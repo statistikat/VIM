@@ -175,6 +175,10 @@ tabimpute <- function(
     mixed = mixed
   )
 
+  if (!is.null(seed)) .transformer_seed(seed, invisible(NULL))
+  if (!is.null(checkpoint_path) && !file.exists(checkpoint_path)) stop("checkpoint_path does not exist")
+  if (any(vapply(prep$x[variables],function(x) all(is.na(x)),logical(1))))
+    stop("Cannot impute an entirely missing target without observed support")
   module <- .tabimpute_import(tabimpute_module = tabimpute_module, python = python)
 
   completed <- .tabimpute_python_impute(
@@ -417,6 +421,12 @@ tabimpute <- function(
                                      seed = NULL,
                                      verbose = FALSE,
                                      ...) {
+  if (inherits(module,"vim_tabimpute_backend")) {
+    if (length(backend)==1L && backend!="auto" && backend!=module$backend)
+      stop("Requested backend differs from loaded backend")
+    backend <- module$backend
+    module <- module$model
+  }
   if (is.function(module)) {
     return(.tabimpute_call_r_backend(module, x, mask, seed, verbose, ...))
   }
@@ -596,6 +606,9 @@ tabimpute <- function(
          call. = FALSE)
   }
 
+  if (length(extra) && (is.null(names(extra)) || any(!nzchar(names(extra))) ||
+      anyDuplicated(names(extra)) || any(names(extra) %in% names(args))))
+    stop("Backend constructor arguments must be uniquely named and not duplicated")
   c(args, extra)
 }
 
@@ -682,7 +695,7 @@ tabimpute <- function(
     list(verbose = isTRUE(verbose)),
     list(...)
   )
-  do.call(fun, args)
+  .transformer_seed(seed, do.call(fun, args))
 }
 
 .tabimpute_is_python_object <- function(x) {
@@ -716,6 +729,9 @@ tabimpute <- function(
       name = var
     )
 
+    if (anyNA(restored[rows]) ||
+        (is.numeric(restored) && any(!is.finite(restored[rows]))))
+      stop("Backend did not provide valid imputations for: ",var,call.=FALSE)
     new_col <- out[[var]]
     new_col[rows] <- restored[rows]
     out[[var]] <- .tabimpute_restore_column(
@@ -888,4 +904,31 @@ tabimpute <- function(
     stop("`", arg, "` must be a positive numeric scalar.", call. = FALSE)
   }
   invisible(TRUE)
+}
+
+#' Load a reusable TabImpute backend
+#'
+#' Load weights once and pass the result as `tabimpute_module` to [tabimpute()].
+#' The backend retains model weights, not the user's data. Offline mode requires
+#' an explicit local checkpoint; no package installs occur automatically.
+#' @param backend Explicit backend kind.
+#' @param device Python device string.
+#' @param checkpoint_path Local checkpoint path, or NULL to download/cache upstream weights.
+#' @param allow_download Whether a checkpoint may be downloaded.
+#' @param python Optional Python executable.
+#' @param ... Additional backend constructor arguments.
+#' @return A reusable backend session, to be recreated in each R process.
+#' @export
+tabimpute_backend <- function(backend=c("imputepfn","categorical","v2"),device="cpu",
+    checkpoint_path=NULL,allow_download=TRUE,python=NULL,...) {
+  backend <- match.arg(backend)
+  .tabimpute_validate_scalar_flag(allow_download,"allow_download")
+  if(!allow_download && is.null(checkpoint_path)) stop("Offline mode requires checkpoint_path")
+  if(!is.null(checkpoint_path) && (length(checkpoint_path)!=1L || !file.exists(checkpoint_path)))
+    stop("checkpoint_path does not exist")
+  api <- .tabimpute_import(python=python)
+  model <- .tabimpute_python_imputer(api,backend,device,checkpoint_path,NULL,2L,NULL,NULL,FALSE,...)
+  version <- reticulate::import("importlib.metadata",convert=TRUE)$version("tabimpute")
+  structure(list(model=model,backend=backend,version=version,checkpoint_path=checkpoint_path,
+    device=device),class="vim_tabimpute_backend")
 }
