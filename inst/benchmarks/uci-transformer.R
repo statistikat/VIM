@@ -4,7 +4,7 @@ uci_config <- function(full = FALSE) {
   list(protocol = "makeMissing-evaluation-v1", n = if (full) 2000L else 240L, rates = c(.1, .2, .4),
        repetitions = if (full) 10L else 3L, mechanisms = c("MCAR", "MAR"),
        seed = 20261010L,
-       methods = c("transformerImpute", "tabular", "shared", "kNN", "ranger", "ranger_seq10", "xgboost"),
+       methods = c("transformerImpute", "tabular", "shared", "kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10"),
        transformer = list(epochs = if (full) 30L else 5L, batch_size = 64L,
                           patience = 3L, embedding_dim = 16L, num_heads = 2L),
        trees = 100L, boosting_rounds = 30L)
@@ -60,7 +60,7 @@ uci_methods <- function(config) {
   exports <- getNamespaceExports("VIM")
   need <- c(transformerImpute = "transformerImpute", tabular = "fit_tabular_transformer",
             shared = "fit_shared_transformer", kNN = "kNN", ranger = "rangerImpute",
-            ranger_seq10 = "vimpute", xgboost = "xgboostImpute")
+            ranger_seq10 = "vimpute", xgboost = "xgboostImpute", xgboost_seq10 = "vimpute")
   if (any(!config$methods %in% names(need))) stop("Unknown benchmark method")
   setNames(lapply(config$methods, function(method) {
     function(d, targets, seed) {
@@ -72,10 +72,14 @@ uci_methods <- function(config) {
         # Seeds Python random, numpy and TF/keras initialization, in addition to R.
         reticulate::import("tf_keras")$utils$set_random_seed(as.integer(seed))
       }
-      if (method == "ranger_seq10") {
-        return(as.data.frame(VIM::vimpute(d, method = "ranger",
+      if (method %in% c("ranger_seq10", "xgboost_seq10")) {
+        learner <- sub("_seq10$", "", method)
+        learner_params <- if (learner == "ranger")
+          list(ranger = list(num.trees = config$trees, num.threads = 1L)) else
+          list(xgboost = list(nrounds = config$boosting_rounds, nthread = 1L))
+        return(as.data.frame(VIM::vimpute(d, method = learner,
           sequential = TRUE, nseq = 10L, pmm = FALSE, uncert = "none",
-          learner_params = list(ranger = list(num.trees = config$trees, num.threads = 1L)),
+          learner_params = learner_params,
           seed = seed, tune = FALSE, imp_var = FALSE, verbose = FALSE)))
       }
       pars <- config$transformer

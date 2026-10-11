@@ -150,14 +150,14 @@ config <- uci_config()
 config$n <- 240L
 config$rates <- c(.1, .2, .4)
 config$repetitions <- 3L
-config$methods <- c("transformerImpute", "tabular", "shared", "kNN", "ranger", "ranger_seq10", "xgboost")
+config$methods <- c("transformerImpute", "tabular", "shared", "kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10")
 # Training parameters, e.g. config$transformer$epochs, can be changed here.
 uci_run(config, cache = "uci-cache", output = "uci-results", download = TRUE)
 uci_distribution_summary("uci-results")
 # Reuse the archives offline:
 # uci_run(config, cache = "uci-cache", output = "uci-results-offline", download = FALSE)
 # To add an omitted method to a local run made with this same protocol:
-# uci_extend("uci-results-subset", methods = "ranger_seq10")
+# uci_extend("uci-results-subset", methods = "xgboost_seq10")
 # Optional larger experiment (not the source of the displayed results):
 # uci_run(uci_config(full = TRUE), "uci-cache", "uci-results-full", FALSE)
 ```
@@ -235,6 +235,10 @@ knitr::kable(aggregate(realized_rate ~ dataset + mechanism + rate + variable,
   are disabled (`pmm = FALSE`, `uncert = "none"`) to match the other tree
   comparisons; tuning is disabled.
 * **xgboost**: `xgboostImpute()` with 30 boosting rounds and one worker.
+* **xgboost_seq10**: `vimpute(method = "xgboost", sequential = TRUE, nseq = 10)`
+  with 30 boosting rounds per fit and one worker. As with sequential ranger,
+  both targets are updated jointly for at most ten iterations, with the default
+  convergence rule, no PMM or uncertainty draws, and no tuning.
 
 The ranger and XGBoost formula interfaces, and sequential `vimpute()`, use
 VIM's suggested mlr3 stack.
@@ -245,7 +249,7 @@ values. Single-target calls always restart from the original incomplete table;
 they do not receive the other target's completed values from earlier calls.
 The tree wrappers may internally initialize missing predictors through
 `vimpute()`, while kNN uses incomplete distances and neural encoders have their
-own handling. The shared model can exploit joint training, and sequential ranger can use
+own handling. The shared model can exploit joint training, and both sequential tree methods can use
 updated imputations of the other target across iterations. These architectural
 differences cannot be equated by merely matching a predictor list.
 
@@ -324,8 +328,11 @@ validation and initialization; it excludes download, preprocessing and result
 writing, but includes scoring. It is measured once per method/scenario, not
 summed over duplicated per-target rows. Method order is randomized within
 scenarios. There is no hardware-normalized speed or peak-memory claim.
-All seven methods, including sequential ranger, were rerun together using
-the `makeMissing()` masks. Earlier results from the custom Bernoulli generator
+The original seven methods, including sequential ranger, were run together using
+the `makeMissing()` masks. Sequential XGBoost was subsequently added with
+`uci_extend()`, reusing the exact saved samples, masks and model seeds. Its
+runtime was measured in a separate session, so timing comparisons also reflect
+between-session variation. Earlier results from the custom Bernoulli generator
 are not mixed into these tables. Random seeds reproduce this protocol, but
 using the same seed with a different generator does not reproduce old masks.
 
@@ -484,7 +491,7 @@ are not established by this experiment.
 
 The per-scenario tables and plots above use each method's successful runs.
 The following paired sensitivity summary instead retains only scenarios
-completed by **all seven methods**, so a method cannot benefit from omitting a
+completed by **all `r length(config$methods)` methods**, so a method cannot benefit from omitting a
 harder scenario. Neither these averages nor the plots imply universal
 transformer superiority.
 
@@ -505,7 +512,7 @@ knitr::kable(findings, digits = 3,
 ```
 
 In this recorded five-epoch experiment, the token transformer has higher mean
-numeric NRMSE and lower categorical accuracy than the four established
+numeric NRMSE and lower categorical accuracy than the five established
 baselines on both datasets. The direct and shared models are closer to the
 baselines on Bank, but do not establish a consistent advantage across datasets.
 The shared fit is faster than fitting two separate direct models here; all
@@ -520,7 +527,8 @@ The installed `benchmarks/uci-results` directory contains `metrics.csv`
 (per target), `runs.csv` (including failures and warnings), `config.rds`,
 `preprocessing.csv`, `sources.csv`, `distributions.csv`, `session.txt` and
 an optional `session-extension.txt` for any later additions. The current
-`session.txt` records the unified seven-method run. The full regeneration
+`session.txt` records the original seven-method run, and
+`session-extension.txt` records the sequential XGBoost addition. The full regeneration
 artifact is intentionally kept outside the package. To update the vignette,
 rerun the script and replace these compact files together; do not hand-edit
 numbers. The test suite checks mask reproducibility, MAR's dependence only on
