@@ -10,9 +10,10 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
                       fig.height = 5, fig.align = "center")
-result_dir <- system.file("benchmarks", "uci-results", package = "VIM")
+# Prefer checkout results when rendering during development.
+result_dir <- file.path("..", "inst", "benchmarks", "uci-results")
 if (!file.exists(file.path(result_dir, "metrics.csv")))
-  result_dir <- file.path("..", "inst", "benchmarks", "uci-results")
+  result_dir <- system.file("benchmarks", "uci-results", package = "VIM")
 stopifnot(file.exists(file.path(result_dir, "metrics.csv")))
 metrics <- read.csv(file.path(result_dir, "metrics.csv"))
 runs <- read.csv(file.path(result_dir, "runs.csv"))
@@ -37,7 +38,7 @@ not expectations about which method should win. This vignette reads bundled
 summaries: it neither downloads data nor initializes Python nor trains models
 when the package is built or checked.
 
-The default regeneration experiment uses `r config$n` rows per dataset and
+The default regeneration experiment uses `r paste(config$n, collapse = ", ")` rows per dataset and
 `r config$repetitions` repetitions, with MCAR and MAR at 10%, 20% and 40%
 missingness in **each of two selected columns**, not across the whole
 table. All original predictor columns are retained. Small samples and limited
@@ -131,11 +132,13 @@ knitr::kable(audit[audit$existing_na > 0 | audit$unknown > 0,
 ## Configuration and independent regeneration
 
 The installed script defines functions without performing work on `source()`.
-Choose a fresh output directory for each run; the script refuses to overwrite
-an existing run. Run the following **outside routine package checks**, after configuring the
+Choose a fresh output directory for each configuration. Use `resume = TRUE`
+to continue an interrupted run with the identical configuration. Completed
+sample sizes are reused, and completed scenarios are checkpointed within each size. Run the following **outside routine package checks**, after configuring the
 Python environment. The default experiment takes substantially longer than
 rendering this vignette. It saves full truth, sample indices, `makeMissing()` masks
-and completed tables locally in `artifacts.rds`; only compact
+and completed tables locally in `n240/artifacts.rds`, `n500/artifacts.rds`,
+and the corresponding directories for the other sizes; only compact
 metrics and provenance are shipped with the package.
 
 ```{r regenerate, eval=FALSE}
@@ -147,13 +150,16 @@ source(system.file("benchmarks", "uci-transformer.R", package = "VIM"))
 # For the tested legacy Keras environment:
 keras::py_require_legacy_keras(FALSE)
 config <- uci_config()
-config$n <- 240L
+config$n <- c(240L, 500L, 1000L, 2000L, 5000L)
+# For a quick development run, use config$n <- 240L.
 config$rates <- c(.1, .2, .4)
 config$repetitions <- 3L
 config$methods <- c("transformerImpute", "tabular", "shared", "kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10")
 # Training parameters, e.g. config$transformer$epochs, can be changed here.
 uci_run(config, cache = "uci-cache", output = "uci-results", download = TRUE)
 uci_distribution_summary("uci-results")
+# Resume after interruption (including reuse of completed sizes):
+# uci_run(config, "uci-cache", "uci-results", download = FALSE, resume = TRUE)
 # Reuse the archives offline:
 # uci_run(config, cache = "uci-cache", output = "uci-results-offline", download = FALSE)
 # To add an omitted method to a local run made with this same protocol:
@@ -180,7 +186,14 @@ results and timing can still differ across hardware or library versions.
 ## Missingness simulation
 
 Each repetition draws a new simple random sample without replacement from each
-complete-case dataset. All methods share that sample and each scenario's mask.
+complete-case dataset at each of **240, 500, 1,000, 2,000 and 5,000 rows**.
+The seed schedule is shared across sizes, so samples overlap and sample-size
+comparisons are not independent replications. The sampling algorithm may change
+with the requested size; exact nesting is not assumed. All methods share the
+same sample and mask within each dataset/size/repetition/mechanism/rate scenario.
+The column `n` records the number of rows in every result table. Seeds and
+training budgets are unchanged across sizes: more rows imply more training
+batches per epoch, not a fixed computation budget.
 The targets are Adult `hours_per_week` and `income`, and Bank `balance` and `y`.
 Other columns stay observed, including the MAR driver `age`.
 
@@ -203,7 +216,7 @@ rounding. Masks are never redrawn to remove difficult cases.
 ```{r masks, eval=FALSE}
 prepared <- uci_prepare("uci-cache", download = FALSE)
 set.seed(config$seed)
-truth <- prepared$data$Adult[sample(nrow(prepared$data$Adult), config$n), ]
+truth <- prepared$data$Adult[sample(nrow(prepared$data$Adult), config$n[1L]), ]
 incomplete <- makeMissing(truth, prop = .2, mechanism = "MAR",
   vars = c("hours_per_week", "income"), weights = c(age = 1), seed = config$seed)
 mask <- attr(incomplete, "where")
@@ -212,9 +225,9 @@ incomplete <- droplevels(incomplete) # no levels learned solely from masked valu
 ```
 
 ```{r realized-rates, echo=FALSE}
-mask_rates <- unique(metrics[c("dataset", "repetition", "mechanism", "rate",
+mask_rates <- unique(metrics[c("n", "dataset", "repetition", "mechanism", "rate",
                                "variable", "realized_rate")])
-knitr::kable(aggregate(realized_rate ~ dataset + mechanism + rate + variable,
+knitr::kable(aggregate(realized_rate ~ n + dataset + mechanism + rate + variable,
                        mask_rates, mean), digits = 3,
              caption = "Mean realized target-specific missing fractions")
 ```
@@ -328,11 +341,12 @@ validation and initialization; it excludes download, preprocessing and result
 writing, but includes scoring. It is measured once per method/scenario, not
 summed over duplicated per-target rows. Method order is randomized within
 scenarios. There is no hardware-normalized speed or peak-memory claim.
-The original seven methods, including sequential ranger, were run together using
+At 240 rows, the original seven methods, including sequential ranger, were run together using
 the `makeMissing()` masks. Sequential XGBoost was subsequently added with
 `uci_extend()`, reusing the exact saved samples, masks and model seeds. Its
 runtime was measured in a separate session, so timing comparisons also reflect
-between-session variation. Earlier results from the custom Bernoulli generator
+between-session variation. The larger sizes run all eight methods together,
+with the same parameters. Earlier results from the custom Bernoulli generator
 are not mixed into these tables. Random seeds reproduce this protocol, but
 using the same seed with a different generator does not reproduce old masks.
 
@@ -344,13 +358,13 @@ The saved run contains `r nrow(runs)` method/scenario attempts,
 uses the same `makeMissing()` mask.
 
 ```{r status, echo=FALSE}
-knitr::kable(as.data.frame(table(runs$dataset, runs$method, runs$status)),
-             col.names = c("Dataset", "Method", "Status", "Runs"))
-failed <- runs[runs$status != "ok", c("dataset", "repetition", "mechanism", "rate", "method", "error")]
+knitr::kable(as.data.frame(table(runs$n, runs$dataset, runs$method, runs$status)),
+             col.names = c("Rows", "Dataset", "Method", "Status", "Runs"))
+failed <- runs[runs$status != "ok", c("n", "dataset", "repetition", "mechanism", "rate", "method", "error")]
 if (nrow(failed)) knitr::kable(failed)
 ```
 
-The following tables retain dataset, mechanism and nominal rate. Scores are
+The following tables retain number of rows, dataset, mechanism and nominal rate. Scores are
 means across successful repetitions, with their sample standard deviations in
 parentheses. Counts are shown so failures cannot improve a ranking invisibly.
 With three repetitions, standard deviations describe variation only roughly;
@@ -364,13 +378,13 @@ fmt <- function(x) {
   if (!length(x)) return("—")
   sprintf("%.3f (%.3f)", mean(x), if (length(x) > 1) sd(x) else NA_real_)
 }
-for (ds in unique(runs$dataset)) for (mech in unique(runs$mechanism)) {
-  cat("\n\n### ", ds, ": ", mech, "\n\n", sep = "")
+for (nr in config$n) for (ds in unique(runs$dataset)) for (mech in unique(runs$mechanism)) {
+  cat("\n\n### ", ds, ": ", mech, ", ", nr, " rows\n\n", sep = "")
   tab <- do.call(rbind, lapply(config$rates, function(rate) {
     do.call(rbind, lapply(config$methods, function(method) {
-      x <- metrics[metrics$dataset == ds & metrics$mechanism == mech &
+      x <- metrics[metrics$n == nr & metrics$dataset == ds & metrics$mechanism == mech &
                      metrics$rate == rate & metrics$method == method, ]
-      rr <- runs[runs$dataset == ds & runs$mechanism == mech &
+      rr <- runs[runs$n == nr & runs$dataset == ds & runs$mechanism == mech &
                    runs$rate == rate & runs$method == method, ]
       data.frame(Rate = rate, Method = method,
         Success = paste(sum(rr$status == "ok"), nrow(rr), sep = "/"),
@@ -384,65 +398,104 @@ for (ds in unique(runs$dataset)) for (mech in unique(runs$mechanism)) {
 }
 ```
 
-```{r error-plot, echo=FALSE, eval=has_ggplot}
+```{r error-plot, echo=FALSE, eval=has_ggplot, fig.height=12}
 library(ggplot2)
 numeric_scores <- subset(metrics, type == "numeric")
 ggplot(numeric_scores, aes(factor(rate), nrmse, colour = method, group = method)) +
   stat_summary(fun = mean, geom = "line") +
   geom_point(position = position_dodge(width = .25), alpha = .65) +
-  facet_grid(dataset ~ mechanism, scales = "free_y") +
+  facet_grid(n + dataset ~ mechanism, scales = "free_y") +
   scale_y_continuous(trans = "log1p") +
   labs(x = "Nominal missing fraction", y = "VIM masked-reference NRMSE (log1p scale)",
        colour = "Method", caption = "Points: repetitions; lines: means. Lower is better.") +
   theme_minimal()
 ```
 
-```{r categorical-plot, echo=FALSE, eval=has_ggplot}
+```{r categorical-plot, echo=FALSE, eval=has_ggplot, fig.height=12}
 ggplot(subset(metrics, type == "categorical"),
        aes(factor(rate), accuracy, colour = method, group = method)) +
   stat_summary(fun = mean, geom = "line") +
   geom_point(position = position_dodge(width = .25), alpha = .65) +
-  facet_grid(dataset ~ mechanism) + ylim(0, 1) +
+  facet_grid(n + dataset ~ mechanism) + ylim(0, 1) +
   labs(x = "Nominal missing fraction", y = "Masked-cell accuracy", colour = "Method") +
   theme_minimal()
 ```
 
-```{r runtime-plot, echo=FALSE, eval=has_ggplot}
+```{r runtime-plot, echo=FALSE, eval=has_ggplot, fig.height=12}
 ggplot(subset(runs, status == "ok"), aes(method, elapsed, colour = factor(rate))) +
   geom_point(position = position_jitter(width = .15, height = 0, seed = 1)) +
-  facet_grid(dataset ~ mechanism) + scale_y_log10() + coord_flip() +
+  facet_grid(n + dataset ~ mechanism) + scale_y_log10() + coord_flip() +
   labs(x = NULL, y = "Seconds for both targets (log scale)", colour = "Missing fraction") +
   theme_minimal()
 ```
 
-```{r structure-plot, echo=FALSE, eval=has_ggplot}
+```{r structure-plot, echo=FALSE, eval=has_ggplot, fig.height=18}
 ggplot(metrics, aes(factor(rate), marginal_distance, colour = method, group = method)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point") +
-  facet_grid(dataset + type ~ mechanism) +
+  facet_grid(n + dataset + type ~ mechanism) +
   labs(x = "Nominal missing fraction", y = "Whole-table marginal distance",
        colour = "Method", caption = "Numeric: ECDF distance; categorical: total variation. Lower is better.") +
   theme_minimal()
 ```
 
-For a predeclared illustrative scenario (repetition 1, MAR, 20%), the next
+The following plot shows sample-size scaling separately at each missingness
+rate, without averaging different rates or mechanisms together.
+
+```{r size-scaling, echo=FALSE, eval=has_ggplot, fig.height=10}
+ggplot(subset(metrics, type == "numeric"),
+       aes(n, nrmse, colour = method, group = method)) +
+  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "point") +
+  facet_grid(dataset + mechanism ~ rate, labeller = label_both) +
+  scale_x_log10(breaks = config$n) + scale_y_continuous(trans = "log1p") +
+  labs(x = "Number of rows (log scale)", y = "VIM masked-reference NRMSE",
+       colour = "Method") +
+  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r size-accuracy, echo=FALSE, eval=has_ggplot, fig.height=10}
+ggplot(subset(metrics, type == "categorical"),
+       aes(n, accuracy, colour = method, group = method)) +
+  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "point") +
+  facet_grid(dataset + mechanism ~ rate, labeller = label_both) +
+  scale_x_log10(breaks = config$n) + ylim(0, 1) +
+  labs(x = "Number of rows (log scale)", y = "Masked-cell accuracy",
+       colour = "Method") +
+  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r size-runtime, echo=FALSE, eval=has_ggplot, fig.height=10}
+ggplot(subset(runs, status == "ok"),
+       aes(n, elapsed, colour = method, group = method)) +
+  stat_summary(fun = median, geom = "line") +
+  stat_summary(fun = median, geom = "point") +
+  facet_grid(dataset + mechanism ~ rate, labeller = label_both) +
+  scale_x_log10(breaks = config$n) + scale_y_log10() +
+  labs(x = "Number of rows (log scale)", y = "Median seconds (log scale)",
+       colour = "Method") +
+  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+For predeclared illustrative scenarios (repetition 1, MAR, 20% at each size), the next
 plots show whole-table numeric deciles and categorical proportions. The
 reference is the complete sampled data. This scenario is illustrative and
 was not selected because a particular method performed well.
 
-```{r marginal-plot, echo=FALSE, eval=has_ggplot}
+```{r marginal-plot, echo=FALSE, eval=has_ggplot, fig.height=10}
 distributions <- read.csv(file.path(result_dir, "distributions.csv"))
 ggplot(subset(distributions, type == "numeric"),
        aes(position, value, colour = method, linetype = method == "Reference")) +
-  geom_line() + geom_point(size = 1) + facet_wrap(~dataset + variable, scales = "free_y") +
+  geom_line() + geom_point(size = 1) + facet_wrap(~n + dataset + variable, scales = "free_y") +
   scale_y_continuous(trans = "asinh") +
   labs(x = "Quantile probability", y = "Whole-table quantile (asinh scale)",
        colour = "Method", linetype = "Complete reference") + theme_minimal()
 ```
 
-```{r proportions-plot, echo=FALSE, eval=has_ggplot}
+```{r proportions-plot, echo=FALSE, eval=has_ggplot, fig.height=10}
 ggplot(subset(distributions, type == "categorical"), aes(method, value, fill = category)) +
-  geom_col() + facet_wrap(~dataset + variable) + coord_flip() +
+  geom_col() + facet_wrap(~n + dataset + variable) + coord_flip() +
   labs(x = NULL, y = "Whole-table category proportion", fill = "Category") + theme_minimal()
 ```
 
@@ -450,9 +503,9 @@ ggplot(subset(distributions, type == "categorical"), aes(method, value, fill = c
 # Full target/scenario/repetition diagnostics are in metrics.csv.
 # Here show the hardest nominal rate, still separating mechanisms and datasets.
 x <- subset(metrics, rate == max(config$rates))
-keys <- interaction(x$dataset, x$mechanism, x$method, x$variable, drop = TRUE)
+keys <- interaction(x$n, x$dataset, x$mechanism, x$method, x$variable, drop = TRUE)
 properties <- do.call(rbind, lapply(split(x, keys), function(z) {
-  cbind(z[1, c("dataset", "mechanism", "method", "variable")],
+  cbind(z[1, c("n", "dataset", "mechanism", "method", "variable")],
     mean_difference = fmt(z$mean_difference), sd_difference = fmt(z$sd_difference),
     marginal_distance = fmt(z$marginal_distance),
     correlation_difference = fmt(z$correlation_difference))
@@ -496,39 +549,46 @@ harder scenario. Neither these averages nor the plots imply universal
 transformer superiority.
 
 ```{r findings, echo=FALSE}
-scenario_key <- function(d) paste(d$dataset, d$repetition, d$mechanism, d$rate)
+scenario_key <- function(d) paste(d$n, d$dataset, d$repetition, d$mechanism, d$rate)
 all_ok <- vapply(split(runs, scenario_key(runs)), function(z)
   nrow(z) == length(config$methods) && all(z$status == "ok"), logical(1))
 common <- names(all_ok)[all_ok]
 paired_metrics <- metrics[scenario_key(metrics) %in% common, ]
 paired_runs <- runs[scenario_key(runs) %in% common, ]
 findings <- merge(
-  aggregate(nrmse ~ dataset + method, paired_metrics, mean),
-  aggregate(accuracy ~ dataset + method, paired_metrics, mean))
-findings <- merge(findings, aggregate(elapsed ~ dataset + method, paired_runs, median))
+  aggregate(nrmse ~ n + dataset + method, paired_metrics, mean),
+  aggregate(accuracy ~ n + dataset + method, paired_metrics, mean))
+findings <- merge(findings, aggregate(elapsed ~ n + dataset + method, paired_runs, median))
 knitr::kable(findings, digits = 3,
   caption = paste("Paired descriptive averages on", length(common),
                   "common successful scenarios; median runtime in seconds"))
 ```
 
-In this recorded five-epoch experiment, the token transformer has higher mean
-numeric NRMSE and lower categorical accuracy than the five established
-baselines on both datasets. The direct and shared models are closer to the
-baselines on Bank, but do not establish a consistent advantage across datasets.
-The shared fit is faster than fitting two separate direct models here; all
-three neural approaches are slower than the established methods at this small
-sample size. These findings support using the configurable benchmark to check
-accuracy and cost on the intended data, rather than choosing an architecture
-from its name alone. The current token encoding also has the limitations described above.
+In the bundled five-epoch run, all three neural approaches have lower mean
+numeric NRMSE and higher categorical accuracy at 5,000 rows than at 240 rows
+on both datasets. This endpoint comparison does not imply a monotonic
+improvement at every intermediate size. At 5,000 rows, the direct tabular model
+and sequential XGBoost have similar mean numeric NRMSE on Bank; the token
+transformer still has higher numeric error and lower categorical accuracy than
+all five established baselines on both datasets. Runtime rankings also change:
+the shared transformer is faster than kNN at 5,000 rows, although both ranger
+and XGBoost variants remain faster than the shared transformer.
+
+The paired summary separates sample sizes. Compare accuracy and runtime together:
+additional rows increase the information available to learners but also the
+number of training batches and distance calculations. A lower error at a larger
+size is descriptive evidence for these samples, not proof of a general learning
+curve. The three repetitions and overlapping samples limit precision. Neither
+the mean error nor a single dataset establishes transformer superiority.
 
 ## Reproducibility information
 
 The installed `benchmarks/uci-results` directory contains `metrics.csv`
 (per target), `runs.csv` (including failures and warnings), `config.rds`,
-`preprocessing.csv`, `sources.csv`, `distributions.csv`, `session.txt` and
-an optional `session-extension.txt` for any later additions. The current
-`session.txt` records the original seven-method run, and
-`session-extension.txt` records the sequential XGBoost addition. The full regeneration
+`preprocessing.csv`, `sources.csv`, `distributions.csv`, and
+per-size environment records combined in `session.txt`. The 240-row records
+include the original seven-method run and the sequential XGBoost addition.
+Larger-size records describe their own sessions. The full regeneration
 artifact is intentionally kept outside the package. To update the vignette,
 rerun the script and replace these compact files together; do not hand-edit
 numbers. The test suite checks mask reproducibility, MAR's dependence only on

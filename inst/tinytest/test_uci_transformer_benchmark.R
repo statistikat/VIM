@@ -46,3 +46,76 @@ flat_score <- e$uci_score(flat, out, mask, c('value', 'group'))
 expect_true(is.na(flat_score$nrmse[1]))
 expect_equal(flat_score$rmse[1], 1)
 expect_true(is.finite(flat_score$nrmse_reference[1]))
+
+# Size validation and collection must not pool otherwise identical scenarios.
+expect_identical(e$uci_config()$n, c(240L, 500L, 1000L, 2000L, 5000L))
+for (bad in list(c(240, 240), c(240, NA), 49, 240.5, Inf, numeric(), "240"))
+  expect_error(e$uci_validate_sizes(bad), "distinct integer")
+
+# Exercise the runner and its checkpoints with deterministic, cheap stand-ins.
+runner <- new.env(parent = globalenv())
+sys.source(system.file("benchmarks", "uci-transformer.R", package = "VIM"),
+           envir = runner)
+runner$uci_prepare <- function(...) list(
+  data = list(Adult = data.frame(age = seq_len(100),
+    hours_per_week = seq_len(100), income = factor(rep(c("low", "high"), 50))),
+    Bank = data.frame(age = seq_len(100), balance = seq_len(100),
+                     y = factor(rep(c("no", "yes"), 50)))),
+  audit = data.frame(dataset = c("Adult", "Bank"), rows = 100),
+  sources = data.frame(url = "test fixture", md5 = "test fixture"))
+calls <- 0L
+runner$uci_methods <- function(config) list(kNN = function(d, targets, seed) {
+  calls <<- calls + 1L
+  for (v in targets) {
+    missing <- is.na(d[[v]])
+    d[[v]][missing] <- if (is.numeric(d[[v]])) median(d[[v]], na.rm = TRUE) else
+      levels(d[[v]])[1L]
+  }
+  d
+})
+config <- runner$uci_config()
+config$n <- c(50L, 60L); config$methods <- "kNN"
+config$repetitions <- 1L; config$mechanisms <- "MAR"; config$rates <- .2
+directory <- tempfile()
+runner$uci_run(config, output = directory)
+runs <- read.csv(file.path(directory, "runs.csv"))
+metrics <- read.csv(file.path(directory, "metrics.csv"))
+expect_identical(calls, 4L)
+expect_equal(as.integer(table(runs$n)), c(2L, 2L))
+expect_true(all(runs$status == "ok"))
+expect_equal(metrics$n_masked, metrics$n * .2)
+expect_equal(sort(unique(read.csv(file.path(directory, "distributions.csv"))$n)),
+             c(50, 60))
+runner$uci_run(config, output = directory, resume = TRUE)
+expect_identical(calls, 4L)
+expect_identical(read.csv(file.path(directory, "runs.csv")), runs)
+# A size interrupted after its last scenario resumes from the scenario checkpoint.
+unlink(file.path(directory, "n60", "complete.rds"))
+runner$uci_run(config, output = directory, resume = TRUE)
+expect_identical(calls, 4L)
+expect_identical(read.csv(file.path(directory, "runs.csv")), runs)
+changed <- config; changed$rates <- .4
+expect_error(runner$uci_run(changed, output = directory, resume = TRUE),
+             "different configuration")
+expect_error(runner$uci_run(config, output = directory), "resume=TRUE")
+for (nr in config$n) {
+  artifacts <- readRDS(file.path(directory, paste0("n", nr), "artifacts.rds"))
+  expect_true(all(vapply(artifacts, function(a) nrow(a$truth) == nr, logical(1))))
+}
+# Adding a method must extend each size without replacing existing scores.
+original_methods <- runner$uci_methods
+runner$uci_methods <- function(config) {
+  f <- original_methods(config)[[1L]]
+  setNames(rep(list(f), length(config$methods)), config$methods)
+}
+runner$uci_extend(directory, "ranger")
+extended <- read.csv(file.path(directory, "runs.csv"))
+expect_identical(calls, 8L)
+expect_equal(as.integer(table(extended$n, extended$method)), rep(2L, 4L))
+original <- extended[extended$method == "kNN", names(runs)]
+rownames(original) <- NULL
+expect_identical(original, runs)
+config$methods <- c(config$methods, "ranger")
+runner$uci_run(config, output = directory, resume = TRUE)
+expect_identical(calls, 8L)
+unlink(directory, recursive = TRUE)

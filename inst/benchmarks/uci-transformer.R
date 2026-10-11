@@ -1,7 +1,7 @@
 # Source this file, then call uci_run(). Nothing downloads or trains on source().
 # See vignettes/transformerImpute-benchmark.Rmd for the protocol.
 uci_config <- function(full = FALSE) {
-  list(protocol = "makeMissing-evaluation-v1", n = if (full) 2000L else 240L, rates = c(.1, .2, .4),
+  list(protocol = "makeMissing-evaluation-v1", n = c(240L, 500L, 1000L, 2000L, 5000L), rates = c(.1, .2, .4),
        repetitions = if (full) 10L else 3L, mechanisms = c("MCAR", "MAR"),
        seed = 20261010L,
        methods = c("transformerImpute", "tabular", "shared", "kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10"),
@@ -173,15 +173,90 @@ uci_score <- function(truth, completed, mask, targets) {
   }))
 }
 
+# Sample sizes are separate experiments with identical budgets and seed schedules.
+# Each size has its own artifacts/checkpoint; top-level CSVs always include n.
+uci_validate_sizes <- function(n) {
+  if (!is.numeric(n) || !length(n) || anyNA(n) ||
+      any(!is.finite(n) | n < 50 | n != floor(n)) || anyDuplicated(n))
+    stop("n must contain distinct integer sample sizes of at least 50")
+  invisible(n)
+}
+
+uci_collect_sizes <- function(output) {
+  config <- readRDS(file.path(output, "config.rds"))
+  for (n in config$n) {
+    single <- config; single$n <- n
+    marker <- file.path(output, paste0("n", n), "complete.rds")
+    if (!file.exists(marker) || !identical(single, readRDS(marker)))
+      stop("Incomplete size or incompatible configuration: ", n)
+  }
+  for (file in c("runs.csv", "metrics.csv", "distributions.csv")) {
+    tables <- lapply(config$n, function(n) {
+      path <- file.path(output, paste0("n", n), file)
+      if (!file.exists(path)) stop("Missing size results: ", path)
+      d <- utils::read.csv(path, stringsAsFactors = FALSE)
+      d$n <- n
+      d[, c("n", setdiff(names(d), "n")), drop = FALSE]
+    })
+    utils::write.csv(do.call(rbind, tables), file.path(output, file), row.names = FALSE)
+  }
+  first <- file.path(output, paste0("n", config$n[1L]))
+  for (file in c("preprocessing.csv", "sources.csv"))
+    if (!file.copy(file.path(first, file), output, overwrite = TRUE))
+      stop("Could not copy ", file)
+  provenance <- unlist(lapply(config$n, function(n) {
+    directory <- file.path(output, paste0("n", n))
+    files <- file.path(directory, c("session.txt", "session-extension.txt"))
+    c(paste("Number of rows:", n),
+      unlist(lapply(files[file.exists(files)], readLines)))
+  }))
+  writeLines(provenance, file.path(output, "session.txt"))
+  invisible(output)
+}
+
 uci_run <- function(config = uci_config(), cache = "uci-cache", output = "uci-results",
-                    download = FALSE) {
-  stopifnot(config$n >= 50L, config$repetitions >= 1L)
-  if (file.exists(file.path(output, "config.rds")))
-    stop("Output already contains a run; choose a new directory")
+                    download = FALSE, resume = FALSE) {
+  uci_validate_sizes(config$n)
+  path <- file.path(output, "config.rds")
+  if (file.exists(path)) {
+    if (!resume) stop("Output already contains a run; use resume=TRUE")
+    if (!identical(config, readRDS(path))) stop("Cannot resume with a different configuration")
+  }
+  dir.create(output, recursive = TRUE, showWarnings = FALSE)
+  saveRDS(config, path)
+  for (n in config$n) {
+    single <- config; single$n <- n
+    directory <- file.path(output, paste0("n", n))
+    marker <- file.path(directory, "complete.rds")
+    if (resume && file.exists(marker)) {
+      if (!identical(single, readRDS(marker))) stop("Completed size configuration differs")
+      next
+    }
+    message("Number of rows: ", n)
+    uci_run_single(single, cache, directory, download, resume)
+    uci_distribution_summary(directory)
+    saveRDS(single, marker)
+  }
+  uci_collect_sizes(output)
+}
+
+uci_run_single <- function(config, cache = "uci-cache", output = "uci-results",
+                    download = FALSE, resume = FALSE) {
+  stopifnot(length(config$n) == 1L, config$n >= 50L, config$repetitions >= 1L)
+  if (file.exists(file.path(output, "config.rds"))) {
+    if (!resume) stop("Output already contains a run; use resume=TRUE")
+    if (!identical(config, readRDS(file.path(output, "config.rds"))))
+      stop("Cannot resume with a different configuration")
+  }
   dir.create(output, recursive = TRUE, showWarnings = FALSE)
   prepared <- uci_prepare(cache, download)
   methods <- uci_methods(config)
   results <- runs <- artifacts <- list()
+  checkpoint <- file.path(output, "checkpoint.rds")
+  if (resume && file.exists(checkpoint)) {
+    saved <- readRDS(checkpoint)
+    results <- saved$results; runs <- saved$runs; artifacts <- saved$artifacts
+  }
   targets_by_dataset <- list(Adult = c("hours_per_week", "income"), Bank = c("balance", "y"))
   saveRDS(config, file.path(output, "config.rds"))
   utils::write.csv(prepared$audit, file.path(output, "preprocessing.csv"), row.names = FALSE)
@@ -191,10 +266,13 @@ uci_run <- function(config = uci_config(), cache = "uci-cache", output = "uci-re
     sample_seed <- config$seed + di * 10000L + rep * 100L
     set.seed(sample_seed)
     source <- prepared$data[[dataset]]
-    row_ids <- sample.int(nrow(source), min(config$n, nrow(source)))
+    if (config$n > nrow(source)) stop("Requested sample exceeds complete reference rows")
+    row_ids <- sample.int(nrow(source), config$n)
     truth <- droplevels(source[row_ids, , drop = FALSE])
     for (mi in seq_along(config$mechanisms)) for (ri in seq_along(config$rates)) {
       mechanism <- config$mechanisms[mi]; rate <- config$rates[ri]
+      key <- paste(dataset, rep, mechanism, rate, sep = "-")
+      if (!is.null(artifacts[[key]])) next
       seed <- sample_seed + mi * 10L + ri
       # Independent stream: otherwise makeMissing's MCAR rows can coincide
       # exactly with a model's random validation split at the same seed.
@@ -204,7 +282,6 @@ uci_run <- function(config = uci_config(), cache = "uci-cache", output = "uci-re
       mask <- attr(incomplete, "where")
       # Do not supply category levels learned only from the withheld cells.
       incomplete <- droplevels(incomplete)
-      key <- paste(dataset, rep, mechanism, rate, sep = "-")
       artifacts[[key]] <- list(truth = truth, row_ids = row_ids, mask = mask,
                                completed = list())
       # Randomize method order to reduce systematic warm-cache/order effects.
@@ -235,9 +312,13 @@ uci_run <- function(config = uci_config(), cache = "uci-cache", output = "uci-re
         if (length(results)) utils::write.csv(do.call(rbind, results),
                                               file.path(output, "metrics.csv"), row.names = FALSE)
       }
-      saveRDS(artifacts, file.path(output, "artifacts.rds"), compress = "xz")
+      # Commit only complete scenarios; resume reruns an interrupted scenario.
+      saveRDS(list(results = results, runs = runs, artifacts = artifacts),
+              paste0(checkpoint, ".tmp"))
+      if (!file.rename(paste0(checkpoint, ".tmp"), checkpoint)) stop("Checkpoint write failed")
     }
   }
+  saveRDS(artifacts, file.path(output, "artifacts.rds"))
   packages <- c("VIM", "keras", "tensorflow", "reticulate", "ranger", "xgboost", "mlr3",
                 "mlr3learners", "mlr3pipelines")
   versions <- vapply(packages, function(p) if (requireNamespace(p, quietly = TRUE))
@@ -255,6 +336,12 @@ uci_run <- function(config = uci_config(), cache = "uci-cache", output = "uci-re
 # Optional compact marginal summaries for a predeclared illustrative scenario.
 # No individual rows are copied into the package documentation.
 uci_distribution_summary <- function(output, repetition = 1L, mechanism = "MAR", rate = .2) {
+  config <- readRDS(file.path(output, "config.rds"))
+  if (dir.exists(file.path(output, paste0("n", config$n[1L])))) {
+    for (n in config$n) uci_distribution_summary(file.path(output, paste0("n", n)),
+                                                repetition, mechanism, rate)
+    return(invisible(uci_collect_sizes(output)))
+  }
   artifacts <- readRDS(file.path(output, "artifacts.rds"))
   rows <- list()
   for (dataset in c("Adult", "Bank")) {
@@ -285,7 +372,7 @@ uci_distribution_summary <- function(output, repetition = 1L, mechanism = "MAR",
 
 # Add a method to a completed local experiment without retraining competitors.
 # Requires the full local artifacts.rds, intentionally not bundled with VIM.
-uci_extend <- function(output, methods = "ranger_seq10") {
+uci_extend_single <- function(output, methods = "ranger_seq10") {
   config <- readRDS(file.path(output, "config.rds"))
   if (!identical(config$protocol, uci_config()$protocol))
     stop("Different benchmark protocol; regenerate with uci_run() instead of mixing results")
@@ -333,6 +420,8 @@ uci_extend <- function(output, methods = "ranger_seq10") {
     metrics[[v]][is.na(metrics[[v]])] <- ""
   }
   config$methods <- c(config$methods, methods)
+  # Earlier scenario checkpoints predate the added methods.
+  unlink(file.path(output, "checkpoint.rds"))
   saveRDS(config, file.path(output, "config.rds"))
   saveRDS(artifacts, file.path(output, "artifacts.rds"), compress = "xz")
   utils::write.csv(runs, file.path(output, "runs.csv"), row.names = FALSE, na = "")
@@ -343,4 +432,23 @@ uci_extend <- function(output, methods = "ranger_seq10") {
              file.path(output, "session-extension.txt"))
   uci_distribution_summary(output)
   invisible(list(runs = runs, metrics = metrics))
+}
+
+# Extend all sizes using their saved reference tables and masks.
+uci_extend <- function(output, methods = "ranger_seq10") {
+  config <- readRDS(file.path(output, "config.rds"))
+  if (!dir.exists(file.path(output, paste0("n", config$n[1L]))))
+    return(uci_extend_single(output, methods))
+  if (any(methods %in% config$methods)) stop("Method already present in this run")
+  for (n in config$n) {
+    directory <- file.path(output, paste0("n", n))
+    single <- readRDS(file.path(directory, "config.rds"))
+    missing <- setdiff(methods, single$methods)
+    if (length(missing)) uci_extend_single(directory, missing)
+    saveRDS(readRDS(file.path(directory, "config.rds")),
+            file.path(directory, "complete.rds"))
+  }
+  config$methods <- c(config$methods, methods)
+  saveRDS(config, file.path(output, "config.rds"))
+  uci_collect_sizes(output)
 }
