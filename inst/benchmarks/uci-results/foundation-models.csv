@@ -1,0 +1,6 @@
+"name","repo","revision","filename","sha256"
+"tabimpute","Tabimpute/TabImpute","96d7a0f160184cfb361a03559430baf1cf31aec5","tabimpute_001.ckpt","b8bacc5f1b8274d2b5f98ef1e2e2ee6771a018dbb72849d9b3a4abaa807a9bb1"
+"tabicl_classifier","jingang/TabICL","4dcd344ece2c00be9e831fdd35bed57b5ad83e19","tabicl-classifier-v2-20260212.ckpt","bdc7dbd5e4ff21f8f0456fcf90c6b7cdf72dbea960f2d05b19bec19f9b3d4ed0"
+"tabicl_regressor","jingang/TabICL","4dcd344ece2c00be9e831fdd35bed57b5ad83e19","tabicl-regressor-v2-20260212.ckpt","0db9cb538f114e79026bf08f45f41ad8dd7ad2de2aaca9a5ca8cd3bd9748ae7a"
+"tabpfn_classifier","Prior-Labs/TabPFN-v2-clf","f851f2a3c941544733b712d8c0f96dfae9b28862","tabpfn-v2-classifier.ckpt","f65a35685aeef42e31b796d9bfa34e68d6fc780bc98e7bff7763802964cf435f"
+"tabpfn_regressor","Prior-Labs/TabPFN-v2-reg","4972a65a1b30806315c6f92499959ffbfc69a673","tabpfn-v2-regressor.ckpt","2ab5a07d5c41dfe6db9aa7ae106fc6de898326c2765be66505a07e2868c10736"

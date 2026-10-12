@@ -18,6 +18,12 @@ stopifnot(file.exists(file.path(result_dir, "metrics.csv")))
 metrics <- read.csv(file.path(result_dir, "metrics.csv"))
 runs <- read.csv(file.path(result_dir, "runs.csv"))
 config <- readRDS(file.path(result_dir, "config.rds"))
+foundation_methods <- c("tabimpute", "tabiclImpute", "tabpfnImpute")
+foundation_rates <- config$rates
+for (extension in config$extensions)
+  if (any(foundation_methods %in% extension$methods)) foundation_rates <- extension$rates
+foundation_requested <- length(config$n) * length(foundation_rates) *
+  config$repetitions * length(config$mechanisms) * 2L * length(foundation_methods)
 has_ggplot <- requireNamespace("ggplot2", quietly = TRUE)
 ```
 
@@ -31,9 +37,9 @@ Imputation accuracy and preservation of statistical structure are different
 objectives. This vignette reuses `makeMissing()`, `evaluation()` and `nrmse()`
 from [Benchmarking imputation methods](vimpute-benchmark.html), rather than
 implementing another missingness generator or duplicating the core error
-metrics. This reproducible, small benchmark compares three transformer
-interfaces in VIM with nearest-neighbour, random-forest and gradient-boosting
-imputation on two mixed-type datasets. Results below are **computed results**,
+metrics. This reproducible benchmark compares three trained transformer
+interfaces and three pretrained foundation adapters in VIM with
+nearest-neighbour, random-forest and gradient-boosting imputation on two mixed-type datasets. Results below are **computed results**,
 not expectations about which method should win. This vignette reads bundled
 summaries: it neither downloads data nor initializes Python nor trains models
 when the package is built or checked.
@@ -43,6 +49,18 @@ The default regeneration experiment uses `r paste(config$n, collapse = ", ")` ro
 missingness in **each of two selected columns**, not across the whole
 table. All original predictor columns are retained. Small samples and limited
 training make this a demonstration, not a definitive method ranking.
+
+The bundled foundation comparison covers **all five row counts**, at
+**`r paste(100 * foundation_rates, collapse = ", ")`% missingness**, with three
+repetitions of both MCAR and MAR on both datasets.
+This requests `r foundation_requested` method/scenario attempts. The bundled
+snapshot includes **`r sum(runs$method %in% foundation_methods)` completed attempts**;
+**`r foundation_requested - sum(runs$method %in% foundation_methods)` remain pending**.
+Only completed attempts contribute to scores and plots. TabImpute's mixed-data
+inference is expensive even without training; it uses the Mac GPU in this run,
+while TabICL and TabPFN use CPU. The other eight methods retain the full five-size,
+three-rate grid. Coverage labels distinguish pending requested runs from rates
+outside the saved experiment's scope. Neither is a failed run or a zero error.
 
 ## Transformer interfaces and training
 
@@ -77,8 +95,16 @@ These interfaces require R **keras**, **tensorflow** and **reticulate**, plus a
 compatible Python TensorFlow/legacy Keras environment. Numeric and unordered
 factor columns are used here. Dates, arbitrary objects, hierarchical categories,
 multiple imputation and out-of-sample generalization are outside this experiment.
-Foundation adapters (`tabimpute`, `tabiclImpute`, `tabpfnImpute`) require separate
-Python dependencies and checkpoints and are not part of this TensorFlow vignette.
+The foundation adapters `tabimpute`, `tabiclImpute`, and `tabpfnImpute`
+use pretrained PyTorch checkpoints. They are evaluated in a separate Python
+environment and fresh R process, using the same incomplete tables and masks.
+They condition on the observed data without training a new transformer from
+scratch. Checkpoint pretraining data and budgets differ from the small neural
+models above, so this compares practical imputers rather than equal training
+resources. We have not independently audited upstream pretraining data for
+overlap with Adult or Bank. The artificial masks protect this experiment from
+using hidden target values, but do not establish independence from pretraining
+data.
 
 A mixed-data pilot exposed an embedding-size bug: deleting the target NA token
 left nonconsecutive IDs, but the embedding was sized by token count. The size
@@ -137,7 +163,7 @@ to continue an interrupted run with the identical configuration. Completed
 sample sizes are reused, and completed scenarios are checkpointed within each size. Run the following **outside routine package checks**, after configuring the
 Python environment. The default experiment takes substantially longer than
 rendering this vignette. It saves full truth, sample indices, `makeMissing()` masks
-and completed tables locally in `n240/artifacts.rds`, `n500/artifacts.rds`,
+and completed tables locally in `n250/artifacts.rds`, `n500/artifacts.rds`,
 and the corresponding directories for the other sizes; only compact
 metrics and provenance are shipped with the package.
 
@@ -150,8 +176,8 @@ source(system.file("benchmarks", "uci-transformer.R", package = "VIM"))
 # For the tested legacy Keras environment:
 keras::py_require_legacy_keras(FALSE)
 config <- uci_config()
-config$n <- c(240L, 500L, 1000L, 2000L, 5000L)
-# For a quick development run, use config$n <- 240L.
+config$n <- 250L#c(250L, 500L, 1000L, 2000L, 5000L)
+# For a quick development run, use config$n <- 250L.
 config$rates <- c(.1, .2, .4)
 config$repetitions <- 3L
 config$methods <- c("transformerImpute", "tabular", "shared", "kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10")
@@ -167,6 +193,49 @@ uci_distribution_summary("uci-results")
 # Optional larger experiment (not the source of the displayed results):
 # uci_run(uci_config(full = TRUE), "uci-cache", "uci-results-full", FALSE)
 ```
+
+### Local foundation-model installation
+
+The optional dependencies and weights are installed independently of package
+checks. The following commands run from the package checkout with Python 3.11
+and `uv` installed. The requirements file pins all transitive Python packages;
+the setup script pins checkpoint revisions and records their SHA-256 hashes.
+Weights and environments stay in the ignored `.local` directory and are
+excluded from the R source package.
+
+```{bash foundation-install, eval=FALSE}
+uv venv .local/foundation-env --python 3.11
+uv pip sync --python .local/foundation-env/bin/python   inst/benchmarks/foundation-requirements.txt
+.local/foundation-env/bin/python inst/benchmarks/setup-foundation.py   --root .local --download
+```
+
+The R adapter needs `reticulate` and the current VIM package. Existing R
+dependencies can be reused; select a project library with `R_LIBS_USER` if
+installing VIM locally. Setup never accepts gated model terms automatically.
+Omit `--download` to verify an existing local cache without network access.
+
+After the eight-method run above, start a **fresh R process** and add the
+foundation comparisons. Do not try to change Python interpreters in an R
+process that has already initialized TensorFlow.
+
+```{r foundation-regenerate, eval=FALSE}
+source("inst/benchmarks/uci-transformer.R")
+manifest <- uci_foundation_setup(".local", device = "mps") # "cpu" on other systems
+uci_extend("uci-results", methods = c("tabimpute", "tabiclImpute", "tabpfnImpute"),
+           rates = .2)
+# To request all three missingness rates instead, omit rates in that call.
+# Choose the scope before extending; use a fresh baseline copy for a new scope.
+# Every completed method/scenario is checkpointed; rerun the same call after
+# an interruption to reuse those completed computations.
+# On a compatible Mac, device = "mps" selects the GPU for TabImpute only.
+```
+
+`uci_config(foundation = TRUE)` lists all eleven methods. The split-session
+workflow avoids mixing the legacy TensorFlow environment with the pinned
+foundation environment. All benchmark inference uses local checkpoints with
+downloads disabled. TabPFN's explicit CPU large-dataset option is enabled by
+the setup helper so that the 2,000- and 5,000-row cases can run.
+
 
 ```{r configuration, echo=FALSE}
 str(config)
@@ -186,7 +255,7 @@ results and timing can still differ across hardware or library versions.
 ## Missingness simulation
 
 Each repetition draws a new simple random sample without replacement from each
-complete-case dataset at each of **240, 500, 1,000, 2,000 and 5,000 rows**.
+complete-case dataset at each of **250, 500, 1,000, 2,000 and 5,000 rows**.
 The seed schedule is shared across sizes, so samples overlap and sample-size
 comparisons are not independent replications. The sampling algorithm may change
 with the requested size; exact nesting is not assumed. All methods share the
@@ -208,7 +277,7 @@ default MAR drivers instead could include the other incomplete numeric target,
 so specifying the observed driver matters here.
 
 The `where` attribute supplies the common mask for every competing method
-and for scoring. We retain the original reference separately. With 240 rows,
+and for scoring. We retain the original reference separately. With 250 rows,
 the three requested rates correspond to 24, 48 and 96 masked cells in each
 target. With other sample sizes the fractions may differ slightly due to
 rounding. Masks are never redrawn to remove difficult cases.
@@ -252,6 +321,27 @@ knitr::kable(aggregate(realized_rate ~ n + dataset + mechanism + rate + variable
   with 30 boosting rounds per fit and one worker. As with sequential ranger,
   both targets are updated jointly for at most ten iterations, with the default
   convergence rule, no PMM or uncertainty draws, and no tuning.
+* **tabimpute**: the categorical TabImpute backend and its pinned
+  `tabimpute_001.ckpt` weights. It one-hot encodes observed categories.
+  Its internal row-chunk size is 32 with one chunk per inference batch.
+  All rows and predictors are retained, but cross-row model context is limited
+  to each chunk; this is a computational limitation, not a full-context model.
+  A benchmark-only vectorized input builder reproduces the upstream tensors
+  exactly while avoiding per-cell GPU synchronization; model weights and
+  inference calculations are unchanged. Unused GPU allocations are released
+  after each chunk, and garbage collection runs before each foundation call.
+  A pilot without this cleanup exceeded the development machine's physical
+  memory. The bundled timings use the cleanup policy throughout.
+  Checkpoint construction is inside the measured call. The recorded run uses
+  `device = "mps"`; this GPU runtime is not directly comparable to CPU-only
+  timings of the other methods.
+* **tabiclImpute**: TabICL 2.2.0's unsupervised interface, one ensemble member,
+  one refinement pass, `temperature = 1e-8`, CPU, and no weight downloads.
+* **tabpfnImpute**: TabPFN 6.0.0 with tabpfn-extensions 0.2.0, pinned v2
+  classifier and regressor weights, one ensemble member, one conditional
+  ordering, `temperature = 1e-9`, CPU, and no weight downloads.
+  Numeric and categorical types are declared explicitly for both foundation
+  interfaces instead of inferred from the number of distinct values.
 
 The ranger and XGBoost formula interfaces, and sequential `vimpute()`, use
 VIM's suggested mlr3 stack.
@@ -339,14 +429,16 @@ if imputation error is large. They are not substitutes for masked-cell scores.
 Elapsed wall time includes fitting and prediction of both targets, internal
 validation and initialization; it excludes download, preprocessing and result
 writing, but includes scoring. It is measured once per method/scenario, not
-summed over duplicated per-target rows. Method order is randomized within
-scenarios. There is no hardware-normalized speed or peak-memory claim.
-At 240 rows, the original seven methods, including sequential ranger, were run together using
+summed over duplicated per-target rows. The original core run randomizes method order within
+scenarios; later extensions use their declared method order. There is no hardware-normalized speed or peak-memory claim.
+At 250 rows, the original seven methods, including sequential ranger, were run together using
 the `makeMissing()` masks. Sequential XGBoost was subsequently added with
 `uci_extend()`, reusing the exact saved samples, masks and model seeds. Its
 runtime was measured in a separate session, so timing comparisons also reflect
-between-session variation. The larger sizes run all eight methods together,
-with the same parameters. Earlier results from the custom Bernoulli generator
+between-session variation. The larger sizes ran the original eight methods together,
+with the same parameters. Foundation methods were added in separate sessions
+using the saved samples, masks and seeds; their environment and device settings
+are recorded with the results. Earlier results from the custom Bernoulli generator
 are not mixed into these tables. Random seeds reproduce this protocol, but
 using the same seed with a different generator does not reproduce old masks.
 
@@ -370,7 +462,9 @@ parentheses. Counts are shown so failures cannot improve a ranking invisibly.
 With three repetitions, standard deviations describe variation only roughly;
 they are not confidence intervals or significance tests. Methods are paired by
 sample and mask, so formal comparisons would require paired analysis and more
-repetitions. Empty cells indicate unavailable metrics.
+repetitions. Empty cells indicate unavailable metrics. Success counts use completed
+attempts as the denominator. The Coverage column distinguishes pending requested
+repetitions from scenarios outside the saved foundation grid.
 
 ```{r result-tables, echo=FALSE, results='asis'}
 fmt <- function(x) {
@@ -386,7 +480,11 @@ for (nr in config$n) for (ds in unique(runs$dataset)) for (mech in unique(runs$m
                      metrics$rate == rate & metrics$method == method, ]
       rr <- runs[runs$n == nr & runs$dataset == ds & runs$mechanism == mech &
                    runs$rate == rate & runs$method == method, ]
+      requested <- if (method %in% foundation_methods && !rate %in% foundation_rates) 0L else config$repetitions
+      pending <- max(0L, requested - nrow(rr))
       data.frame(Rate = rate, Method = method,
+        Coverage = if (!requested) "Not requested" else if (pending)
+          paste(pending, "pending") else "Complete",
         Success = paste(sum(rr$status == "ok"), nrow(rr), sep = "/"),
         RMSE = fmt(x$rmse), MAE = fmt(x$mae), NRMSE = fmt(x$nrmse), NRMSE_ref = fmt(x$nrmse_reference),
         Accuracy = fmt(x$accuracy), Misclassification = fmt(x$misclassification),
@@ -402,7 +500,9 @@ for (nr in config$n) for (ds in unique(runs$dataset)) for (mech in unique(runs$m
 library(ggplot2)
 numeric_scores <- subset(metrics, type == "numeric")
 ggplot(numeric_scores, aes(factor(rate), nrmse, colour = method, group = method)) +
-  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "line",
+    data = function(d) if (length(foundation_rates) > 1L) d else
+      d[!d$method %in% foundation_methods, ]) +
   geom_point(position = position_dodge(width = .25), alpha = .65) +
   facet_grid(n + dataset ~ mechanism, scales = "free_y") +
   scale_y_continuous(trans = "log1p") +
@@ -414,7 +514,9 @@ ggplot(numeric_scores, aes(factor(rate), nrmse, colour = method, group = method)
 ```{r categorical-plot, echo=FALSE, eval=has_ggplot, fig.height=12}
 ggplot(subset(metrics, type == "categorical"),
        aes(factor(rate), accuracy, colour = method, group = method)) +
-  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "line",
+    data = function(d) if (length(foundation_rates) > 1L) d else
+      d[!d$method %in% foundation_methods, ]) +
   geom_point(position = position_dodge(width = .25), alpha = .65) +
   facet_grid(n + dataset ~ mechanism) + ylim(0, 1) +
   labs(x = "Nominal missing fraction", y = "Masked-cell accuracy", colour = "Method") +
@@ -431,7 +533,9 @@ ggplot(subset(runs, status == "ok"), aes(method, elapsed, colour = factor(rate))
 
 ```{r structure-plot, echo=FALSE, eval=has_ggplot, fig.height=18}
 ggplot(metrics, aes(factor(rate), marginal_distance, colour = method, group = method)) +
-  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "line",
+    data = function(d) if (length(foundation_rates) > 1L) d else
+      d[!d$method %in% foundation_methods, ]) +
   stat_summary(fun = mean, geom = "point") +
   facet_grid(n + dataset + type ~ mechanism) +
   labs(x = "Nominal missing fraction", y = "Whole-table marginal distance",
@@ -543,29 +647,61 @@ categorical targets, missingness in all predictors, other MAR drivers and MNAR
 are not established by this experiment.
 
 The per-scenario tables and plots above use each method's successful runs.
-The following paired sensitivity summary instead retains only scenarios
-completed by **all `r length(config$methods)` methods**, so a method cannot benefit from omitting a
-harder scenario. Neither these averages nor the plots imply universal
-transformer superiority.
+The first paired summary retains scenarios completed by all eight original
+methods. The second retains the set attempted and completed by
+all eleven methods. These separate comparisons preserve the full sample-size
+study without treating unrequested foundation runs as failures.
 
-```{r findings, echo=FALSE}
+```{r findings, echo=FALSE, results='asis'}
 scenario_key <- function(d) paste(d$n, d$dataset, d$repetition, d$mechanism, d$rate)
-all_ok <- vapply(split(runs, scenario_key(runs)), function(z)
-  nrow(z) == length(config$methods) && all(z$status == "ok"), logical(1))
-common <- names(all_ok)[all_ok]
-paired_metrics <- metrics[scenario_key(metrics) %in% common, ]
-paired_runs <- runs[scenario_key(runs) %in% common, ]
-findings <- merge(
-  aggregate(nrmse ~ n + dataset + method, paired_metrics, mean),
-  aggregate(accuracy ~ n + dataset + method, paired_metrics, mean))
-findings <- merge(findings, aggregate(elapsed ~ n + dataset + method, paired_runs, median))
-knitr::kable(findings, digits = 3,
-  caption = paste("Paired descriptive averages on", length(common),
-                  "common successful scenarios; median runtime in seconds"))
+paired_summary <- function(methods, label) {
+  selected_runs <- runs[runs$method %in% methods, ]
+  all_ok <- vapply(split(selected_runs, scenario_key(selected_runs)), function(z)
+    length(unique(z$method)) == length(methods) &&
+      nrow(z) == length(methods) && all(z$status == "ok"), logical(1))
+  common <- names(all_ok)[all_ok]
+  if (!length(common)) {
+    cat(label, ": no common successful scenarios.\n")
+    return(invisible(NULL))
+  }
+  paired_metrics <- metrics[metrics$method %in% methods &
+                              scenario_key(metrics) %in% common, ]
+  paired_runs <- selected_runs[scenario_key(selected_runs) %in% common, ]
+  findings <- merge(
+    aggregate(nrmse ~ n + dataset + method, paired_metrics, mean),
+    aggregate(accuracy ~ n + dataset + method, paired_metrics, mean))
+  findings <- merge(findings, aggregate(elapsed ~ n + dataset + method, paired_runs, median))
+  print(knitr::kable(findings, digits = 3,
+    caption = paste(label, "on", length(common),
+                    "common successful scenarios; median runtime in seconds")))
+}
+paired_summary(setdiff(config$methods, foundation_methods), "Original methods")
+if (any(config$methods %in% foundation_methods))
+  paired_summary(config$methods, "Including foundation methods")
 ```
 
-In the bundled five-epoch run, all three neural approaches have lower mean
-numeric NRMSE and higher categorical accuracy at 5,000 rows than at 240 rows
+```{r foundation-findings, echo=FALSE, results='asis'}
+for (dataset in c("Adult", "Bank")) {
+  selected <- metrics[metrics$n == max(config$n) & metrics$dataset == dataset &
+                        metrics$rate == .2 & metrics$method %in% foundation_methods, ]
+  if (!nrow(selected)) next
+  summary <- merge(aggregate(nrmse ~ method, selected, mean),
+                   aggregate(accuracy ~ method, selected, mean))
+  if (nrow(summary) != length(foundation_methods)) next
+  numeric_best <- summary[which.min(summary$nrmse), ]
+  categorical_best <- summary[which.max(summary$accuracy), ]
+  cat(sprintf(paste0("For **%s** at %s rows and 20%% missingness, among the three ",
+    "pretrained adapters, **%s** has the lowest mean numerical NRMSE (%.3f), ",
+    "and **%s** has the highest mean categorical accuracy (%.1f%%), averaged ",
+    "over the MCAR and MAR repetitions. These are descriptive comparisons ",
+    "under the stated inference budgets, not evidence of general superiority.\n\n"),
+    dataset, format(max(config$n), big.mark = ","), numeric_best$method,
+    numeric_best$nrmse, categorical_best$method, 100 * categorical_best$accuracy))
+}
+```
+
+In the bundled five-epoch run, all three transformers trained from scratch have lower mean
+numeric NRMSE and higher categorical accuracy at 5,000 rows than at 250 rows
 on both datasets. This endpoint comparison does not imply a monotonic
 improvement at every intermediate size. At 5,000 rows, the direct tabular model
 and sequential XGBoost have similar mean numeric NRMSE on Bank; the token
@@ -586,7 +722,7 @@ the mean error nor a single dataset establishes transformer superiority.
 The installed `benchmarks/uci-results` directory contains `metrics.csv`
 (per target), `runs.csv` (including failures and warnings), `config.rds`,
 `preprocessing.csv`, `sources.csv`, `distributions.csv`, and
-per-size environment records combined in `session.txt`. The 240-row records
+per-size environment records combined in `session.txt`. The 250-row records
 include the original seven-method run and the sequential XGBoost addition.
 Larger-size records describe their own sessions. The full regeneration
 artifact is intentionally kept outside the package. To update the vignette,
@@ -597,6 +733,13 @@ behaviour without invoking TensorFlow.
 
 ```{r source-checksums, echo=FALSE}
 knitr::kable(read.csv(file.path(result_dir, "sources.csv")))
+```
+
+Foundation checkpoint provenance (paths omitted; weights are not bundled):
+
+```{r foundation-checkpoints, echo=FALSE}
+model_manifest <- file.path(result_dir, "foundation-models.csv")
+if (file.exists(model_manifest)) knitr::kable(read.csv(model_manifest))
 ```
 
 Experiment environment (not the environment rendering this document):

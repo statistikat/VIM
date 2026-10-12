@@ -118,4 +118,58 @@ expect_identical(original, runs)
 config$methods <- c(config$methods, "ranger")
 runner$uci_run(config, output = directory, resume = TRUE)
 expect_identical(calls, 8L)
+# An interrupted extension reuses completed method/scenario checkpoints.
+xgb_calls <- 0L
+runner$uci_methods <- function(config) list(xgboost = function(d, targets, seed) {
+  xgb_calls <<- xgb_calls + 1L
+  if (xgb_calls == 2L) stop(structure(list(message = "test interruption", call = NULL),
+                                    class = c("interrupt", "condition")))
+  original_methods(config)[[1L]](d, targets, seed)
+})
+interrupted <- tryCatch(runner$uci_extend(directory, "xgboost"),
+                       interrupt = function(e) TRUE)
+expect_true(isTRUE(interrupted))
+runner$uci_extend(directory, "xgboost")
+expect_identical(xgb_calls, 5L)
+resumed <- read.csv(file.path(directory, "runs.csv"))
+expect_equal(nrow(resumed), 12L)
+expect_false(anyDuplicated(resumed[c("n", "dataset", "repetition", "mechanism",
+                                     "rate", "method")]) > 0L)
+expect_true(all(resumed$status == "ok"))
+expect_true(all(c("tabimpute", "tabiclImpute", "tabpfnImpute") %in%
+                  e$uci_config(foundation = TRUE)$methods))
+# Reduced extensions add only requested scenarios, while preserving all core runs.
+runner$uci_methods <- function(config)
+  setNames(rep(list(original_methods(config)[[1L]]), length(config$methods)), config$methods)
+expect_error(runner$uci_extend(directory, "shared", sample_sizes = 75L),
+             "existing sample sizes")
+runner$uci_extend(directory, "shared", sample_sizes = 50L, rates = .2)
+scoped <- read.csv(file.path(directory, "runs.csv"))
+expect_equal(nrow(scoped), 14L)
+expect_equal(scoped$n[scoped$method == "shared"], c(50, 50))
+scoped_config <- readRDS(file.path(directory, "config.rds"))
+expect_identical(scoped_config$extensions[[1L]]$n, 50L)
+runner$uci_run(scoped_config, output = directory, resume = TRUE)
+expect_identical(read.csv(file.path(directory, "runs.csv")), scoped)
+# Restarting during final output writes also avoids duplicate scores or fits.
+original_summary <- runner$uci_distribution_summary
+stop_summary <- TRUE
+runner$uci_distribution_summary <- function(...) {
+  if (stop_summary) {
+    stop_summary <<- FALSE
+    stop(structure(list(message = "output interruption", call = NULL),
+                   class = c("interrupt", "condition")))
+  }
+  original_summary(...)
+}
+prior_calls <- calls
+interrupted <- tryCatch(runner$uci_extend(directory, "ranger_seq10"),
+                       interrupt = function(e) TRUE)
+expect_true(isTRUE(interrupted))
+runner$uci_extend(directory, "ranger_seq10")
+expect_identical(calls, prior_calls + 4L)
+committed <- read.csv(file.path(directory, "runs.csv"))
+expect_equal(nrow(committed), 18L)
+expect_false(anyDuplicated(committed[c("n", "dataset", "repetition", "mechanism",
+                                       "rate", "method")]) > 0L)
 unlink(directory, recursive = TRUE)

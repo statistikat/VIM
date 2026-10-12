@@ -25,3 +25,6 @@ pkgdown
 ^\.superpowers$
 ^inst/python/__pycache__$
 ^inst/python/.*\.pyc$
+^\.local$
+^inst/benchmarks/__pycache__$
+^inst/benchmarks/.*\.pyc$

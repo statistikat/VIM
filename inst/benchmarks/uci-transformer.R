@@ -1,10 +1,11 @@
 # Source this file, then call uci_run(). Nothing downloads or trains on source().
 # See vignettes/transformerImpute-benchmark.Rmd for the protocol.
-uci_config <- function(full = FALSE) {
+uci_config <- function(full = FALSE, foundation = FALSE) {
   list(protocol = "makeMissing-evaluation-v1", n = c(240L, 500L, 1000L, 2000L, 5000L), rates = c(.1, .2, .4),
        repetitions = if (full) 10L else 3L, mechanisms = c("MCAR", "MAR"),
        seed = 20261010L,
-       methods = c("transformerImpute", "tabular", "shared", "kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10"),
+       methods = c("transformerImpute", "tabular", "shared", "kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10",
+                   if (foundation) c("tabimpute", "tabiclImpute", "tabpfnImpute")),
        transformer = list(epochs = if (full) 30L else 5L, batch_size = 64L,
                           patience = 3L, embedding_dim = 16L, num_heads = 2L),
        trees = 100L, boosting_rounds = 30L)
@@ -56,16 +57,81 @@ uci_prepare <- function(cache, download = FALSE) {
        sources = data.frame(url = unname(urls), md5 = unname(tools::md5sum(archives))))
 }
 
+# Select the separately installed PyTorch environment before Python initializes.
+uci_foundation_setup <- function(local = ".local", device = "cpu") {
+  local <- normalizePath(local, mustWork = TRUE)
+  python <- file.path(local, "foundation-env", "bin", "python")
+  manifest <- utils::read.csv(file.path(local, "foundation-models.csv"),
+                              stringsAsFactors = FALSE)
+  stopifnot(file.exists(python), all(file.exists(manifest$path)),
+            device %in% c("cpu", "mps", "cuda"))
+  if (reticulate::py_available(initialize = FALSE) &&
+      normalizePath(dirname(reticulate::py_config()$python)) != normalizePath(dirname(python)))
+    stop("Start a fresh R session before selecting the foundation environment")
+  checkpoint <- function(name) {
+    path <- manifest$path[manifest$name == name]
+    if (length(path) != 1L) stop("Missing or ambiguous model manifest entry: ", name)
+    path
+  }
+  Sys.setenv(RETICULATE_PYTHON = python, HF_HOME = file.path(local, "huggingface"),
+    HF_HUB_OFFLINE = "1", OMP_NUM_THREADS = "1",
+    TABPFN_ALLOW_CPU_LARGE_DATASET = "1", TABPFN_DISABLE_TELEMETRY = "1",
+    VIM_TABIMPUTE_DEVICE = device,
+    VIM_TABIMPUTE_CHECKPOINT = checkpoint("tabimpute"),
+    VIM_TABPFN_CLASSIFIER = checkpoint("tabpfn_classifier"),
+    VIM_TABPFN_REGRESSOR = checkpoint("tabpfn_regressor"))
+  invisible(manifest)
+}
+
 uci_methods <- function(config) {
   exports <- getNamespaceExports("VIM")
   need <- c(transformerImpute = "transformerImpute", tabular = "fit_tabular_transformer",
             shared = "fit_shared_transformer", kNN = "kNN", ranger = "rangerImpute",
-            ranger_seq10 = "vimpute", xgboost = "xgboostImpute", xgboost_seq10 = "vimpute")
+            ranger_seq10 = "vimpute", xgboost = "xgboostImpute", xgboost_seq10 = "vimpute",
+            tabimpute = "tabimpute", tabiclImpute = "tabiclImpute", tabpfnImpute = "tabpfnImpute")
   if (any(!config$methods %in% names(need))) stop("Unknown benchmark method")
   setNames(lapply(config$methods, function(method) {
     function(d, targets, seed) {
       if (!need[[method]] %in% exports) stop("Unavailable in this VIM version: ", need[[method]])
       set.seed(seed)
+      if (method %in% c("tabimpute", "tabiclImpute", "tabpfnImpute")) {
+        torch <- reticulate::import("torch")
+        torch$set_num_threads(1L)
+        invisible(gc())
+        reticulate::import("gc")$collect()
+        if (isTRUE(torch$backends$mps$is_available())) torch$mps$empty_cache()
+        if (method == "tabimpute") {
+          checkpoint <- Sys.getenv("VIM_TABIMPUTE_CHECKPOINT")
+          if (!nzchar(checkpoint) || !file.exists(checkpoint))
+            stop("Set VIM_TABIMPUTE_CHECKPOINT to a local checkpoint")
+          backend <- VIM::tabimpute_backend(backend = "categorical",
+            device = Sys.getenv("VIM_TABIMPUTE_DEVICE", "cpu"),
+            checkpoint_path = checkpoint, allow_download = FALSE)
+          # Bound cell-token attention on wide one-hot tables; process every row.
+          backend$model$imputer$max_num_rows <- 32L
+          backend$model$imputer$max_num_chunks <- 1L
+          runtime_path <- system.file("benchmarks", package = "VIM")
+          if (file.exists("inst/benchmarks/uci_foundation_runtime.py"))
+            runtime_path <- normalizePath("inst/benchmarks")
+          runtime <- reticulate::import_from_path("uci_foundation_runtime", runtime_path)
+          backend$model <- runtime$VectorizedTabImpute(backend$model)
+          return(as.data.frame(VIM::tabimpute(d, variables = targets, seed = seed,
+            tabimpute_module = backend, imp_var = FALSE)))
+        }
+        if (method == "tabiclImpute")
+          return(as.data.frame(VIM::tabiclImpute(d, variables = targets, seed = seed,
+            n_estimators = 1L, n_iterations = 1L, device = "cpu",
+            allow_download = FALSE, imp_var = FALSE)))
+        classifier <- Sys.getenv("VIM_TABPFN_CLASSIFIER")
+        regressor <- Sys.getenv("VIM_TABPFN_REGRESSOR")
+        if (!all(nzchar(c(classifier, regressor))) ||
+            !all(file.exists(c(classifier, regressor))))
+          stop("Set VIM_TABPFN_CLASSIFIER and VIM_TABPFN_REGRESSOR to local checkpoints")
+        return(as.data.frame(VIM::tabpfnImpute(d, variables = targets, seed = seed,
+          n_estimators = 1L, n_permutations = 1L, device = "cpu",
+          classifier_path = classifier, regressor_path = regressor,
+          allow_download = FALSE, imp_var = FALSE)))
+      }
       neural <- method %in% c("transformerImpute", "tabular", "shared")
       if (neural) {
         keras::k_clear_session()
@@ -372,7 +438,7 @@ uci_distribution_summary <- function(output, repetition = 1L, mechanism = "MAR",
 
 # Add a method to a completed local experiment without retraining competitors.
 # Requires the full local artifacts.rds, intentionally not bundled with VIM.
-uci_extend_single <- function(output, methods = "ranger_seq10") {
+uci_extend_single <- function(output, methods = "ranger_seq10", scope = NULL) {
   config <- readRDS(file.path(output, "config.rds"))
   if (!identical(config$protocol, uci_config()$protocol))
     stop("Different benchmark protocol; regenerate with uci_run() instead of mixing results")
@@ -380,6 +446,18 @@ uci_extend_single <- function(output, methods = "ranger_seq10") {
   artifacts <- readRDS(file.path(output, "artifacts.rds"))
   runs <- utils::read.csv(file.path(output, "runs.csv"), stringsAsFactors = FALSE)
   metrics <- utils::read.csv(file.path(output, "metrics.csv"), stringsAsFactors = FALSE)
+  # Preserve the baseline until all files of the extension are committed.
+  # A restart during final CSV/artifact writes must not append duplicate rows.
+  base_file <- file.path(output, "extension-base.rds")
+  baseline <- if (file.exists(base_file)) readRDS(base_file) else NULL
+  if (is.null(baseline) || !identical(baseline$config, config)) {
+    session_file <- file.path(output, "session-extension.txt")
+    baseline <- list(config = config, artifacts = artifacts, runs = runs, metrics = metrics,
+      session = if (file.exists(session_file)) readLines(session_file) else character())
+    saveRDS(baseline, paste0(base_file, ".tmp"))
+    if (!file.rename(paste0(base_file, ".tmp"), base_file)) stop("Baseline checkpoint failed")
+  }
+  artifacts <- baseline$artifacts; runs <- baseline$runs; metrics <- baseline$metrics
   extra <- config; extra$methods <- methods
   functions <- uci_methods(extra)
   for (key in names(artifacts)) {
@@ -387,11 +465,25 @@ uci_extend_single <- function(output, methods = "ranger_seq10") {
     fields <- strsplit(key, "-", fixed = TRUE)[[1L]]
     reference <- runs[runs$dataset == fields[1L] & runs$repetition == as.integer(fields[2L]) &
       runs$mechanism == fields[3L] & runs$rate == as.numeric(fields[4L]), , drop = FALSE][1L, ]
+    if (!is.null(scope) && (!config$n %in% scope$n || !reference$rate %in% scope$rates))
+      next
     targets <- names(which(colSums(a$mask) > 0L))
     incomplete <- a$truth
     for (v in targets) incomplete[[v]][a$mask[, v]] <- NA
     incomplete <- droplevels(incomplete)
     for (method in methods) {
+      checkpoint <- file.path(output, "extension-checkpoints", method, paste0(key, ".rds"))
+      if (file.exists(checkpoint)) {
+        cached <- readRDS(checkpoint)
+        if (!identical(cached$config, config))
+          stop("Extension checkpoint configuration differs")
+        runs <- rbind(runs, cached$row)
+        if (!is.null(cached$scores)) {
+          metrics <- rbind(metrics, cbind(cached$row, cached$scores))
+          artifacts[[key]]$completed[[method]] <- cached$completed
+        }
+        next
+      }
       message(key, " / ", method)
       warnings <- character(); started <- proc.time()[["elapsed"]]
       value <- tryCatch(withCallingHandlers({
@@ -413,6 +505,13 @@ uci_extend_single <- function(output, methods = "ranger_seq10") {
         metrics <- rbind(metrics, cbind(row, value$scores))
         artifacts[[key]]$completed[[method]] <- value$completed
       }
+      dir.create(dirname(checkpoint), recursive = TRUE, showWarnings = FALSE)
+      saveRDS(list(config = config, scope = scope, row = row,
+        scores = if (!inherits(value, "error")) value$scores else NULL,
+        completed = if (!inherits(value, "error")) value$completed else NULL),
+        paste0(checkpoint, ".tmp"))
+      if (!file.rename(paste0(checkpoint, ".tmp"), checkpoint))
+        stop("Could not save extension checkpoint")
     }
   }
   for (v in c("error", "warnings")) {
@@ -420,35 +519,64 @@ uci_extend_single <- function(output, methods = "ranger_seq10") {
     metrics[[v]][is.na(metrics[[v]])] <- ""
   }
   config$methods <- c(config$methods, methods)
+  if (!is.null(scope)) config$extensions <- c(config$extensions,
+                                             list(c(list(methods = methods), scope)))
   # Earlier scenario checkpoints predate the added methods.
   unlink(file.path(output, "checkpoint.rds"))
-  saveRDS(config, file.path(output, "config.rds"))
-  saveRDS(artifacts, file.path(output, "artifacts.rds"), compress = "xz")
+  saveRDS(artifacts, file.path(output, "artifacts.rds"))
   utils::write.csv(runs, file.path(output, "runs.csv"), row.names = FALSE, na = "")
   utils::write.csv(metrics, file.path(output, "metrics.csv"), row.names = FALSE)
-  provenance <- capture.output(list(added_methods = methods, config = config,
+  python <- if (any(methods %in% c("tabimpute", "tabiclImpute", "tabpfnImpute")))
+    list(executable = reticulate::py_config()$python,
+         versions = setNames(lapply(c("tabimpute", "tabicl", "tabpfn", "tabpfn-extensions",
+           "torch", "numpy", "scikit-learn"), function(p)
+             reticulate::import("importlib.metadata")$version(p)),
+           c("tabimpute", "tabicl", "tabpfn", "tabpfn-extensions",
+             "torch", "numpy", "scikit-learn")),
+         torch_threads = reticulate::import("torch")$get_num_threads(),
+         tabimpute_device = Sys.getenv("VIM_TABIMPUTE_DEVICE", "cpu"),
+         other_foundation_devices = "cpu",
+         tabimpute_row_chunk = 32L, tabimpute_input_builder = "vectorized-equivalent",
+         mps_cache_cleanup = "between chunks and method calls",
+         ensemble_members = 1L,
+         imputation_passes = 1L) else NULL
+  provenance <- capture.output(list(added_methods = methods, scope = scope, config = config, python = python,
     system = Sys.info()[c("sysname", "release", "machine")], session = utils::sessionInfo()))
-  writeLines(trimws(paste(sub("[ \t]+$", "", provenance), collapse = "\n"), which = "right"),
-             file.path(output, "session-extension.txt"))
+  session_file <- file.path(output, "session-extension.txt")
+  writeLines(c(baseline$session, trimws(paste(sub("[ \t]+$", "", provenance),
+                    collapse = "\n"), which = "right")), session_file)
   uci_distribution_summary(output)
+  # Config is the commit marker: only advertise the added methods after all
+  # their outputs and provenance are complete.
+  saveRDS(config, file.path(output, "config.rds"))
+  unlink(base_file)
   invisible(list(runs = runs, metrics = metrics))
 }
 
 # Extend all sizes using their saved reference tables and masks.
-uci_extend <- function(output, methods = "ranger_seq10") {
+uci_extend <- function(output, methods = "ranger_seq10", sample_sizes = NULL, rates = NULL) {
   config <- readRDS(file.path(output, "config.rds"))
+  scope <- if (!is.null(sample_sizes) || !is.null(rates))
+    list(n = if (is.null(sample_sizes)) config$n else sample_sizes,
+         rates = if (is.null(rates)) config$rates else rates) else NULL
+  if (!is.null(scope) && (!length(scope$n) || !length(scope$rates) ||
+      any(!scope$n %in% config$n) || any(!scope$rates %in% config$rates)))
+    stop("Extension scope must use existing sample sizes and missingness rates")
   if (!dir.exists(file.path(output, paste0("n", config$n[1L]))))
-    return(uci_extend_single(output, methods))
+    return(uci_extend_single(output, methods, scope))
   if (any(methods %in% config$methods)) stop("Method already present in this run")
   for (n in config$n) {
     directory <- file.path(output, paste0("n", n))
     single <- readRDS(file.path(directory, "config.rds"))
     missing <- setdiff(methods, single$methods)
-    if (length(missing)) uci_extend_single(directory, missing)
+    if (length(missing)) uci_extend_single(directory, missing, scope) else
+      uci_distribution_summary(directory)
     saveRDS(readRDS(file.path(directory, "config.rds")),
             file.path(directory, "complete.rds"))
   }
   config$methods <- c(config$methods, methods)
+  if (!is.null(scope)) config$extensions <- c(config$extensions,
+                                             list(c(list(methods = methods), scope)))
   saveRDS(config, file.path(output, "config.rds"))
   uci_collect_sizes(output)
 }

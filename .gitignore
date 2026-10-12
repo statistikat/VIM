@@ -18,3 +18,4 @@ renv.lock
 .posit
 __pycache__/
 *.pyc
+/.local/

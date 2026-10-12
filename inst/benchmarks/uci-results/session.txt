@@ -210,6 +210,164 @@ loaded via a namespace (and not attached):
 [40] proxy_0.4-29         data.table_1.18.6.1  listenv_1.0.0
 [43] codetools_0.2-20     zoo_1.9-1            parallelly_1.48.0
 [46] e1071_1.7-17         colorspace_2.1-4     tools_4.5.2
+$added_methods
+[1] "tabimpute"    "tabiclImpute" "tabpfnImpute"
+
+$scope
+$scope$n
+[1]  240  500 1000 2000 5000
+
+$scope$rates
+[1] 0.2
+
+
+$config
+$config$protocol
+[1] "makeMissing-evaluation-v1"
+
+$config$n
+[1] 240
+
+$config$rates
+[1] 0.1 0.2 0.4
+
+$config$repetitions
+[1] 3
+
+$config$mechanisms
+[1] "MCAR" "MAR"
+
+$config$seed
+[1] 20261010
+
+$config$methods
+ [1] "transformerImpute" "tabular"           "shared"
+ [4] "kNN"               "ranger"            "ranger_seq10"
+ [7] "xgboost"           "xgboost_seq10"     "tabimpute"
+[10] "tabiclImpute"      "tabpfnImpute"
+
+$config$transformer
+$config$transformer$epochs
+[1] 5
+
+$config$transformer$batch_size
+[1] 64
+
+$config$transformer$patience
+[1] 3
+
+$config$transformer$embedding_dim
+[1] 16
+
+$config$transformer$num_heads
+[1] 2
+
+
+$config$trees
+[1] 100
+
+$config$boosting_rounds
+[1] 30
+
+$config$extensions
+$config$extensions[[1]]
+$config$extensions[[1]]$methods
+[1] "tabimpute"    "tabiclImpute" "tabpfnImpute"
+
+$config$extensions[[1]]$n
+[1]  240  500 1000 2000 5000
+
+$config$extensions[[1]]$rates
+[1] 0.2
+
+
+
+
+$python
+$python$executable
+[1] "/Users/alex/git/VIM/.local/foundation-env/bin/python"
+
+$python$versions
+$python$versions$tabimpute
+[1] "0.0.4"
+
+$python$versions$tabicl
+[1] "2.2.0"
+
+$python$versions$tabpfn
+[1] "6.0.0"
+
+$python$versions$`tabpfn-extensions`
+[1] "0.2.0"
+
+$python$versions$torch
+[1] "2.14.1"
+
+$python$versions$numpy
+[1] "2.4.6"
+
+$python$versions$`scikit-learn`
+[1] "1.6.1"
+
+
+$python$torch_threads
+[1] 1
+
+$python$tabimpute_device
+[1] "mps"
+
+$python$other_foundation_devices
+[1] "cpu"
+
+$python$tabimpute_row_chunk
+[1] 32
+
+$python$tabimpute_input_builder
+[1] "vectorized-equivalent"
+
+$python$mps_cache_cleanup
+[1] "between chunks and method calls"
+
+$python$ensemble_members
+[1] 1
+
+$python$imputation_passes
+[1] 1
+
+
+$system
+ sysname  release  machine
+"Darwin" "27.0.0"  "arm64"
+
+$session
+R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS 27.0.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] C.UTF-8/C.UTF-8/C.UTF-8/C/C.UTF-8/C.UTF-8
+
+time zone: Europe/Vienna
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base
+
+loaded via a namespace (and not attached):
+ [1] ranger_0.18.0       laeken_0.5.3        DEoptimR_1.2-2
+ [4] Matrix_1.7-4        lattice_0.22-9      vcd_1.4-14
+ [7] e1071_1.7-17        reticulate_1.47.0   nnet_7.3-20
+[10] zoo_1.9-1           png_0.1-9           cli_3.6.6
+[13] VIM_7.5.1           grid_4.5.2          withr_3.0.3
+[16] data.table_1.18.6.1 proxy_0.4-29        robustbase_0.99-7
+[19] class_7.3-23        compiler_4.5.2      xgboost_3.2.1.1
+[22] lmtest_0.9-40       boot_1.3-32         tools_4.5.2
+[25] sp_2.2-3            Rcpp_1.1.2          colorspace_2.1-4
+[28] rlang_1.3.0         jsonlite_2.0.0      MASS_7.3-65
 Number of rows: 500
 $config
 $config$protocol
@@ -328,6 +486,164 @@ loaded via a namespace (and not attached):
 [61] Rcpp_1.1.2           lgr_0.5.2            paradox_1.0.1
 [64] DEoptimR_1.2-2       lmtest_0.9-40        compiler_4.5.2
 [67] sp_2.2-3
+$added_methods
+[1] "tabimpute"    "tabiclImpute" "tabpfnImpute"
+
+$scope
+$scope$n
+[1]  240  500 1000 2000 5000
+
+$scope$rates
+[1] 0.2
+
+
+$config
+$config$protocol
+[1] "makeMissing-evaluation-v1"
+
+$config$n
+[1] 500
+
+$config$rates
+[1] 0.1 0.2 0.4
+
+$config$repetitions
+[1] 3
+
+$config$mechanisms
+[1] "MCAR" "MAR"
+
+$config$seed
+[1] 20261010
+
+$config$methods
+ [1] "transformerImpute" "tabular"           "shared"
+ [4] "kNN"               "ranger"            "ranger_seq10"
+ [7] "xgboost"           "xgboost_seq10"     "tabimpute"
+[10] "tabiclImpute"      "tabpfnImpute"
+
+$config$transformer
+$config$transformer$epochs
+[1] 5
+
+$config$transformer$batch_size
+[1] 64
+
+$config$transformer$patience
+[1] 3
+
+$config$transformer$embedding_dim
+[1] 16
+
+$config$transformer$num_heads
+[1] 2
+
+
+$config$trees
+[1] 100
+
+$config$boosting_rounds
+[1] 30
+
+$config$extensions
+$config$extensions[[1]]
+$config$extensions[[1]]$methods
+[1] "tabimpute"    "tabiclImpute" "tabpfnImpute"
+
+$config$extensions[[1]]$n
+[1]  240  500 1000 2000 5000
+
+$config$extensions[[1]]$rates
+[1] 0.2
+
+
+
+
+$python
+$python$executable
+[1] "/Users/alex/git/VIM/.local/foundation-env/bin/python"
+
+$python$versions
+$python$versions$tabimpute
+[1] "0.0.4"
+
+$python$versions$tabicl
+[1] "2.2.0"
+
+$python$versions$tabpfn
+[1] "6.0.0"
+
+$python$versions$`tabpfn-extensions`
+[1] "0.2.0"
+
+$python$versions$torch
+[1] "2.14.1"
+
+$python$versions$numpy
+[1] "2.4.6"
+
+$python$versions$`scikit-learn`
+[1] "1.6.1"
+
+
+$python$torch_threads
+[1] 1
+
+$python$tabimpute_device
+[1] "mps"
+
+$python$other_foundation_devices
+[1] "cpu"
+
+$python$tabimpute_row_chunk
+[1] 32
+
+$python$tabimpute_input_builder
+[1] "vectorized-equivalent"
+
+$python$mps_cache_cleanup
+[1] "between chunks and method calls"
+
+$python$ensemble_members
+[1] 1
+
+$python$imputation_passes
+[1] 1
+
+
+$system
+ sysname  release  machine
+"Darwin" "27.0.0"  "arm64"
+
+$session
+R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS 27.0.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] C.UTF-8/C.UTF-8/C.UTF-8/C/C.UTF-8/C.UTF-8
+
+time zone: Europe/Vienna
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base
+
+loaded via a namespace (and not attached):
+ [1] ranger_0.18.0       laeken_0.5.3        DEoptimR_1.2-2
+ [4] Matrix_1.7-4        lattice_0.22-9      vcd_1.4-14
+ [7] e1071_1.7-17        reticulate_1.47.0   nnet_7.3-20
+[10] zoo_1.9-1           png_0.1-9           cli_3.6.6
+[13] VIM_7.5.1           grid_4.5.2          withr_3.0.3
+[16] data.table_1.18.6.1 proxy_0.4-29        robustbase_0.99-7
+[19] class_7.3-23        compiler_4.5.2      xgboost_3.2.1.1
+[22] lmtest_0.9-40       boot_1.3-32         tools_4.5.2
+[25] sp_2.2-3            Rcpp_1.1.2          colorspace_2.1-4
+[28] rlang_1.3.0         jsonlite_2.0.0      MASS_7.3-65
 Number of rows: 1000
 $config
 $config$protocol
@@ -446,6 +762,164 @@ loaded via a namespace (and not attached):
 [61] Rcpp_1.1.2           lgr_0.5.2            paradox_1.0.1
 [64] DEoptimR_1.2-2       lmtest_0.9-40        compiler_4.5.2
 [67] sp_2.2-3
+$added_methods
+[1] "tabimpute"    "tabiclImpute" "tabpfnImpute"
+
+$scope
+$scope$n
+[1]  240  500 1000 2000 5000
+
+$scope$rates
+[1] 0.2
+
+
+$config
+$config$protocol
+[1] "makeMissing-evaluation-v1"
+
+$config$n
+[1] 1000
+
+$config$rates
+[1] 0.1 0.2 0.4
+
+$config$repetitions
+[1] 3
+
+$config$mechanisms
+[1] "MCAR" "MAR"
+
+$config$seed
+[1] 20261010
+
+$config$methods
+ [1] "transformerImpute" "tabular"           "shared"
+ [4] "kNN"               "ranger"            "ranger_seq10"
+ [7] "xgboost"           "xgboost_seq10"     "tabimpute"
+[10] "tabiclImpute"      "tabpfnImpute"
+
+$config$transformer
+$config$transformer$epochs
+[1] 5
+
+$config$transformer$batch_size
+[1] 64
+
+$config$transformer$patience
+[1] 3
+
+$config$transformer$embedding_dim
+[1] 16
+
+$config$transformer$num_heads
+[1] 2
+
+
+$config$trees
+[1] 100
+
+$config$boosting_rounds
+[1] 30
+
+$config$extensions
+$config$extensions[[1]]
+$config$extensions[[1]]$methods
+[1] "tabimpute"    "tabiclImpute" "tabpfnImpute"
+
+$config$extensions[[1]]$n
+[1]  240  500 1000 2000 5000
+
+$config$extensions[[1]]$rates
+[1] 0.2
+
+
+
+
+$python
+$python$executable
+[1] "/Users/alex/git/VIM/.local/foundation-env/bin/python"
+
+$python$versions
+$python$versions$tabimpute
+[1] "0.0.4"
+
+$python$versions$tabicl
+[1] "2.2.0"
+
+$python$versions$tabpfn
+[1] "6.0.0"
+
+$python$versions$`tabpfn-extensions`
+[1] "0.2.0"
+
+$python$versions$torch
+[1] "2.14.1"
+
+$python$versions$numpy
+[1] "2.4.6"
+
+$python$versions$`scikit-learn`
+[1] "1.6.1"
+
+
+$python$torch_threads
+[1] 1
+
+$python$tabimpute_device
+[1] "mps"
+
+$python$other_foundation_devices
+[1] "cpu"
+
+$python$tabimpute_row_chunk
+[1] 32
+
+$python$tabimpute_input_builder
+[1] "vectorized-equivalent"
+
+$python$mps_cache_cleanup
+[1] "between chunks and method calls"
+
+$python$ensemble_members
+[1] 1
+
+$python$imputation_passes
+[1] 1
+
+
+$system
+ sysname  release  machine
+"Darwin" "27.0.0"  "arm64"
+
+$session
+R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS 27.0.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] C.UTF-8/C.UTF-8/C.UTF-8/C/C.UTF-8/C.UTF-8
+
+time zone: Europe/Vienna
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base
+
+loaded via a namespace (and not attached):
+ [1] ranger_0.18.0       laeken_0.5.3        DEoptimR_1.2-2
+ [4] Matrix_1.7-4        lattice_0.22-9      vcd_1.4-14
+ [7] e1071_1.7-17        reticulate_1.47.0   nnet_7.3-20
+[10] zoo_1.9-1           png_0.1-9           cli_3.6.6
+[13] VIM_7.5.1           grid_4.5.2          withr_3.0.3
+[16] data.table_1.18.6.1 proxy_0.4-29        robustbase_0.99-7
+[19] class_7.3-23        compiler_4.5.2      xgboost_3.2.1.1
+[22] lmtest_0.9-40       boot_1.3-32         tools_4.5.2
+[25] sp_2.2-3            Rcpp_1.1.2          colorspace_2.1-4
+[28] rlang_1.3.0         jsonlite_2.0.0      MASS_7.3-65
 Number of rows: 2000
 $config
 $config$protocol
@@ -564,6 +1038,164 @@ loaded via a namespace (and not attached):
 [61] Rcpp_1.1.2           lgr_0.5.2            paradox_1.0.1
 [64] DEoptimR_1.2-2       lmtest_0.9-40        compiler_4.5.2
 [67] sp_2.2-3
+$added_methods
+[1] "tabimpute"    "tabiclImpute" "tabpfnImpute"
+
+$scope
+$scope$n
+[1]  240  500 1000 2000 5000
+
+$scope$rates
+[1] 0.2
+
+
+$config
+$config$protocol
+[1] "makeMissing-evaluation-v1"
+
+$config$n
+[1] 2000
+
+$config$rates
+[1] 0.1 0.2 0.4
+
+$config$repetitions
+[1] 3
+
+$config$mechanisms
+[1] "MCAR" "MAR"
+
+$config$seed
+[1] 20261010
+
+$config$methods
+ [1] "transformerImpute" "tabular"           "shared"
+ [4] "kNN"               "ranger"            "ranger_seq10"
+ [7] "xgboost"           "xgboost_seq10"     "tabimpute"
+[10] "tabiclImpute"      "tabpfnImpute"
+
+$config$transformer
+$config$transformer$epochs
+[1] 5
+
+$config$transformer$batch_size
+[1] 64
+
+$config$transformer$patience
+[1] 3
+
+$config$transformer$embedding_dim
+[1] 16
+
+$config$transformer$num_heads
+[1] 2
+
+
+$config$trees
+[1] 100
+
+$config$boosting_rounds
+[1] 30
+
+$config$extensions
+$config$extensions[[1]]
+$config$extensions[[1]]$methods
+[1] "tabimpute"    "tabiclImpute" "tabpfnImpute"
+
+$config$extensions[[1]]$n
+[1]  240  500 1000 2000 5000
+
+$config$extensions[[1]]$rates
+[1] 0.2
+
+
+
+
+$python
+$python$executable
+[1] "/Users/alex/git/VIM/.local/foundation-env/bin/python"
+
+$python$versions
+$python$versions$tabimpute
+[1] "0.0.4"
+
+$python$versions$tabicl
+[1] "2.2.0"
+
+$python$versions$tabpfn
+[1] "6.0.0"
+
+$python$versions$`tabpfn-extensions`
+[1] "0.2.0"
+
+$python$versions$torch
+[1] "2.14.1"
+
+$python$versions$numpy
+[1] "2.4.6"
+
+$python$versions$`scikit-learn`
+[1] "1.6.1"
+
+
+$python$torch_threads
+[1] 1
+
+$python$tabimpute_device
+[1] "mps"
+
+$python$other_foundation_devices
+[1] "cpu"
+
+$python$tabimpute_row_chunk
+[1] 32
+
+$python$tabimpute_input_builder
+[1] "vectorized-equivalent"
+
+$python$mps_cache_cleanup
+[1] "between chunks and method calls"
+
+$python$ensemble_members
+[1] 1
+
+$python$imputation_passes
+[1] 1
+
+
+$system
+ sysname  release  machine
+"Darwin" "27.0.0"  "arm64"
+
+$session
+R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS 27.0.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] C.UTF-8/C.UTF-8/C.UTF-8/C/C.UTF-8/C.UTF-8
+
+time zone: Europe/Vienna
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base
+
+loaded via a namespace (and not attached):
+ [1] ranger_0.18.0       laeken_0.5.3        DEoptimR_1.2-2
+ [4] Matrix_1.7-4        lattice_0.22-9      vcd_1.4-14
+ [7] e1071_1.7-17        reticulate_1.47.0   nnet_7.3-20
+[10] zoo_1.9-1           png_0.1-9           cli_3.6.6
+[13] VIM_7.5.1           grid_4.5.2          withr_3.0.3
+[16] data.table_1.18.6.1 proxy_0.4-29        robustbase_0.99-7
+[19] class_7.3-23        compiler_4.5.2      xgboost_3.2.1.1
+[22] lmtest_0.9-40       boot_1.3-32         tools_4.5.2
+[25] sp_2.2-3            Rcpp_1.1.2          colorspace_2.1-4
+[28] rlang_1.3.0         jsonlite_2.0.0      MASS_7.3-65
 Number of rows: 5000
 $config
 $config$protocol
@@ -682,3 +1314,161 @@ loaded via a namespace (and not attached):
 [61] Rcpp_1.1.2           lgr_0.5.2            paradox_1.0.1
 [64] DEoptimR_1.2-2       lmtest_0.9-40        compiler_4.5.2
 [67] sp_2.2-3
+$added_methods
+[1] "tabimpute"    "tabiclImpute" "tabpfnImpute"
+
+$scope
+$scope$n
+[1]  240  500 1000 2000 5000
+
+$scope$rates
+[1] 0.2
+
+
+$config
+$config$protocol
+[1] "makeMissing-evaluation-v1"
+
+$config$n
+[1] 5000
+
+$config$rates
+[1] 0.1 0.2 0.4
+
+$config$repetitions
+[1] 3
+
+$config$mechanisms
+[1] "MCAR" "MAR"
+
+$config$seed
+[1] 20261010
+
+$config$methods
+ [1] "transformerImpute" "tabular"           "shared"
+ [4] "kNN"               "ranger"            "ranger_seq10"
+ [7] "xgboost"           "xgboost_seq10"     "tabimpute"
+[10] "tabiclImpute"      "tabpfnImpute"
+
+$config$transformer
+$config$transformer$epochs
+[1] 5
+
+$config$transformer$batch_size
+[1] 64
+
+$config$transformer$patience
+[1] 3
+
+$config$transformer$embedding_dim
+[1] 16
+
+$config$transformer$num_heads
+[1] 2
+
+
+$config$trees
+[1] 100
+
+$config$boosting_rounds
+[1] 30
+
+$config$extensions
+$config$extensions[[1]]
+$config$extensions[[1]]$methods
+[1] "tabimpute"    "tabiclImpute" "tabpfnImpute"
+
+$config$extensions[[1]]$n
+[1]  240  500 1000 2000 5000
+
+$config$extensions[[1]]$rates
+[1] 0.2
+
+
+
+
+$python
+$python$executable
+[1] "/Users/alex/git/VIM/.local/foundation-env/bin/python"
+
+$python$versions
+$python$versions$tabimpute
+[1] "0.0.4"
+
+$python$versions$tabicl
+[1] "2.2.0"
+
+$python$versions$tabpfn
+[1] "6.0.0"
+
+$python$versions$`tabpfn-extensions`
+[1] "0.2.0"
+
+$python$versions$torch
+[1] "2.14.1"
+
+$python$versions$numpy
+[1] "2.4.6"
+
+$python$versions$`scikit-learn`
+[1] "1.6.1"
+
+
+$python$torch_threads
+[1] 1
+
+$python$tabimpute_device
+[1] "mps"
+
+$python$other_foundation_devices
+[1] "cpu"
+
+$python$tabimpute_row_chunk
+[1] 32
+
+$python$tabimpute_input_builder
+[1] "vectorized-equivalent"
+
+$python$mps_cache_cleanup
+[1] "between chunks and method calls"
+
+$python$ensemble_members
+[1] 1
+
+$python$imputation_passes
+[1] 1
+
+
+$system
+ sysname  release  machine
+"Darwin" "27.0.0"  "arm64"
+
+$session
+R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS 27.0.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] C.UTF-8/C.UTF-8/C.UTF-8/C/C.UTF-8/C.UTF-8
+
+time zone: Europe/Vienna
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base
+
+loaded via a namespace (and not attached):
+ [1] ranger_0.18.0       laeken_0.5.3        DEoptimR_1.2-2
+ [4] Matrix_1.7-4        lattice_0.22-9      vcd_1.4-14
+ [7] e1071_1.7-17        reticulate_1.47.0   nnet_7.3-20
+[10] zoo_1.9-1           png_0.1-9           cli_3.6.6
+[13] VIM_7.5.1           grid_4.5.2          withr_3.0.3
+[16] data.table_1.18.6.1 proxy_0.4-29        robustbase_0.99-7
+[19] class_7.3-23        compiler_4.5.2      xgboost_3.2.1.1
+[22] lmtest_0.9-40       boot_1.3-32         tools_4.5.2
+[25] sp_2.2-3            Rcpp_1.1.2          colorspace_2.1-4
+[28] rlang_1.3.0         jsonlite_2.0.0      MASS_7.3-65
