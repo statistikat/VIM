@@ -27,7 +27,7 @@
 #'   an API-compatible backend for testing.
 #' @param imp_var Add imputation indicator columns.
 #' @param ... Additional arguments to [vimpute()], including `seed`, `nseq`,
-#'   `sequential`, `predictors`, `uncert`, and `pmm`. The wrapper defaults to one
+#'   `sequential`, `predictors`, `uncert`, `pmm`, `edit_rules`, and `edit_control`. The wrapper defaults to one
 #'   pass and deterministic predictions (`uncert = "none"`, `pmm = FALSE`).
 #' @return The imputed data set, as returned by [vimpute()].
 #' @export
@@ -46,7 +46,8 @@ tabiclImpute <- function(data, considered_variables = names(data), finetune = FA
   variables <- considered_variables
   if (!is.character(variables) || anyNA(variables) ||
       any(!variables %in% names(data))) stop("Unknown or invalid variables")
-  if (!length(variables) || !anyNA(as.data.frame(data)[variables])) return(data)
+  if ((!length(variables) || !anyNA(as.data.frame(data)[variables])) &&
+      is.null(list(...)$edit_rules)) return(data)
   args <- utils::modifyList(list(sequential = FALSE, nseq = 1L, pmm = FALSE,
                                 uncert = "none", verbose = FALSE), list(...))
   do.call(vimpute, c(list(data = data, considered_variables = variables, method = "tabicl2",

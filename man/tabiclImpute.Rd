@@ -32,7 +32,7 @@ an API-compatible backend for testing.}
 \item{imp_var}{Add imputation indicator columns.}
 
 \item{...}{Additional arguments to \code{\link[=vimpute]{vimpute()}}, including \code{seed}, \code{nseq},
-\code{sequential}, \code{predictors}, \code{uncert}, and \code{pmm}. The wrapper defaults to one
+\code{sequential}, \code{predictors}, \code{uncert}, \code{pmm}, \code{edit_rules}, and \code{edit_control}. The wrapper defaults to one
 pass and deterministic predictions (\code{uncert = "none"}, \code{pmm = FALSE}).}
 }
 \value{

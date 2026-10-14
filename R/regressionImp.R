@@ -20,6 +20,9 @@
 #' @param imp_suffix suffix used for TF imputation variables
 #' @param mod_cat ignored in this wrapper version (classification handled by vimpute)
 #'
+#' @param edit_rules Optional model-agnostic validator, applied jointly to the
+#'   assembled imputed LHS columns after all target fits; see [vimpute()].
+#' @param edit_control Control object or named list; see [vimpute_edit_control()].
 #' @return the imputed data set (same class as `data`)
 #' @family imputation methods
 #' @export
@@ -29,9 +32,10 @@ regressionImp <- function(formula, data,
                           robust = FALSE,
                           imp_var = TRUE,
                           imp_suffix = "imp",
-                          mod_cat = FALSE) {
+                          mod_cat = FALSE, edit_rules = NULL, edit_control = NULL) {
   
   check_data(data)
+  edit_wrapper_original <- if (!is.null(edit_rules)) as.data.frame(data) else NULL
   data_out <- as.data.frame(data)
   
   # Warn user about arguments that are no longer honored directly
@@ -157,7 +161,7 @@ regressionImp <- function(formula, data,
     }
   }
   
-  data_out
+  .edit_finish_wrapper(data_out, edit_wrapper_original, lhs, edit_rules, edit_control)
 }
 
 # OLD FUNCTION
