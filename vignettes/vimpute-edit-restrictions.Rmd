@@ -119,6 +119,207 @@ result <- vimpute(d, method = "restricted",
   sequential = FALSE, uncert = "none")
 ```
 
+## Examples carried over from restricted regression
+
+The following examples reproduce the interval, conditional, formula and robust
+regression scenarios from the restricted regression vignette. Each passes the
+numeric rules explicitly to both `learner_params` and `edit_rules`: the first
+constrains the restricted model, and the second checks the completed records
+and projects any remaining violations. All observed records in these examples
+satisfy the final edits. To run only the original coefficient restrictions,
+omit `edit_rules`.
+
+These examples require the optional restricted-regression dependencies,
+including `validate`, `ECOSolveR` and the mlr3 stack. Like the other examples in
+this vignette, they are displayed without execution during package builds.
+
+## Interval Rules
+
+Restricted regression is most natural when variables have row-wise lower and
+upper bounds. In this example `amount` is imputed while every completed value
+must remain between its corresponding `lower` and `upper` columns.
+
+```{r interval-rules, message=FALSE, warning=FALSE}
+set.seed(42)
+n <- 100L
+
+bounded_data <- data.frame(
+  x1 = stats::runif(n, 0, 10),
+  x2 = stats::runif(n, -2, 2)
+)
+bounded_data$amount <- 20 + 1.5 * bounded_data$x1 - 0.75 * bounded_data$x2
+bounded_data$lower <- bounded_data$amount - 0.5
+bounded_data$upper <- bounded_data$amount + 0.5
+bounded_data <- bounded_data[, c("amount", "x1", "x2", "lower", "upper")]
+
+missing_idx <- sample.int(n, 20L)
+bounded_missing <- bounded_data
+bounded_missing$amount[missing_idx] <- NA_real_
+
+bounded_rules <- validate::validator(
+  amount >= lower,
+  amount <= upper,
+  amount >= 0,
+  lower <= upper
+)
+
+bounded_imp <- vimpute(
+  bounded_missing,
+  method = list(amount = "restricted"),
+  pmm = FALSE,
+  sequential = FALSE,
+  edit_rules = bounded_rules,
+  learner_params = list(amount = list(rules = bounded_rules))
+)
+
+head(bounded_imp[bounded_imp$amount_imp, c("amount", "lower", "upper")])
+```
+
+```{r interval-check}
+completed <- as.data.frame(bounded_imp)[, names(bounded_data), drop = FALSE]
+
+sum(bounded_imp$amount_imp)
+all(validate::values(validate::confront(completed, bounded_rules)))
+```
+
+## Categorical and conditional rules
+
+Rules can also involve categorical predictors and conditional logic. The
+restricted learner uses the edit rules only to constrain the imputed target; the
+remaining columns can be numeric or categorical predictors.
+
+```{r conditional-rules, message=FALSE, warning=FALSE}
+categorical_data <- bounded_missing
+categorical_data$c1 <- factor(rep(c("A", "B", "C"), length.out = n))
+categorical_data$c2 <- factor(rep(c("B", "C", "A"), length.out = n))
+categorical_data$c3 <- factor(rep(c("C", "A", "B"), length.out = n))
+
+conditional_rules <- validate::validator(
+  amount >= lower,
+  amount <= upper,
+  amount >= 0,
+  lower <= upper,
+  (c1 == "A") + (c2 == "A") + (c3 == "A") <= 2,
+  if (c1 == "A") amount >= 2
+)
+
+# The categorical count rule concerns only observed, fixed predictors.
+fixed_category_rules <- validate::validator(
+  (c1 == "A") + (c2 == "A") + (c3 == "A") <= 2
+)
+stopifnot(all(validate::values(validate::confront(
+  categorical_data, fixed_category_rules
+))))
+conditional_final_rules <- validate::validator(
+  amount >= lower,
+  amount <= upper,
+  amount >= 0,
+  lower <= upper,
+  if (c1 == "A") amount >= 2
+)
+
+categorical_imp <- vimpute(
+  categorical_data,
+  method = list(amount = "restricted"),
+  pmm = FALSE,
+  sequential = FALSE,
+  edit_rules = conditional_final_rules,
+  learner_params = list(amount = list(rules = conditional_rules))
+)
+
+all(validate::values(validate::confront(categorical_imp, conditional_rules)))
+```
+
+The original categorical count rule remains in the restricted learner's
+validator. Its sum of categorical comparisons is not supported by the generic
+linear parser, so we check it separately before imputation. The final projector
+uses the numeric bounds and the conditional rule, whose condition depends on
+an observed categorical value.
+
+## Formula Control
+
+`formula` can be used with `method = "restricted"` to choose the predictors in
+the regression model while the edit rules still constrain the final
+predictions. The left-hand side must be the untransformed target variable.
+
+```{r formula-control, message=FALSE, warning=FALSE}
+n_formula <- 80L
+formula_data <- data.frame(
+  y = 10 + 2 * seq_len(n_formula),
+  x_signal = seq_len(n_formula),
+  x_noise = 10 + 2 * seq_len(n_formula),
+  lower = 0,
+  upper = 200
+)
+
+formula_missing_idx <- c(12L, 24L, 36L)
+expected_y <- formula_data$y[formula_missing_idx]
+formula_data$y[formula_missing_idx] <- NA_real_
+formula_data$x_noise[formula_missing_idx] <- -1000
+
+formula_rules <- validate::validator(y >= lower, y <= upper, lower <= upper)
+
+formula_imp <- vimpute(
+  formula_data,
+  method = list(y = "restricted"),
+  formula = list(y = y ~ x_signal),
+  pmm = FALSE,
+  sequential = FALSE,
+  edit_rules = formula_rules,
+  learner_params = list(y = list(rules = formula_rules))
+)
+
+formula_imp[formula_missing_idx, c("y", "x_signal", "x_noise", "y_imp")]
+max(abs(formula_imp$y[formula_missing_idx] - expected_y))
+```
+
+## Robust Restricted Regression
+
+Set `robust = TRUE` to use a Huber loss instead of ordinary least squares. This
+is helpful when the observed data contain influential outliers but the final
+imputed values must still obey the edit rules.
+
+```{r robust-restricted, message=FALSE, warning=FALSE}
+robust_rules <- validate::validator(y >= 0)
+
+outlier_data <- data.frame(
+  x = 0:21,
+  y = 1 + 2 * (0:21)
+)
+outlier_data$y[21L] <- 500
+outlier_data$y[22L] <- NA_real_
+
+ordinary_imp <- vimpute(
+  outlier_data,
+  method = list(y = "restricted"),
+  formula = list(y = y ~ x),
+  pmm = FALSE,
+  sequential = FALSE,
+  edit_rules = robust_rules,
+  learner_params = list(y = list(rules = robust_rules))
+)
+
+robust_imp <- vimpute(
+  outlier_data,
+  method = list(y = "restricted"),
+  formula = list(y = y ~ x),
+  pmm = FALSE,
+  sequential = FALSE,
+  edit_rules = robust_rules,
+  learner_params = list(y = list(
+    rules = robust_rules,
+    robust = TRUE,
+    huber_k = 1.345
+  ))
+)
+
+c(
+  ordinary = ordinary_imp$y[22L],
+  robust = robust_imp$y[22L],
+  expected_without_outlier = 43
+)
+```
+
 ## Weighted record-level optimization
 
 For each record, let $M$ contain eligible imputed numeric cells, and
