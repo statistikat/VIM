@@ -1,0 +1,2 @@
+# Python >= 3.10. Includes torch, numpy, scikit-learn and fine-tuning extras.
+tabicl[finetune]==2.2.0

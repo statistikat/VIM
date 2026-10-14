@@ -16,3 +16,6 @@ renv
 .Rprofile
 renv.lock
 .posit
+
+.local/
+__pycache__/

@@ -74,7 +74,7 @@ Invisibly, the registered method name.
 \description{
 \code{vimpute()} resolves its \code{method} argument through a package-level method
 registry. The built-in methods (\code{"ranger"}, \code{"xgboost"}, \code{"regularized"},
-\code{"robust"}, \code{"gam"}, \code{"robgam"}, \code{"restricted"}) are pre-registered; this function adds
+\code{"robust"}, \code{"gam"}, \code{"robgam"}, \code{"restricted"}, \code{"tabicl2"}) are pre-registered; this function adds
 (or, with \code{overwrite = TRUE}, replaces) a user-defined method backed by any
 pair of mlr3 learners -- e.g. \code{regr.rpart}/\code{classif.rpart} from mlr3
 itself, or learners from \code{mlr3extralearners} such as lightgbm -- without

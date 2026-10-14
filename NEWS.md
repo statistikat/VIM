@@ -1,6 +1,10 @@
 # VIM 7.5.1
 
 ## Changes
+- Added `tabiclImpute()` and `vimpute(method = "tabicl2")` for TabICL 2.2
+  regression and classification, with optional dataset fine-tuning via
+  `learner_params = list(tabicl2 = list(finetune = TRUE))`. Python dependencies
+  remain optional. Added a six-method Adult/Bank benchmark protocol.
 - **The soft corner's scatter correction is now additive on the diagonal.** The bisquare weights act
   on a cell's conditional residual, which under the Gaussian model is independent of every other
   cell, so they deflate the cell's own variance and leave its covariances unbiased to first order.

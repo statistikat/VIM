@@ -39,10 +39,12 @@ Suggests:
     mlr3tuning (>= 1.0.0),
     paradox (>= 1.0.0),
     R6,
+    reticulate,
     future,
     dplyr,
     tinytest,
     knitr,
+    ggplot2,
     mgcv,
     rmarkdown,
     reactable,
@@ -83,6 +85,8 @@ Description: Provides methods for imputation and visualization of
     General background and practical guidance on imputation are provided in the
     Springer book by
     Templ (2023) <doi:10.1007/978-3-031-30073-8>.
+SystemRequirements: Python (>= 3.10), tabicl[finetune] (2.2.x)
+    (optional, for TabICL imputation)
 LazyData: TRUE
 ByteCompile: TRUE
 License: GPL (>= 2)

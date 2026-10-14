@@ -27,6 +27,7 @@
 #'  Built-in methods:
 #'   - ranger (Random Forest)
 #'   - xgboost (Gradient Boosting)
+#'   - tabicl2 (TabICL 2.2 pretrained regression/classification; see [tabiclImpute()])
 #'   - regularized (glmnet regression/classification)
 #'   - robust (robustbase::lmrob / glmrob)
 #'   - gam (Generalized Additive Model via mgcv::gam)

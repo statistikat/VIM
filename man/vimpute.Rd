@@ -62,6 +62,7 @@ Can be provided either:
 Built-in methods:
 \item ranger (Random Forest)
 \item xgboost (Gradient Boosting)
+\item tabicl2 (TabICL 2.2 pretrained regression/classification; see \code{\link[=tabiclImpute]{tabiclImpute()}})
 \item regularized (glmnet regression/classification)
 \item robust (robustbase::lmrob / glmrob)
 \item gam (Generalized Additive Model via mgcv::gam)
