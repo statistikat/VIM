@@ -2,8 +2,8 @@
 # Source then call uci_run(); nothing downloads or trains on source().
 uci_config <- function(full = FALSE) {
   list(protocol = "makeMissing-evaluation-tabicl2-v1",
-       n = c(250L, 500L, 1000L, 2000L, 5000L), rates = c(.1, .2, .4),
-       repetitions = if (full) 10L else 3L, mechanisms = c("MCAR", "MAR"),
+       n = c(250L, 500L, 1000L, 2000L, 5000L, 10000L), rates = c(.1, .2, .4),
+       repetitions = if (full) 10L else 5L, mechanisms = c("MCAR", "MAR"),
        seed = 20261010L,
        methods = c("kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
                    "vimpute_tabicl2_finetune", "vimpute_tabicl2_seq10",

@@ -5,6 +5,8 @@ if (!at_home()) exit_file("benchmark integration runs at home")
 library(VIM)
 e <- new.env(); sys.source(system.file("benchmarks", "tabicl2.R", package = "VIM"), e)
 config <- e$uci_config()
+expect_equal(config$n, c(250L, 500L, 1000L, 2000L, 5000L, 10000L))
+expect_equal(config$repetitions, 5L)
 expect_equal(config$methods, c("kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
  "vimpute_tabicl2_finetune", "vimpute_tabicl2_seq10", "vimpute_tabicl2_finetune_seq10"))
 expect_error(e$uci_validate_sizes(c(50L, 50L)), "distinct")

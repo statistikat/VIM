@@ -18,9 +18,9 @@ stopifnot(requireNamespace("ggplot2", quietly = TRUE))
 
 ```{r benchmark, include=FALSE}
 config <- uci_config()
-config$n <- 250L
-config$repetitions <- 1L
-result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-nine-methods")
+config$n <- c(250L, 500L, 1000L, 2000L, 5000L, 10000L)
+config$repetitions <- 5L
+result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-expanded-5reps")
 cache_dir <- Sys.getenv("VIM_TABICL2_DATA", "../.local/benchmarks/tabicl2-cache")
 # The local checkpoint cache resumes matching completed scenarios. The generated
 # .Rmd embeds the outputs, so normal rendering never executes the benchmark.
