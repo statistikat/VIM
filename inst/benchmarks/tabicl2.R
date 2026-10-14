@@ -5,8 +5,13 @@ uci_config <- function(full = FALSE) {
        n = c(250L, 500L, 1000L, 2000L, 5000L), rates = c(.1, .2, .4),
        repetitions = if (full) 10L else 3L, mechanisms = c("MCAR", "MAR"),
        seed = 20261010L,
-       methods = c("kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2"),
+       methods = c("kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
+                   "vimpute_tabicl2_finetune", "vimpute_tabicl2_seq10",
+                   "vimpute_tabicl2_finetune_seq10"),
        tabicl2 = list(finetune = FALSE, n_estimators = 8L, device = "cpu", n_jobs = 1L),
+       tabicl2_finetune = list(epochs = 5L, patience = 3L, learning_rate = 1e-5,
+         finetune_params = list(n_estimators_finetune = 2L,
+                               n_estimators_validation = 2L, amp = FALSE)),
        trees = 100L, boosting_rounds = 30L)
 }
 
@@ -57,15 +62,24 @@ uci_prepare <- function(cache, download = FALSE) {
 }
 
 uci_methods <- function(config) {
-  allowed <- c("kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2")
+  allowed <- c("kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
+                   "vimpute_tabicl2_finetune", "vimpute_tabicl2_seq10",
+                   "vimpute_tabicl2_finetune_seq10")
   if (any(!config$methods %in% allowed)) stop("Unknown benchmark method")
   setNames(lapply(config$methods, function(method) {
     function(d, targets, seed) {
       set.seed(seed)
-      if (method == "vimpute_tabicl2")
+      if (startsWith(method, "vimpute_tabicl2")) {
+        fine <- grepl("finetune", method, fixed = TRUE)
+        seq10 <- endsWith(method, "seq10")
+        pars <- utils::modifyList(config$tabicl2,
+                                 if (fine) config$tabicl2_finetune else list())
+        pars$finetune <- fine
         return(as.data.frame(VIM::vimpute(d, method = "tabicl2",
-          learner_params = list(tabicl2 = config$tabicl2), sequential = FALSE,
-          nseq = 1L, pmm = FALSE, uncert = "none", seed = seed, imp_var = FALSE)))
+          learner_params = list(tabicl2 = pars), sequential = seq10,
+          nseq = if (seq10) 10L else 1L, pmm = FALSE, uncert = "none",
+          seed = seed, imp_var = FALSE)))
+      }
       if (method %in% c("ranger_seq10", "xgboost_seq10")) {
         learner <- sub("_seq10$", "", method)
         pars <- if (learner == "ranger") list(num.trees = config$trees, num.threads = 1L)
@@ -298,7 +312,7 @@ uci_run_single <- function(config, cache = "uci-cache", output = "tabicl2-result
                 "mlr3learners", "mlr3pipelines")
   versions <- vapply(packages, function(p) if (requireNamespace(p, quietly = TRUE))
     as.character(utils::packageVersion(p)) else "unavailable", character(1))
-  python <- if ("vimpute_tabicl2" %in% config$methods)
+  python <- if (any(startsWith(config$methods, "vimpute_tabicl2")))
     reticulate::import("importlib.metadata")$version("tabicl") else NULL
   provenance <- capture.output(list(config = config, packages = versions, python = python,
     system = Sys.info()[c("sysname", "release", "machine")], threads = Sys.getenv(c("OMP_NUM_THREADS", "RETICULATE_PYTHON")), session = utils::sessionInfo()))
