@@ -48,7 +48,7 @@ The final standalone and workflow suites pass 235 checks (46 analytical,
 parsing, failure and performance checks; 189 integration/workflow assertions).
 Together with 141 unchanged legacy regression checks, 376 core targeted checks pass. A further 36 legacy MI/interface checks pass,
 bringing the targeted total to 412.
-New and existing restricted-regression vignettes render successfully. The new
+The combined restricted-regression and edit-restrictions vignette renders successfully. The new
 vignette shows examples without executing Python during package builds.
 
 The final package build succeeds. R CMD check was run with --no-manual and
@@ -74,7 +74,8 @@ environment; their optional paths cannot be verified here.
   man/regressionImp.Rd, man/tabiclImpute.Rd.
 - Tests: inst/tinytest/test_vimpute_edit_rules.R,
   inst/tinytest/test_vimpute_edit_integration.R.
-- Vignette: vignettes/vimpute-edit-restrictions.Rmd.
+- Combined vignette: vignettes/vimpute-edit-restrictions.Rmd; replaces
+  vignettes/vimpute-restricted.Rmd and includes the mathematical setup.
 - Architecture and validation record: dev-notes/edit-restrictions.md.
 
 R/restricted_helpers.R, the legacy coefficient optimizer, the registry,
