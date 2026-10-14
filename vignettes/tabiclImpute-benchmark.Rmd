@@ -10,7 +10,9 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
                       fig.height = 5, fig.align = "center")
-result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../tabicl2-results")
+result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../inst/benchmarks/tabicl2-results")
+if (!dir.exists(result_dir))
+  result_dir <- system.file("benchmarks", "tabicl2-results", package = "VIM")
 have_results <- all(file.exists(file.path(result_dir, c("metrics.csv", "runs.csv", "config.rds"))))
 knitr::opts_chunk$set(eval = have_results)
 if (have_results) {
@@ -24,7 +26,7 @@ if (have_results) {
 }
 if (!have_results) {
   runs <- data.frame(status = character())
-  config <- list(methods = character(), n = integer(), repetitions = 0L)
+  config <- list(methods = character(), n = c(250L, 500L, 1000L, 2000L, 5000L), repetitions = 3L)
 }
 has_ggplot <- requireNamespace("ggplot2", quietly = TRUE)
 ```
@@ -43,7 +45,9 @@ Package checks do not download data, load Python, or train models.
 
 `vimpute_tabicl2` calls `vimpute(method = "tabicl2")` for one pass, with no
 PMM or residual noise. Numeric targets use TabICLRegressor and factors use
-TabICLClassifier. The default uses pretrained in-context learning. Set
+TabICLClassifier. The default uses pretrained in-context learning. This run uses `r if (have_results) config$tabicl2$n_estimators else 8L` ensemble
+members on `r if (have_results) config$tabicl2$device else "cpu"`; fine-tuning is
+`r if (have_results && isTRUE(config$tabicl2$finetune)) "enabled" else "disabled"`. Set
 `config$tabicl2$finetune <- TRUE` to adapt pretrained weights separately for
 each observed target in each scenario. Fine-tuning uses the upstream internal
 validation split; held-out imputation truth is never supplied to the learner.
@@ -66,7 +70,10 @@ library(VIM)
 source(system.file("benchmarks", "tabicl2.R", package = "VIM"))
 # Set RETICULATE_PYTHON before Python initializes to select your environment.
 config <- uci_config()
-# Quick development run: config$n <- 250L; config$repetitions <- 1L
+# Match the bundled demonstration run:
+config$n <- 250L
+config$repetitions <- 1L
+# For the full grid, omit these two overrides.
 # Optional adaptation: config$tabicl2$finetune <- TRUE
 # config$tabicl2$epochs <- 5L
 uci_run(config, cache = "uci-cache", output = "tabicl2-results", download = TRUE)
@@ -121,7 +128,8 @@ knitr::kable(audit[audit$existing_na > 0 | audit$unknown > 0,
 ## Missingness simulation
 
 Each repetition draws a new simple random sample without replacement from each
-complete-case dataset at each of **250, 500, 1,000, 2,000 and 5,000 rows**.
+complete-case dataset at **`r paste(format(config$n, big.mark = ","), collapse = ", ")` rows**,
+with **`r config$repetitions` repetition(s)** per scenario.
 The seed schedule is shared across sizes, so samples overlap and sample-size
 comparisons are not independent replications. The sampling algorithm may change
 with the requested size; exact nesting is not assumed. All methods share the
@@ -208,8 +216,9 @@ if (nrow(failed)) knitr::kable(failed)
 The following tables retain number of rows, dataset, mechanism and nominal rate. Scores are
 means across successful repetitions, with their sample standard deviations in
 parentheses. Counts are shown so failures cannot improve a ranking invisibly.
-With three repetitions, standard deviations describe variation only roughly;
-they are not confidence intervals or significance tests. Methods are paired by
+The saved configuration has `r config$repetitions` repetition(s). With one
+repetition, standard deviations are unavailable; with few repetitions they
+describe variation only roughly. They are not confidence intervals or significance tests. Methods are paired by
 sample and mask, so formal comparisons would require paired analysis and more
 repetitions. Empty cells indicate unavailable metrics. Success counts use completed
 attempts as the denominator. The Coverage column distinguishes pending requested
@@ -292,7 +301,7 @@ ggplot(metrics, aes(factor(rate), marginal_distance, colour = method, group = me
 The following plot shows sample-size scaling separately at each missingness
 rate, without averaging different rates or mechanisms together.
 
-```{r size-scaling, echo=FALSE, eval=have_results && has_ggplot, fig.height=10}
+```{r size-scaling, echo=FALSE, eval=have_results && has_ggplot && length(config$n) > 1L, fig.height=10}
 ggplot(subset(metrics, type == "numeric"),
        aes(n, nrmse, colour = method, group = method)) +
   stat_summary(fun = mean, geom = "line") +
@@ -304,7 +313,7 @@ ggplot(subset(metrics, type == "numeric"),
   theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-```{r size-accuracy, echo=FALSE, eval=have_results && has_ggplot, fig.height=10}
+```{r size-accuracy, echo=FALSE, eval=have_results && has_ggplot && length(config$n) > 1L, fig.height=10}
 ggplot(subset(metrics, type == "categorical"),
        aes(n, accuracy, colour = method, group = method)) +
   stat_summary(fun = mean, geom = "line") +
@@ -316,7 +325,7 @@ ggplot(subset(metrics, type == "categorical"),
   theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-```{r size-runtime, echo=FALSE, eval=have_results && has_ggplot, fig.height=10}
+```{r size-runtime, echo=FALSE, eval=have_results && has_ggplot && length(config$n) > 1L, fig.height=10}
 ggplot(subset(runs, status == "ok"),
        aes(n, elapsed, colour = method, group = method)) +
   stat_summary(fun = median, geom = "line") +
@@ -366,7 +375,7 @@ knitr::kable(properties, row.names = FALSE,
 
 ## Limitations and provenance
 
-Three repetitions describe sample variation only roughly. Scores apply to the
+The configured repetitions provide descriptive comparisons. Scores apply to the
 complete-case populations and artificial target missingness; they do not assess
 proper multiple-imputation coverage. Pretraining overlap with these datasets has
 not been independently audited. Runtime includes model initialization, fitting,

@@ -1,0 +1,105 @@
+Number of rows: 250
+$config
+$config$protocol
+[1] "makeMissing-evaluation-tabicl2-v1"
+
+$config$n
+[1] 250
+
+$config$rates
+[1] 0.1 0.2 0.4
+
+$config$repetitions
+[1] 1
+
+$config$mechanisms
+[1] "MCAR" "MAR"
+
+$config$seed
+[1] 20261010
+
+$config$methods
+[1] "kNN"             "ranger"          "ranger_seq10"    "xgboost"
+[5] "xgboost_seq10"   "vimpute_tabicl2"
+
+$config$tabicl2
+$config$tabicl2$finetune
+[1] FALSE
+
+$config$tabicl2$n_estimators
+[1] 8
+
+$config$tabicl2$device
+[1] "cpu"
+
+$config$tabicl2$n_jobs
+[1] 1
+
+
+$config$trees
+[1] 100
+
+$config$boosting_rounds
+[1] 30
+
+
+$packages
+          VIM    reticulate        ranger       xgboost          mlr3
+      "7.5.1"      "1.47.0"      "0.18.0"     "3.2.1.1"  "1.7.1.9000"
+ mlr3learners mlr3pipelines
+     "0.14.0"      "0.11.0"
+
+$python
+[1] "2.2.0"
+
+$system
+ sysname  release  machine
+"Darwin" "27.0.0"  "arm64"
+
+$threads
+                                       OMP_NUM_THREADS
+                                                   "1"
+                                     RETICULATE_PYTHON
+"/Users/alex/git/VIM/.local/foundation-env/bin/python"
+
+$session
+R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS 27.0.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] C.UTF-8/C.UTF-8/C.UTF-8/C/C.UTF-8/C.UTF-8
+
+time zone: Europe/Vienna
+tzcode source: internal
+
+attached base packages:
+[1] grid      stats     graphics  grDevices utils     datasets  methods
+[8] base
+
+other attached packages:
+[1] VIM_7.5.1        colorspace_2.1-4
+
+loaded via a namespace (and not attached):
+ [1] future_1.70.0        class_7.3-23         robustbase_0.99-7
+ [4] lattice_0.22-9       listenv_1.0.0        digest_0.6.39
+ [7] pkgload_1.5.0        xgboost_3.2.1.1      rprojroot_2.1.1
+[10] jsonlite_2.0.0       Matrix_1.7-4         pkgbuild_1.4.8
+[13] e1071_1.7-17         nnet_7.3-20          backports_1.5.1
+[16] vcd_1.4-14           mlr3learners_0.14.0  laeken_0.5.3
+[19] mlr3tuning_1.5.1     mlr3_1.7.1.9000      mlr3measures_1.3.0
+[22] codetools_0.2-20     palmerpenguins_0.1.1 cli_3.6.6
+[25] rlang_1.3.0          crayon_1.5.3         parallelly_1.48.0
+[28] withr_3.0.3          mlr3pipelines_0.11.0 tools_4.5.2
+[31] parallel_4.5.2       uuid_1.2-2           checkmate_2.3.4
+[34] ranger_0.18.0        boot_1.3-32          globals_0.19.1
+[37] bbotk_1.9.0          reticulate_1.47.0    R6_2.6.1
+[40] png_0.1-9            zoo_1.9-1            proxy_0.4-29
+[43] MASS_7.3-65          mlr3misc_0.22.0      desc_1.4.3
+[46] data.table_1.18.6.1  Rcpp_1.1.2           lgr_0.5.2
+[49] paradox_1.0.1        DEoptimR_1.2-2       lmtest_0.9-40
+[52] compiler_4.5.2       sp_2.2-3
