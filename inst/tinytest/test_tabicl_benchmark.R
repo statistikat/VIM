@@ -5,8 +5,8 @@ if (!at_home()) exit_file("benchmark integration runs at home")
 library(VIM)
 e <- new.env(); sys.source(system.file("benchmarks", "tabicl2.R", package = "VIM"), e)
 config <- e$uci_config()
-expect_equal(config$n, c(250L, 500L, 1000L, 2000L, 5000L, 10000L))
-expect_equal(config$repetitions, 5L)
+expect_equal(config$n, c(250L, 500L, 1000L, 2000L))
+expect_equal(config$repetitions, 3L)
 expect_equal(config$methods, c("kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
  "vimpute_tabicl2_finetune", "vimpute_tabicl2_seq10", "vimpute_tabicl2_finetune_seq10"))
 expect_error(e$uci_validate_sizes(c(50L, 50L)), "distinct")
@@ -61,3 +61,13 @@ for (method in names(methods)) {
 }
 bad <- truth; bad$age[1] <- 0
 expect_error(e$uci_score(truth, bad, mask, c("y", "g")), "Changed observed")
+
+# Auxiliary hurdle probabilities may be missing at observed rows; they are not
+# imputation targets. Missing target values must still fail scoring.
+aux <- truth
+aux$y_zero_prob <- NA_real_
+expect_identical(e$uci_prediction_table(aux, truth, c("y", "g")), truth)
+aux$unexpected <- 1
+expect_error(e$uci_prediction_table(aux, truth, c("y", "g")), "schema")
+bad <- truth; bad$y[1] <- NA_real_
+expect_error(e$uci_score(truth, bad, matrix(TRUE, nrow(truth), ncol(truth), dimnames = list(NULL, names(truth))), c("y", "g")), "Invalid completion")

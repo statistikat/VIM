@@ -18,9 +18,9 @@ stopifnot(requireNamespace("ggplot2", quietly = TRUE))
 
 ```{r benchmark, include=FALSE}
 config <- uci_config()
-config$n <- c(250L, 500L, 1000L, 2000L, 5000L, 10000L)
-config$repetitions <- 5L
-result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-expanded-5reps")
+config$n <- c(250L, 500L, 1000L, 2000L)
+config$repetitions <- 3L
+result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-reduced-3reps")
 cache_dir <- Sys.getenv("VIM_TABICL2_DATA", "../.local/benchmarks/tabicl2-cache")
 # The local checkpoint cache resumes matching completed scenarios. The generated
 # .Rmd embeds the outputs, so normal rendering never executes the benchmark.
@@ -239,7 +239,12 @@ The saved configuration has `r config$repetitions` repetition(s). With one
 repetition, standard deviations are unavailable; with few repetitions they
 describe variation only roughly. They are not confidence intervals or significance tests. Methods are paired by
 sample and mask, so formal comparisons would require paired analysis and more
-repetitions. Empty cells indicate unavailable metrics. Success counts use completed
+repetitions. Empty cells or `NA` indicate unavailable metrics: numeric error
+measures do not apply to categorical targets, classification accuracy does not
+apply to numeric targets, and a standard deviation requires at least two
+successful repetitions. These are missing summary statistics, not unfilled
+imputation cells. Auxiliary hurdle-model `*_zero_prob` diagnostics are excluded
+from the scored data; actual target columns must contain no missing values. Success counts use completed
 attempts as the denominator. The Coverage column distinguishes pending requested
 repetitions from scenarios outside the saved experiment.
 

@@ -2,8 +2,8 @@
 # Source then call uci_run(); nothing downloads or trains on source().
 uci_config <- function(full = FALSE) {
   list(protocol = "makeMissing-evaluation-tabicl2-v1",
-       n = c(250L, 500L, 1000L, 2000L, 5000L, 10000L), rates = c(.1, .2, .4),
-       repetitions = if (full) 10L else 5L, mechanisms = c("MCAR", "MAR"),
+       n = c(250L, 500L, 1000L, 2000L), rates = c(.1, .2, .4),
+       repetitions = if (full) 10L else 3L, mechanisms = c("MCAR", "MAR"),
        seed = 20261010L,
        methods = c("kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
                    "vimpute_tabicl2_finetune", "vimpute_tabicl2_seq10",
@@ -75,18 +75,18 @@ uci_methods <- function(config) {
         pars <- utils::modifyList(config$tabicl2,
                                  if (fine) config$tabicl2_finetune else list())
         pars$finetune <- fine
-        return(as.data.frame(VIM::vimpute(d, method = "tabicl2",
+        return(uci_prediction_table(as.data.frame(VIM::vimpute(d, method = "tabicl2",
           learner_params = list(tabicl2 = pars), sequential = seq10,
           nseq = if (seq10) 10L else 1L, pmm = FALSE, uncert = "none",
-          seed = seed, imp_var = FALSE)))
+          seed = seed, imp_var = FALSE)), d, targets))
       }
       if (method %in% c("ranger_seq10", "xgboost_seq10")) {
         learner <- sub("_seq10$", "", method)
         pars <- if (learner == "ranger") list(num.trees = config$trees, num.threads = 1L)
                 else list(nrounds = config$boosting_rounds, nthread = 1L)
-        return(as.data.frame(VIM::vimpute(d, method = learner,
+        return(uci_prediction_table(as.data.frame(VIM::vimpute(d, method = learner,
           learner_params = setNames(list(pars), learner), sequential = TRUE,
-          nseq = 10L, pmm = FALSE, uncert = "none", seed = seed, imp_var = FALSE)))
+          nseq = 10L, pmm = FALSE, uncert = "none", seed = seed, imp_var = FALSE)), d, targets))
       }
       out <- d
       for (v in targets) {
@@ -104,6 +104,18 @@ uci_methods <- function(config) {
       out
     }
   }), config$methods)
+}
+
+# Hurdle-model probabilities are diagnostics, not completed survey variables.
+# They are populated only at imputed rows and may therefore legitimately be NA.
+# Reject all other schema changes rather than silently hiding missing columns.
+uci_prediction_table <- function(completed, input, targets) {
+  extra <- setdiff(names(completed), names(input))
+  if (nrow(completed) != nrow(input) ||
+      length(setdiff(names(input), names(completed))) ||
+      any(!extra %in% paste0(targets, "_zero_prob")))
+    stop("Completion changed the table schema")
+  completed[, names(input), drop = FALSE]
 }
 
 uci_score <- function(truth, completed, mask, targets) {
