@@ -1,0 +1,4 @@
+"first","second","repetitions","mean_rmse_difference","sd_rmse_difference","ci_low","ci_high","second_wins","ties","first_wins"
+"vimpute_tabicl2","vimpute_tabicl2_finetune",50,-0.000301281189415545,0.0222970626139219,-0.00663803627108355,0.00603547389225246,13,23,14
+"vimpute_tabicl2","vimpute_tabicl2_finetune_seq10",50,-0.011166700210376,0.0258136349195916,-0.0185028540834387,-0.00383054633731329,31,0,19
+"vimpute_tabicl2_finetune","vimpute_tabicl2_finetune_seq10",50,-0.0108654190209604,0.0231498873876923,-0.0174445442216229,-0.00428629382029802,33,0,17
