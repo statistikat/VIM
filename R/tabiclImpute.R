@@ -21,6 +21,10 @@
 #' @param learner_params Named TabICL learner parameters. Common parameters are
 #'   `device`, `n_estimators`, `random_state`, `model_path`,
 #'   `allow_auto_download`, `python`, `epochs`, `learning_rate`, and `patience`.
+#'   `epochs` defaults to 5 and sets the maximum fine-tuning epochs; early
+#'   stopping may finish sooner. For example, use `learner_params =
+#'   list(tabicl2 = list(finetune = TRUE, epochs = 20L))` with [vimpute()],
+#'   or `learner_params = list(epochs = 20L)` with `tabiclImpute()`.
 #'   `estimator_params` and `finetune_params` are named lists of additional
 #'   upstream constructor arguments. `n_estimators` maps to
 #'   `n_estimators_inference` for fine-tuning. `tabicl_module` optionally supplies
@@ -164,7 +168,7 @@ register_tabicl_learners <- function() {
             model_path = paradox::p_uty(tags = "train"),
             allow_auto_download = paradox::p_lgl(default = TRUE, tags = "train"),
             python = paradox::p_uty(tags = "train"),
-            epochs = paradox::p_int(1L, tags = "train"),
+            epochs = paradox::p_int(1L, default = 5L, tags = "train"),
             learning_rate = paradox::p_dbl(lower = 0, tags = "train"),
             patience = paradox::p_int(1L, tags = "train"),
             estimator_params = paradox::p_uty(tags = "train"),
@@ -175,7 +179,7 @@ register_tabicl_learners <- function() {
             predict_types = if (classif) c("response", "prob") else "response",
             properties = c("missings", if (classif) c("twoclass", "multiclass")),
             packages = "VIM", man = "VIM::tabiclImpute")
-          self$param_set$values <- list(finetune = FALSE, n_estimators = 8L,
+          self$param_set$values <- list(finetune = FALSE, epochs = 5L, n_estimators = 8L,
             random_state = 42L, allow_auto_download = TRUE)
         }),
         private = list(

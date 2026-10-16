@@ -24,6 +24,10 @@ tabiclImpute(
 \item{learner_params}{Named TabICL learner parameters. Common parameters are
 \code{device}, \code{n_estimators}, \code{random_state}, \code{model_path},
 \code{allow_auto_download}, \code{python}, \code{epochs}, \code{learning_rate}, and \code{patience}.
+\code{epochs} defaults to 5 and sets the maximum fine-tuning epochs; early
+stopping may finish sooner. For example, use \code{learner_params =
+list(tabicl2 = list(finetune = TRUE, epochs = 20L))} with \code{\link[=vimpute]{vimpute()}},
+or \code{learner_params = list(epochs = 20L)} with \code{tabiclImpute()}.
 \code{estimator_params} and \code{finetune_params} are named lists of additional
 upstream constructor arguments. \code{n_estimators} maps to
 \code{n_estimators_inference} for fine-tuning. \code{tabicl_module} optionally supplies

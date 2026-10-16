@@ -33,6 +33,12 @@ api <- setNames(lapply(c("TabICLRegressor", "TabICLClassifier",
                 c("TabICLRegressor", "TabICLClassifier",
                   "FinetunedTabICLRegressor", "FinetunedTabICLClassifier"))
 VIM:::register_tabicl_learners()
+for (type in c("regr", "classif")) {
+  default <- mlr3::lrn(paste0(type, ".tabicl2"))
+  expect_identical(default$param_set$values$epochs, 5L)
+  pars_default <- utils::modifyList(default$param_set$get_values(), list(finetune = TRUE))
+  expect_identical(VIM:::.tabicl_constructor_args(pars_default)$epochs, 5L)
+}
 expect_true("tabicl2" %in% vimpute_methods())
 expect_error(unregister_vimpute_method("tabicl2"), "built-in")
 

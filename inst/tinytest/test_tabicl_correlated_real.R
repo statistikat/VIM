@@ -1,5 +1,5 @@
-# Opt-in real-model MCAR experiment. Uses the same budget as the UCI benchmark;
-# no routine package check initializes Python or downloads checkpoints.
+# Opt-in real-model MCAR experiment with a 20-epoch maximum;
+# No routine package check initializes Python or downloads checkpoints.
 if (!identical(Sys.getenv("VIM_TEST_TABICL"), "true"))
   exit_file("set VIM_TEST_TABICL=true to run the correlated real-model experiment")
 if (!all(vapply(c("reticulate", "mlr3", "R6", "paradox"),

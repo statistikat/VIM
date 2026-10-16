@@ -26,8 +26,8 @@ Pairwise differences compare individual imputations, including categorical
 labels, rather than relying only on aggregate scores.
 
 The three methods are vimpute_tabicl2, vimpute_tabicl2_finetune and
-vimpute_tabicl2_finetune_seq10. Budgets match the UCI benchmark: eight inference
-ensemble members, CPU, one thread, five fine-tuning epochs, learning rate 1e-5,
+vimpute_tabicl2_finetune_seq10. The initial five-epoch run matched the UCI benchmark budget: eight inference
+ensemble members, CPU, one thread, learning rate 1e-5,
 patience three, and two ensemble members for fine-tuning and validation.
 PMM and residual uncertainty are disabled. Sequential imputation is capped at
 ten sweeps and can stop earlier under the existing convergence rule.
@@ -50,7 +50,7 @@ checkpoints. Routine package checks skip it and never initialize Python:
 
 ```r
 Sys.setenv(VIM_TEST_TABICL = "true",
-           VIM_TABICL_CORRELATED_RESULTS = ".local/benchmarks/tabicl2-correlated")
+           VIM_TABICL_CORRELATED_RESULTS = ".local/benchmarks/tabicl2-correlated-epochs20")
 pkgload::load_all(".")
 tinytest::run_test_file("inst/tinytest/test_tabicl_correlated_real.R")
 ```
@@ -60,7 +60,14 @@ The real-model run uses cached checkpoints and offline mode.
 Set RETICULATE_PYTHON and HF_HOME to the configured environment and checkpoint
 cache, and HF_HUB_OFFLINE=1 to prevent checkpoint downloads. The standalone
 experiment can also be sourced from inst/benchmarks/tabicl2-correlated.R and
-run with tabicl_correlated_run(). It returns the data, mask, completions,
+run with tabicl_correlated_run(epochs = 20L). The correlated experiment now
+uses 20 epochs by default; epochs = 5L reproduces the earlier budget. This is
+a maximum: patience-based early stopping remains enabled. The underlying
+TabICL learner keeps an explicit default of five epochs. It is exposed as
+learner_params = list(tabicl2 = list(finetune = TRUE, epochs = 20L)) in vimpute(),
+or learner_params = list(epochs = 20L) in tabiclImpute(..., finetune = TRUE).
+
+The experiment returns the data, mask, completions,
 metrics, pairwise differences and constructor diagnostics; output= saves them.
 
 ## Predictor-preprocessing bug found by this test
@@ -110,7 +117,7 @@ A single small sample is a diagnostic, not evidence of comparative superiority.
 Other seeds, missingness rates and fine-tuning budgets need a separate,
 predeclared experiment before drawing general performance conclusions.
 
-## Real-model results after the fix
+## Real-model results after the fix (five epochs)
 
 The generated complete data have R-squared 0.99636 for Y ~ X + A*B.
 
@@ -141,3 +148,20 @@ Raw generated data, masks, completed datasets and constructor arguments are
 saved locally in .local/benchmarks/tabicl2-correlated/experiment.rds. The
 before-fix diagnostic is retained separately in
 .local/benchmarks/tabicl2-correlated-before-predictor-fix/.
+
+## Twenty-epoch experiment
+
+The same data, mask, seeds, learning rate and patience were used with epochs = 20L.
+The learner default remains five epochs; twenty is the diagnostic experiment
+override. Early stopping remains enabled, so twenty is a maximum.
+
+| Method | X NRMSE | Y NRMSE | A accuracy | B accuracy | Sweeps | Seconds |
+|---|---:|---:|---:|---:|---:|---:|
+| vimpute_tabicl2 | 0.604 | 0.552 | 84.4% | 84.4% | 1 | 5.5 |
+| vimpute_tabicl2_finetune | 0.605 | 0.567 | 81.2% | 78.1% | 1 | 15.6 |
+| vimpute_tabicl2_finetune_seq10 | 0.575 | 0.579 | 81.2% | 78.1% | 5 | 60.7 |
+
+Constructor diagnostics confirm epochs = 20 for every fine-tuned model.
+The parameter-default, routing and benchmark suites pass 111 checks; the real
+twenty-epoch experiment passes 12 checks. The saved results are in
+.local/benchmarks/tabicl2-correlated-epochs20/.

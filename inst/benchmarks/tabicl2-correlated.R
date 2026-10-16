@@ -14,10 +14,15 @@ tabicl_correlated_data <- function(n = 160L, seed = 20261016L) {
 }
 
 tabicl_correlated_run <- function(n = 160L, prop = .2, seed = 20261016L,
-                                  config = NULL, backend = NULL, output = NULL) {
+                                  config = NULL, backend = NULL, output = NULL,
+                                  epochs = 20L) {
+  if (!is.numeric(epochs) || length(epochs) != 1L || !is.finite(epochs) ||
+      epochs < 1 || epochs != floor(epochs) || epochs > .Machine$integer.max)
+    stop("epochs must be a positive integer")
   bench <- new.env(parent = environment())
   sys.source(system.file("benchmarks", "tabicl2.R", package = "VIM"), bench)
   if (is.null(config)) config <- bench$uci_config()
+  config$tabicl2_finetune$epochs <- as.integer(epochs)
   config$n <- n
   config$methods <- c("vimpute_tabicl2", "vimpute_tabicl2_finetune",
                      "vimpute_tabicl2_finetune_seq10")

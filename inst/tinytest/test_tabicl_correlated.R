@@ -45,7 +45,7 @@ for (method in names(x$completed)) {
     expect_true(length(calls) > 4L && length(calls) <= 40L)
   } else expect_equal(length(calls), 4L)
   if (fine) expect_true(all(vapply(calls, function(c)
-    identical(c$args$epochs, 5L) && identical(c$args$learning_rate, 1e-5), logical(1))))
+    identical(c$args$epochs, 20L) && identical(c$args$learning_rate, 1e-5), logical(1))))
 }
 # Equal predictions from an API double are allowed. Real-model differences are
 # measured, never required to favor fine-tuning on one random small dataset.
@@ -58,3 +58,5 @@ for (features in seen[1:4]) {
   expect_true(any(is.finite(features) & !features %in% c(0, 1)))
 }
 expect_true(any(vapply(seen[1:4], anyNA, logical(1))))
+
+expect_error(e$tabicl_correlated_run(epochs = 0, backend = api), "positive integer")
