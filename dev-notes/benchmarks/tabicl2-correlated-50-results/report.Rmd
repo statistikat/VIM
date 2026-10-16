@@ -15,7 +15,7 @@ paired <- read.csv('paired.csv')
 The experiment generates **50 independent datasets**, each with 160 records.
 Exactly 32 values of `Y` are hidden under MCAR in each dataset. `X`, `A` and `B`
 remain fully observed and unchanged. The same data, mask and model seed are
-used for all three methods within each repetition. Only hidden `Y` values
+used for all four methods within each repetition. Only hidden `Y` values
 contribute to the scores.
 
 ```text
@@ -42,6 +42,7 @@ commit. No repetitions are selected based on their results.
 
 ```{r summary}
 labels <- c(vimpute_tabicl2='Pretrained',
+  vimpute_tabicl2_seq10='Pretrained sequential',
   vimpute_tabicl2_finetune='Fine-tuned',
   vimpute_tabicl2_finetune_seq10='Fine-tuned sequential')
 tab <- data.frame(Method=unname(labels[summary$method]),
@@ -75,13 +76,31 @@ tab <- data.frame(First=unname(labels[paired$first]),
 knitr::kable(tab)
 ```
 
+```{r pretrained-sequential, include=FALSE}
+pretrained_seq <- subset(paired, first == 'vimpute_tabicl2' &
+  second == 'vimpute_tabicl2_seq10')
+sequential_fine <- subset(paired, first == 'vimpute_tabicl2_seq10' &
+  second == 'vimpute_tabicl2_finetune_seq10')
+```
+
+Without fine-tuning, sequential imputation changed mean RMSE by
+**`r sprintf('%+.4f', pretrained_seq$mean_rmse_difference)`**, with a paired
+95% interval of **`r sprintf('[%.4f, %.4f]', pretrained_seq$ci_low, pretrained_seq$ci_high)`**.
+It improved RMSE in **`r pretrained_seq$second_wins`/50** repetitions,
+tied in `r pretrained_seq$ties`, and worsened it in `r pretrained_seq$first_wins`.
+
 Fine-tuning alone changed mean RMSE by only **−0.0003**; its paired 95%
 interval includes zero. It improved RMSE in 13 repetitions, worsened it in 14,
 and tied in 23. Sequential fine-tuning reduced mean RMSE by **0.0112 (2.0%)**
 relative to pretrained TabICL, with a paired 95% interval of
 **[−0.0185, −0.0038]**. It improved RMSE in 31 of 50 repetitions.
-All sequential runs stopped after three sweeps under the convergence rule;
+Sequential fine-tuned runs stopped after three sweeps under the convergence rule;
 `seq=10` is the maximum number of sweeps.
+
+Adding fine-tuning to sequential imputation changed mean RMSE by
+**`r sprintf('%+.4f', sequential_fine$mean_rmse_difference)`**, with a paired
+95% interval of **`r sprintf('[%.4f, %.4f]', sequential_fine$ci_low, sequential_fine$ci_high)`**.
+There is no clear additional accuracy benefit from fine-tuning in this setup.
 
 ![Paired RMSE differences with 95% Monte Carlo intervals](paired.png)
 
@@ -90,21 +109,25 @@ and missingness protocol. They do not establish superiority on other datasets
 or missingness mechanisms. A missing value in the `accuracy` CSV field means
 classification accuracy is inapplicable to numeric `Y`, not an unfilled target.
 
-Workers ran in separate R/Python processes with one Torch/BLAS thread each.
+The original three variants ran in three separate R/Python workers; the added
+pretrained sequential variant ran later in one process. Each used one Torch/BLAS thread.
 The larger UCI benchmark was running concurrently, so elapsed times describe
 this run rather than isolated hardware performance. Initial model loading and
 caching also affect runtime comparisons.
 
-The sequential method receives no newly imputed predictors in this Y-only
+The sequential methods receive no newly imputed predictors in this Y-only
 scenario. Any difference from one pass reflects refitting rather than recovery
 of missing predictor information. Lower point RMSE does not by itself establish
 better distribution preservation or proper multiple imputation.
 
+The pretrained sequential variant was added using the original 50 saved datasets
+and masks. The previous 150 scores were reused unchanged.
+
 ## Reproducibility
 
 Raw repetition artifacts stay in
-`.local/benchmarks/tabicl2-correlated-y-only-typed-epochs20-50reps/`.
-The accompanying `metrics.csv` contains all 150 method/repetition rows;
+`.local/benchmarks/tabicl2-correlated-y-only-typed-epochs20-50reps-four/`.
+The accompanying `metrics.csv` contains all 200 method/repetition rows;
 `summary.csv` and `paired.csv` contain the displayed statistics.
 
 Source: `dev-notes/benchmarks/tabicl2-correlated.R`.

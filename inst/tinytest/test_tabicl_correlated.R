@@ -93,3 +93,27 @@ expect_false(identical(first$truth,second$truth))
 expect_error(e$tabicl_correlated_repetitions(folder,repetitions=2L,epochs=5L,backend=api),"different experiment")
 expect_error(e$tabicl_correlated_repetitions(folder,repetitions=2L,rep_ids=c(1,1),backend=api),"IDs")
 unlink(folder,recursive=TRUE)
+
+# Adding the fourth variant reuses the exact original datasets and scores.
+sys.source(file.path(dirname(benchmark_paths[1L]), 'tabicl2-correlated-add-sequential.R'), e)
+folder <- tempfile('tabicl-parent-'); expanded <- tempfile('tabicl-expanded-')
+e$tabicl_correlated_repetitions(folder,repetitions=2L,backend=api)
+e$tabicl_correlated_add_sequential(folder,expanded,backend=api)
+added <- e$tabicl_correlated_summary(expanded)
+expect_equal(nrow(added$metrics),8L)
+expect_equal(nrow(added$paired),6L)
+for (id in 1:2) {
+  parent <- readRDS(file.path(folder,sprintf('rep%03d',id),'experiment.rds'))
+  child <- readRDS(file.path(expanded,sprintf('rep%03d',id),'experiment.rds'))
+  expect_identical(child$truth,parent$truth)
+  expect_identical(child$incomplete,parent$incomplete)
+  expect_identical(child$mask,parent$mask)
+  expect_identical(child$metrics[1:3,],parent$metrics)
+  expect_true(child$metrics$sweeps[4L]>1L && child$metrics$sweeps[4L]<=10L)
+  expect_true(all(vapply(child$fit_calls$vimpute_tabicl2_seq10,
+    function(x) x$kind=='TabICLRegressor' && identical(x$args$finetune,NULL),logical(1))))
+}
+fits_before <- length(seen)
+e$tabicl_correlated_add_sequential(folder,expanded,backend=api)
+expect_equal(length(seen),fits_before)
+unlink(c(folder,expanded),recursive=TRUE)
