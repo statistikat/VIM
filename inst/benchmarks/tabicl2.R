@@ -1,7 +1,7 @@
 # Adapted from transformerImpute-rebased:inst/benchmarks/uci-transformer.R.
 # Source then call uci_run(); nothing downloads or trains on source().
 uci_config <- function(full = FALSE) {
-  list(protocol = "makeMissing-evaluation-tabicl2-v1",
+  list(protocol = "makeMissing-evaluation-tabicl2-v2-native-predictors",
        n = c(250L, 500L, 1000L, 2000L), rates = c(.1, .2, .4),
        repetitions = if (full) 10L else 3L, mechanisms = c("MCAR", "MAR"),
        seed = 20261010L,

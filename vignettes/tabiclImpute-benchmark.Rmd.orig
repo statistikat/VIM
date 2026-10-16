@@ -20,13 +20,19 @@ stopifnot(requireNamespace("ggplot2", quietly = TRUE))
 config <- uci_config()
 config$n <- c(250L, 500L, 1000L, 2000L)
 config$repetitions <- 3L
-result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-reduced-3reps")
+result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-native-predictors-3reps")
 cache_dir <- Sys.getenv("VIM_TABICL2_DATA", "../.local/benchmarks/tabicl2-cache")
 # The local checkpoint cache resumes matching completed scenarios. The generated
 # .Rmd embeds the outputs, so normal rendering never executes the benchmark.
-reticulate::import("torch")$set_num_threads(1L)
-uci_run(config, cache = cache_dir, output = result_dir, download = TRUE,
-        resume = file.exists(file.path(result_dir, "config.rds")))
+# Explicit report-only mode never initializes Python or resumes model fitting.
+# It may display an old protocol, but labels it as superseded below.
+if (identical(Sys.getenv("VIM_TABICL2_CACHED_ONLY"), "true")) {
+  config <- readRDS(file.path(result_dir, "config.rds"))
+} else {
+  reticulate::import("torch")$set_num_threads(1L)
+  uci_run(config, cache = cache_dir, output = result_dir, download = TRUE,
+          resume = file.exists(file.path(result_dir, "config.rds")))
+}
 metrics <- read.csv(file.path(result_dir, "metrics.csv"))
 runs <- read.csv(file.path(result_dir, "runs.csv"))
 stopifnot(all(runs$status == "ok"))
@@ -39,6 +45,15 @@ dir.create(bundled, recursive = TRUE, showWarnings = FALSE)
 for (f in c("config.rds", "runs.csv", "metrics.csv", "distributions.csv",
             "preprocessing.csv", "sources.csv", "session.txt"))
   stopifnot(file.copy(file.path(result_dir, f), file.path(bundled, f), overwrite = TRUE))
+```
+
+```{r protocol-status, echo=FALSE, results='asis'}
+if (!identical(config$protocol, uci_config()$protocol)) {
+  cat("> **Superseded results:** These cached results predate the TabICL predictor ",
+      "preprocessing fix. Missingness indicators replaced the original predictors ",
+      "during affected fits. The TabICL comparisons below require a fresh run ",
+      "and should not be interpreted as a comparison of the corrected variants.\n\n")
+}
 ```
 
 <style>

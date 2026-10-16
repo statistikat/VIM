@@ -1921,7 +1921,10 @@ vimpute <- function(
       if(verbose){
         message(paste("***** NAs in feature variables bearbeiten"))
       }
-      if (method_var == "xgboost") {
+      # These learners consume the original predictors with native NA support.
+      # PipeOpMissInd replaces predictors with indicators; it does not append
+      # them. In particular, TabICL must retain the actual feature values.
+      if (method_var %in% c("xgboost", "tabicl2")) {
         po_x_miss <- NULL  
         
       } else if (supports_missing) {
@@ -2132,7 +2135,7 @@ vimpute <- function(
         if (method_var == "ranger") supports_missing <- FALSE
         
         po_x_miss_reg <- NULL
-        if (has_na_in_features && supports_missing && method_var != "xgboost") {
+        if (has_na_in_features && supports_missing && !method_var %in% c("xgboost", "tabicl2")) {
           po_x_miss_reg <- mlr3pipelines::po("missind", param_vals = list(
             affect_columns = mlr3pipelines::selector_name(reg_features),
             which = "all",
