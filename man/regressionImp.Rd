@@ -11,7 +11,9 @@ regressionImp(
   robust = FALSE,
   imp_var = TRUE,
   imp_suffix = "imp",
-  mod_cat = FALSE
+  mod_cat = FALSE,
+  edit_rules = NULL,
+  edit_control = NULL
 )
 }
 \arguments{
@@ -28,6 +30,11 @@ regressionImp(
 \item{imp_suffix}{suffix used for TF imputation variables}
 
 \item{mod_cat}{ignored in this wrapper version (classification handled by vimpute)}
+
+\item{edit_rules}{Optional model-agnostic validator, applied jointly to the
+assembled imputed LHS columns after all target fits; see \code{\link[=vimpute]{vimpute()}}.}
+
+\item{edit_control}{Control object or named list; see \code{\link[=vimpute_edit_control]{vimpute_edit_control()}}.}
 }
 \value{
 the imputed data set (same class as \code{data})

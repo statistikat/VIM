@@ -157,6 +157,10 @@ vim_complete <- function(data, action = 1, ...) {
       miss_rows <- which(x$where[, varname])
       completed[miss_rows, varname] <- imp_df[[mi]]
     }
+    for (attribute in c("edit_diagnostics", "edit_optimization_problems")) {
+      stored <- attr(x, attribute, exact = TRUE)
+      if (!is.null(stored)) attr(completed, attribute) <- stored[[mi]]
+    }
     completed
   }
 
@@ -183,7 +187,12 @@ vim_complete <- function(data, action = 1, ...) {
       d$.id <- seq_len(nrow(d))
       d
     })
-    return(do.call(rbind, frames))
+    result <- do.call(rbind, frames)
+    for (attribute in c("edit_diagnostics", "edit_optimization_problems")) {
+      stored <- attr(x, attribute, exact = TRUE)
+      if (!is.null(stored)) attr(result, attribute) <- stored
+    }
+    return(result)
   }
 
   stop("action must be an integer (1..m), 'all', or 'long'.")

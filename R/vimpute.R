@@ -19,6 +19,22 @@
 #'  combined with \code{spec = } or the flat per-variable arguments.
 #' @param considered_variables
 #'  A character vector of variable names to be either imputed or used as predictors, excluding irrelevant columns from the imputation process. Excluded columns are still returned unchanged by default (see \code{keep_all_columns}).
+#' @param edit_rules Optional `validate::validator()` containing model-agnostic
+#'   linear edits. After each complete sweep (including uncertainty draws),
+#'   numeric imputed cells are jointly projected record-wise; observed cells
+#'   stay fixed. Rules can use excluded columns without making them predictors.
+#'   These edits are independent of `learner_params$restricted$rules`, which
+#'   continues to constrain regression coefficients. Final projection may
+#'   invalidate coefficient-stage rules absent from `edit_rules`.
+#' @param edit_control A [vimpute_edit_control()] object or named list. Default
+#'   scaled weights use observed units, not predictive uncertainty. Only error
+#'   on infeasibility is supported. Adjustable integer columns, nonlinear edits,
+#'   and disjunctions involving multiple adjustable branches are unsupported.
+#'   Fixed-value conditions and row-dependent linear coefficients are supported.
+#'   Projection can move PMM values away from donors and reduce MI variance;
+#'   it does not establish theoretically proper multiple imputation. Per-run
+#'   diagnostics and optional solver problems are attached separately from
+#'   restricted-regression diagnostics. See `vignette("vimpute-edit-restrictions")`.
 #' @param method
 #'  Specifies the imputation method for each variable.
 #'  Can be provided either:
@@ -303,7 +319,9 @@ vimpute <- function(
     tune_control = NULL,
     predictors = NULL,
     visit_sequence = "asis",
-    spec = NULL
+    spec = NULL,
+    edit_rules = NULL,
+    edit_control = NULL
 ) {
 
   # vimpute() is the single choke point for the mlr3 stack: regressionImp(),
@@ -311,6 +329,9 @@ vimpute <- function(
   # check covers them too. See require_vimpute_deps() for why mlr3 is only
   # suggested.
   require_vimpute_deps()
+  edit_prepared <- .edit_prepare(edit_rules, edit_control)
+  edit_original <- if (!is.null(edit_prepared)) as.data.frame(data) else NULL
+  edit_sweeps <- edit_problems <- NULL
 
   # Everything else reaches mlr3pipelines with ::, but %>>% is an infix
   # operator -- mlr3pipelines::`%>>%`(a, b) would wreck the pipeline chains
@@ -811,6 +832,7 @@ vimpute <- function(
     mi_tuning_log <- NULL
     mi_model_error <- NULL
     run_chains <- vector("list", m)
+    edit_mi_diagnostics <- edit_mi_problems <- if (!is.null(edit_prepared)) vector("list", m) else NULL
 
     for (mi in seq_len(m)) {
       if (verbose) message(sprintf("=== Multiple imputation run %d of %d ===", mi, m))
@@ -818,6 +840,8 @@ vimpute <- function(
       # Recurse with m = 1 to produce one completed dataset per run
       single_result <- vimpute(
         data = data_all_variables,
+        edit_rules = edit_rules,
+        edit_control = edit_control,
         considered_variables = considered_variables,
         method = method,
         pmm = pmm,
@@ -871,6 +895,11 @@ vimpute <- function(
       }
 
       run_chains[[mi]] <- attr(single_result, "chain")
+      if (!is.null(edit_prepared)) {
+        edit_mi_diagnostics[mi] <- list(attr(single_result, "edit_diagnostics"))
+        if (edit_prepared$control$save_optimization_problem)
+          edit_mi_problems[mi] <- list(attr(single_result, "edit_optimization_problems"))
+      }
       if (mi == 1L) {
         mi_model_error <- attr(single_result, "model_error")
       }
@@ -931,7 +960,7 @@ vimpute <- function(
     if (verbose) {
       message("***** Constructing compact 'vimmi' result object")
     }
-    return(attach_restricted_problems(new_vimmi(
+    result <- attach_restricted_problems(new_vimmi(
       data   = vimmi_data,
       imp    = imp_list,
       where  = where_matrix,
@@ -945,7 +974,13 @@ vimpute <- function(
       chain  = chain_arrays,
       seed   = seed,
       model_error = mi_model_error
-    )))
+    ))
+    if (!is.null(edit_prepared)) {
+      attr(result, "edit_diagnostics") <- edit_mi_diagnostics
+      if (edit_prepared$control$save_optimization_problem)
+        attr(result, "edit_optimization_problems") <- edit_mi_problems
+    }
+    return(result)
   }
 
   if (pred_history == TRUE) {
@@ -2482,6 +2517,25 @@ vimpute <- function(
       }
     }
 ### Variable loop END ###
+
+    if (!is.null(edit_prepared)) {
+      projected <- .project_imputed_values(data, edit_original, impute_mask,
+        edit_rules, prepared = edit_prepared)
+      # Keep model-side covariate encodings; update the numeric target values.
+      # The projector evaluates fixed covariates in their original meaning.
+      # Use the constrained completed values, including preceding uncertainty
+      # draws, for convergence, chain summaries, and the following sweep.
+      for (v in variables_NA) {
+        if (is.numeric(edit_original[[v]]) && !is.object(edit_original[[v]])) {
+          data[[v]] <- projected$data[[v]]
+          convergence_data[[v]] <- data[[v]]
+          if (imp_var) data_new[[v]] <- data[[v]]
+        }
+      }
+      edit_sweeps[i] <- list(projected$diagnostics)
+      if (edit_prepared$control$save_optimization_problem)
+        edit_problems[i] <- list(projected$problems)
+    }
     
 ### *****Stop Criteria Start***** ###################################################################################################
     convergence_result <- check_convergence(
@@ -2546,7 +2600,7 @@ vimpute <- function(
     NULL
   }
 
-  return(attach_restricted_problems(build_vimpute_result(
+  result <- attach_restricted_problems(build_vimpute_result(
     data = data,
     data_new = data_new,
     imp_var = imp_var,
@@ -2563,5 +2617,14 @@ vimpute <- function(
     convergence = convergence_matrix,
     chain = chain_matrices,
     model_error = Filter(Negate(is.null), model_error_track)
-  )))
+  ))
+  if (!is.null(edit_prepared)) {
+    # No postprocessing may silently invalidate the projection.
+    checked <- .project_imputed_values(result, edit_original, impute_mask, edit_rules,
+                                      prepared = edit_prepared, check_only = TRUE)
+    for (v in intersect(names(result), names(edit_original)[vapply(edit_original, is.logical, logical(1))]))
+      result[[v]] <- checked$data[[v]]
+    result <- .edit_attach(result, edit_sweeps, edit_problems)
+  }
+  return(result)
 }

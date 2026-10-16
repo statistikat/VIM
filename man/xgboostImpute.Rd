@@ -12,7 +12,9 @@ xgboostImpute(
   verbose = FALSE,
   nrounds = 100,
   objective = NULL,
-  ...
+  ...,
+  edit_rules = NULL,
+  edit_control = NULL
 )
 }
 \arguments{
@@ -36,6 +38,11 @@ argument passed to \code{\link[xgboost:xgboost]{xgboost::xgboost()}}}
 argument passed to \code{\link[xgboost:xgboost]{xgboost::xgboost()}}}
 
 \item{...}{Arguments passed to \code{\link[xgboost:xgboost]{xgboost::xgboost()}}}
+
+\item{edit_rules}{Optional model-agnostic validator, applied jointly to the
+assembled imputed LHS columns after all target fits; see \code{\link[=vimpute]{vimpute()}}.}
+
+\item{edit_control}{Control object or named list; see \code{\link[=vimpute_edit_control]{vimpute_edit_control()}}.}
 }
 \value{
 the imputed data set.
