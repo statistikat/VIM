@@ -14,13 +14,15 @@ x <- e$tabicl_correlated_run(output = if (nzchar(out)) out else NULL)
 for (method in names(x$completed)) {
   expect_false(anyNA(x$completed[[method]]))
   expect_true(all(is.finite(x$metrics$rmse[x$metrics$method == method &
-    x$metrics$variable %in% c("X", "Y")])))
+    x$metrics$variable == "Y"])))
+  expect_identical(x$completed[[method]][c("X", "A", "B")],
+                   x$truth[c("X", "A", "B")])
   calls <- x$fit_calls[[method]]
   fine <- grepl("finetune", method, fixed = TRUE)
   expect_true(all(vapply(calls, function(c)
     startsWith(c$kind, "Finetuned") == fine, logical(1))))
-  if (endsWith(method, "seq10")) expect_true(length(calls) > 4L)
-  else expect_equal(length(calls), 4L)
+  if (endsWith(method, "seq10")) expect_true(length(calls) > 1L)
+  else expect_equal(length(calls), 1L)
 }
 print(x$metrics, row.names = FALSE)
 print(x$differences, row.names = FALSE)

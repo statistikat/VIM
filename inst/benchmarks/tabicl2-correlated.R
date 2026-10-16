@@ -27,7 +27,8 @@ tabicl_correlated_run <- function(n = 160L, prop = .2, seed = 20261016L,
   config$methods <- c("vimpute_tabicl2", "vimpute_tabicl2_finetune",
                      "vimpute_tabicl2_finetune_seq10")
   truth <- tabicl_correlated_data(n, seed)
-  incomplete <- VIM::makeMissing(truth, mechanism = "MCAR", vars = names(truth),
+  targets <- "Y"
+  incomplete <- VIM::makeMissing(truth, mechanism = "MCAR", vars = targets,
                                  prop = prop, seed = seed + 1L)
   mask <- attr(incomplete, "where")
   if (is.null(backend)) backend <- VIM:::.tabicl_import()
@@ -49,7 +50,7 @@ tabicl_correlated_run <- function(n = 160L, prop = .2, seed = 20261016L,
     message("Correlated MCAR: ", method)
     calls <- list()
     started <- proc.time()[["elapsed"]]
-    ans <- methods[[method]](incomplete, names(truth), seed + 2L)
+    ans <- methods[[method]](incomplete, targets, seed + 2L)
     elapsed <- proc.time()[["elapsed"]] - started
     stopifnot(identical(names(ans), names(truth)), identical(dim(ans), dim(truth)),
               !anyNA(ans))
@@ -62,7 +63,7 @@ tabicl_correlated_run <- function(n = 160L, prop = .2, seed = 20261016L,
     }
     completed[[method]] <- ans
     fits[[method]] <- calls
-    metrics[[method]] <- do.call(rbind, lapply(names(truth), function(v) {
+    metrics[[method]] <- do.call(rbind, lapply(targets, function(v) {
       take <- mask[, v]; a <- truth[[v]][take]; b <- ans[[v]][take]
       numeric <- is.numeric(a)
       data.frame(method, variable = v, n_masked = sum(take),
@@ -71,12 +72,12 @@ tabicl_correlated_run <- function(n = 160L, prop = .2, seed = 20261016L,
         nrmse = if (numeric) sqrt(mean((b - a)^2)) / stats::sd(a) else NA_real_,
         accuracy = if (!numeric) mean(b == a) else NA_real_,
         elapsed, model_fits = length(calls),
-        sweeps = length(calls) / ncol(truth))
+        sweeps = length(calls) / length(targets))
     }))
   }
   pairs <- utils::combn(names(completed), 2, simplify = FALSE)
   differences <- do.call(rbind, lapply(pairs, function(pair) {
-    do.call(rbind, lapply(names(truth), function(v) {
+    do.call(rbind, lapply(targets, function(v) {
       take <- mask[, v]
       a <- completed[[pair[1]]][[v]][take]; b <- completed[[pair[2]]][[v]][take]
       numeric <- is.numeric(a)
@@ -91,7 +92,7 @@ tabicl_correlated_run <- function(n = 160L, prop = .2, seed = 20261016L,
   result <- list(truth = truth, incomplete = incomplete, mask = mask,
     completed = completed, metrics = do.call(rbind, metrics),
     differences = differences, fit_calls = fits, config = config,
-    design = list(n = n, prop = prop, seed = seed,
+    design = list(n = n, prop = prop, seed = seed, missing_variables = targets,
       model = "Y | X,A,B ~ N(mu[A,B] + 4*X, 0.5^2)",
       group_means = c("A:B" = -8, "A:C" = -2, "B:B" = 2, "B:C" = 10)))
   if (!is.null(output)) {

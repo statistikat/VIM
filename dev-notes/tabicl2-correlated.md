@@ -18,12 +18,17 @@ and variance 16.25. The four group means include an interaction. A and B are
 independent by design; the strong relationship is between Y and its predictors,
 not an artificial correlation between independently sampled factors.
 
-MCAR masks exactly 32 cells (20%) in each of X, Y, A and B. All methods receive
-the same data and mask, with the same model seed. Masking predictors as well as
-Y gives sequential imputation an opportunity to use newly imputed covariates.
-Numeric errors and classification accuracy are evaluated only on masked cells.
-Pairwise differences compare individual imputations, including categorical
-labels, rather than relying only on aggregate scores.
+MCAR now masks exactly 32 cells (20%) in Y only. X, A and B remain fully
+observed and unchanged in every completion. All methods receive the same data
+and mask, with the same model seed. Numeric errors and pairwise differences
+are evaluated only on the masked Y cells. Fully observed predictors are not
+reported as imputation targets.
+
+With no missing predictors, sequential passes have no updated covariates to
+feed back into Y. A difference between sequential and single-pass results
+would therefore reflect refitting behavior rather than recovery of missing
+predictor information. The sequential variant retains its ten-sweep cap and
+normal early stopping.
 
 The three methods are vimpute_tabicl2, vimpute_tabicl2_finetune and
 vimpute_tabicl2_finetune_seq10. The initial five-epoch run matched the UCI benchmark budget: eight inference
@@ -50,7 +55,7 @@ checkpoints. Routine package checks skip it and never initialize Python:
 
 ```r
 Sys.setenv(VIM_TEST_TABICL = "true",
-           VIM_TABICL_CORRELATED_RESULTS = ".local/benchmarks/tabicl2-correlated-epochs20")
+           VIM_TABICL_CORRELATED_RESULTS = ".local/benchmarks/tabicl2-correlated-y-only-epochs20")
 pkgload::load_all(".")
 tinytest::run_test_file("inst/tinytest/test_tabicl_correlated_real.R")
 ```
@@ -84,8 +89,8 @@ already did. Original predictor values, including missing values supported by
 TabICL, reach the learner. The same exclusion applies to the semicontinuous
 regressor path. Other methods retain their existing preprocessing.
 
-The regression test checks that all three input predictors reach each first
-sweep fit, that numeric signal values survive rather than only 0/1 indicators,
+A separate all-column-missing regression case checks that all three input
+predictors reach each first sweep fit, that numeric signal values survive rather than only 0/1 indicators,
 and that native training-time missings are retained. This test fails before
 the fix and passes afterward.
 
@@ -117,51 +122,24 @@ A single small sample is a diagnostic, not evidence of comparative superiority.
 Other seeds, missingness rates and fine-tuning budgets need a separate,
 predeclared experiment before drawing general performance conclusions.
 
-## Real-model results after the fix (five epochs)
+## Current Y-only experiment
 
-The generated complete data have R-squared 0.99636 for Y ~ X + A*B.
+The current run keeps the 20-epoch maximum, learning rate 1e-5 and patience
+three. Data generation and model seeds are unchanged; because only Y is now
+masked, its MCAR draw uses the first random-sampling stream rather than the
+second stream used when X was also masked. Earlier all-column-missing results
+remain in their separate local cache directories and are not overwritten.
 
-| Method | X NRMSE | Y NRMSE | A accuracy | B accuracy | Fits | Sweeps | Seconds |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| vimpute_tabicl2 | 0.604 | 0.552 | 84.4% | 84.4% | 4 | 1 | 5.2 |
-| vimpute_tabicl2_finetune | 0.599 | 0.562 | 81.2% | 78.1% | 4 | 1 | 13.3 |
-| vimpute_tabicl2_finetune_seq10 | 0.575 | 0.574 | 81.2% | 78.1% | 20 | 5 | 58.5 |
+| Method | Y RMSE | Y NRMSE | Sweeps | Seconds |
+|---|---:|---:|---:|---:|
+| vimpute_tabicl2 | 0.554 | 0.0650 | 1 | 1.3 |
+| vimpute_tabicl2_finetune | 0.605 | 0.0710 | 1 | 8.5 |
+| vimpute_tabicl2_finetune_seq10 | 0.551 | 0.0645 | 3 | 11.6 |
 
-These measurements use the real cached TabICL 2.2 backend on CPU. The sequential
-variant stopped under the existing convergence rule after five sweeps, not ten.
-All 32 masked X and all 32 masked Y imputations differ between pretrained and
-fine-tuned single-pass fits. Their mean absolute Y difference is 0.170; one A
-classification and two B classifications also change. This confirms that
-fine-tuning is executed and can affect results without guaranteeing improvement.
+All 39 data-design/routing checks and 15 real-model checks pass. Every
+completed dataset preserves X, A and B exactly, and only the 32 masked Y
+values contribute to the metrics. The sequential model stopped after three
+sweeps. These results describe one small sample and do not establish a
+general advantage for fine-tuning or sequential refitting.
 
-Before the fix, both single-pass variants produced constant imputations with
-Y NRMSE 1.019 and A/B accuracy 40.6%. The sequential variant eventually recovered
-actual predictors on later sweeps; it used all ten sweeps. The corrected
-single-pass pretrained model has Y NRMSE 0.552 and A/B accuracy 84.4%.
-
-The 35 data-design/routing/predictor checks and 12 real-model checks pass.
-The 34 existing TabICL checks and 37 benchmark checks also pass: 118 checks
-in total. The superseded UCI report was regenerated in cached-only mode with
-RETICULATE_PYTHON=/nonexistent, confirming report generation needs no Python.
-
-Raw generated data, masks, completed datasets and constructor arguments are
-saved locally in .local/benchmarks/tabicl2-correlated/experiment.rds. The
-before-fix diagnostic is retained separately in
-.local/benchmarks/tabicl2-correlated-before-predictor-fix/.
-
-## Twenty-epoch experiment
-
-The same data, mask, seeds, learning rate and patience were used with epochs = 20L.
-The learner default remains five epochs; twenty is the diagnostic experiment
-override. Early stopping remains enabled, so twenty is a maximum.
-
-| Method | X NRMSE | Y NRMSE | A accuracy | B accuracy | Sweeps | Seconds |
-|---|---:|---:|---:|---:|---:|---:|
-| vimpute_tabicl2 | 0.604 | 0.552 | 84.4% | 84.4% | 1 | 5.5 |
-| vimpute_tabicl2_finetune | 0.605 | 0.567 | 81.2% | 78.1% | 1 | 15.6 |
-| vimpute_tabicl2_finetune_seq10 | 0.575 | 0.579 | 81.2% | 78.1% | 5 | 60.7 |
-
-Constructor diagnostics confirm epochs = 20 for every fine-tuned model.
-The parameter-default, routing and benchmark suites pass 111 checks; the real
-twenty-epoch experiment passes 12 checks. The saved results are in
-.local/benchmarks/tabicl2-correlated-epochs20/.
+Current raw results: .local/benchmarks/tabicl2-correlated-y-only-epochs20/.

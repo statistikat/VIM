@@ -30,9 +30,9 @@ clf <- function(...) {
 api <- list(TabICLRegressor = reg, TabICLClassifier = clf,
   FinetunedTabICLRegressor = reg, FinetunedTabICLClassifier = clf)
 x <- e$tabicl_correlated_run(backend = api)
-expect_equal(colSums(x$mask), setNames(rep(32, 4), names(d)))
+expect_equal(colSums(x$mask), c(X = 0, Y = 32, A = 0, B = 0))
 expect_identical(is.na(x$incomplete), x$mask)
-expect_equal(nrow(x$metrics), 12L)
+expect_equal(nrow(x$metrics), 3L)
 for (method in names(x$completed)) {
   expect_false(anyNA(x$completed[[method]]))
   fine <- grepl("finetune", method, fixed = TRUE)
@@ -40,10 +40,11 @@ for (method in names(x$completed)) {
   expect_true(all(vapply(calls, function(c)
     startsWith(c$kind, "Finetuned") == fine, logical(1))))
   expect_true(any(vapply(calls, function(c) endsWith(c$kind, "Regressor"), logical(1))))
-  expect_true(any(vapply(calls, function(c) endsWith(c$kind, "Classifier"), logical(1))))
+  expect_false(any(vapply(calls, function(c) endsWith(c$kind, "Classifier"), logical(1))))
+  expect_identical(x$completed[[method]][c("X", "A", "B")], d[c("X", "A", "B")])
   if (endsWith(method, "seq10")) {
-    expect_true(length(calls) > 4L && length(calls) <= 40L)
-  } else expect_equal(length(calls), 4L)
+    expect_true(length(calls) > 1L && length(calls) <= 10L)
+  } else expect_equal(length(calls), 1L)
   if (fine) expect_true(all(vapply(calls, function(c)
     identical(c$args$epochs, 20L) && identical(c$args$learning_rate, 1e-5), logical(1))))
 }
@@ -51,8 +52,13 @@ for (method in names(x$completed)) {
 # measured, never required to favor fine-tuning on one random small dataset.
 expect_true(all(x$differences$fraction_changed == 0))
 
-# Regression: the first sweep must see actual X/Y values, not exclusively
-# binary missingness indicators. Every target has at least one numeric feature.
+# Separate regression coverage retains the all-column-missing scenario that
+# exposed the indicator-only pipeline bug. The experiment above masks Y only.
+seen <- list()
+all_missing <- makeMissing(d, prop = .2, vars = names(d), seed = 17)
+invisible(vimpute(all_missing, method = "tabicl2",
+  learner_params = list(tabicl2 = list(tabicl_module = api)),
+  sequential = FALSE, pmm = FALSE, uncert = "none", imp_var = FALSE))
 for (features in seen[1:4]) {
   expect_equal(ncol(features), 3L)
   expect_true(any(is.finite(features) & !features %in% c(0, 1)))
