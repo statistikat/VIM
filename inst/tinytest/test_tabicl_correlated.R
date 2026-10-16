@@ -65,7 +65,8 @@ invisible(vimpute(all_missing, method = "tabicl2",
   sequential = FALSE, pmm = FALSE, uncert = "none", imp_var = FALSE))
 for (features in seen[1:4]) {
   expect_equal(ncol(features), 3L)
-  expect_true(any(is.finite(features) & !features %in% c(0, 1)))
+  expect_true(any(vapply(features, function(z) is.numeric(z) &&
+    any(is.finite(z) & !z %in% c(0, 1)), logical(1))))
 }
 expect_true(any(vapply(seen[1:4], anyNA, logical(1))))
 

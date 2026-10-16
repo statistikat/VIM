@@ -143,3 +143,11 @@ sweeps. These results describe one small sample and do not establish a
 general advantage for fine-tuning or sequential refitting.
 
 Current raw results: .local/benchmarks/tabicl2-correlated-y-only-epochs20/.
+
+## Typed preprocessing rerun
+
+The Y-only experiment was rerun after implementing typed pandas inputs and
+consistent predictor missing-value preprocessing. Its three RMSE values remain
+0.554, 0.605 and 0.551; predictors are fully observed in this scenario. The
+15 real-model checks pass. Fresh raw results are in
+.local/benchmarks/tabicl2-correlated-y-only-typed-epochs20/.

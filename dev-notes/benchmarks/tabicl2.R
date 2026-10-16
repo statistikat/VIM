@@ -1,14 +1,14 @@
 # Adapted from transformerImpute-rebased:inst/benchmarks/uci-transformer.R.
 # Source then call uci_run(); nothing downloads or trains on source().
 uci_config <- function(full = FALSE) {
-  list(protocol = "makeMissing-evaluation-tabicl2-v2-native-predictors",
+  list(protocol = "makeMissing-evaluation-tabicl2-v3-typed-consistent-predictors",
        n = c(250L, 500L, 1000L, 2000L), rates = c(.1, .2, .4),
        repetitions = if (full) 10L else 3L, mechanisms = c("MCAR", "MAR"),
        seed = 20261010L,
        methods = c("kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
                    "vimpute_tabicl2_finetune", "vimpute_tabicl2_seq10",
                    "vimpute_tabicl2_finetune_seq10"),
-       tabicl2 = list(finetune = FALSE, n_estimators = 8L, device = "cpu", n_jobs = 1L),
+       tabicl2 = list(input_type = "dataframe", finetune = FALSE, n_estimators = 8L, device = "cpu", n_jobs = 1L),
        tabicl2_finetune = list(epochs = 5L, patience = 3L, learning_rate = 1e-5,
          finetune_params = list(n_estimators_finetune = 2L,
                                n_estimators_validation = 2L, amp = FALSE)),

@@ -2,12 +2,14 @@
 #'
 #' Impute numeric and categorical targets with pretrained TabICL models through
 #' [vimpute()]. Python is initialized lazily when a model is trained. Install
-#' `reticulate` and `python -m pip install 'tabicl[finetune]==2.2.0'` in its
+#' `reticulate` and `python -m pip install 'tabicl[finetune]==2.2.0' 'pandas>=2.1.2'` in its
 #' Python environment (Python >= 3.10). Checkpoints are downloaded on first use
 #' unless `model_path` and `allow_auto_download = FALSE` are supplied in
 #' `learner_params`. Each target and iteration fits a separate estimator using
-#' only observed target values. Factors are encoded using training-time levels;
-#' missing predictors are passed as NaN.
+#' only observed target values. By default predictors are passed as a typed
+#' pandas data frame: numeric missings remain NaN and factors retain their
+#' training-time categorical schema. Python fits and reuses the preprocessing
+#' for both training and prediction.
 #'
 #' `vimpute(method = "tabicl2")` uses the same learners. They support PMM and
 #' the other uncertainty mechanisms of `vimpute()`. Fine-tuning adapts pretrained
@@ -21,6 +23,9 @@
 #' @param learner_params Named TabICL learner parameters. Common parameters are
 #'   `device`, `n_estimators`, `random_state`, `model_path`,
 #'   `allow_auto_download`, `python`, `epochs`, `learning_rate`, and `patience`.
+#'   `input_type` defaults to `"dataframe"`; `"matrix"` retains the legacy
+#'   numeric coding of factors. Unknown factor levels become categorical
+#'   missings with the default backend, rather than fractional numeric codes.
 #'   `epochs` defaults to 5 and sets the maximum fine-tuning epochs; early
 #'   stopping may finish sooner. For example, use `learner_params =
 #'   list(tabicl2 = list(finetune = TRUE, epochs = 20L))` with [vimpute()],
@@ -87,9 +92,43 @@ tabiclImpute <- function(data, considered_variables = names(data), finetune = FA
   out
 }
 
+# Preserve one schema across training, prediction and PMM donor scoring.
+# R backends used in tests receive the same typed frame without starting Python.
+.tabicl_input <- function(data, encoding, input_type = "dataframe", python = FALSE) {
+  if (identical(input_type, "matrix")) return(.tabicl_matrix(data, encoding))
+  if (!identical(input_type, "dataframe")) stop("Unknown TabICL input_type")
+  frame <- as.data.frame(data, stringsAsFactors = FALSE)
+  for (nm in names(frame)) {
+    if (!is.null(encoding[[nm]])) {
+      # Unordered storage avoids reticulate's ordered-factor conversion warning.
+      # The original ordered class is restored by vimpute's result builder.
+      frame[[nm]] <- factor(as.character(frame[[nm]]), levels = encoding[[nm]])
+    } else {
+      frame[[nm]] <- as.numeric(frame[[nm]])
+    }
+  }
+  rownames(frame) <- NULL
+  if (!isTRUE(python)) return(frame)
+  pandas <- tryCatch(reticulate::import("pandas", convert = FALSE),
+    error = function(e) stop("TabICL dataframe input requires Python pandas. ",
+      "Install inst/python/tabicl-requirements.txt in reticulate's environment.\n",
+      conditionMessage(e), call. = FALSE))
+  out <- reticulate::r_to_py(frame, convert = FALSE)
+  # Set categorical dtype explicitly, including missing/unused/single levels.
+  # -1 is pandas' missing-category code; it never becomes a numeric category.
+  for (nm in names(frame)) if (!is.null(encoding[[nm]])) {
+    codes <- as.integer(frame[[nm]]) - 1L
+    codes[is.na(codes)] <- -1L
+    categorical <- pandas$Categorical$from_codes(
+      as.array(codes), categories = as.list(encoding[[nm]]), ordered = FALSE)
+    out$`__setitem__`(nm, categorical)
+  }
+  out
+}
+
 .tabicl_constructor_args <- function(pv) {
   fine <- isTRUE(pv$finetune)
-  reserved <- c("finetune", "python", "tabicl_module", "estimator_params",
+  reserved <- c("finetune", "python", "tabicl_module", "input_type", "estimator_params",
                 "finetune_params", "epochs", "learning_rate", "patience")
   args <- pv[setdiff(names(pv), reserved)]
   if (fine) {
@@ -120,8 +159,11 @@ tabiclImpute <- function(data, considered_variables = names(data), finetune = FA
   if (is.null(constructor)) stop("TabICL backend does not expose ", kind)
   estimator <- do.call(constructor, .tabicl_constructor_args(pv))
   if (classif) y <- as.character(y)
-  estimator$fit(.tabicl_matrix(x, encoding), y)
-  list(estimator = estimator, encoding = encoding, features = names(x), classes = classes)
+  input_type <- if (is.null(pv$input_type)) "dataframe" else pv$input_type
+  python_input <- inherits(estimator, "python.builtin.object")
+  estimator$fit(.tabicl_input(x, encoding, input_type, python_input), y)
+  list(estimator = estimator, encoding = encoding, features = names(x), classes = classes,
+       input_type = input_type, python_input = python_input)
 }
 
 .tabicl_predict <- function(task, model, classif, predict_type) {
@@ -131,7 +173,9 @@ tabiclImpute <- function(data, considered_variables = names(data), finetune = FA
     prob <- matrix(0, n, length(model$classes), dimnames = list(NULL, model$classes))
     prob[, as.character(model$constant)] <- 1
   } else {
-    x <- .tabicl_matrix(as.data.frame(task$data(cols = model$features)), model$encoding)
+    input_type <- if (is.null(model$input_type)) "matrix" else model$input_type
+    x <- .tabicl_input(as.data.frame(task$data(cols = model$features)), model$encoding,
+                       input_type, isTRUE(model$python_input))
     if (!classif) {
       response <- as.numeric(model$estimator$predict(x))
       if (length(response) != n || any(!is.finite(response))) stop("Invalid TabICL predictions")
@@ -169,6 +213,7 @@ register_tabicl_learners <- function() {
             model_path = paradox::p_uty(tags = "train"),
             allow_auto_download = paradox::p_lgl(default = TRUE, tags = "train"),
             python = paradox::p_uty(tags = "train"),
+            input_type = paradox::p_fct(c("dataframe", "matrix"), default = "dataframe", tags = "train"),
             epochs = paradox::p_int(1L, default = 5L, tags = "train"),
             learning_rate = paradox::p_dbl(lower = 0, tags = "train"),
             patience = paradox::p_int(1L, tags = "train"),
@@ -180,7 +225,7 @@ register_tabicl_learners <- function() {
             predict_types = if (classif) c("response", "prob") else "response",
             properties = c("missings", if (classif) c("twoclass", "multiclass")),
             packages = "VIM", man = "VIM::tabiclImpute")
-          self$param_set$values <- list(finetune = FALSE, epochs = 5L, n_estimators = 8L,
+          self$param_set$values <- list(finetune = FALSE, input_type = "dataframe", epochs = 5L, n_estimators = 8L,
             random_state = 42L, allow_auto_download = TRUE)
         }),
         private = list(

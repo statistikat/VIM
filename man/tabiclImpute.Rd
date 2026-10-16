@@ -24,9 +24,11 @@ tabiclImpute(
 \item{learner_params}{Named TabICL learner parameters. Common parameters are
 \code{device}, \code{n_estimators}, \code{random_state}, \code{model_path},
 \code{allow_auto_download}, \code{python}, \code{epochs}, \code{learning_rate}, and \code{patience}.
+\code{input_type} defaults to \code{"dataframe"}; \code{"matrix"} retains the legacy
+numeric coding of factors. Unknown factor levels become categorical
+missings with the default backend, rather than fractional numeric codes.
 \code{epochs} defaults to 5 and sets the maximum fine-tuning epochs; early
-stopping may finish sooner. For example, use \code{learner_params =
-list(tabicl2 = list(finetune = TRUE, epochs = 20L))} with \code{\link[=vimpute]{vimpute()}},
+stopping may finish sooner. For example, use \code{learner_params = list(tabicl2 = list(finetune = TRUE, epochs = 20L))} with \code{\link[=vimpute]{vimpute()}},
 or \code{learner_params = list(epochs = 20L)} with \code{tabiclImpute()}.
 \code{estimator_params} and \code{finetune_params} are named lists of additional
 upstream constructor arguments. \code{n_estimators} maps to
@@ -45,12 +47,14 @@ The imputed data set, as returned by \code{\link[=vimpute]{vimpute()}}.
 \description{
 Impute numeric and categorical targets with pretrained TabICL models through
 \code{\link[=vimpute]{vimpute()}}. Python is initialized lazily when a model is trained. Install
-\code{reticulate} and \verb{python -m pip install 'tabicl[finetune]==2.2.0'} in its
+\code{reticulate} and \verb{python -m pip install 'tabicl[finetune]==2.2.0' 'pandas>=2.1.2'} in its
 Python environment (Python >= 3.10). Checkpoints are downloaded on first use
 unless \code{model_path} and \code{allow_auto_download = FALSE} are supplied in
 \code{learner_params}. Each target and iteration fits a separate estimator using
-only observed target values. Factors are encoded using training-time levels;
-missing predictors are passed as NaN.
+only observed target values. By default predictors are passed as a typed
+pandas data frame: numeric missings remain NaN and factors retain their
+training-time categorical schema. Python fits and reuses the preprocessing
+for both training and prediction.
 }
 \details{
 \code{vimpute(method = "tabicl2")} uses the same learners. They support PMM and

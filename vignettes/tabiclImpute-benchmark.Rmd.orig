@@ -20,7 +20,7 @@ stopifnot(requireNamespace("ggplot2", quietly = TRUE))
 config <- uci_config()
 config$n <- c(250L, 500L, 1000L, 2000L)
 config$repetitions <- 3L
-result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-native-predictors-3reps")
+result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-typed-predictors-3reps")
 cache_dir <- Sys.getenv("VIM_TABICL2_DATA", "../.local/benchmarks/tabicl2-cache")
 # The local checkpoint cache resumes matching completed scenarios. The generated
 # .Rmd embeds the outputs, so normal rendering never executes the benchmark.
@@ -50,8 +50,8 @@ for (f in c("config.rds", "runs.csv", "metrics.csv", "distributions.csv",
 ```{r protocol-status, echo=FALSE, results='asis'}
 if (!identical(config$protocol, uci_config()$protocol)) {
   cat("> **Superseded results:** These cached results predate the TabICL predictor ",
-      "preprocessing fix. Missingness indicators replaced the original predictors ",
-      "during affected fits. The TabICL comparisons below require a fresh run ",
+      "preprocessing fixes (original features, consistent missing-value handling ",
+      "and typed categorical inputs). The TabICL comparisons below require a fresh run ",
       "and should not be interpreted as a comparison of the corrected variants.\n\n")
 }
 ```
