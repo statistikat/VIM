@@ -4,7 +4,11 @@ if (!all(vapply(c("mlr3", "mlr3learners", "mlr3pipelines", "mlr3tuning",
   exit_file("mlr3 stack not installed")
 library(VIM)
 e <- new.env()
-sys.source(system.file("benchmarks", "tabicl2-correlated.R", package = "VIM"), e)
+# Development benchmarks are excluded from installed packages.
+benchmark_paths <- file.path(c(".", "..", "../.."), "dev-notes", "benchmarks", "tabicl2-correlated.R")
+benchmark_paths <- benchmark_paths[file.exists(benchmark_paths)]
+if (!length(benchmark_paths)) exit_file("development benchmark files not available")
+sys.source(benchmark_paths[1L], e)
 d <- e$tabicl_correlated_data()
 expect_identical(d, e$tabicl_correlated_data())
 expect_identical(names(d), c("X", "Y", "A", "B"))

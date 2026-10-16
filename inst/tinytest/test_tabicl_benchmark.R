@@ -3,7 +3,11 @@ if (!all(vapply(c("mlr3", "mlr3learners", "mlr3pipelines", "mlr3tuning",
   exit_file("mlr3 stack not installed")
 if (!at_home()) exit_file("benchmark integration runs at home")
 library(VIM)
-e <- new.env(); sys.source(system.file("benchmarks", "tabicl2.R", package = "VIM"), e)
+e <- new.env(); # Development benchmarks are excluded from installed packages.
+benchmark_paths <- file.path(c(".", "..", "../.."), "dev-notes", "benchmarks", "tabicl2.R")
+benchmark_paths <- benchmark_paths[file.exists(benchmark_paths)]
+if (!length(benchmark_paths)) exit_file("development benchmark files not available")
+sys.source(benchmark_paths[1L], e)
 config <- e$uci_config()
 expect_equal(config$n, c(250L, 500L, 1000L, 2000L))
 expect_equal(config$repetitions, 3L)

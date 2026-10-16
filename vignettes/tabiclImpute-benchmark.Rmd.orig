@@ -12,7 +12,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
                       fig.height = 5, fig.align = "center",
                       fig.path = "figures/tabicl2-benchmark-", error = FALSE)
 library(VIM)
-source("../inst/benchmarks/tabicl2.R")
+source("../dev-notes/benchmarks/tabicl2.R")
 stopifnot(requireNamespace("ggplot2", quietly = TRUE))
 ```
 
@@ -40,7 +40,7 @@ multi_rate_methods <- config$methods
 have_results <- TRUE
 has_ggplot <- TRUE
 # Retain compact provenance alongside the frozen report; raw records stay local.
-bundled <- "../inst/benchmarks/tabicl2-results"
+bundled <- "../dev-notes/benchmarks/tabicl2-results"
 dir.create(bundled, recursive = TRUE, showWarnings = FALSE)
 for (f in c("config.rds", "runs.csv", "metrics.csv", "distributions.csv",
             "preprocessing.csv", "sources.csv", "session.txt"))

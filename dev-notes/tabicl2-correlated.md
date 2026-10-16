@@ -64,7 +64,7 @@ The real-model run uses cached checkpoints and offline mode.
 
 Set RETICULATE_PYTHON and HF_HOME to the configured environment and checkpoint
 cache, and HF_HUB_OFFLINE=1 to prevent checkpoint downloads. The standalone
-experiment can also be sourced from inst/benchmarks/tabicl2-correlated.R and
+experiment can also be sourced from dev-notes/benchmarks/tabicl2-correlated.R and
 run with tabicl_correlated_run(epochs = 20L). The correlated experiment now
 uses 20 epochs by default; epochs = 5L reproduces the earlier budget. This is
 a maximum: patience-based early stopping remains enabled. The underlying

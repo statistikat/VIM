@@ -7,7 +7,11 @@ if (!all(vapply(c("reticulate", "mlr3", "R6", "paradox"),
   exit_file("optional dependencies absent")
 library(VIM)
 e <- new.env()
-sys.source(system.file("benchmarks", "tabicl2-correlated.R", package = "VIM"), e)
+# Development benchmarks are excluded from installed packages.
+benchmark_paths <- file.path(c(".", "..", "../.."), "dev-notes", "benchmarks", "tabicl2-correlated.R")
+benchmark_paths <- benchmark_paths[file.exists(benchmark_paths)]
+if (!length(benchmark_paths)) exit_file("development benchmark files not available")
+sys.source(benchmark_paths[1L], e)
 reticulate::import("torch")$set_num_threads(1L)
 out <- Sys.getenv("VIM_TABICL_CORRELATED_RESULTS", "")
 x <- e$tabicl_correlated_run(output = if (nzchar(out)) out else NULL)

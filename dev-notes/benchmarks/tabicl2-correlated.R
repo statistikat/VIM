@@ -20,7 +20,10 @@ tabicl_correlated_run <- function(n = 160L, prop = .2, seed = 20261016L,
       epochs < 1 || epochs != floor(epochs) || epochs > .Machine$integer.max)
     stop("epochs must be a positive integer")
   bench <- new.env(parent = environment())
-  sys.source(system.file("benchmarks", "tabicl2.R", package = "VIM"), bench)
+  paths <- file.path(c(".", "..", "../.."), "dev-notes", "benchmarks", "tabicl2.R")
+  paths <- paths[file.exists(paths)]
+  if (!length(paths)) stop("Run this development experiment from the VIM source tree")
+  sys.source(paths[1L], bench)
   if (is.null(config)) config <- bench$uci_config()
   config$tabicl2_finetune$epochs <- as.integer(epochs)
   config$n <- n
