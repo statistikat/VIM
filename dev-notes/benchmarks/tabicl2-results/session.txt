@@ -1,7 +1,7 @@
 Number of rows: 250
 $config
 $config$protocol
-[1] "makeMissing-evaluation-tabicl2-v1"
+[1] "makeMissing-evaluation-tabicl2-v3-typed-consistent-predictors"
 
 $config$n
 [1] 250
@@ -10,7 +10,7 @@ $config$rates
 [1] 0.1 0.2 0.4
 
 $config$repetitions
-[1] 5
+[1] 3
 
 $config$mechanisms
 [1] "MCAR" "MAR"
@@ -26,6 +26,9 @@ $config$methods
 [9] "vimpute_tabicl2_finetune_seq10"
 
 $config$tabicl2
+$config$tabicl2$input_type
+[1] "dataframe"
+
 $config$tabicl2$finetune
 [1] FALSE
 
@@ -138,7 +141,7 @@ loaded via a namespace (and not attached):
 Number of rows: 500
 $config
 $config$protocol
-[1] "makeMissing-evaluation-tabicl2-v1"
+[1] "makeMissing-evaluation-tabicl2-v3-typed-consistent-predictors"
 
 $config$n
 [1] 500
@@ -147,7 +150,7 @@ $config$rates
 [1] 0.1 0.2 0.4
 
 $config$repetitions
-[1] 5
+[1] 3
 
 $config$mechanisms
 [1] "MCAR" "MAR"
@@ -163,6 +166,9 @@ $config$methods
 [9] "vimpute_tabicl2_finetune_seq10"
 
 $config$tabicl2
+$config$tabicl2$input_type
+[1] "dataframe"
+
 $config$tabicl2$finetune
 [1] FALSE
 
@@ -275,7 +281,7 @@ loaded via a namespace (and not attached):
 Number of rows: 1000
 $config
 $config$protocol
-[1] "makeMissing-evaluation-tabicl2-v1"
+[1] "makeMissing-evaluation-tabicl2-v3-typed-consistent-predictors"
 
 $config$n
 [1] 1000
@@ -300,6 +306,9 @@ $config$methods
 [9] "vimpute_tabicl2_finetune_seq10"
 
 $config$tabicl2
+$config$tabicl2$input_type
+[1] "dataframe"
+
 $config$tabicl2$finetune
 [1] FALSE
 
@@ -412,7 +421,7 @@ loaded via a namespace (and not attached):
 Number of rows: 2000
 $config
 $config$protocol
-[1] "makeMissing-evaluation-tabicl2-v1"
+[1] "makeMissing-evaluation-tabicl2-v3-typed-consistent-predictors"
 
 $config$n
 [1] 2000
@@ -437,6 +446,9 @@ $config$methods
 [9] "vimpute_tabicl2_finetune_seq10"
 
 $config$tabicl2
+$config$tabicl2$input_type
+[1] "dataframe"
+
 $config$tabicl2$finetune
 [1] FALSE
 
