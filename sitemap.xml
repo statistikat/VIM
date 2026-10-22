@@ -7,10 +7,11 @@
 <url><loc>https://statistikat.github.io/VIM/articles/index.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/articles/irmi.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/articles/modelImp.html</loc></url>
+<url><loc>https://statistikat.github.io/VIM/articles/tabiclImpute-benchmark.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/articles/vimpute-benchmark.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/articles/vimpute-coverage.html</loc></url>
+<url><loc>https://statistikat.github.io/VIM/articles/vimpute-edit-restrictions.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/articles/vimpute-mi.html</loc></url>
-<url><loc>https://statistikat.github.io/VIM/articles/vimpute-restricted.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/articles/vimpute.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/articles/xgboostImpute.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/authors.html</loc></url>
@@ -172,6 +173,7 @@
 <url><loc>https://statistikat.github.io/VIM/reference/scattmatrixMiss.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/sleep.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/spineMiss.html</loc></url>
+<url><loc>https://statistikat.github.io/VIM/reference/tabiclImpute.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/tableMiss.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/tao.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/testdata.html</loc></url>
@@ -183,6 +185,7 @@
 <url><loc>https://statistikat.github.io/VIM/reference/vim_complete.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/vimmi.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/vimpute.html</loc></url>
+<url><loc>https://statistikat.github.io/VIM/reference/vimpute_edit_control.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/vimpute_methods.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/vimpute_search_space.html</loc></url>
 <url><loc>https://statistikat.github.io/VIM/reference/vimpute_spec.html</loc></url>

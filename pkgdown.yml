@@ -6,15 +6,16 @@ articles:
   impPCA: impPCA.html
   irmi: irmi.html
   modelImp: modelImp.html
+  tabiclImpute-benchmark: tabiclImpute-benchmark.html
   VIM: VIM.html
   vimpute-benchmark: vimpute-benchmark.html
   vimpute-coverage: vimpute-coverage.html
+  vimpute-edit-restrictions: vimpute-edit-restrictions.html
   vimpute-mi: vimpute-mi.html
-  vimpute-restricted: vimpute-restricted.html
   vimpute: vimpute.html
   VisualImp: VisualImp.html
   xgboostImpute: xgboostImpute.html
-last_built: 2026-10-22T10:42Z
+last_built: 2026-10-22T10:58Z
 urls:
   reference: https://statistikat.github.io/VIM/reference
   article: https://statistikat.github.io/VIM/articles

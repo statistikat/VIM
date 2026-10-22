@@ -31,46 +31,9 @@ contaminated cells without discarding entire observations."><!-- mathjax --><scr
 <li>
   <a href="../reference/index.html">Reference</a>
 </li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-    Articles
-
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu"><li>
-      <a href="../articles/donorImp.html">Donor based Imputation Methods</a>
-    </li>
-    <li>
-      <a href="../articles/impPCA.html">Imputation Method based on Iterative EM PCA</a>
-    </li>
-    <li>
-      <a href="../articles/irmi.html">Imputation Method IRMI</a>
-    </li>
-    <li>
-      <a href="../articles/modelImp.html">Model based Imputation Methods</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute.html">Imputation Method vimpute</a>
-    </li>
-    <li>
-      <a href="../articles/VisualImp.html">Supportive Graphic Methods</a>
-    </li>
-    <li>
-      <a href="../articles/xgboostImpute.html">Imputation Method based on xgboost</a>
-    </li>
-  </ul></li>
+<li>
+  <a href="../articles/index.html">Articles</a>
+</li>
 <li>
   <a href="../news/index.html">Changelog</a>
 </li>
@@ -281,12 +244,12 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">imputeCellIRMI</span><span class="op">(</span><span class="va">sleep</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">data_imputed</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   BodyWgt BrainWgt NonD Dream Sleep Span Gest Pred Exp Danger</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1   1.700      5.5  9.1   1.3  10.7 38.6   63    3   2      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1   1.000      5.0  8.3   2.1  10.3 38.6  100    3   3      3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2   1.000      6.6  6.3   2.0   8.3  4.5   42    3   1      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3   3.385     44.5  8.4   2.1  10.3 14.0   60    1   1      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4   0.920      5.7  8.6   1.9  10.7  3.9   25    5   2      3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5   1.620      8.1  2.1   1.8   3.9  6.0   19    3   1      4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6   0.425      6.6  9.1   0.7   9.8 27.0  180    4   4      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   3.385     44.5  8.4   2.0  10.6 14.0   60    1   1      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   0.920      5.7  8.3   2.1  10.7  3.5   25    5   2      3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   1.400      8.1  2.1   1.8   3.9 34.0   42    3   1      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6   0.425     11.4  9.1   0.7   9.8 27.0  180    4   4      4</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/image.html" class="external-link">image</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">cellweights</span>, main <span class="op">=</span> <span class="st">"Cell weights"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="imputeCellIRMI-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
@@ -303,8 +266,8 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 6 ( Span ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.551596</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 0</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.738809</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 2</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
@@ -316,7 +279,7 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.204784</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.021655</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 3</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
@@ -328,7 +291,7 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.012886</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.005233</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --------------------------------------</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI: start of iteration 4</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 1 ( BodyWgt ) - continuous</span>
@@ -340,7 +303,7 @@ methods.  <em>Computational Statistics &amp; Data Analysis</em>,
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 7 ( Gest ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   imputing variable: 9 ( Exp ) - continuous</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   multivariate weight update: flagged cells = 1</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.004593</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   convergence criterion: 0.00244</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> cellIRMI converged.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Mixed data example</span></span></span>

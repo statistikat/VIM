@@ -28,46 +28,9 @@
 <li>
   <a href="../reference/index.html">Reference</a>
 </li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-    Articles
-
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu"><li>
-      <a href="../articles/donorImp.html">Donor based Imputation Methods</a>
-    </li>
-    <li>
-      <a href="../articles/impPCA.html">Imputation Method based on Iterative EM PCA</a>
-    </li>
-    <li>
-      <a href="../articles/irmi.html">Imputation Method IRMI</a>
-    </li>
-    <li>
-      <a href="../articles/modelImp.html">Model based Imputation Methods</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute.html">Imputation Method vimpute</a>
-    </li>
-    <li>
-      <a href="../articles/VisualImp.html">Supportive Graphic Methods</a>
-    </li>
-    <li>
-      <a href="../articles/xgboostImpute.html">Imputation Method based on xgboost</a>
-    </li>
-  </ul></li>
+<li>
+  <a href="../articles/index.html">Articles</a>
+</li>
 <li>
   <a href="../news/index.html">Changelog</a>
 </li>
@@ -126,7 +89,9 @@
 <span>  tune_control <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  predictors <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  visit_sequence <span class="op">=</span> <span class="st">"asis"</span>,</span>
-<span>  spec <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  edit_rules <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  edit_control <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -163,6 +128,7 @@ Can be provided either:</p><ul><li><p>as a <strong>single global method</strong>
 Built-in methods:</p></li>
 <li><p>ranger (Random Forest)</p></li>
 <li><p>xgboost (Gradient Boosting)</p></li>
+<li><p>tabicl2 (TabICL 2.2 pretrained regression/classification; see <code><a href="tabiclImpute.html">tabiclImpute()</a></code>)</p></li>
 <li><p>regularized (glmnet regression/classification)</p></li>
 <li><p>robust (robustbase::lmrob / glmrob)</p></li>
 <li><p>gam (Generalized Additive Model via mgcv::gam)</p></li>
@@ -396,6 +362,28 @@ parameters (validated eagerly), <code>formula</code>/<code>predictors</code>,
 reserved name <code>".default"</code> covers unlisted variables. Compiles to
 the flat per-variable arguments, which therefore cannot be given in the
 same call.</p></dd>
+
+
+<dt id="arg-edit-rules">edit_rules<a class="anchor" aria-label="anchor" href="#arg-edit-rules"></a></dt>
+<dd><p>Optional <code><a href="https://rdrr.io/pkg/validate/man/validator.html" class="external-link">validate::validator()</a></code> containing model-agnostic
+linear edits. After each complete sweep (including uncertainty draws),
+numeric imputed cells are jointly projected record-wise; observed cells
+stay fixed. Rules can use excluded columns without making them predictors.
+These edits are independent of <code>learner_params$restricted$rules</code>, which
+continues to constrain regression coefficients. Final projection may
+invalidate coefficient-stage rules absent from <code>edit_rules</code>.</p></dd>
+
+
+<dt id="arg-edit-control">edit_control<a class="anchor" aria-label="anchor" href="#arg-edit-control"></a></dt>
+<dd><p>A <code><a href="vimpute_edit_control.html">vimpute_edit_control()</a></code> object or named list. Default
+scaled weights use observed units, not predictive uncertainty. Only error
+on infeasibility is supported. Adjustable integer columns, nonlinear edits,
+and disjunctions involving multiple adjustable branches are unsupported.
+Fixed-value conditions and row-dependent linear coefficients are supported.
+Projection can move PMM values away from donors and reduce MI variance;
+it does not establish theoretically proper multiple imputation. Per-run
+diagnostics and optional solver problems are attached separately from
+restricted-regression diagnostics. See <code><a href="../articles/vimpute-edit-restrictions.html">vignette("vimpute-edit-restrictions")</a></code>.</p></dd>
 
 </dl></div>
     <div id="value">

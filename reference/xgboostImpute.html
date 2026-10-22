@@ -28,46 +28,9 @@
 <li>
   <a href="../reference/index.html">Reference</a>
 </li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-    Articles
-
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu"><li>
-      <a href="../articles/donorImp.html">Donor based Imputation Methods</a>
-    </li>
-    <li>
-      <a href="../articles/impPCA.html">Imputation Method based on Iterative EM PCA</a>
-    </li>
-    <li>
-      <a href="../articles/irmi.html">Imputation Method IRMI</a>
-    </li>
-    <li>
-      <a href="../articles/modelImp.html">Model based Imputation Methods</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute.html">Imputation Method vimpute</a>
-    </li>
-    <li>
-      <a href="../articles/VisualImp.html">Supportive Graphic Methods</a>
-    </li>
-    <li>
-      <a href="../articles/xgboostImpute.html">Imputation Method based on xgboost</a>
-    </li>
-  </ul></li>
+<li>
+  <a href="../articles/index.html">Articles</a>
+</li>
 <li>
   <a href="../news/index.html">Changelog</a>
 </li>
@@ -104,7 +67,9 @@
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  nrounds <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>  objective <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  edit_rules <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  edit_control <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -147,6 +112,15 @@ argument passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgboost.html" 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Arguments passed to <code><a href="https://rdrr.io/pkg/xgboost/man/xgboost.html" class="external-link">xgboost::xgboost()</a></code></p></dd>
+
+
+<dt id="arg-edit-rules">edit_rules<a class="anchor" aria-label="anchor" href="#arg-edit-rules"></a></dt>
+<dd><p>Optional model-agnostic validator, applied jointly to the
+assembled imputed LHS columns after all target fits; see <code><a href="vimpute.html">vimpute()</a></code>.</p></dd>
+
+
+<dt id="arg-edit-control">edit_control<a class="anchor" aria-label="anchor" href="#arg-edit-control"></a></dt>
+<dd><p>Control object or named list; see <code><a href="vimpute_edit_control.html">vimpute_edit_control()</a></code>.</p></dd>
 
 </dl></div>
     <div id="value">

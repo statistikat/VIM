@@ -28,46 +28,9 @@
 <li>
   <a href="../reference/index.html">Reference</a>
 </li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-    Articles
-
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu"><li>
-      <a href="../articles/donorImp.html">Donor based Imputation Methods</a>
-    </li>
-    <li>
-      <a href="../articles/impPCA.html">Imputation Method based on Iterative EM PCA</a>
-    </li>
-    <li>
-      <a href="../articles/irmi.html">Imputation Method IRMI</a>
-    </li>
-    <li>
-      <a href="../articles/modelImp.html">Model based Imputation Methods</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-benchmark.html">Benchmarking imputation methods with makeMissing() and evaluation()</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-coverage.html">Validating multiple-imputation properness: a coverage simulation</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-mi.html">Multiple imputation with vimpute: pooling, tuning and diagnostics</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute-restricted.html">Restricted regression with vimpute</a>
-    </li>
-    <li>
-      <a href="../articles/vimpute.html">Imputation Method vimpute</a>
-    </li>
-    <li>
-      <a href="../articles/VisualImp.html">Supportive Graphic Methods</a>
-    </li>
-    <li>
-      <a href="../articles/xgboostImpute.html">Imputation Method based on xgboost</a>
-    </li>
-  </ul></li>
+<li>
+  <a href="../articles/index.html">Articles</a>
+</li>
 <li>
   <a href="../news/index.html">Changelog</a>
 </li>
@@ -94,7 +57,8 @@
 <h2 class="page-header" data-toc-text="7.5.1" id="vim-751">VIM 7.5.1<a class="anchor" aria-label="anchor" href="#vim-751"></a></h2>
 <div class="section level3">
 <h3 id="changes-7-5-1">Changes<a class="anchor" aria-label="anchor" href="#changes-7-5-1"></a></h3>
-<ul><li>
+<ul><li>Added <code><a href="../reference/tabiclImpute.html">tabiclImpute()</a></code> and <code>vimpute(method = "tabicl2")</code> for TabICL 2.2 regression and classification, with optional dataset fine-tuning via <code>learner_params = list(tabicl2 = list(finetune = TRUE))</code>. Python dependencies remain optional. Added a six-method Adult/Bank benchmark protocol.</li>
+<li>
 <strong>The soft corner’s scatter correction is now additive on the diagonal.</strong> The bisquare weights act on a cell’s conditional residual, which under the Gaussian model is independent of every other cell, so they deflate the cell’s own variance and leave its covariances unbiased to first order. <code>imputeCellGLoc(weights = "soft")</code> now adds <code>1 - kappa</code> times each conditional variance to the diagonal of the weighted scatter and keeps the off-diagonals. Until 7.5.0 it rescaled the whole matrix symmetrically, which restored the diagonal but multiplied every covariance by more than 1: the correlations came out biased upward (0.746 for a true 0.700 in the limit) and the conditional variances, which detection and the conditional imputation use, too small (0.86 of the truth). On clean data (five variables at correlation 0.7, a sixth at 0.1, n = 10000) the conditional variances are now 1.045 of the truth (0.866 before), the block correlation 0.682 (0.742), the marginal variances 0.996 (0.978), and 0.99% of the cells have <code>W &lt; 0.5</code> (1.86%; nominal 1.12%). It is a first-order correction: the raw covariances are themselves about 2.5% low, so a correlation bias of about -0.02 remains. On the pilot grid of the categorical EM (900 paired fits against the same code with the old correction), the default <code>"em"</code> fits gained 0.011 in categorical hit rate and 0.006 in detection AUC (no cell fell), lost 3.6% of their imputation MSE, flagged 1.21% of the clean cells in complete rows instead of 2.33%, and took 0.59 times the time; their scatter error rose by 0.007, almost all at eps 0.20 with a shift of 3, and the simulation’s misspecified comparison arms reached a wrong fixed point more often (8 to 10 and 9 to 12 fits). <strong>Every soft-corner result changes.</strong> The binary corner has no correction and does not change, bit for bit; only its fallback for a failed <code><a href="https://rdrr.io/pkg/cellWise/man/cellMCD.html" class="external-link">cellWise::cellMCD()</a></code> call, a hard-threshold weighted scatter, goes through the new correction.</li>
 <li>
 <strong>Per-level detection in <code>imputeCellGLoc(categorical = "em")</code>, soft corner.</strong> A row with a missing categorical cell now carries one row of cell weights per candidate level (per level combination when several cells are missing), computed at that level’s fitted mean and conditioned on the cells that are clean under it. The E-step scores a level by the cellwise-penalised likelihood of the binary corner: the Gaussian log-density of the cells retained under the level, minus a cellMCD-type penalty for each cell flagged under it, with the penalty taken from the current scatter. <code>B</code> and <code>Sigma</code> are updated with each candidate’s own weights times its posterior. <code>W</code> now reports the posterior mixture of the candidates’ weights, and the new element <code>cat_weights</code> holds the candidates’ weights themselves. <code>criterion["weights"]</code> is the largest change of a candidate’s weights times its posterior probability, divided by the relaxation factor, and the non-convergence warning says so. In 7.5.0 detection ran at the row’s expected design row, where the cell that decides the level looks outlying whenever the true level is far from the prior mean. That cell was flagged, the E-step dropped it, and the posterior could not move. On the datasets of the full simulation’s categorical arms at eps = 0 (n = 200, 10 replicates per pattern) the decisive cell was flagged in 17.6-19.8% of the rows missing the factor, and the imputed level was right in 0.809-0.861 of those rows, against 0.965-0.986 for a classifier that uses the fit’s own <code>B</code> and <code>Sigma</code>, the true prior probabilities and every observed continuous cell. A contaminated cell is flagged under every level and pays the same penalty under each, so it still does not steer the level. Results change for soft-corner <code>"em"</code> fits with a missing categorical cell. The binary corner, <code>categorical = "level"</code> and fits without a missing categorical cell are unchanged, bit for bit. The binary corner takes one weight row per observation from <code><a href="https://rdrr.io/pkg/cellWise/man/cellMCD.html" class="external-link">cellWise::cellMCD()</a></code>, so its detection stays at the expected design row, and the lock can still occur there.</li>
