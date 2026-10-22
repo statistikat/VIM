@@ -118,7 +118,12 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,
 #' @param methodStand either "range" or "iqr" to be used in the standardization of numeric vaiables in the gower distance
 #' @param ordFun function for aggregating the k Nearest Neighbours in the case
 #' of a ordered factor variable
-#' @return the imputed data set.
+#' @param id_var NULL or a single character string naming a column of `data`
+#' containing donor IDs. If NULL, row numbers are used.
+#' @param return_donor TRUE/FALSE whether to return donor IDs for each variable
+#' in a character column named `x_donor_id`, where `x` is the imputed variable.
+#' Multiple donor IDs are separated by `;`. Rows not imputed have NA donor IDs.
+#' @return the imputed data set, optionally including donor ID columns.
 #' @author Alexander Kowarik, Statistik Austria
 #' @references A. Kowarik, M. Templ (2016) Imputation with
 #' R package VIM.  *Journal of
@@ -139,8 +144,16 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
                 imp_var=TRUE,imp_suffix="imp", addRF=FALSE, onlyRF=FALSE,
                 addRandom=FALSE,useImputedDist=TRUE,weightDist=FALSE,
                 methodStand = "range",
-                ordFun = medianSamp) {
+                ordFun = medianSamp, id_var = NULL, return_donor = FALSE) {
   check_data(data)
+  if (!is.null(id_var) &&
+      (!is.character(id_var) || length(id_var) != 1L || is.na(id_var) ||
+       !id_var %in% colnames(data))) {
+    stop("'id_var' must be NULL or a single character value in colnames(data)")
+  }
+  if (!is.logical(return_donor) || length(return_donor) != 1L || is.na(return_donor)) {
+    stop("'return_donor' must be a single TRUE or FALSE value")
+  }
   data_df <- !is.data.table(data)
   # check for colnames before forcing variable
   if (is.null(colnames(data))) { 
@@ -161,6 +174,11 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
   startTime <- Sys.time()
   nvar <- length(variable)
   ndat <- nrow(data)
+  if (return_donor) {
+    donor_values <- if (is.null(id_var)) as.character(seq_len(ndat)) else as.character(data[[id_var]])
+    donor_ids <- setNames(rep(list(rep(NA_character_, ndat)), nvar),
+                          paste0(variable, "_donor_id"))
+  }
   #impNA==FALSE -> NAs should remain NAs (Routing NAs!?)
   indexNAs <- is.na(data)
   if(!is.null(donorcond)){
@@ -214,6 +232,8 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
   }
   if(length(variable)==0){
     warning(paste("Nothing is imputed, because all variables to be imputed only contains missings."))
+    if (return_donor)
+      data[, (names(donor_ids)) := donor_ids]
     if (data_df)
       data <- as.data.frame(data)
     return(data)
@@ -424,6 +444,14 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
       mindi <- dist_single(as.data.frame(don_dist_var),as.data.frame(imp_dist_var),numericalX,factorsX,ordersX,mixedX,levOrdersX,
           don_index,imp_index,weightsx,k,mixed.constant,provideMins=weightDist,
           methodStand = methodStand)
+      if (return_donor) {
+        ids <- if (k == 1) {
+          donor_values[as.vector(mindi[[1]])]
+        } else {
+          apply(mindi[[1]], 2, function(rows) paste(donor_values[rows], collapse = ";"))
+        }
+        donor_ids[[paste0(variable[j], "_donor_id")]][imp_index] <- ids
+      }
       getI <- function(x)data[x,variable[j],with=FALSE]
       if(trace)
         message(sum(indexNA2s[,variable[j]]),"items of","variable:",variable[j]," imputed\n")
@@ -492,6 +520,8 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
   if(!is.null(features_added)){
     data[,c(features_added):=NULL]
   }
+  if (return_donor)
+    data[, (names(donor_ids)) := donor_ids]
   if (data_df)
     data <- as.data.frame(data)
   data
