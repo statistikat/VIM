@@ -35,7 +35,10 @@ gowerD(
 
 \item{mixed}{names of mixed variables}
 
-\item{levOrders}{vector with number of levels for each orders variable}
+\item{levOrders}{vector of positive integer level counts, one for each
+variable in \code{orders}. Ordered factors must have identical levels in both
+inputs, including unused levels. Numeric ordinal variables must contain
+integer ranks from 1 to the corresponding level count, or NA.}
 
 \item{mixed.constant}{vector with length equal to the number of semi-continuous variables specifying the point of the semi-continuous distribution with non-zero probability}
 
@@ -64,6 +67,10 @@ contributes up to about 2 (rather than a variable's nominal maximum of 1).
 This sentinel convention departs from Gower's (1971) omit-and-renormalise
 rule and biases nearest-neighbour selection towards records that share the
 same missingness pattern.
+
+Ordinal distances use the full declared scale, including unused levels.
+A single-level ordinal variable contributes zero between observed values;
+missing values still follow the sentinel convention described above.
 
 The distance computation is parallelised with OpenMP where R was built with
 OpenMP support. The number of threads is \code{getOption("VIM.ncores")}; if the

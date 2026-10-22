@@ -38,7 +38,13 @@ double distW(double x,double y, int type, double weight=1, double weightsum=1,do
       out=weight/weightsum;
     }
   }else if(type==2){  //Ordered
-    out=abs(x-y)/(levOrder-1)*weight/weightsum;
+    // A single-level scale is constant for observed values. Use denominator 1
+    // to avoid 0/0 while retaining the missing-value sentinel contribution.
+    if(levOrder > 1){
+      out=abs(x-y)/(levOrder-1)*weight/weightsum;
+    }else{
+      out=abs(x-y)*weight/weightsum;
+    }
   }else if(type==3){  //Semi-Continous
     if(
       ((x==mixedConstant)&(y!=mixedConstant))|

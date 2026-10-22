@@ -10,7 +10,10 @@
 #' @param factors names of factor variables
 #' @param orders names of ordered variables
 #' @param mixed names of mixed variables
-#' @param levOrders vector with number of levels for each orders variable
+#' @param levOrders vector of positive integer level counts, one for each
+#' variable in `orders`. Ordered factors must have identical levels in both
+#' inputs, including unused levels. Numeric ordinal variables must contain
+#' integer ranks from 1 to the corresponding level count, or NA.
 #' @param mixed.constant 	vector with length equal to the number of semi-continuous variables specifying the point of the semi-continuous distribution with non-zero probability
 #' @param returnIndex logical if TRUE return the index of the minimum distance
 #' @param nMin integer number of values with smallest distance to be returned
@@ -28,6 +31,10 @@
 #' This sentinel convention departs from Gower's (1971) omit-and-renormalise
 #' rule and biases nearest-neighbour selection towards records that share the
 #' same missingness pattern.
+#'
+#' Ordinal distances use the full declared scale, including unused levels.
+#' A single-level ordinal variable contributes zero between observed values;
+#' missing values still follow the sentinel convention described above.
 #'
 #' The distance computation is parallelised with OpenMP where R was built with
 #' OpenMP support. The number of threads is `getOption("VIM.ncores")`; if the
@@ -67,17 +74,33 @@ gowerD <- function(data.x, data.y = data.x,
                    returnMin=FALSE,
                    methodStand="range") {
   stopifnot(length(methodStand)==1&&methodStand%in%c("range", "iqr"))
-  if(length(levOrders)>0){
-    stopifnot(length(levOrders)==length(orders))
-    levOrdersUniqueX <- sapply(orders,function(x)length(unique(data.x[[x]])))
-    if(any(levOrdersUniqueX!=levOrders)){
-      warning("The number of unique values in the ordinal variables in data.x
-              does not correspond to the values given in levOrders")
-    }
-    levOrdersUniqueY <- sapply(orders,function(x)length(unique(data.y[[x]])))
-    if(any(levOrdersUniqueY!=levOrders)){
-      warning("The number of unique values in the ordinal variables in data.y
-              does not correspond to the values given in levOrders")
+  if ((!is.numeric(levOrders) && length(levOrders) > 0L) ||
+      length(levOrders) != length(orders) ||
+      anyNA(levOrders) || any(!is.finite(levOrders)) ||
+      any(levOrders < 1 | levOrders != floor(levOrders))) {
+    stop("'levOrders' must contain one positive integer level count per ordinal variable")
+  }
+  for (i in seq_along(orders)) {
+    x <- data.x[[orders[i]]]
+    y <- data.y[[orders[i]]]
+    if (is.factor(x) || is.factor(y)) {
+      if (!is.ordered(x) || !is.ordered(y) ||
+          !identical(levels(x), levels(y))) {
+        stop("Ordinal variable '", orders[i],
+             "' must have identical ordered factor levels in both inputs")
+      }
+      if (nlevels(x) != levOrders[i]) {
+        stop("'levOrders' does not match the declared levels of ordinal variable '", orders[i], "'")
+      }
+    } else {
+      if (!is.numeric(x) || !is.numeric(y)) {
+        stop("Ordinal variable '", orders[i], "' must be an ordered factor or numeric ranks")
+      }
+      ranks <- c(x, y)
+      ranks <- ranks[!is.na(ranks)]
+      if (any(!is.finite(ranks)) || any(ranks != floor(ranks) | ranks < 1 | ranks > levOrders[i])) {
+        stop("Ordinal variable '", orders[i], "' must contain integer ranks between 1 and ", levOrders[i])
+      }
     }
   }
   maxplus1 <- function(x){
