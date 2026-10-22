@@ -7,6 +7,29 @@ template:
   params:
     bootswatch: cosmo
 
+articles:
+- title: Getting started
+  contents:
+  - VIM
+  - VisualImp
+- title: Imputation methods
+  contents:
+  - donorImp
+  - modelImp
+  - irmi
+  - impPCA
+  - xgboostImpute
+- title: Imputation with vimpute
+  contents:
+  - vimpute
+  - vimpute-mi
+  - vimpute-edit-restrictions
+- title: Benchmarking and validation
+  contents:
+  - vimpute-benchmark
+  - vimpute-coverage
+  - tabiclImpute-benchmark
+
 reference:
 - title: Imputation methods
   desc: Functions to impute missing data
