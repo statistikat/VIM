@@ -48,7 +48,9 @@ kNN(
   useImputedDist = TRUE,
   weightDist = FALSE,
   methodStand = "range",
-  ordFun = medianSamp
+  ordFun = medianSamp,
+  id_var = NULL,
+  return_donor = FALSE
 )
 }
 \arguments{
@@ -111,9 +113,16 @@ aggregation step}
 
 \item{ordFun}{function for aggregating the k Nearest Neighbours in the case
 of a ordered factor variable}
+
+\item{id_var}{NULL or a single character string naming a column of \code{data}
+containing donor IDs. If NULL, row numbers are used.}
+
+\item{return_donor}{TRUE/FALSE whether to return donor IDs for each variable
+in a character column named \code{x_donor_id}, where \code{x} is the imputed variable.
+Multiple donor IDs are separated by \verb{;}. Rows not imputed have NA donor IDs.}
 }
 \value{
-the imputed data set.
+the imputed data set, optionally including donor ID columns.
 }
 \description{
 k-Nearest Neighbour Imputation based on a variation of the Gower Distance
