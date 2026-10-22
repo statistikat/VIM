@@ -14,6 +14,9 @@
 #'   argument passed to [xgboost::xgboost()]
 #' @param objective objective for xgboost,
 #'   argument passed to [xgboost::xgboost()]
+#' @param edit_rules Optional model-agnostic validator, applied jointly to the
+#'   assembled imputed LHS columns after all target fits; see [vimpute()].
+#' @param edit_control Control object or named list; see [vimpute_edit_control()].
 #' @return the imputed data set.
 #' @family imputation methods
 #' @examples 
@@ -36,8 +39,9 @@
 xgboostImpute <- function(formula, data, imp_var = TRUE,
                          imp_suffix = "imp", verbose = FALSE,
                          nrounds=100, objective=NULL,
-                         ...){
+                         ..., edit_rules = NULL, edit_control = NULL){
   check_data(data)
+  edit_wrapper_original <- if (!is.null(edit_rules)) as.data.frame(data) else NULL
   formchar <- as.character(formula)
   lhs <- gsub(" ", "", strsplit(formchar[2], "\\+")[[1]])
   rhs <- formchar[3]
@@ -106,5 +110,5 @@ xgboostImpute <- function(formula, data, imp_var = TRUE,
       }
     }
   }
-  data_out
+  .edit_finish_wrapper(data_out, edit_wrapper_original, lhs, edit_rules, edit_control)
 }

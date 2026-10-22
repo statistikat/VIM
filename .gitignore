@@ -19,3 +19,4 @@ renv.lock
 .local
 inst/python/__pycache__
 dev-notes/benchmarks/__pycache__
+__pycache__/

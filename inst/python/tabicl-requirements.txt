@@ -1,0 +1,4 @@
+# Python >= 3.10. Includes torch, numpy, scikit-learn and fine-tuning extras.
+# pandas preserves categorical predictor types at the R/Python boundary.
+tabicl[finetune]==2.2.0
+pandas>=2.1.2

@@ -1,0 +1,9 @@
+Source commit: ae6a4b7b79358b95790a35a816eddfeb79db5bcb
+Started: 2026-10-16 20:28:04 CEST
+Three separate R/Python workers; one Torch/BLAS thread each; larger benchmark also running.
+Independent data and masks; n=160; MCAR 20% in Y only; seed=20261016+100*(repetition-1).
+
+Added pretrained sequential variant from saved datasets and masks.
+Original 150 scores preserved.
+Addition started UTC: 2026-10-16T18:46:29.293332+00:00
+See config.rds for parent artifact and addition source fingerprints.

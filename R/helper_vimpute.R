@@ -2047,7 +2047,7 @@ pmm_observed_scores <- function(learner, data_temp, obs_idx, feature_cols,
   tryCatch({
     cols <- unique(c(feature_cols, target_col))
     obs_dt <- as.data.table(data_temp)[obs_idx, cols, with = FALSE]
-    if (anyNA(obs_dt)) {
+    if (method_var != "tabicl2" && anyNA(obs_dt)) {
       obs_dt <- impute_missing_values(obs_dt, data_temp)
     }
     obs_dt <- enforce_factor_levels(obs_dt, factor_levels)
@@ -2415,7 +2415,7 @@ predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, featur
     reg_pred_data <- enforce_factor_levels(reg_pred_data, factor_levels)
     check_all_factor_levels(reg_pred_data, factor_levels)
 
-    if (anyNA(reg_pred_data)) {
+    if (method_var != "tabicl2" && anyNA(reg_pred_data)) {
       reg_pred_data <- impute_missing_values(reg_pred_data, data_temp[missing_idx])
     }
 
@@ -2447,7 +2447,9 @@ predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, featur
       bdt <- set_out_of_range_factor_levels_to_na(bdt, data_temp)
     }
 
-    if (anyNA(bdt)) {
+    # TabICL's fitted Python transformer handles predictor missings in both
+    # training and prediction. Only the task target placeholder is filled below.
+    if (method_var != "tabicl2" && anyNA(bdt)) {
       bdt <- impute_missing_values(bdt, data_temp)
     }
 

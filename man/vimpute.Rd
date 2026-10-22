@@ -34,7 +34,9 @@ vimpute(
   tune_control = NULL,
   predictors = NULL,
   visit_sequence = "asis",
-  spec = NULL
+  spec = NULL,
+  edit_rules = NULL,
+  edit_control = NULL
 )
 }
 \arguments{
@@ -62,6 +64,7 @@ Can be provided either:
 Built-in methods:
 \item ranger (Random Forest)
 \item xgboost (Gradient Boosting)
+\item tabicl2 (TabICL 2.2 pretrained regression/classification; see \code{\link[=tabiclImpute]{tabiclImpute()}})
 \item regularized (glmnet regression/classification)
 \item robust (robustbase::lmrob / glmrob)
 \item gam (Generalized Additive Model via mgcv::gam)
@@ -259,6 +262,24 @@ parameters (validated eagerly), \code{formula}/\code{predictors},
 reserved name \code{".default"} covers unlisted variables. Compiles to
 the flat per-variable arguments, which therefore cannot be given in the
 same call.}
+
+\item{edit_rules}{Optional \code{validate::validator()} containing model-agnostic
+linear edits. After each complete sweep (including uncertainty draws),
+numeric imputed cells are jointly projected record-wise; observed cells
+stay fixed. Rules can use excluded columns without making them predictors.
+These edits are independent of \code{learner_params$restricted$rules}, which
+continues to constrain regression coefficients. Final projection may
+invalidate coefficient-stage rules absent from \code{edit_rules}.}
+
+\item{edit_control}{A \code{\link[=vimpute_edit_control]{vimpute_edit_control()}} object or named list. Default
+scaled weights use observed units, not predictive uncertainty. Only error
+on infeasibility is supported. Adjustable integer columns, nonlinear edits,
+and disjunctions involving multiple adjustable branches are unsupported.
+Fixed-value conditions and row-dependent linear coefficients are supported.
+Projection can move PMM values away from donors and reduce MI variance;
+it does not establish theoretically proper multiple imputation. Per-run
+diagnostics and optional solver problems are attached separately from
+restricted-regression diagnostics. See \code{vignette("vimpute-edit-restrictions")}.}
 }
 \value{
 For \code{m = 1}: the imputed dataset, classed like the input

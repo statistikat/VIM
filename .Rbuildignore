@@ -23,3 +23,6 @@ pkgdown
 ^vignettes/.*\.Rmd\.orig$
 ^vignettes/precompute\.R$
 ^\.superpowers$
+
+^\.local$
+__pycache__

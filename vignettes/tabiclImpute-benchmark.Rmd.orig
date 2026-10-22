@@ -1,0 +1,429 @@
+---
+title: "TabICL 2.2 imputation on Adult and Bank Marketing"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{TabICL 2.2 imputation on Adult and Bank Marketing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
+                      fig.height = 5, fig.align = "center",
+                      fig.path = "figures/tabicl2-benchmark-", error = FALSE)
+library(VIM)
+source("../dev-notes/benchmarks/tabicl2.R")
+stopifnot(requireNamespace("ggplot2", quietly = TRUE))
+```
+
+```{r benchmark, include=FALSE}
+config <- uci_config()
+config$n <- c(250L, 500L, 1000L, 2000L)
+config$repetitions <- 3L
+result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-typed-predictors-3reps")
+cache_dir <- Sys.getenv("VIM_TABICL2_DATA", "../.local/benchmarks/tabicl2-cache")
+# The local checkpoint cache resumes matching completed scenarios. The generated
+# .Rmd embeds the outputs, so normal rendering never executes the benchmark.
+# Explicit report-only mode never initializes Python or resumes model fitting.
+# It may display an old protocol, but labels it as superseded below.
+if (identical(Sys.getenv("VIM_TABICL2_CACHED_ONLY"), "true")) {
+  config <- readRDS(file.path(result_dir, "config.rds"))
+} else {
+  reticulate::import("torch")$set_num_threads(1L)
+  uci_run(config, cache = cache_dir, output = result_dir, download = TRUE,
+          resume = file.exists(file.path(result_dir, "config.rds")))
+}
+metrics <- read.csv(file.path(result_dir, "metrics.csv"))
+runs <- read.csv(file.path(result_dir, "runs.csv"))
+stopifnot(all(runs$status == "ok"))
+multi_rate_methods <- config$methods
+have_results <- TRUE
+has_ggplot <- TRUE
+# Retain compact provenance alongside the frozen report; raw records stay local.
+bundled <- "../dev-notes/benchmarks/tabicl2-results"
+dir.create(bundled, recursive = TRUE, showWarnings = FALSE)
+for (f in c("config.rds", "runs.csv", "metrics.csv", "distributions.csv",
+            "preprocessing.csv", "sources.csv", "session.txt"))
+  stopifnot(file.copy(file.path(result_dir, f), file.path(bundled, f), overwrite = TRUE))
+```
+
+```{r protocol-status, echo=FALSE, results='asis'}
+if (!identical(config$protocol, uci_config()$protocol)) {
+  cat("> **Superseded results:** These cached results predate the TabICL predictor ",
+      "preprocessing fixes (original features, consistent missing-value handling ",
+      "and typed categorical inputs). The TabICL comparisons below require a fresh run ",
+      "and should not be interpreted as a comparison of the corrected variants.\n\n")
+}
+```
+
+<style>
+table { display: block; max-width: 100%; overflow-x: auto; }
+</style>
+
+## Introduction
+
+This benchmark is adapted from `transformerImpute-benchmark.Rmd` on the
+`transformerImpute-rebased` branch. It retains the Adult/Bank samples, common
+MCAR/MAR masks and scoring protocol, and compares kNN, ranger, ranger_seq10, xgboost, xgboost_seq10 and four
+TabICL variants: pretrained/fine-tuned, each with one or up to ten passes.
+
+Like `vimpute-benchmark.Rmd`, this document is precomputed from its
+`.Rmd.orig` source using `vignettes/precompute.R`. The generated `.Rmd`
+contains static code examples, tables and figures. Package builds and checks
+render these cached outputs without loading Python or fitting models.
+Edit the `.Rmd.orig` source to change the experiment, then precompute again.
+
+## Models and regeneration
+
+All four TabICL variants call `vimpute(method = "tabicl2")`, with PMM and
+residual noise disabled. Numeric targets use TabICLRegressor and factors use
+TabICLClassifier. Fine-tuning uses the corresponding Finetuned estimators.
+Each target and iteration fits a fresh model on observed target values only.
+
+| Method | Fine-tuning | Sequential passes |
+|:--|:--|:--|
+| vimpute_tabicl2 | No | 1 |
+| vimpute_tabicl2_finetune | Yes | 1 |
+| vimpute_tabicl2_seq10 | No | Up to 10 |
+| vimpute_tabicl2_finetune_seq10 | Yes | Up to 10 |
+
+All variants use eight inference ensemble members on CPU. Fine-tuning uses
+five epochs, learning rate `1e-5`, patience three, and two ensemble members
+for training and validation, with mixed precision disabled. The upstream
+internal validation split never receives hidden imputation truth. The seq10
+variants use `sequential = TRUE, nseq = 10`; vimpute's convergence rule may
+stop earlier. Fine-tuning occurs afresh at each fitted iteration.
+
+kNN uses five neighbours. Ranger uses 100 trees and XGBoost 30 boosting rounds.
+The seq10 variants use up to ten sequential passes; the other ranger/XGBoost variants
+predict each target from the same incomplete table. TabICL's pretrained budget
+differs from these fitted models, so this is a practical method comparison.
+
+Python >= 3.10 and the optional R package `reticulate` are required for TabICL.
+Install dependencies explicitly in the environment selected by reticulate:
+
+```{bash installation, eval=FALSE}
+python -m pip install -r inst/python/tabicl-requirements.txt
+```
+
+```{r regenerate, eval=FALSE}
+# From the repository root, with the current VIM installed and the Python
+# environment selected via RETICULATE_PYTHON:
+# Rscript vignettes/precompute.R tabiclImpute-benchmark
+# Edit config in tabiclImpute-benchmark.Rmd.orig for a different experiment.
+# Set VIM_TABICL2_RESULTS to a fresh local directory if configuration changes.
+# To render the already cached document only:
+rmarkdown::render("vignettes/tabiclImpute-benchmark.Rmd")
+```
+
+## Datasets and preprocessing
+
+* [Adult / Census Income](https://archive.ics.uci.edu/dataset/2/adult),
+  Becker and Kohavi (1996), [DOI:10.24432/C5XW20](https://doi.org/10.24432/C5XW20):
+  combine `adult.data` and `adult.test` (48,842 rows). Skip the test-file header,
+  trim whitespace, remove the final period from test income labels, and parse
+  `?` as missing. Combining the published splits is intentional: this is
+  transductive reconstruction of missing cells, not a supervised income test.
+* [Bank Marketing](https://archive.ics.uci.edu/dataset/222/bank+marketing),
+  Moro, Rita and Cortez (2014), [DOI:10.24432/C5K306](https://doi.org/10.24432/C5K306):
+  use `bank-full.csv` (45,211 rows), not the smaller sample or the different
+  `bank-additional-full.csv`. Keep `unknown` as an observed category. It encodes
+  recorded lack of knowledge; equating it with an artificially deleted value
+  would change the evaluation target. Keep `pdays = -1` (no prior contact) as
+  a structural sentinel in its original numeric column. Do not interpret it
+  as a literal negative duration.
+
+Both UCI datasets are distributed under CC BY 4.0. The script stores archive
+URLs and MD5 checksums for provenance. Raw records are downloaded only with
+explicit `download = TRUE` and are not bundled with VIM.
+
+All character columns become unordered factors and all numeric measurements
+remain numeric. No clipping, logarithms, balancing, rare-level pooling or
+one-hot conversion is applied in shared preprocessing. Adult's `fnlwgt` remains
+a predictor, not a survey weight; these are unweighted sample diagnostics.
+Both education representations are retained. Bank's call duration is retained:
+it is available for retrospective imputation, but would be inappropriate in a
+pre-call subscription prediction task.
+
+Remove rows with any existing NA to obtain complete references. Consequently,
+Adult results describe its complete-case population and need not transfer to
+people with naturally missing occupation or workclass. No correctness claim
+is made for the unobserved true values in those removed rows.
+
+```{r preprocessing, echo=FALSE}
+audit <- read.csv(file.path(result_dir, "preprocessing.csv"))
+knitr::kable(unique(audit[c("dataset", "rows", "complete_rows")]),
+             caption = "Rows before and after complete-case selection")
+knitr::kable(audit[audit$existing_na > 0 | audit$unknown > 0,
+                   c("dataset", "variable", "existing_na", "unknown")],
+             caption = "Existing missing values and retained unknown categories")
+```
+
+## Missingness simulation
+
+Each repetition draws a new simple random sample without replacement from each
+complete-case dataset at **`r paste(format(config$n, big.mark = ","), collapse = ", ")` rows**,
+with **`r config$repetitions` repetition(s)** per scenario.
+The seed schedule is shared across sizes, so samples overlap and sample-size
+comparisons are not independent replications. The sampling algorithm may change
+with the requested size; exact nesting is not assumed. All methods share the
+same sample and mask within each dataset/size/repetition/mechanism/rate scenario.
+The column `n` records the number of rows in every result table. Seeds and
+training budgets are unchanged across sizes: more rows imply more observed context and, when fine-tuning is enabled, more training batches.
+The targets are Adult `hours_per_week` and `income`, and Bank `balance` and `y`.
+Other columns stay observed, including the MAR driver `age`.
+
+`makeMissing()` selects exactly `round(rate * nrow(truth))` cells per
+target, without replacement. MCAR uses uniform sampling. MAR uses
+`weights = c(age = 1)` explicitly: the sampling weights are the logistic
+transform of standardized observed age. These weights are **not** marginal
+cell-deletion probabilities; the requested number of rows is sampled using
+those relative weights. Higher age favours selection. Age is never masked,
+and no target's hidden value drives another target's missingness. Using the
+default MAR drivers instead could include the other incomplete numeric target,
+so specifying the observed driver matters here.
+
+The `where` attribute supplies the common mask for every competing method
+and for scoring. We retain the original reference separately. With 250 rows,
+the three requested rates correspond to 25, 50 and 100 masked cells in each
+target. With other sample sizes the fractions may differ slightly due to
+rounding. Masks are never redrawn to remove difficult cases.
+
+```{r masks, eval=FALSE}
+prepared <- uci_prepare("uci-cache", download = FALSE)
+set.seed(config$seed)
+truth <- prepared$data$Adult[sample(nrow(prepared$data$Adult), config$n[1L]), ]
+incomplete <- makeMissing(truth, prop = .2, mechanism = "MAR",
+  vars = c("hours_per_week", "income"), weights = c(age = 1), seed = config$seed)
+mask <- attr(incomplete, "where")
+incomplete <- droplevels(incomplete) # no levels learned solely from masked values
+# truth is passed only to evaluation, never to a learner.
+```
+
+```{r realized-rates, echo=FALSE}
+mask_rates <- unique(metrics[c("n", "dataset", "repetition", "mechanism", "rate",
+                               "variable", "realized_rate")])
+knitr::kable(aggregate(realized_rate ~ n + dataset + mechanism + rate + variable,
+                       mask_rates, mean), digits = 3,
+             caption = "Mean realized target-specific missing fractions")
+```
+
+## Evaluation
+
+The pointwise metrics reuse VIM's existing tools and score artificially
+masked cells only:
+
+* `evaluation()` supplies numeric mean squared error (`err_num`) and the
+  fraction of incorrect categories (`err_cat`). We report RMSE as
+  `sqrt(err_num)`, misclassification as `err_cat`, and accuracy as
+  `1 - err_cat`. Because the current implementation of `evaluation()` sums
+  errors over the supplied table, the runner **subsets its inputs to masked
+  cells for each target** and passes an all-TRUE `where` matrix. This makes
+  the scoring boundary explicit. Whole-table calls are equivalent only when
+  observed values are preserved, which the runner also checks.
+* `nrmse(x, y, m = mask)` supplies **NRMSE**, using the standard deviation of
+  the **masked true values**, as implemented by VIM. This is the convention
+  used by the companion benchmark. Fewer than two masked values or zero
+  masked-reference variance gives an undefined score, recorded as NA.
+* **NRMSE_ref** (`nrmse_reference` in the CSV) retains the alternative
+  `RMSE / sd(full sampled reference column)` requested for this UCI
+  benchmark. It is separate from VIM's masked-reference NRMSE; under MAR the
+  two denominators can differ substantially. Both denominators are common
+  across methods within a scenario and are used only for evaluation.
+* MAE, whole-table marginal distances and relationship diagnostics supplement
+  these existing tools; they are not available from `evaluation()` itself.
+
+## Results
+
+The saved run contains `r nrow(runs)` method/scenario attempts,
+`r sum(runs$status == "ok")` successful completions and
+`r sum(runs$status != "ok")` recorded failures. Every method in a scenario
+uses the same `makeMissing()` mask.
+
+```{r status, echo=FALSE}
+knitr::kable(as.data.frame(table(runs$n, runs$dataset, runs$method, runs$status)),
+             col.names = c("Rows", "Dataset", "Method", "Status", "Runs"))
+failed <- runs[runs$status != "ok", c("n", "dataset", "repetition", "mechanism", "rate", "method", "error")]
+if (nrow(failed)) knitr::kable(failed)
+```
+
+The following tables retain number of rows, dataset, mechanism and nominal rate. Scores are
+means across successful repetitions, with their sample standard deviations in
+parentheses. Counts are shown so failures cannot improve a ranking invisibly.
+The saved configuration has `r config$repetitions` repetition(s). With one
+repetition, standard deviations are unavailable; with few repetitions they
+describe variation only roughly. They are not confidence intervals or significance tests. Methods are paired by
+sample and mask, so formal comparisons would require paired analysis and more
+repetitions. Empty cells or `NA` indicate unavailable metrics: numeric error
+measures do not apply to categorical targets, classification accuracy does not
+apply to numeric targets, and a standard deviation requires at least two
+successful repetitions. These are missing summary statistics, not unfilled
+imputation cells. Auxiliary hurdle-model `*_zero_prob` diagnostics are excluded
+from the scored data; actual target columns must contain no missing values. Success counts use completed
+attempts as the denominator. The Coverage column distinguishes pending requested
+repetitions from scenarios outside the saved experiment.
+
+```{r result-tables, echo=FALSE, results='asis'}
+fmt <- function(x) {
+  x <- x[is.finite(x)]
+  if (!length(x)) return("—")
+  sprintf("%.3f (%.3f)", mean(x), if (length(x) > 1) sd(x) else NA_real_)
+}
+for (nr in config$n) for (ds in unique(runs$dataset)) for (mech in unique(runs$mechanism)) {
+  cat("\n\n### ", ds, ": ", mech, ", ", nr, " rows\n\n", sep = "")
+  tab <- do.call(rbind, lapply(config$rates, function(rate) {
+    do.call(rbind, lapply(config$methods, function(method) {
+      x <- metrics[metrics$n == nr & metrics$dataset == ds & metrics$mechanism == mech &
+                     metrics$rate == rate & metrics$method == method, ]
+      rr <- runs[runs$n == nr & runs$dataset == ds & runs$mechanism == mech &
+                   runs$rate == rate & runs$method == method, ]
+      requested <- config$repetitions
+      pending <- max(0L, requested - nrow(rr))
+      data.frame(Rate = rate, Method = method,
+        Coverage = if (!requested) "Not requested" else if (pending)
+          paste(pending, "pending") else "Complete",
+        Success = paste(sum(rr$status == "ok"), nrow(rr), sep = "/"),
+        RMSE = fmt(x$rmse), MAE = fmt(x$mae), NRMSE = fmt(x$nrmse), NRMSE_ref = fmt(x$nrmse_reference),
+        Accuracy = fmt(x$accuracy), Misclassification = fmt(x$misclassification),
+        Seconds = fmt(rr$elapsed[rr$status == "ok"]))
+    }))
+  }))
+  print(knitr::kable(tab, row.names = FALSE))
+  cat("\n\n")
+}
+```
+
+```{r error-plot, echo=FALSE, eval=have_results && has_ggplot, fig.height=12}
+library(ggplot2)
+numeric_scores <- subset(metrics, type == "numeric")
+ggplot(numeric_scores, aes(factor(rate), nrmse, colour = method, group = method)) +
+  stat_summary(fun = mean, geom = "line",
+    data = function(d) d[d$method %in% multi_rate_methods, ]) +
+  geom_point(position = position_dodge(width = .25), alpha = .65) +
+  facet_grid(n + dataset ~ mechanism, scales = "free_y") +
+  scale_y_continuous(trans = "log1p") +
+  labs(x = "Nominal missing fraction", y = "VIM masked-reference NRMSE (log1p scale)",
+       colour = "Method", caption = "Points: repetitions; lines: means. Lower is better.") +
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2))
+```
+
+```{r categorical-plot, echo=FALSE, eval=have_results && has_ggplot, fig.height=12}
+ggplot(subset(metrics, type == "categorical"),
+       aes(factor(rate), accuracy, colour = method, group = method)) +
+  stat_summary(fun = mean, geom = "line",
+    data = function(d) d[d$method %in% multi_rate_methods, ]) +
+  geom_point(position = position_dodge(width = .25), alpha = .65) +
+  facet_grid(n + dataset ~ mechanism) + ylim(0, 1) +
+  labs(x = "Nominal missing fraction", y = "Masked-cell accuracy", colour = "Method") +
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2))
+```
+
+```{r runtime-plot, echo=FALSE, eval=have_results && has_ggplot, fig.height=12}
+ggplot(subset(runs, status == "ok"), aes(method, elapsed, colour = factor(rate))) +
+  geom_point(position = position_jitter(width = .15, height = 0, seed = 1)) +
+  facet_grid(n + dataset ~ mechanism) + scale_y_log10() + coord_flip() +
+  labs(x = NULL, y = "Seconds for both targets (log scale)", colour = "Missing fraction") +
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2))
+```
+
+```{r structure-plot, echo=FALSE, eval=have_results && has_ggplot, fig.height=18}
+ggplot(metrics, aes(factor(rate), marginal_distance, colour = method, group = method)) +
+  stat_summary(fun = mean, geom = "line",
+    data = function(d) d[d$method %in% multi_rate_methods, ]) +
+  stat_summary(fun = mean, geom = "point") +
+  facet_grid(n + dataset + type ~ mechanism) +
+  labs(x = "Nominal missing fraction", y = "Whole-table marginal distance",
+       colour = "Method", caption = "Numeric: ECDF distance; categorical: total variation. Lower is better.") +
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2))
+```
+
+```{r scaling-note, echo=FALSE, results='asis'}
+if (length(config$n) > 1L) {
+  cat("Sample-size scaling is shown separately at each missingness rate.\n")
+} else {
+  cat("Sample-size scaling is omitted for this single-size demonstration.\n")
+}
+```
+
+```{r size-scaling, echo=FALSE, eval=have_results && has_ggplot && length(config$n) > 1L, fig.height=10}
+ggplot(subset(metrics, type == "numeric"),
+       aes(n, nrmse, colour = method, group = method)) +
+  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "point") +
+  facet_grid(dataset + mechanism ~ rate, labeller = label_both) +
+  scale_x_log10(breaks = config$n) + scale_y_continuous(trans = "log1p") +
+  labs(x = "Number of rows (log scale)", y = "VIM masked-reference NRMSE",
+       colour = "Method") +
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r size-accuracy, echo=FALSE, eval=have_results && has_ggplot && length(config$n) > 1L, fig.height=10}
+ggplot(subset(metrics, type == "categorical"),
+       aes(n, accuracy, colour = method, group = method)) +
+  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "point") +
+  facet_grid(dataset + mechanism ~ rate, labeller = label_both) +
+  scale_x_log10(breaks = config$n) + ylim(0, 1) +
+  labs(x = "Number of rows (log scale)", y = "Masked-cell accuracy",
+       colour = "Method") +
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r size-runtime, echo=FALSE, eval=have_results && has_ggplot && length(config$n) > 1L, fig.height=10}
+ggplot(subset(runs, status == "ok"),
+       aes(n, elapsed, colour = method, group = method)) +
+  stat_summary(fun = median, geom = "line") +
+  stat_summary(fun = median, geom = "point") +
+  facet_grid(dataset + mechanism ~ rate, labeller = label_both) +
+  scale_x_log10(breaks = config$n) + scale_y_log10() +
+  labs(x = "Number of rows (log scale)", y = "Median seconds (log scale)",
+       colour = "Method") +
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+For predeclared illustrative scenarios (repetition 1, MAR, 20% at each size), the next
+plots show whole-table numeric deciles and categorical proportions. The
+reference is the complete sampled data. This scenario is illustrative and
+was not selected because a particular method performed well.
+
+```{r marginal-plot, echo=FALSE, eval=have_results && has_ggplot, fig.height=10}
+distributions <- read.csv(file.path(result_dir, "distributions.csv"))
+ggplot(subset(distributions, type == "numeric"),
+       aes(position, value, colour = method, linetype = method == "Reference")) +
+  geom_line() + geom_point(size = 1) + facet_wrap(~n + dataset + variable, scales = "free_y") +
+  scale_y_continuous(trans = "asinh") +
+  labs(x = "Quantile probability", y = "Whole-table quantile (asinh scale)",
+       colour = "Method", linetype = "Complete reference") + theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2))
+```
+
+```{r proportions-plot, echo=FALSE, eval=have_results && has_ggplot, fig.height=10}
+ggplot(subset(distributions, type == "categorical"), aes(method, value, fill = category)) +
+  geom_col() + facet_wrap(~n + dataset + variable) + coord_flip() +
+  labs(x = NULL, y = "Whole-table category proportion", fill = "Category") + theme_minimal() + theme(legend.position = "bottom")
+```
+
+```{r statistical-properties, echo=FALSE}
+# Full target/scenario/repetition diagnostics are in metrics.csv.
+# Here show the hardest nominal rate, still separating mechanisms and datasets.
+x <- subset(metrics, rate == max(config$rates))
+keys <- interaction(x$n, x$dataset, x$mechanism, x$method, x$variable, drop = TRUE)
+properties <- do.call(rbind, lapply(split(x, keys), function(z) {
+  cbind(z[1, c("n", "dataset", "mechanism", "method", "variable")],
+    mean_difference = fmt(z$mean_difference), sd_difference = fmt(z$sd_difference),
+    marginal_distance = fmt(z$marginal_distance),
+    correlation_difference = fmt(z$correlation_difference))
+}))
+knitr::kable(properties, row.names = FALSE,
+             caption = "Whole-table differences at 40% target missingness")
+```
+
+## Limitations and provenance
+
+The configured repetitions provide descriptive comparisons. Scores apply to the
+complete-case populations and artificial target missingness; they do not assess
+proper multiple-imputation coverage. Pretraining overlap with these datasets has
+not been independently audited. Runtime includes model initialization, fitting,
+prediction and scoring, so checkpoint caching and hardware affect comparisons.
+The runner records failures and warnings, package/Python versions, sample indices,
+truth, masks and completions. Observed values and table schema are checked before
+scoring. Raw UCI records and weights are not bundled with this vignette.

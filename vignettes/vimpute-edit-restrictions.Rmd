@@ -1,0 +1,785 @@
+---
+title: "Restricted regression and model-agnostic edit restrictions with vimpute"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Restricted regression and model-agnostic edit restrictions with vimpute}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+This vignette covers both coefficient-restricted regression and generic
+projection of completed numeric imputations, using a common
+`validate::validator()` rule format. It combines the restricted regression
+examples with examples for Ranger, XGBoost, TabICL, mixed methods and multiple
+imputation. Runnable code is displayed without execution during package builds;
+`validate`, `ECOSolveR` and the optional mlr3 stack are needed to run it, and
+TabICL additionally needs its Python backend.
+
+## Two different restriction mechanisms
+
+Restricted regression constrains the coefficients estimated for predictions:
+`learner_params = list(restricted = list(rules = model_rules))`.
+Generic edit restrictions constrain completed numeric imputation values:
+`edit_rules = final_rules`. Both arguments take `validate::validator()` objects.
+They are independent and are never merged. The restricted learner still
+requires its own model rules and retains its `uncert = "none"` override.
+
+The generic mechanism works with numeric predictions from ranger, xgboost,
+tabicl2, regularized, robust, gam, robgam, restricted, and registered numeric
+learners. One projection follows each complete sweep, after stochastic draws
+and rounding, before convergence and chain statistics. Adjusted values feed
+into the next sweep. Projection is joint across target variables and methods.
+
+## Mathematical setup
+
+The setup separates the model that proposes imputations from the edits that
+make a completed record admissible. Both mechanisms use validators, but their
+optimization variables and objectives differ.
+
+| Aspect | Restricted regression | Generic value projection |
+|:--|:--|:--|
+| Rules argument | `learner_params$restricted$rules` | `edit_rules` |
+| Optimization variables | Regression coefficients | Eligible imputed numeric cells |
+| Applied during | Coefficient estimation | After a complete imputation sweep |
+| Changes the fitted coefficients | Yes | No |
+| Can couple outputs from different learners | No joint cross-learner projection | Yes |
+
+### Coefficient-constrained regression
+
+For one target, let $y_O$ contain its observed responses, $X_O$ the corresponding
+predictor design matrix, and $X_M$ the design matrix for rows whose target is
+missing. Restricted least squares estimates
+
+$$
+\widehat\beta
+=\operatorname*{arg\,min}_{\beta}\frac12\|y_O-X_O\beta\|_2^2
+\quad\text{subject to}\quad
+C\beta\le d,\qquad H\beta=g.
+$$
+
+The matrices $C,H$ and right-hand sides $d,g$ come from `model_rules` after
+substituting the other columns. For example, row-wise target bounds
+$\ell_i\le x_i^T\beta\le u_i$ become linear inequalities on the same coefficient
+vector. An equality on a prediction becomes an equality on that vector.
+The resulting missing-target predictions are $X_M\widehat\beta$. All constrained
+rows share coefficients, so individually feasible bounds can still be
+incompatible with a single fitted regression model.
+
+With `robust = TRUE`, the same coefficient constraints are retained and the
+least-squares objective is replaced by a standardized Huber loss:
+
+$$
+\min_{\beta}\sum_{i\in O}\rho_k\!\left(
+\frac{y_i-x_i^T\beta}{s}\right),\qquad
+\rho_k(r)=
+\begin{cases}
+\tfrac12 r^2,& |r|\le k,\\
+k|r|-\tfrac12 k^2,& |r|>k.
+\end{cases}
+$$
+
+Here $s$ is the residual scale used by the restricted learner and
+$k$ is `huber_k`. Robust fitting changes the influence of observed outliers;
+it does not change which coefficient restrictions are imposed.
+
+### Fixed observations and the feasible region
+
+For record $i$, let $M_i$ denote the originally eligible numeric imputation
+cells, including cells selected by `makeNA`, and $O_i$ the fixed cells.
+Columns excluded from imputation are fixed too. Let $o_i$ be their values and
+$\widehat x_{i,M_i}$ the imputations after prediction and any configured
+stochastic operations. Different entries may come from different learners.
+
+Consider full-record linear edits
+
+$$
+\widetilde A_{i,M_i}x_{i,M_i}
++\widetilde A_{i,O_i}o_i\le\widetilde b_i,
+\qquad
+\widetilde E_{i,M_i}x_{i,M_i}
++\widetilde E_{i,O_i}o_i=\widetilde f_i.
+$$
+
+Substituting fixed values gives
+
+$$
+A_i=\widetilde A_{i,M_i},\quad
+b_i=\widetilde b_i-\widetilde A_{i,O_i}o_i,
+\qquad
+E_i=\widetilde E_{i,M_i},\quad
+f_i=\widetilde f_i-\widetilde E_{i,O_i}o_i.
+$$
+
+The feasible region is
+$\mathcal C_i=\{x:A_ix\le b_i,\ E_ix=f_i\}$.
+Conditions evaluated from fixed categorical or numeric values select the
+active linear edits for that record. Fixed observations are substituted
+exactly; they are not assigned large penalty weights. A violation involving
+only fixed values is therefore infeasible and raises an error.
+
+### Weighted value projection
+
+With positive diagonal weights $W_i=\operatorname{diag}(w_{ij}:j\in M_i)$,
+the generic stage solves independently for each record
+
+$$
+\boxed{
+x^*_{i,M_i}
+=\operatorname*{arg\,min}_{x\in\mathcal C_i}
+\frac12(x-\widehat x_{i,M_i})^T
+W_i(x-\widehat x_{i,M_i})
+}.
+$$
+
+For a nonempty supported closed convex feasible region, positive weights give
+a unique projection. Feasible predictions are preserved exactly without a
+solver call. Cells absent from the active constraints also remain unchanged.
+An empty feasible region produces an error; solver status, finite solutions
+and absolute constraint residuals are checked before accepting any adjustment.
+The implementation accepts residuals within `tolerance` and represents strict
+inequalities using an interior margin.
+
+Equal weights measure changes in original units. Scaled weights use
+$w_{ij}=1/s_j^2$, where $s_j$ is an observed variable scale, so the objective
+measures squared standardized adjustments. Larger weights make changes more
+costly. An alternative is to use weights $1/\widehat\sigma_{ij}^2$ based on
+predictive uncertainty. Automatic predictive-uncertainty weighting is not
+implemented: observed scales are not predictive standard deviations, and the
+current named weight vector is common across records.
+
+### ECOS formulation
+
+Let $D_i=W_i^{1/2}$. The identity-design least-squares formulation from the
+setup is
+
+$$
+X_i=D_i,\qquad y_i=D_i\widehat x_{i,M_i},\qquad
+\|X_ix-y_i\|_2^2
+=(x-\widehat x_{i,M_i})^TW_i(x-\widehat x_{i,M_i}).
+$$
+
+The implementation uses the equivalent centered coordinates
+$z=D_i(x-\widehat x_{i,M_i})$ and the second-order cone problem
+
+$$
+\min_{z,t}t\quad\text{subject to}\quad
+\|z\|_2\le t,
+$$
+$$
+A_iD_i^{-1}z\le b_i-A_i\widehat x_{i,M_i},\qquad
+E_iD_i^{-1}z=f_i-E_i\widehat x_{i,M_i}.
+$$
+
+Minimizing the norm gives the same adjusted values as minimizing half its
+square. Each problem involves only one record's relevant imputed cells; no
+dense optimization matrix spans all missing cells in the dataset.
+
+### An accounting example with an analytical solution
+
+For equality-only edits with independent rows of $E$, the solution is
+
+$$
+x^*=\widehat x-W^{-1}E^T
+(EW^{-1}E^T)^{-1}(E\widehat x-f).
+$$
+
+Consider turnover $T$, costs $C$ and profit $P$, with $T=C+P$.
+If all three are imputed as $(100,70,40)$ and $W=I$, then
+$E=(1,-1,-1)$ and the residual is $-10$. The projection is
+
+$$
+(T^*,C^*,P^*)=
+\left(\frac{310}{3},\frac{200}{3},\frac{110}{3}\right).
+$$
+
+If turnover is observed at 100, it stays exactly 100 and only $(C,P)$ can move.
+Equal weights give $(C^*,P^*)=(65,35)$. For arbitrary positive weights,
+
+$$
+C^*=70-\frac{10w_P}{w_C+w_P},\qquad
+P^*=40-\frac{10w_C}{w_C+w_P}.
+$$
+
+For example, user-supplied $w_C=1/15^2$ and $w_P=1/10^2$ give
+$C^*\approx63.077$ and $P^*\approx36.923$.
+If nonnegativity constraints are also imposed, these examples already satisfy
+them; otherwise active bounds must be included in the joint optimization.
+
+### Sequential and stochastic imputation
+
+For a sequential sweep $s$, write the learner-and-uncertainty update as
+$\widehat x^{(s)}=F_s(x^{(s-1)},\varepsilon_s)$. The completed sweep is then
+projected record by record:
+
+$$
+x^{(s)}_i=P_{\mathcal C_i}^{W_i}
+\bigl(\widehat x^{(s)}_i\bigr).
+$$
+
+Convergence and the next sweep use $x^{(s)}$, so they reflect the adjusted
+values. With `sequential = FALSE`, this sequence runs once. With multiple
+imputation, it runs separately for every imputed dataset.
+The order is
+
+$$
+\text{prediction}\longrightarrow
+\text{stochastic imputation, if configured}\longrightarrow
+\text{joint projection}\longrightarrow
+\text{convergence or return}.
+$$
+
+The restricted learner retains its existing `uncert = "none"` override.
+For other learners, projection can move a PMM draw away from its donor or
+alter the distribution of a residual or normal-error draw.
+Sample-and-project generally does not sample from the constrained conditional
+law,
+
+$$
+p(x_M\mid x_O,\mathcal C)
+\propto p(x_M\mid x_O)\,\mathbf 1\{x\in\mathcal C\}.
+$$
+
+This expression applies when the admissible set has positive probability.
+For exact equalities under continuous predictions, the equality surface has
+probability zero; a constrained sampling model needs a suitable
+parameterization or conditional distribution on that surface.
+Constrained probabilistic sampling and edit-aware model training remain
+research extensions, rather than guarantees of the present projection method.
+
+## A structural business-survey example
+
+The bundled `lse_synthetic` dataset and `lse_synthetic_rules` provide a wider
+structural business-survey example. Here we take its continuous turnover
+components and impose a compact subset of linear edits. Convert integer
+storage explicitly when the variables are intended to represent continuous
+amounts. Discrete employee counts are outside this continuous optimizer.
+
+```{r example-data}
+library(VIM)
+data(lse_synthetic, package = "VIM")
+cols <- c("turnover_total", "turnover_domestic", "turnover_exports", "onace_section")
+business <- lse_synthetic[seq_len(100), cols]
+business[cols[1:3]] <- lapply(business[cols[1:3]], as.numeric)
+business$turnover_total[1:10] <- NA_real_
+business$turnover_domestic[5:15] <- NA_real_
+business$turnover_exports[8:18] <- NA_real_
+final_rules <- validate::validator(
+  accounting = turnover_total == turnover_domestic + turnover_exports,
+  turnover_total >= 0,
+  turnover_domestic >= 0,
+  turnover_exports >= 0
+)
+```
+
+Rules may use fixed columns excluded by `considered_variables`; these columns
+are read from the original input and do not become model predictors.
+A missing fixed rule value raises an error. Observed cells remain fixed, so an
+observed record violating an edit cannot be repaired by changing its observations.
+
+## Ranger and XGBoost
+
+```{r ranger}
+rf <- vimpute(business, method = "ranger", edit_rules = final_rules,
+  learner_params = list(ranger = list(num.trees = 100L)),
+  sequential = FALSE, uncert = "none", seed = 1)
+```
+
+```{r xgboost}
+boost <- vimpute(business, method = "xgboost", edit_rules = final_rules,
+  learner_params = list(xgboost = list(nrounds = 30L)),
+  sequential = TRUE, nseq = 3L, uncert = "none", seed = 1)
+```
+
+## TabICL and mixed methods
+
+TabICL needs the optional Python environment described in `tabiclImpute()`.
+The example is displayed rather than run during package builds, so it cannot
+download checkpoints. Its model is independent of the ECOS projection.
+
+```{r tabicl}
+tab <- vimpute(business, method = "tabicl2", edit_rules = final_rules,
+  learner_params = list(tabicl2 = list(finetune = FALSE, device = "cpu")),
+  sequential = FALSE, uncert = "none", seed = 1)
+```
+
+The next example mixes coefficient-restricted regression, Ranger and TabICL.
+The accounting identity is imposed once on the joint completed record after
+all three models produce their imputations.
+
+```{r mixed}
+model_rules <- validate::validator(turnover_total >= 0)
+mixed <- vimpute(business,
+  method = list(turnover_total = "restricted", turnover_domestic = "ranger",
+                turnover_exports = "tabicl2"),
+  learner_params = list(
+    turnover_total = list(rules = model_rules),
+    turnover_domestic = list(num.trees = 100L),
+    turnover_exports = list(device = "cpu", finetune = FALSE)),
+  edit_rules = final_rules,
+  edit_control = vimpute_edit_control(weights = "scaled"),
+  sequential = TRUE, nseq = 3L, uncert = "none", seed = 1)
+```
+
+## Minimal Example
+
+The smallest useful example is a lower bound. Here the observed data suggest a
+line through `(x, y)`, but the missing value is constrained to be at least 4.
+The imputation indicator `y_imp` marks the cell filled by `vimpute()`.
+
+```{r minimal-example, message=FALSE, warning=FALSE}
+library(VIM)
+
+small_data <- data.frame(
+  y = c(1, 2, NA),
+  x = c(1, 2, 3)
+)
+
+rules <- validate::validator(y >= 4)
+
+small_imp <- vimpute(
+  small_data,
+  method = list(y = "restricted"),
+  pmm = FALSE,
+  sequential = FALSE,
+  learner_params = list(
+    restricted = list(
+      rules = rules,
+      save_optimization_problem = TRUE
+    )
+  )
+)
+
+small_imp
+```
+
+The imputed value satisfies the model rule. Observed values 1 and 2 stay
+unchanged even though they fail that rule: the legacy restricted learner
+constrains its missing-target predictions. Passing the unconditional rule
+`y >= 4` as `edit_rules` would raise an error because the generic stage also
+checks the fixed observations. The saved optimization problem can
+be inspected when `save_optimization_problem = TRUE`.
+
+```{r minimal-check}
+all(validate::values(validate::confront(
+  small_imp[small_imp$y_imp, , drop = FALSE], rules
+)))
+
+names(attr(small_imp, "restricted_optimization_problems"))
+```
+
+## Two validators can deliberately disagree
+
+The coefficient stage below predicts at least four in the missing row.
+The generic stage independently restricts that row to at most three. It changes
+that prediction to three. Only the generic validator is guaranteed for the
+final output: parameter-stage rules not included there may cease to hold.
+
+```{r independent-rules}
+d <- data.frame(y = c(1, 2, NA_real_), x = c(1, 2, 3))
+model_rules <- validate::validator(y >= 4)
+final_rules <- validate::validator(if (x > 2) y <= 3)
+result <- vimpute(d, method = "restricted",
+  learner_params = list(restricted = list(rules = model_rules,
+    save_optimization_problem = TRUE)),
+  edit_rules = final_rules,
+  edit_control = list(save_optimization_problem = TRUE),
+  sequential = FALSE, uncert = "none")
+```
+
+## Interval, conditional, formula and robust examples
+
+The following examples reproduce the interval, conditional, formula and robust
+regression scenarios of the original restricted regression vignette. Each passes the
+numeric rules explicitly to both `learner_params` and `edit_rules`: the first
+constrains the restricted model, and the second checks the completed records
+and projects any remaining violations. All observed records in these examples
+satisfy the final edits. To run only the original coefficient restrictions,
+omit `edit_rules`.
+
+These examples require the optional restricted-regression dependencies,
+including `validate`, `ECOSolveR` and the mlr3 stack. Like the other examples in
+this vignette, they are displayed without execution during package builds.
+
+## Interval Rules
+
+Restricted regression is most natural when variables have row-wise lower and
+upper bounds. In this example `amount` is imputed while every completed value
+must remain between its corresponding `lower` and `upper` columns.
+
+```{r interval-rules, message=FALSE, warning=FALSE}
+set.seed(42)
+n <- 100L
+
+bounded_data <- data.frame(
+  x1 = stats::runif(n, 0, 10),
+  x2 = stats::runif(n, -2, 2)
+)
+bounded_data$amount <- 20 + 1.5 * bounded_data$x1 - 0.75 * bounded_data$x2
+bounded_data$lower <- bounded_data$amount - 0.5
+bounded_data$upper <- bounded_data$amount + 0.5
+bounded_data <- bounded_data[, c("amount", "x1", "x2", "lower", "upper")]
+
+missing_idx <- sample.int(n, 20L)
+bounded_missing <- bounded_data
+bounded_missing$amount[missing_idx] <- NA_real_
+
+bounded_rules <- validate::validator(
+  amount >= lower,
+  amount <= upper,
+  amount >= 0,
+  lower <= upper
+)
+
+bounded_imp <- vimpute(
+  bounded_missing,
+  method = list(amount = "restricted"),
+  pmm = FALSE,
+  sequential = FALSE,
+  edit_rules = bounded_rules,
+  learner_params = list(amount = list(rules = bounded_rules))
+)
+
+head(bounded_imp[bounded_imp$amount_imp, c("amount", "lower", "upper")])
+```
+
+```{r interval-check}
+completed <- as.data.frame(bounded_imp)[, names(bounded_data), drop = FALSE]
+
+sum(bounded_imp$amount_imp)
+all(validate::values(validate::confront(completed, bounded_rules)))
+```
+
+## Categorical and conditional rules
+
+Rules can also involve categorical predictors and conditional logic. The
+restricted learner uses the edit rules only to constrain the imputed target; the
+remaining columns can be numeric or categorical predictors.
+
+```{r conditional-rules, message=FALSE, warning=FALSE}
+categorical_data <- bounded_missing
+categorical_data$c1 <- factor(rep(c("A", "B", "C"), length.out = n))
+categorical_data$c2 <- factor(rep(c("B", "C", "A"), length.out = n))
+categorical_data$c3 <- factor(rep(c("C", "A", "B"), length.out = n))
+
+conditional_rules <- validate::validator(
+  amount >= lower,
+  amount <= upper,
+  amount >= 0,
+  lower <= upper,
+  (c1 == "A") + (c2 == "A") + (c3 == "A") <= 2,
+  if (c1 == "A") amount >= 2
+)
+
+# The categorical count rule concerns only observed, fixed predictors.
+fixed_category_rules <- validate::validator(
+  (c1 == "A") + (c2 == "A") + (c3 == "A") <= 2
+)
+stopifnot(all(validate::values(validate::confront(
+  categorical_data, fixed_category_rules
+))))
+conditional_final_rules <- validate::validator(
+  amount >= lower,
+  amount <= upper,
+  amount >= 0,
+  lower <= upper,
+  if (c1 == "A") amount >= 2
+)
+
+categorical_imp <- vimpute(
+  categorical_data,
+  method = list(amount = "restricted"),
+  pmm = FALSE,
+  sequential = FALSE,
+  edit_rules = conditional_final_rules,
+  learner_params = list(amount = list(rules = conditional_rules))
+)
+
+all(validate::values(validate::confront(categorical_imp, conditional_rules)))
+```
+
+The original categorical count rule remains in the restricted learner's
+validator. Its sum of categorical comparisons is not supported by the generic
+linear parser, so we check it separately before imputation. The final projector
+uses the numeric bounds and the conditional rule, whose condition depends on
+an observed categorical value.
+
+## Formula Control
+
+`formula` can be used with `method = "restricted"` to choose the predictors in
+the regression model while the edit rules still constrain the final
+predictions. The left-hand side must be the untransformed target variable.
+
+```{r formula-control, message=FALSE, warning=FALSE}
+n_formula <- 80L
+formula_data <- data.frame(
+  y = 10 + 2 * seq_len(n_formula),
+  x_signal = seq_len(n_formula),
+  x_noise = 10 + 2 * seq_len(n_formula),
+  lower = 0,
+  upper = 200
+)
+
+formula_missing_idx <- c(12L, 24L, 36L)
+expected_y <- formula_data$y[formula_missing_idx]
+formula_data$y[formula_missing_idx] <- NA_real_
+formula_data$x_noise[formula_missing_idx] <- -1000
+
+formula_rules <- validate::validator(y >= lower, y <= upper, lower <= upper)
+
+formula_imp <- vimpute(
+  formula_data,
+  method = list(y = "restricted"),
+  formula = list(y = y ~ x_signal),
+  pmm = FALSE,
+  sequential = FALSE,
+  edit_rules = formula_rules,
+  learner_params = list(y = list(rules = formula_rules))
+)
+
+formula_imp[formula_missing_idx, c("y", "x_signal", "x_noise", "y_imp")]
+max(abs(formula_imp$y[formula_missing_idx] - expected_y))
+```
+
+## Robust Restricted Regression
+
+Set `robust = TRUE` to use a Huber loss instead of ordinary least squares. This
+is helpful when the observed data contain influential outliers but the final
+imputed values must still obey the edit rules.
+
+```{r robust-restricted, message=FALSE, warning=FALSE}
+robust_rules <- validate::validator(y >= 0)
+
+outlier_data <- data.frame(
+  x = 0:21,
+  y = 1 + 2 * (0:21)
+)
+outlier_data$y[21L] <- 500
+outlier_data$y[22L] <- NA_real_
+
+ordinary_imp <- vimpute(
+  outlier_data,
+  method = list(y = "restricted"),
+  formula = list(y = y ~ x),
+  pmm = FALSE,
+  sequential = FALSE,
+  edit_rules = robust_rules,
+  learner_params = list(y = list(rules = robust_rules))
+)
+
+robust_imp <- vimpute(
+  outlier_data,
+  method = list(y = "restricted"),
+  formula = list(y = y ~ x),
+  pmm = FALSE,
+  sequential = FALSE,
+  edit_rules = robust_rules,
+  learner_params = list(y = list(
+    rules = robust_rules,
+    robust = TRUE,
+    huber_k = 1.345
+  ))
+)
+
+c(
+  ordinary = ordinary_imp$y[22L],
+  robust = robust_imp$y[22L],
+  expected_without_outlier = 43
+)
+```
+
+## Synthetic LSE Data
+
+The package includes `lse_synthetic` and `lse_synthetic_rules`, a compact
+synthetic business-statistics example with many linear edit rules. The rules
+ship as plain data frames of rule text (so the data set does not depend on
+`validate`); `validate::validator(.data = )` turns a rule set into a validator.
+The example uses 80 records and keeps the original coefficient-restricted
+workflow, without generic `edit_rules`. It includes integer employee counts,
+which the generic continuous projector cannot adjust. For generic projection
+of continuous amounts, use the turnover example above.
+
+```{r lse-example, message=FALSE, warning=FALSE}
+data("lse_synthetic", package = "VIM")
+data("lse_synthetic_rules", package = "VIM")
+
+lse_rules <- validate::validator(.data = lse_synthetic_rules$edit)
+
+numeric_cols <- c(
+  "persons_employed",
+  "employees_paid",
+  "self_employed",
+  "employees_male",
+  "employees_female",
+  "employees_blue_collar",
+  "employees_white_collar",
+  "apprentices",
+  "marginal_employees",
+  "turnover_total",
+  "turnover_domestic",
+  "turnover_exports",
+  "e_commerce_turnover",
+  "material_costs",
+  "purchased_services",
+  "rents_leasing",
+  "other_operating_expense",
+  "intermediate_consumption",
+  "gross_value_added",
+  "personnel_costs",
+  "wages_salaries",
+  "social_security_costs",
+  "other_personnel_costs",
+  "gross_operating_surplus",
+  "investments_tangible",
+  "investment_machinery",
+  "investment_buildings",
+  "investment_software"
+)
+
+edit_cols <- c(
+  "reporting_year",
+  "onace_section",
+  "onace_group",
+  "nuts2",
+  "data_source",
+  "survey_mode",
+  "employment_size_class",
+  "turnover_size_class",
+  numeric_cols
+)
+
+lse_complete <- lse_synthetic[seq_len(80L), edit_cols]
+
+missing_map <- list(
+  turnover_total = c(2L, 15L),
+  intermediate_consumption = c(13L, 18L),
+  gross_value_added = c(24L, 31L),
+  personnel_costs = c(39L, 45L),
+  investments_tangible = c(52L, 60L)
+)
+
+lse_missing <- lse_complete
+for (var in names(missing_map)) {
+  lse_missing[missing_map[[var]], var] <- NA_real_
+}
+
+restricted_formulas <- setNames(
+  lapply(names(missing_map), function(var) {
+    stats::reformulate(setdiff(numeric_cols, var), response = var)
+  }),
+  names(missing_map)
+)
+
+lse_imp <- vimpute(
+  lse_missing,
+  method = "restricted",
+  formula = restricted_formulas,
+  pmm = FALSE,
+  sequential = FALSE,
+  learner_params = list(
+    restricted = list(
+      rules = lse_rules,
+      save_optimization_problem = TRUE
+    )
+  )
+)
+
+lse_completed <- as.data.frame(lse_imp)[, edit_cols, drop = FALSE]
+
+sum(as.data.frame(lse_imp)[paste0(names(missing_map), "_imp")])
+all(validate::values(validate::confront(lse_completed, lse_rules)))
+sort(names(attr(lse_imp, "restricted_optimization_problems")))
+```
+
+The same pattern scales to many variables: define a `validate::validator`
+object for the edits, provide one formula per imputed target when you need
+predictor control, and pass the rules through `learner_params` for either the
+method name (`restricted`) or the individual variables.
+
+## Projection controls
+
+`weights = "equal"` measures absolute distances in input units. The default
+`"scaled"` uses inverse squared observed scales (MAD, IQR/1.349, SD, then one).
+Constant or nearly constant variables use one; extreme scales are bounded to
+avoid overflow. These scales do not estimate predictive uncertainty. Cells
+selected by `makeNA` do not contribute to observed scales. A named positive
+weight vector must cover every eligible numeric variable referenced by the edits.
+
+```{r control}
+control <- vimpute_edit_control(
+  weights = c(turnover_total = 1, turnover_domestic = 2, turnover_exports = 2),
+  tolerance = 1e-6, on_infeasible = "error",
+  save_optimization_problem = TRUE
+)
+```
+
+## Stochastic and multiple imputation
+
+For other learners, bootstrap, PMM, residual sampling and normal-error draws
+retain their normal behavior before projection. Projected PMM values can move
+away from their donors. Each multiple-imputation dataset is projected separately.
+`vim_complete()` returns completed data with that run's edit diagnostics.
+
+```{r multiple-imputation}
+mi <- vimpute(business, method = "ranger", edit_rules = validate::validator(
+    turnover_total == turnover_domestic + turnover_exports,
+    turnover_domestic >= 0, turnover_exports >= 0),
+  m = 5L, boot = TRUE, uncert = "normalerror", seed = 7)
+completed <- vim_complete(mi, 1)
+attr(completed, "edit_diagnostics")
+```
+
+Deterministic projection can reduce between-imputation variance and change the
+joint distribution. Projection of stochastic imputations is not, by itself, a
+justification for theoretically proper multiple imputation.
+
+## Diagnostics
+
+`attr(result, "edit_diagnostics")` reports unique records ever adjusted,
+unique variables adjusted, record counts, solver calls and maximum absolute,
+weighted and rule-residual adjustments. `per_sweep` retains the corresponding
+sweep summaries. Records counted as already satisfying were never adjusted
+in any sweep. With `m > 1`, the attribute is a list of summaries by imputation.
+
+Saving optimization problems is optional; otherwise no solver structures or
+original stochastic prediction vectors are retained. Saved problems are grouped
+by sweep and include feasible predictions with a NULL solver input, as well as
+record indices, variable names, weights, constraint matrices, original
+predictions, adjusted values, ECOS inputs/output/status and residuals.
+`stochastic_predictions` preserves all eligible numeric cells of that record
+before projection, including cells outside the active edits.
+`restricted_optimization_problems` remains a separate attribute.
+
+```{r diagnostics}
+attr(result, "edit_diagnostics")
+attr(result, "edit_optimization_problems")[[1]][[1]]
+attr(result, "restricted_optimization_problems")
+```
+
+## Supported edits and limitations
+
+Supported edits are record-wise linear bounds, equalities and inequalities,
+including coefficients determined by fixed values. For example,
+`amount <= fixed_rate * observed_total` is linear after substitution.
+Conditions must depend only on fixed values. Disjunctions are supported when
+one alternative is determined from fixed values, such as
+`industry == "A" | amount >= 0`. A conditional consequence can contain
+several jointly applied edits. Strict inequalities use an interior margin of
+twice the absolute tolerance.
+
+The continuous optimizer rejects adjustable integer columns, nonlinear edits,
+conditions depending on adjustable values, and unresolved nonconvex or
+mixed-integer disjunctions. Cross-record or aggregate constraints are not
+supported. Use continuous numeric storage only when fractional values are
+meaningful. Infeasibility or numerical failure raises `vimpute_edit_error`,
+with the record and rule names available on the error condition. No policy for
+silently retaining invalid predictions is provided.
+
+Formula convenience wrappers apply the same projector jointly after assembling
+their LHS columns. Their RHS missings remain outside projection eligibility.
+`tabiclImpute()` forwards edit arguments directly to `vimpute()`.
