@@ -35,6 +35,7 @@ reference:
   desc: Functions to impute missing data
   contents:
   - has_concept("imputation methods")
+  - tabiclImpute
   - initialise
   - maxCat
   - sampleCat
@@ -56,6 +57,7 @@ reference:
   - vimpute_methods
   - vimpute_search_space
   - vimpute_tune_control
+  - vimpute_edit_control
   - register_vimpute_method
   - unregister_vimpute_method
 - title: Simulation and diagnostics
