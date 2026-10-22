@@ -148,7 +148,10 @@ factor ordered and semi-continous variables.</p>
 
 
 <dt id="arg-levorders">levOrders<a class="anchor" aria-label="anchor" href="#arg-levorders"></a></dt>
-<dd><p>vector with number of levels for each orders variable</p></dd>
+<dd><p>vector of positive integer level counts, one for each
+variable in <code>orders</code>. Ordered factors must have identical levels in both
+inputs, including unused levels. Numeric ordinal variables must contain
+integer ranks from 1 to the corresponding level count, or NA.</p></dd>
 
 
 <dt id="arg-mixed-constant">mixed.constant<a class="anchor" aria-label="anchor" href="#arg-mixed-constant"></a></dt>
@@ -184,6 +187,9 @@ contributes up to about 2 (rather than a variable's nominal maximum of 1).
 This sentinel convention departs from Gower's (1971) omit-and-renormalise
 rule and biases nearest-neighbour selection towards records that share the
 same missingness pattern.</p>
+<p>Ordinal distances use the full declared scale, including unused levels.
+A single-level ordinal variable contributes zero between observed values;
+missing values still follow the sentinel convention described above.</p>
 <p>The distance computation is parallelised with OpenMP where R was built with
 OpenMP support. The number of threads is <code>getOption("VIM.ncores")</code>; if the
 option is unset, at most 2 threads are used while the package is checked

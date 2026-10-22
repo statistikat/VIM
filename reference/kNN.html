@@ -121,7 +121,9 @@ for numerical, categorical, ordered and semi-continous variables.</p>
 <span>  useImputedDist <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  weightDist <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  methodStand <span class="op">=</span> <span class="st">"range"</span>,</span>
-<span>  ordFun <span class="op">=</span> <span class="va">medianSamp</span></span>
+<span>  ordFun <span class="op">=</span> <span class="va">medianSamp</span>,</span>
+<span>  id_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  return_donor <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -234,10 +236,21 @@ aggregation step</p></dd>
 <dd><p>function for aggregating the k Nearest Neighbours in the case
 of a ordered factor variable</p></dd>
 
+
+<dt id="arg-id-var">id_var<a class="anchor" aria-label="anchor" href="#arg-id-var"></a></dt>
+<dd><p>NULL or a single character string naming a column of <code>data</code>
+containing donor IDs. If NULL, row numbers are used.</p></dd>
+
+
+<dt id="arg-return-donor">return_donor<a class="anchor" aria-label="anchor" href="#arg-return-donor"></a></dt>
+<dd><p>TRUE/FALSE whether to return donor IDs for each variable
+in a character column named <code>x_donor_id</code>, where <code>x</code> is the imputed variable.
+Multiple donor IDs are separated by <code>;</code>. Rows not imputed have NA donor IDs.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>the imputed data set.</p>
+    <p>the imputed data set, optionally including donor ID columns.</p>
     </div>
     <div id="details">
     <h2>Details</h2>
