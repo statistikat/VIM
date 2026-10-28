@@ -23,8 +23,12 @@ knitr::opts_chunk$set(
   fig.align = "center"
 )
 
-# Cairo PNGs are a fifth smaller than macOS quartz ones (keeps the tarball < 5 MB)
-if (capabilities("cairo")) options(bitmapType = "cairo")
+# Cairo PNGs are a fifth smaller than macOS quartz ones (keeps the tarball < 5 MB);
+# probe the device: capabilities("cairo") is TRUE on macOS even without XQuartz
+cairo_ok <- tryCatch({
+  grDevices::png(tempfile(fileext = ".png"), type = "cairo"); grDevices::dev.off(); TRUE
+}, error = function(e) FALSE, warning = function(w) FALSE)
+if (cairo_ok) knitr::opts_chunk$set(dev.args = list(type = "cairo"))
 
 # vimpute() and the wrappers built on it run on the mlr3 stack, which VIM
 # suggests rather than imports (it backs vimpute() alone, and a hard
