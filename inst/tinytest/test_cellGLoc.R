@@ -547,6 +547,10 @@ expect_equal(Z_all, VIM:::.gloc_cond_resid(Rw3, Sw3, W = NULL))
 # and an all-clean W must agree with no W at all
 expect_equal(Z_all, VIM:::.gloc_cond_resid(Rw3, Sw3, W = matrix(1, 500, 3)))
 
+# CRAN runs the sections above (helpers and the basic fit, ~3 s); the rest is
+# about 45 s of fits and stays at_home() for the CRAN check-time budget.
+if (!at_home()) exit_file("slower cellGLoc sections run at home")
+
 # ==========================================================================
 # The two performance levers
 #

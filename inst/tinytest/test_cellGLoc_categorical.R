@@ -335,6 +335,10 @@ w6 <- collect_warnings(S6 <- VIM:::.gloc_scatter_soft(Rsc, Wsc, Msc, have_cw = F
 expect_true(any(grepl("^cellGLoc: ", w6)))
 expect_identical(dim(S6), c(3L, 3L))
 
+# CRAN runs the helper sections above (~1 s); the EM fits below are about
+# 23 s and stay at_home() for the CRAN check-time budget.
+if (!at_home()) exit_file("cellGLoc EM fits run at home")
+
 # ==========================================================================
 # Task 5: the EM inside imputeCellGLoc()
 # ==========================================================================

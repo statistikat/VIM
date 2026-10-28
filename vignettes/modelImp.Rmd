@@ -18,6 +18,9 @@ knitr::opts_chunk$set(
   fig.align = "center"
 )
 
+# Cairo PNGs are a fifth smaller than macOS quartz ones (keeps the tarball < 5 MB)
+if (capabilities("cairo")) options(bitmapType = "cairo")
+
 # vimpute() and the wrappers built on it run on the mlr3 stack, which VIM
 # suggests rather than imports (it backs vimpute() alone, and a hard
 # dependency would tie every reverse dependency of VIM to the mlr3 chain).
