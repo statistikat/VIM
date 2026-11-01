@@ -316,6 +316,7 @@ register_restricted_learners <- function() {
               "`formula` must be NULL or a formula object."
             }
           ),
+          per_observation = paradox::p_lgl(default = FALSE),
           robust = paradox::p_lgl(default = FALSE),
           huber_k = paradox::p_dbl(
             lower = .Machine$double.eps,
@@ -423,40 +424,49 @@ register_restricted_learners <- function() {
           contrasts.arg = self$state$contrasts
         )
 
-        constraints <- .restricted_validate_constraints(
-          rules = self$state$rules,
-          lhs = self$state$target,
-          data_pred = newdata,
-          X_pred = X_pred
-        )
-
         save_problem <- isTRUE(pv$save_optimization_problem)
         huber_k <- pv$huber_k
         if (is.null(huber_k)) {
           huber_k <- 1.345
         }
-        beta <- .restricted_ecos_lm(
-          X = model$X_train,
-          y = model$y_train,
-          C = constraints$C,
-          d = constraints$d,
-          Aeq = constraints$Aeq,
-          beq = constraints$beq,
-          robust = isTRUE(pv$robust),
-          huber_k = huber_k,
-          save_optimization_problem = save_problem
-        )
-
-        if (save_problem && is.environment(pv$optimization_problem_store)) {
-          target <- self$state$target
-          previous <- pv$optimization_problem_store[[target]]
-          pv$optimization_problem_store[[target]] <- c(
-            previous,
-            list(attr(beta, "optimization_problem", exact = TRUE))
+        predict_rows <- function(rows) {
+          design <- X_pred[rows, , drop = FALSE]
+          constraints <- .restricted_validate_constraints(
+            rules = self$state$rules,
+            lhs = self$state$target,
+            data_pred = newdata[rows, , drop = FALSE],
+            X_pred = design
           )
-        }
 
-        response <- as.vector(X_pred %*% beta)
+          beta <- .restricted_ecos_lm(
+            X = model$X_train,
+            y = model$y_train,
+            C = constraints$C,
+            d = constraints$d,
+            Aeq = constraints$Aeq,
+            beq = constraints$beq,
+            robust = isTRUE(pv$robust),
+            huber_k = huber_k,
+            save_optimization_problem = save_problem
+          )
+
+          if (save_problem && is.environment(pv$optimization_problem_store)) {
+            target <- self$state$target
+            previous <- pv$optimization_problem_store[[target]]
+            pv$optimization_problem_store[[target]] <- c(
+              previous,
+              list(attr(beta, "optimization_problem", exact = TRUE))
+            )
+          }
+
+          as.vector(design %*% beta)
+        }
+        rows <- seq_len(nrow(X_pred))
+        response <- if (isTRUE(pv$per_observation)) {
+          vapply(rows, predict_rows, numeric(1L))
+        } else {
+          predict_rows(rows)
+        }
         mlr3::PredictionRegr$new(task = task, response = response)
       }
     )

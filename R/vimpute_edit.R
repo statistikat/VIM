@@ -44,6 +44,7 @@ vimpute_edit_control <- function(weights = "scaled", tolerance = 1e-6,
       anyNA(names(control)) || any(!nzchar(names(control))) || anyDuplicated(names(control)))))
     stop("edit_control must be a named list or vimpute_edit_control object")
   unknown <- setdiff(names(control), names(formals(vimpute_edit_control)))
+  unknown <- setdiff(unknown, c("LETTERS", "letters"))
   if (length(unknown)) stop("Unknown edit_control fields: ", paste(unknown, collapse = ", "))
   do.call(vimpute_edit_control, unclass(control))
 }
@@ -83,7 +84,7 @@ vimpute_edit_control <- function(weights = "scaled", tolerance = 1e-6,
   if (any(all.vars(expr) %in% free))
     .edit_abort("Conditions/disjunction alternatives must depend only on fixed variables", row, name)
   allowed <- c("(", "==", "!=", "<", "<=", ">", ">=", "&", "&&", "|", "||", "!",
-               "+", "-", "*", "/", "%in%", "c")
+               "+", "-", "*", "/", "%in%", "c", "setdiff", "[", ":")
   safe <- function(x) !is.call(x) || (as.character(x[[1L]]) %in% allowed &&
     all(vapply(as.list(x)[-1L], safe, logical(1))))
   if (!safe(expr)) .edit_abort("Unsupported condition expression", row, name)
@@ -122,6 +123,15 @@ vimpute_edit_control <- function(weights = "scaled", tolerance = 1e-6,
   expr <- .restricted_rewrite_in_range(expr)
   if (is.call(expr) && as.character(expr[[1L]]) %in% c("&", "&&"))
     return(.edit_record_rules(expr, fixed, free, row, name))
+  # Fully observed categorical predicates have a truth value and no
+  # coefficients to add to the continuous optimization problem.
+  vars <- all.vars(expr)
+  if (!any(vars %in% free) &&
+      (any(vapply(fixed[intersect(vars, names(fixed))], is.character, logical(1))) ||
+       (is.call(expr) && as.character(expr[[1L]]) %in% c("%in%", "!=")))) {
+    if (.edit_condition(expr, fixed, free, row, name)) return(list())
+    .edit_abort("Infeasible constraint on fixed values", row, name, infeasible = TRUE)
+  }
   if (!is.call(expr) || !as.character(expr[[1L]]) %in% c("==", "<=", ">=", "<", ">"))
     .edit_abort("Unsupported edit: expected a linear equality or inequality", row, name)
   rule <- tryCatch(.restricted_rewrite_mip_rule(
@@ -131,7 +141,7 @@ vimpute_edit_control <- function(weights = "scaled", tolerance = 1e-6,
   list(rule)
 }
 
-.edit_constraints <- function(prepared, full, free, row) {
+.edit_constraints <- function(prepared, full, free, row, strict_margin = 2 * prepared$control$tolerance) {
   fixed_names <- setdiff(prepared$variables, free)
   fixed <- lapply(full[fixed_names], function(x) {
     z <- x[row]
@@ -148,7 +158,7 @@ vimpute_edit_control <- function(weights = "scaled", tolerance = 1e-6,
   for (j in seq_along(pieces)) {
     p <- pieces[[j]]
     if (length(p$a)) mat[j, names(p$a)] <- p$a
-    rhs[j] <- p$b - if (identical(p$op, "<")) 2 * prepared$control$tolerance else 0
+    rhs[j] <- p$b - if (identical(p$op, "<")) strict_margin else 0
     equality[j] <- identical(p$op, "=="); rule_names[j] <- p$rule
   }
   list(C = mat[!equality, , drop = FALSE], d = rhs[!equality],
@@ -214,7 +224,9 @@ vimpute_edit_control <- function(weights = "scaled", tolerance = 1e-6,
   if (nrow(current) != nrow(original)) stop("Projection data and original_data must have the same rows")
   for (v in intersect(names(current), names(full))) full[[v]] <- current[[v]]
   unknown <- setdiff(prepared$variables, names(full))
+  unknown <- setdiff(unknown, c("LETTERS", "letters"))
   if (length(unknown)) stop("Edit rules reference missing columns: ", paste(unknown, collapse = ", "))
+  prepared$variables <- intersect(prepared$variables, names(full))
   mask <- matrix(FALSE, nrow(full), ncol(full), dimnames = list(NULL, names(full)))
   if (is.matrix(imputation_mask) || is.data.frame(imputation_mask)) {
     if (nrow(imputation_mask) != nrow(full) || is.null(colnames(imputation_mask))) stop("Invalid imputation_mask")

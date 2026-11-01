@@ -122,6 +122,25 @@ if (
     sort(names(missing_map))
   )
 
+  lse_per_obs <- vimpute(
+    lse_missing,
+    method = "restricted",
+    formula = restricted_formulas,
+    pmm = FALSE,
+    sequential = FALSE,
+    learner_params = list(restricted = list(
+      rules = lse_edit_rules, per_observation = TRUE
+    ))
+  )
+  for (var in names(missing_map)) {
+    expect_false(anyNA(lse_per_obs[[var]][missing_map[[var]]]))
+  }
+  per_obs_checks <- validate::values(validate::confront(
+    as.data.frame(lse_per_obs)[, edit_cols, drop = FALSE], lse_edit_rules
+  ))
+  expect_equal(dim(per_obs_checks), c(nrow(lse_missing), length(lse_edit_rules)))
+  expect_true(all(per_obs_checks))
+
   lse_missing2 <- lse_synthetic[seq_len(10000L), edit_cols]
   set.seed(20260630)
   missing_rows <- sample.int(10000L, 600L)
@@ -253,4 +272,66 @@ if (
     sort(names(attr(lse_imp, "restricted_optimization_problems"))),
     sort(names(missing_map))
   )
+
+  # A shared headcount regression cannot reproduce the distinct accounting
+  # totals required by the edits for rows with identical headcounts.
+  check_headcount <- function(masked_data, missing_map) {
+    headcount_formulas <- lapply(names(missing_map), function(var) {
+      stats::reformulate("persons_employed", response = var)
+    })
+    names(headcount_formulas) <- names(missing_map)
+    fit_headcount <- function(per_observation) {
+      vimpute(
+        masked_data,
+        method = "restricted",
+        formula = headcount_formulas,
+        pmm = FALSE,
+        sequential = FALSE,
+        learner_params = list(restricted = list(
+          rules = lse_edit_rules, per_observation = per_observation
+        ))
+      )
+    }
+    expect_error(fit_headcount(FALSE), pattern = "equality constraints are inconsistent")
+    row_fit <- as.data.frame(fit_headcount(TRUE))
+    for (var in names(missing_map)) {
+      rows <- sort(missing_map[[var]])
+      expect_equal(which(row_fit[[paste0(var, "_imp")]]), rows)
+      expect_false(anyNA(row_fit[[var]][rows]))
+      expect_equal(row_fit[[var]][rows], lse_synthetic[[var]][rows], tolerance = 1e-7)
+    }
+    row_checks <- validate::values(validate::confront(row_fit[, edit_cols], lse_edit_rules))
+    expect_equal(dim(row_checks), c(10000L, 92L))
+    expect_true(all(row_checks))
+  }
+  check_headcount(lse_missing2, missing_map)
+
+  # Mask three totals together while keeping their accounting components observed.
+  overlap_data <- lse_synthetic[seq_len(10000L), edit_cols]
+  overlap_targets <- c("turnover_total", "personnel_costs", "investments_tangible")
+  overlap_rows <- missing_rows[seq_len(200L)]
+  overlap_map <- setNames(rep(list(overlap_rows), length(overlap_targets)), overlap_targets)
+  overlap_data[overlap_rows, overlap_targets] <- NA_real_
+  check_headcount(overlap_data, overlap_map)
+
+  # Turnover and intermediate consumption are linked through gross value added.
+  linked_data <- lse_synthetic[seq_len(10000L), edit_cols]
+  linked_data[overlap_rows, names(missing_map)] <- NA_real_
+  fit_linked <- function(per_observation) {
+    vimpute(
+      linked_data, method = "restricted", formula = restricted_formulas,
+      sequential = FALSE, pmm = FALSE,
+      learner_params = list(restricted = list(rules = lse_edit_rules, per_observation = per_observation))
+    )
+  }
+  expect_error(fit_linked(FALSE), pattern = "equality constraints are inconsistent")
+  linked_fit <- as.data.frame(fit_linked(TRUE))
+  for (v in names(missing_map)) {
+    expect_equal(which(linked_fit[[paste0(v, "_imp")]]), sort(overlap_rows))
+    expect_equal(linked_fit[[v]][overlap_rows], lse_synthetic[[v]][overlap_rows],
+                 tolerance = 1e-7)
+  }
+  linked_checks <- validate::values(validate::confront(linked_fit[, edit_cols], lse_edit_rules))
+  expect_equal(dim(linked_checks), c(10000L, 92L))
+  expect_true(all(linked_checks))
 }

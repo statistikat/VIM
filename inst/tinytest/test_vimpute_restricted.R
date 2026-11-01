@@ -50,6 +50,24 @@ if (
     names(optimization_problems$y[[1L]]$arguments),
     c("c", "G", "h", "dims", "A", "b", "control")
   )
+
+  # Identical design rows require different coefficients to meet these edits.
+  row_data <- data.frame(y = c(1, 2, 3, NA, NA), x = c(1, 2, 3, 2, 2),
+                         required = c(1, 2, 3, 4, 7))
+  row_imp <- vimpute(
+    row_data,
+    method = list(y = "restricted"),
+    formula = list(y = y ~ x),
+    pmm = FALSE,
+    sequential = FALSE,
+    learner_params = list(y = list(
+      rules = validate::validator(y == required),
+      per_observation = TRUE,
+      save_optimization_problem = TRUE
+    ))
+  )
+  expect_equal(row_imp$y, row_data$required, tolerance = 1e-6)
+  expect_equal(length(attr(row_imp, "restricted_optimization_problems")$y), 2L)
 }
 
 if (

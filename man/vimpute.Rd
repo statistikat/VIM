@@ -118,6 +118,11 @@ Can be provided in \strong{three ways}:
 For \code{restricted}, set \code{save_optimization_problem = TRUE} to attach the
 exact ECOS problem arguments to the returned object under the
 \code{restricted_optimization_problems} attribute.
+Set \code{per_observation = TRUE} to fit separate coefficients for each missing
+observation using all training rows and only that observation's edit constraints.
+When edit rules link missing per-observation targets in a row, the learner
+initializes their missing predictors jointly at the feasible values nearest
+their observed column medians, then fits each target in visit order.
 Set \code{robust = TRUE} to replace least squares with Huber loss; \code{huber_k}
 controls its tuning constant and defaults to \code{1.345}.
 }}

@@ -54,7 +54,7 @@ optimization variables and objectives differ.
 
 For one target, let $y_O$ contain its observed responses, $X_O$ the corresponding
 predictor design matrix, and $X_M$ the design matrix for rows whose target is
-missing. Restricted least squares estimates
+missing. With the default `per_observation = FALSE`, restricted least squares estimates
 
 $$
 \widehat\beta
@@ -70,6 +70,14 @@ vector. An equality on a prediction becomes an equality on that vector.
 The resulting missing-target predictions are $X_M\widehat\beta$. All constrained
 rows share coefficients, so individually feasible bounds can still be
 incompatible with a single fitted regression model.
+
+With `per_observation = TRUE`, each missing row $i$ gets its own coefficient
+vector $\widehat\beta_i$. Each fit uses the same observed training responses
+and design matrix, but applies only the constraints for row $i$. The
+prediction is $x_i^T\widehat\beta_i$. Two businesses with identical model
+predictors can therefore receive different turnover estimates when their
+observed accounting components require different totals. This entails one
+constrained fit per missing row for each target.
 
 With `robust = TRUE`, the same coefficient constraints are retained and the
 least-squares objective is replaced by a standardized Huber loss:
@@ -87,6 +95,27 @@ $$
 Here $s$ is the residual scale used by the restricted learner and
 $k$ is `huber_k`. Robust fitting changes the influence of observed outliers;
 it does not change which coefficient restrictions are imposed.
+
+### Initializing linked missing values in one row
+
+Suppose turnover $T$ and intermediate consumption $C$ are both missing for a
+business whose observed gross value added is 30. The edit requires $T-C=30$.
+If the observed column medians are 100 for turnover and 80 for consumption,
+filling each cell with its median would give a difference of only 20.
+
+When both targets use `per_observation = TRUE`, `vimpute()` uses these medians
+as starting points for a joint calculation. With just this edit, it chooses
+the pair minimizing $(T-100)^2 + (C-80)^2$ subject to $T-C=30$. The result is
+**105 for turnover and 75 for consumption**. If other edits also constrain
+these amounts, such as a turnover total fixed by observed domestic sales and
+exports, the initialization enforces those edits at the same time.
+
+These values supply missing predictors during prediction. If turnover is
+visited first, its coefficient fit can use 75 for the still-missing
+consumption value. When consumption is visited, its fit uses the turnover
+just imputed. The training responses come from observed data. Joint
+initialization is triggered only when an edit references multiple missing
+per-observation targets in that row.
 
 ### Fixed observations and the feasible region
 
@@ -601,8 +630,8 @@ ship as plain data frames of rule text (so the data set does not depend on
 `validate`); `validate::validator(.data = )` turns a rule set into a validator.
 The example uses 80 records and keeps the original coefficient-restricted
 workflow, without generic `edit_rules`. It includes integer employee counts,
-which the generic continuous projector cannot adjust. For generic projection
-of continuous amounts, use the turnover example above.
+which the generic continuous projector cannot adjust. The larger example below keeps the employee counts observed and masks only
+continuous amounts.
 
 ```{r lse-example, message=FALSE, warning=FALSE}
 data("lse_synthetic", package = "VIM")
@@ -696,10 +725,72 @@ all(validate::values(validate::confront(lse_completed, lse_rules)))
 sort(names(attr(lse_imp, "restricted_optimization_problems")))
 ```
 
-The same pattern scales to many variables: define a `validate::validator`
-object for the edits, provide one formula per imputed target when you need
-predictor control, and pass the rules through `learner_params` for either the
-method name (`restricted`) or the individual variables.
+### Linked missing values in 10,000 records
+
+In the next example the same 200 businesses are missing turnover, intermediate
+consumption and personnel costs. Gross value added is observed, so the edit
+`gross_value_added == turnover_total - intermediate_consumption` links two
+missing cells in every affected row. The observed turnover components, cost
+components and payroll components determine the three totals. This lets us
+check recovery against the held-out values as well as compliance with the edits.
+
+```{r lse-linked-mask}
+targets <- c("turnover_total", "intermediate_consumption", "personnel_costs")
+original <- lse_synthetic[seq_len(10000L), edit_cols]
+set.seed(20260630)
+rows <- sample.int(nrow(original), 600L)[seq_len(200L)]
+masked <- original
+masked[rows, targets] <- NA_real_
+```
+
+Run both restricted fits with the formulas defined above. On this mask the
+shared fit raises **“Restricted regression equality constraints are
+inconsistent.”** The per-observation fit fills all 600 cells.
+
+```{r lse-linked-restricted}
+fit_restricted <- function(per_observation) {
+  vimpute(
+    masked, method = "restricted", formula = restricted_formulas[targets],
+    pmm = FALSE, sequential = FALSE,
+    learner_params = list(restricted = list(
+      rules = lse_rules, per_observation = per_observation
+    ))
+  )
+}
+tryCatch(fit_restricted(FALSE), error = conditionMessage)
+row_fit <- fit_restricted(TRUE)
+```
+
+For ranger, pass the same validator through `edit_rules`. After the forest
+predicts all three amounts, the projector adjusts the missing cells jointly
+within each row. The observed industry code also participates in the full
+validator through the membership rule using `setdiff(LETTERS[2:19], "O")`.
+
+```{r lse-linked-ranger}
+forest_fit <- vimpute(
+  masked, method = "ranger", edit_rules = lse_rules,
+  learner_params = list(ranger = list(num.trees = 15L, num.threads = 1L)),
+  pmm = FALSE, sequential = FALSE, seed = 8
+)
+```
+
+Both completed datasets pass all 920,000 record-by-rule checks. The following
+checks also verify that each imputation flag identifies the intended row and
+that each recovered amount matches its held-out value within numerical tolerance.
+
+```{r lse-linked-checks}
+for (fit in list(row_fit, forest_fit)) {
+  completed <- as.data.frame(fit)
+  for (v in targets) {
+    stopifnot(
+      identical(which(completed[[paste0(v, "_imp")]]), sort(rows)),
+      isTRUE(all.equal(completed[[v]][rows], original[[v]][rows], tolerance = 1e-7))
+    )
+  }
+  checks <- validate::values(validate::confront(completed[edit_cols], lse_rules))
+  stopifnot(identical(dim(checks), c(10000L, 92L)), all(checks))
+}
+```
 
 ## Projection controls
 

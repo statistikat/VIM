@@ -87,6 +87,11 @@
 #'  For `restricted`, set `save_optimization_problem = TRUE` to attach the
 #'  exact ECOS problem arguments to the returned object under the
 #'  `restricted_optimization_problems` attribute.
+#'  Set `per_observation = TRUE` to fit separate coefficients for each missing
+#'  observation using all training rows and only that observation's edit constraints.
+#'  When edit rules link missing per-observation targets in a row, the learner
+#'  initializes their missing predictors jointly at the feasible values nearest
+#'  their observed column medians, then fits each target in visit order.
 #'  Set `robust = TRUE` to replace least squares with Huber loss; `huber_k`
 #'  controls its tuning constant and defaults to `1.345`.
 #' @param formula
@@ -1012,6 +1017,8 @@ vimpute <- function(
   convergence_track <- list()
   chain_track <- list()
   model_error_track <- setNames(vector("list", length(variables_NA)), variables_NA)
+
+  linked_fills <- .restricted_linked_fills(data, variables_NA, method, learner_params, impute_mask)
 
   # Iterative Imputation for nseq iterations
   for (i in seq_len(nseq)) {
@@ -2378,6 +2385,13 @@ vimpute <- function(
             backend_data <- set_out_of_range_factor_levels_to_na(backend_data, data_temp)
           }
           
+          if (method_var == "restricted" && isTRUE(var_learner_params$per_observation)) {
+            for (v in intersect(feature_cols, names(linked_fills))) {
+              fills <- linked_fills[[v]][missing_idx]
+              use <- is.na(backend_data[[v]]) & !is.na(fills)
+              backend_data[[v]][use] <- fills[use]
+            }
+          }
           if (!supports_missing) {
             backend_data <- impute_missing_values(backend_data, data_y_fill)
           }

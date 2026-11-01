@@ -8,6 +8,47 @@
   rules[which(rule_variables[, variable])]
 }
 
+# Find jointly feasible predictor fills before fitting one target at a time.
+# These values are used only for still-missing predictors at prediction time.
+.restricted_linked_fills <- function(data, targets, method, params, mask) {
+  targets <- targets[vapply(targets, function(v) {
+    identical(method[[v]], "restricted") && isTRUE(params[[v]]$per_observation) &&
+      inherits(params[[v]]$rules, "validator")
+  }, logical(1))]
+  if (length(targets) < 2L) return(list())
+  overlap <- which(Reduce(`+`, mask[targets]) > 1L)
+  if (!length(overlap)) return(list())
+
+  exprs <- list()
+  for (v in targets) {
+    relevant <- .restricted_filter_rules(params[[v]]$rules, v)
+    exprs <- c(exprs, .restricted_validator_exprs(relevant))
+  }
+  exprs <- exprs[!duplicated(exprs)]
+  rule_vars <- lapply(exprs, all.vars)
+  full <- as.data.frame(data)
+  centers <- vapply(full[targets], stats::median, numeric(1), na.rm = TRUE)
+  fills <- list()
+  for (row in overlap) {
+    missing <- targets[vapply(mask[targets], `[[`, logical(1), row)]
+    members <- lapply(rule_vars, intersect, y = missing)
+    linked <- unique(unlist(members[lengths(members) > 1L], use.names = FALSE))
+    if (!length(linked)) next
+    relevant <- vapply(members, function(vars) any(vars %in% linked), logical(1))
+    prepared <- list(exprs = exprs[relevant],
+                     variables = unique(unlist(rule_vars[relevant], use.names = FALSE)))
+    con <- .edit_constraints(prepared, full, linked, row, strict_margin = 0.001)
+    value <- .restricted_ecos_lm(diag(length(linked)), centers[linked],
+                                 con$C, con$d, con$Aeq, con$beq)
+    for (j in seq_along(linked)) {
+      v <- linked[j]
+      if (is.null(fills[[v]])) fills[[v]] <- rep(NA_real_, nrow(data))
+      fills[[v]][row] <- value[j]
+    }
+  }
+  fills
+}
+
 .restricted_validate_constraints <- function(
   rules,
   lhs,
