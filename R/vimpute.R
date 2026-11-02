@@ -1433,7 +1433,7 @@ vimpute <- function(
       if(verbose){
         message(paste("***** Create Learner"))
       }
-      max_threads <- max(1L, future::availableCores() - 1L)
+      max_threads <- max(1L, parallelly::availableCores() - 1L)
       if (nrow(data_y_fill_final) < 10000) {
         optimal_threads <- 1
       } else if (nrow(data_y_fill_final) < 100000) {
