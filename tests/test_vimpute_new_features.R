@@ -144,8 +144,8 @@ show_test("4) with() auf vimmi")
 shift <- 5
 with_res <- with(res2, y_num + x2 + shift)
 
-# Seit 7.3.0 liefert with() ein mice-kompatibles mira-Objekt; die m
-# Einzelergebnisse stehen in $analyses.
+# Since 7.3.0, with() returns a mice-compatible mira object.
+# The m individual results are stored in $analyses.
 check(inherits(with_res, "mira"), "with(vimmi, ...) sollte ein mira-Objekt liefern.")
 check(length(with_res$analyses) == 3L, "with(vimmi, ...) sollte ein Ergebnis pro Imputation liefern.")
 check(all(vapply(with_res$analyses, length, integer(1)) == nrow(dt2)), "with(vimmi, ...) hat unerwartete Laengen geliefert.")
