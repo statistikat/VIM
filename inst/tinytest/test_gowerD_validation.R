@@ -55,3 +55,9 @@ for (index in c(FALSE, TRUE)) {
 expect_true(all(is.finite(gowerD(data.frame(a = c(NA_real_, 1))))))
 for (value in c(NA_real_, Inf, -Inf, NaN))
   expect_error(VIM:::whichminN(c(0, value), 1L, 0L), "finite values")
+
+# Preparing a selected column does not coerce an unrelated list column.
+x <- data.frame(value = c(0, 2), unused = I(list(list("a"), list("b"))))
+y <- x[2L, c("unused", "value"), drop = FALSE]
+expect_identical(gowerD(x, y, numerical = "value", returnIndex = TRUE),
+                 list(ind = matrix(2)))

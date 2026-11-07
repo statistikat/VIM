@@ -79,7 +79,6 @@ gowerD <- function(data.x, data.y = data.x,
       ncol(data.x) != ncol(data.y) || anyDuplicated(names(data.x)) ||
       anyDuplicated(names(data.y)) || !setequal(names(data.x), names(data.y)))
     stop("'data.x' and 'data.y' must be data frames with matching unique column names")
-  data.y <- data.y[, names(data.x), drop = FALSE]
   if (!is.numeric(weights) || length(weights) != ncol(data.x) ||
       anyNA(weights) || any(!is.finite(weights)) || any(weights < 0) ||
       !is.finite(sum(weights)) || sum(weights) <= 0)
@@ -142,130 +141,86 @@ gowerD <- function(data.x, data.y = data.x,
       }
     }
   }
-  maxplus1 <- function(x){
-    if(all(is.na(x)))
-      return(1)
-    else
-      return(max(x,na.rm=TRUE)+1)
+  counts <- lengths(list(numerical, factors, orders, mixed))
+  prepared <- prepare_gower_columns(data.x, data.y, distance_columns, counts,
+                                    mixed.constant, methodStand)
+  weightind <- match(distance_columns, names(data.x))
+  nthreads <- vim_ncores()
+  if (returnIndex) {
+    out <- gowerDind(prepared$x, prepared$y, weights[weightind], counts,
+                    as.numeric(levOrders), prepared$mixed.constant,
+                    nMin, as.integer(returnMin), nthreads = nthreads)
+    # The single-recipient result historically omits an absent mins entry.
+    if (nrow(data.y) == 1L && is.null(out$min)) return(list(ind = out$ind))
+    list(ind = out$ind, mins = out$min)
+  } else {
+    gowerd(prepared$x, prepared$y, weights[weightind], counts,
+           as.numeric(levOrders), prepared$mixed.constant, nthreads = nthreads)$delta
   }
-  min0 <- function(x,na.rm){
-    if(all(is.na(x)))
-      return(0)
-    else
-      return(min(x,na.rm=na.rm))
-  }
-  max1 <- function(x,na.rm){
-    if(all(is.na(x)))
-      return(1)
-    else
-      return(max(x,na.rm=na.rm))
-  }
-  as.numericX <- function(x,...){
-    if("character"%in%class(x)){
-      x <- as.factor(x)
-    }
-    return(as.numeric(x,...))
-  }
-  #weights <- rep(1,ncol(data.x))
-  # Nominal labels must have the same codes in both populations. In
-  # particular, independent factorization of character subsets is unsafe.
-  for (v in factors) {
-    x <- data.x[[v]]
-    y <- data.y[[v]]
-    if (is.character(x) || is.character(y) || is.factor(x) || is.factor(y)) {
+}
+
+prepare_gower_columns <- function(data.x, data.y, columns, counts, mixed.constant,
+                                  methodStand) {
+  x_matrix <- matrix(0, nrow(data.x), length(columns))
+  y_matrix <- matrix(0, nrow(data.y), length(columns))
+  numeric_end <- counts[1L]
+  factor_end <- numeric_end + counts[2L]
+  ordered_end <- factor_end + counts[3L]
+
+  for (i in seq_along(columns)) {
+    x <- data.x[[columns[i]]]
+    y <- data.y[[columns[i]]]
+    nominal <- i > numeric_end && i <= factor_end
+    if (nominal && (is.character(x) || is.character(y) ||
+                    is.factor(x) || is.factor(y))) {
+      # Both sides must use the same codes for nominal labels.
       x <- as.character(x)
       y <- as.character(y)
       labels <- unique(c(x[!is.na(x)], y[!is.na(y)]))
-      data.x[[v]] <- match(x, labels)
-      data.y[[v]] <- match(y, labels)
-    }
-  }
-  for(i in 1:ncol(data.x)){
-    data.x[,i] <- as.numericX(data.x[,i])
-    data.y[,i] <- as.numericX(data.y[,i])
-  }
-  weightind <- match(distance_columns, colnames(data.x))
-  data.x <- data.x[,c(numerical,factors,orders,mixed),drop=FALSE]
-  data.y <- data.y[,c(numerical,factors,orders,mixed),drop=FALSE]
-  if(length(numerical)>0){
-    ##Datensatz durch Range dividieren
-    if(methodStand == "range"){
-      rmin <- apply(rbind(data.x[,numerical,drop=FALSE],data.y[,numerical,drop=FALSE]),
-                        2,min0,na.rm=TRUE)
-      rmax <- apply(rbind(data.x[,numerical,drop=FALSE],
-                        data.y[,numerical,drop=FALSE]),2,max1,na.rm=TRUE)
-    }else if(methodStand == "iqr"){
-      rmin <- apply(rbind(data.x[,numerical,drop=FALSE],data.y[,numerical,drop=FALSE]),2,quantile,na.rm=TRUE,
-                    probs=.25)
-      rmax <- apply(rbind(data.x[,numerical,drop=FALSE],data.y[,numerical,drop=FALSE]),2,quantile,na.rm=TRUE,
-                    probs=.75)
-    }
-    r <- rmax-rmin
-    r[is.na(r)] <- 1
-    r[r==0] <- 1
-    for(i in seq_along(numerical)){
-      data.x[,numerical[i]] <- data.x[,numerical[i]]/r[i]
-      data.y[,numerical[i]] <- data.y[,numerical[i]]/r[i]
-    }
-  }
-  # Semi-continuous (mixed) columns need the same range/IQR scaling as numeric
-  # columns; otherwise their raw magnitude dominates the Gower distance (the C++
-  # kernel uses raw |x-y| for two non-spike values, exactly like the numeric
-  # branch that IS scaled). The point mass (mixed.constant) is excluded from the
-  # scale estimate and scaled along, so the kernel's spike comparison is kept.
-  if(length(mixed)>0){
-    pooled_mixed <- rbind(data.x[,mixed,drop=FALSE], data.y[,mixed,drop=FALSE])
-    for(i in seq_along(mixed)){
-      col <- pooled_mixed[,i]
-      nonspike <- col[!is.na(col) & col != mixed.constant[i]]
-      if(length(nonspike) > 0){
-        if(methodStand == "range"){
-          rr <- max(nonspike) - min(nonspike)
-        }else{
-          rr <- as.numeric(diff(quantile(nonspike, probs = c(.25, .75), na.rm = TRUE)))
-        }
-        if(is.na(rr) || rr == 0) rr <- 1
-        data.x[,mixed[i]] <- data.x[,mixed[i]]/rr
-        data.y[,mixed[i]] <- data.y[,mixed[i]]/rr
-        mixed.constant[i] <- mixed.constant[i]/rr
-      }
-    }
-  }
-  justone <- FALSE
-  if(nrow(data.y)==1){
-    data.y <- rbind(data.y,data.y)
-    justone <- TRUE
-  }
-  # Maximum + 1 for missing values
-  # TODO: find better way to handle missing in distance variables
-  maxplus1X <- apply(rbind(data.x,data.y),2,maxplus1)
-  for(i in 1:ncol(data.x)){
-    data.x[is.na(data.x[,i]),i] <- maxplus1X[i]
-    data.y[is.na(data.y[,i]),i] <- maxplus1X[i]
-  }
-  levOrders <- as.numeric(levOrders)
-  if(returnIndex){
-    out <- gowerDind( as.matrix(data.x), as.matrix(data.y),weights[weightind],
-        nthreads = vim_ncores(),
-        c(length(numerical),length(factors),length(orders),length(mixed)),
-        levOrders,mixed.constant,nMin,as.integer(returnMin))
-    out <- list(ind=out$ind,mins=out$min)
-    if(justone){
-      out$ind <-  out$ind[,1,drop=FALSE]
-      out$mins <-  out$mins[,1,drop=FALSE]
+      x <- match(x, labels)
+      y <- match(y, labels)
+    } else {
+      if ("character" %in% class(x)) x <- as.factor(x)
+      if ("character" %in% class(y)) y <- as.factor(y)
+      x <- as.numeric(x)
+      y <- as.numeric(y)
     }
 
-  }else{
-    out <- gowerd(as.matrix(data.x), as.matrix(data.y),weights[weightind],
-        nthreads = vim_ncores(),
-        c(length(numerical),length(factors),length(orders),length(mixed)),
-        levOrders,mixed.constant)
-    if(justone)
-      out <-  out$delta[,1,drop=FALSE]
-    else
-      out <- out$delta
+    is_mixed <- i > ordered_end
+    if (i <= numeric_end || is_mixed) {
+      pooled <- c(x, y)
+      if (is_mixed) {
+        # Exclude the point mass when estimating the scale.
+        mixed_index <- i - ordered_end
+        point_mass <- mixed.constant[mixed_index]
+        pooled <- pooled[!is.na(pooled) & pooled != point_mass]
+      }
+      scale <- 1
+      if (any(!is.na(pooled))) {
+        bounds <- if (methodStand == "range") range(pooled, na.rm = TRUE) else
+          quantile(pooled, probs = c(.25, .75), na.rm = TRUE, names = FALSE)
+        span <- bounds[2L] - bounds[1L]
+        if (!is.na(span) && span != 0) scale <- span
+      }
+      x <- x / scale
+      y <- y / scale
+      if (is_mixed) mixed.constant[mixed_index] <- point_mass / scale
+    }
+
+    missing_x <- is.na(x)
+    missing_y <- is.na(y)
+    if (any(missing_x) || any(missing_y)) {
+      # Use the pooled maximum after scaling. An entirely missing column
+      # uses 1, even when one side has no rows.
+      sentinel <- if (all(missing_x) && all(missing_y)) 1 else
+        max(x, y, na.rm = TRUE) + 1
+      x[missing_x] <- sentinel
+      y[missing_y] <- sentinel
+    }
+    x_matrix[, i] <- x
+    y_matrix[, i] <- y
   }
-  return(out)
+  list(x = x_matrix, y = y_matrix, mixed.constant = mixed.constant)
 }
 
 validate_neighbor_count <- function(n, available = Inf, name = "k") {
