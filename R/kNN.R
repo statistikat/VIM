@@ -225,13 +225,14 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
         data[,imp_vars[i]:=as.logical(data[,imp_vars[i]])]#,with=FALSE]
     }
   }
+  active_targets <- seq_along(variable)
   for(v in variable){
     if(data[,sapply(.SD,function(x)all(is.na(x))),.SDcols=v]){
       warning(paste("All observations of",v,"are missing, therefore the variable will not be imputed!\n"))
-      variable <- variable[variable!=v]
+      active_targets <- active_targets[variable[active_targets] != v]
     }
   }
-  if(length(variable)==0){
+  if(length(active_targets)==0){
     warning(paste("Nothing is imputed, because all variables to be imputed only contains missings."))
     if (return_donor)
       data[, (names(donor_ids)) := donor_ids]
@@ -276,7 +277,7 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
     dataRF <- suppressWarnings(kNN(data[,unique(c(unlist(dist_var)
                                                   ,variable)),with=FALSE],imp_var = FALSE))
 
-    for(i in 1:nvar){
+    for(i in active_targets){
 
       if(any(indexNA2s[,variable[i]])){
         if(is.list(dist_var)){
@@ -361,7 +362,7 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
     weights_new <- list()
     dist_var_new <- list()
 
-    for(i in 1:nvar){
+    for(i in active_targets){
       if(any(indexNA2s[,variable[i]])){
 
         if(is.list(dist_var)){
@@ -398,7 +399,7 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
       weights <- c(weights,min(weights)/(sum(weights)+1))
     }
   }
-  for(j in 1:nvar){
+  for(j in active_targets){
 
     if(any(indexNA2s[,variable[j]])){
       if(is.list(dist_var)){
