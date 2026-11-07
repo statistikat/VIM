@@ -87,7 +87,7 @@ new_vimpute_method_entry <- function(name,
 #'
 #' `vimpute()` resolves its `method` argument through a package-level method
 #' registry. The built-in methods (`"ranger"`, `"xgboost"`, `"regularized"`,
-#' `"robust"`, `"gam"`, `"robgam"`, `"restricted"`, `"tabicl2"`) are pre-registered; this function adds
+#' `"robust"`, `"gam"`, `"robgam"`, `"restricted"`, `"tabicl2"`, `"cellwise"`) are pre-registered; this function adds
 #' (or, with `overwrite = TRUE`, replaces) a user-defined method backed by any
 #' pair of mlr3 learners -- e.g. `regr.rpart`/`classif.rpart` from mlr3
 #' itself, or learners from `mlr3extralearners` such as lightgbm -- without
@@ -412,6 +412,10 @@ register_builtin_vimpute_methods <- function() {
       learner = list(regr = "regr.lm_rob", classif = "classif.glm_rob"),
       setup = function() register_robust_learners(),
       supports_formula = TRUE)
+
+  put("cellwise",
+      learner = list(regr = "regr.cellwise"),
+      setup = function() register_cellwise_learners())
 
   put("restricted",
       learner = list(regr = "regr.restricted"),

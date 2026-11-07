@@ -46,6 +46,8 @@
 #'   - tabicl2 (TabICL 2.2 pretrained regression/classification; see [tabiclImpute()])
 #'   - regularized (glmnet regression/classification)
 #'   - robust (robustbase::lmrob / glmrob)
+#'   - cellwise (cellwise-robust regression; see [register_cellwise_learners()];
+#'     categorical targets fall back to robust)
 #'   - gam (Generalized Additive Model via mgcv::gam)
 #'   - robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
 #'   - restricted (ECOSolveR least-squares regression with validate rules)
@@ -84,6 +86,10 @@
 #'    - **Per variable**  (e.g. list(mpg = list(num.trees = 500)))  
 #'    - **Per method**    (e.g. list(ranger = list(num.trees = 600)))  
 #'    - **Global**, applied to all variables using the same method
+#'  For `cellwise`, select `engine = "crm"` (default; requires crmReg),
+#'  `"cellwise-mm"`, `"shooting-s"`, or `"irwls"`, for example
+#'  `learner_params = list(cellwise = list(engine = "cellwise-mm"))`.
+#'  See [register_cellwise_learners()] for weighting and iteration parameters.
 #'  For `restricted`, set `save_optimization_problem = TRUE` to attach the
 #'  exact ECOS problem arguments to the returned object under the
 #'  `restricted_optimization_problems` attribute.

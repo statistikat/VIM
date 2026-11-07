@@ -1,6 +1,10 @@
 # VIM 7.5.1
 
 ## Changes
+- Added `vimpute(method = "cellwise")` and the mlr3 learner `regr.cellwise`,
+  with CRM, cell-weighted MM, the existing shooting-S approximation, and
+  cellIRWLS regression engines. Select the engine through `learner_params`.
+  Training is restricted to observed-target rows; vimpute handles uncertainty.
 - Added `tabiclImpute()` and `vimpute(method = "tabicl2")` for TabICL 2.2
   regression and classification, with optional dataset fine-tuning via
   `learner_params = list(tabicl2 = list(finetune = TRUE))`. Python dependencies

@@ -256,7 +256,8 @@ imputeCellReg <- function(data, engine = "crm",
     return(list(
       fitted = predict(fit, newdata = data),
       cell_flags = NULL,
-      response_weights = fit$rweights
+      response_weights = fit$rweights,
+      model = fit
     ))
   }
 
@@ -272,7 +273,8 @@ imputeCellReg <- function(data, engine = "crm",
   list(
     fitted = crm_res$fitted.values,
     cell_flags = cell_flags,
-    response_weights = resp_w
+    response_weights = resp_w,
+    model = crm_res
   )
 }
 
@@ -326,7 +328,8 @@ imputeCellReg <- function(data, engine = "crm",
   list(
     fitted = fitted_vals,
     cell_flags = NULL,
-    response_weights = resp_w
+    response_weights = resp_w,
+    model = fit
   )
 }
 
@@ -335,7 +338,7 @@ imputeCellReg <- function(data, engine = "crm",
 # Engine 3: Shooting S-estimator (Öllerer, Alfons, Croux 2016)
 # ============================================================================
 
-.engine_shooting_s <- function(data, j, pred_cols, miss_j, cn) {
+.engine_shooting_s <- function(data, j, pred_cols, miss_j, cn, max_shooting = 5L) {
   # Implementation of the Shooting S algorithm
   # Iterates between cell detection and S-estimation
 
@@ -373,7 +376,6 @@ imputeCellReg <- function(data, engine = "crm",
 
   # Step 2: Shooting iterations
   cell_flags <- matrix(0, nrow = n, ncol = q)
-  max_shooting <- 5
 
   for (shoot_iter in seq_len(max_shooting)) {
     # Compute residuals
@@ -425,6 +427,7 @@ imputeCellReg <- function(data, engine = "crm",
   list(
     fitted = fitted_vals,
     cell_flags = cell_flags,
-    response_weights = resp_w
+    response_weights = resp_w,
+    coefficients = as.numeric(beta)
   )
 }

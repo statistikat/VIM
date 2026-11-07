@@ -1,0 +1,156 @@
+#' Register the cellwise regression learner for mlr3
+#'
+#' Registers `regr.cellwise`, also used by `vimpute(method = "cellwise")`.
+#' Training uses only the rows supplied by mlr3; prediction never refits the
+#' model or uses the response. Predictors must be complete (vimpute supplies
+#' its current completed predictors). Numeric, integer and factor predictors
+#' are supported. Constant predictors are removed; unseen factor levels at
+#' prediction time are rejected.
+#'
+#' @details
+#' Learner parameters:
+#' * `engine`: `"crm"` (default, requires crmReg), `"cellwise-mm"`,
+#'   `"shooting-s"`, or `"irwls"`.
+#' * `init_weights`: `"mcd"` (default) or `"univariate"`, for cellwise-mm
+#'   and irwls. Weights are estimated on the training data only.
+#' * `weight_function`: `"tukey"` (default) or `"huber"`, and `alpha`
+#'   (optional positive tuning constant), for the initial cell weights and
+#'   irwls residual weights.
+#' * `max_shooting`: number of shooting iterations (default 5).
+#' * `maxit_irwls`, `eps_irwls`: IRWLS iteration limit and tolerance
+#'   (defaults 50 and 1e-6).
+#'
+#' The first three engines reuse the regression code in [imputeCellReg()].
+#' Shooting S here denotes that function's contribution-flagging approximation,
+#' not a new implementation of the published coordinate-wise S estimator.
+#' Cellwise-MM aggregates initial cell weights to row weights for `lmrob`;
+#' IRWLS uses [cellIRWLS()] from [imputeCellM()] directly. Dummy columns inherit
+#' weight one, while continuous predictors receive cell weights.
+#' These are independent per-target fits: they do not carry a shared cell-weight
+#' matrix between vimpute sweeps. Prediction uses the raw predictor design,
+#' as in imputeCellReg; it does not repair contaminated new predictor cells.
+#'
+#' The learner returns deterministic responses. Iteration, bootstrap and
+#' uncertainty (including PMM) remain the responsibility of vimpute.
+#' Categorical targets requested with `method = "cellwise"` use vimpute's
+#' existing `"robust"` fallback; this is a regression-only learner.
+#'
+#' @return Invisibly, `NULL`. The learner is added to `mlr3::mlr_learners`.
+#' @examplesIf requireNamespace("mlr3", quietly = TRUE) && requireNamespace("paradox", quietly = TRUE)
+#' register_cellwise_learners()
+#' learner <- mlr3::lrn("regr.cellwise", engine = "cellwise-mm")
+#' task <- mlr3::as_task_regr(mtcars, target = "mpg")
+#' learner$train(task)
+#' learner$predict(task)
+#' @export
+register_cellwise_learners <- function() {
+  for (pkg in c("mlr3", "paradox", "R6")) {
+    if (!requireNamespace(pkg, quietly = TRUE))
+      stop("Cellwise learners require package '", pkg, "'.", call. = FALSE)
+  }
+  learner <- R6::R6Class("LearnerRegrCellwise",
+    inherit = mlr3::LearnerRegr,
+    public = list(initialize = function() {
+      ps <- paradox::ps(
+        engine = paradox::p_fct(c("crm", "cellwise-mm", "shooting-s", "irwls"),
+                               default = "crm", tags = "train"),
+        init_weights = paradox::p_fct(c("mcd", "univariate"), default = "mcd", tags = "train"),
+        weight_function = paradox::p_fct(c("tukey", "huber"), default = "tukey", tags = "train"),
+        alpha = paradox::p_dbl(lower = .Machine$double.eps, tags = "train"),
+        max_shooting = paradox::p_int(lower = 1L, default = 5L, tags = "train"),
+        maxit_irwls = paradox::p_int(lower = 1L, default = 50L, tags = "train"),
+        eps_irwls = paradox::p_dbl(lower = .Machine$double.eps, default = 1e-6, tags = "train")
+      )
+      ps$values <- list(engine = "crm", init_weights = "mcd",
+                        weight_function = "tukey", max_shooting = 5L,
+                        maxit_irwls = 50L, eps_irwls = 1e-6)
+      super$initialize(id = "regr.cellwise", param_set = ps,
+        feature_types = c("numeric", "integer", "factor", "ordered"),
+        predict_types = "response", properties = "featureless",
+        packages = c("VIM", "robustbase"),
+        man = "VIM::register_cellwise_learners")
+    }),
+    private = list(
+      .train = function(task) {
+        pv <- self$param_set$get_values(tags = "train")
+        if ((!is.null(pv$alpha) && (!is.finite(pv$alpha) || pv$alpha <= 0)) ||
+            !is.finite(pv$eps_irwls) || pv$eps_irwls <= 0)
+          stop("alpha and eps_irwls must be finite and positive.", call. = FALSE)
+        if (pv$engine == "crm" && !requireNamespace("crmReg", quietly = TRUE))
+          stop("Engine 'crm' requires the crmReg package.", call. = FALSE)
+        original <- task$feature_names
+        data <- as.data.frame(task$data(cols = c(task$target_names, original)))
+        # Positional names avoid formula parsing of arbitrary task column names.
+        names(data) <- .cw_safe_names(ncol(data))
+        target <- names(data)[1L]
+        sanitized <- sanitize_model_features(data, target, names(data)[-1L])
+        data <- sanitized$data
+        features <- sanitized$features
+        if (anyNA(data)) stop("Cellwise training requires complete predictors and response.")
+        form <- stats::reformulate(if (length(features)) features else "1")
+        mf <- stats::model.frame(form, data)
+        terms <- stats::terms(mf)
+        design <- stats::model.matrix(terms, mf)
+        X <- design[, colnames(design) != "(Intercept)", drop = FALSE]
+        y <- data[[target]]
+        model <- list(features = original, terms = terms,
+                      xlevels = lapply(mf[vapply(mf, is.factor, logical(1))], levels),
+                      contrasts = attr(design, "contrasts"), engine = pv$engine)
+        if (!ncol(X) || length(unique(y)) == 1L) {
+          model$constant <- stats::median(y)
+          return(model)
+        }
+        # Build cell weights before dummy expansion: categorical contrasts must
+        # not enter a continuous MCD scatter estimate.
+        W <- matrix(1, nrow(data), ncol(data), dimnames = list(NULL, names(data)))
+        numeric_cols <- vapply(data, is.numeric, logical(1))
+        if (pv$engine %in% c("cellwise-mm", "irwls")) {
+          weight_fun <- if (pv$init_weights == "mcd") cellWeightsMCD else cellWeights
+          W[, numeric_cols] <- weight_fun(as.matrix(data[, numeric_cols, drop = FALSE]),
+                                          method = pv$weight_function, alpha = pv$alpha)
+        }
+        assignments <- attr(design, "assign")[-1L]
+        WX <- W[, features[assignments], drop = FALSE]
+        train <- as.data.frame(cbind(y, X))
+        names(train) <- .cw_safe_names(ncol(train))
+        model$design_names <- names(train)[-1L]
+        args <- list(data = train, j = 1L, pred_cols = seq.int(2L, ncol(train)),
+                     miss_j = rep(FALSE, nrow(train)), cn = names(train))
+        result <- switch(pv$engine,
+          crm = do.call(.engine_crm, args),
+          `cellwise-mm` = do.call(.engine_cellwise_mm,
+                                 c(args, list(W = cbind(W[, target], WX)))),
+          `shooting-s` = do.call(.engine_shooting_s,
+                                c(args, list(max_shooting = pv$max_shooting))),
+          irwls = cellIRWLS(X, y, w_cell = WX, w_response = W[, target],
+                            method = pv$weight_function, alpha = pv$alpha,
+                            maxit = pv$maxit_irwls, eps = pv$eps_irwls)
+        )
+        model$fit <- result$model
+        model$coefficients <- result$coefficients
+        model$cell_flags <- result$cell_flags
+        model$response_weights <- result$response_weights
+        model
+      },
+      .predict = function(task) {
+        model <- self$model
+        data <- as.data.frame(task$data(cols = model$features))
+        names(data) <- .cw_safe_names(length(model$features) + 1L)[-1L]
+        if (!is.null(model$constant)) return(list(response = rep(model$constant, task$nrow)))
+        mf <- stats::model.frame(model$terms, data, xlev = model$xlevels,
+                                 na.action = stats::na.pass)
+        X <- stats::model.matrix(model$terms, mf, contrasts.arg = model$contrasts)
+        if (anyNA(X)) stop("Cellwise prediction requires complete predictors.")
+        if (model$engine %in% c("shooting-s", "irwls")) {
+          response <- as.numeric(X %*% model$coefficients)
+        } else {
+          newdata <- as.data.frame(X[, -1L, drop = FALSE])
+          names(newdata) <- model$design_names
+          response <- as.numeric(stats::predict(model$fit, newdata = newdata))
+        }
+        list(response = response)
+      }
+    ))
+  mlr3::mlr_learners$add("regr.cellwise", learner)
+  invisible(NULL)
+}

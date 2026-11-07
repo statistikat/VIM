@@ -26,7 +26,7 @@ if (!requireNamespace("rpart", quietly = TRUE)) {
 }
 
 builtin <- c("ranger", "xgboost", "regularized", "robust", "gam", "robgam",
-             "restricted", "tabicl2")
+             "restricted", "tabicl2", "cellwise")
 
 ## --- built-ins are registered through the same contract ------------------------
 expect_true(is.character(vimpute_methods()))
