@@ -91,7 +91,8 @@ factor ordered and semi-continous variables.</p>
 
 
 <dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
-<dd><p>numeric vector providing weights for the observations in x</p></dd>
+<dd><p>finite nonnegative numeric weights, one per input column,
+with a positive finite total over the selected distance variables</p></dd>
 
 
 <dt id="arg-numerical">numerical<a class="anchor" aria-label="anchor" href="#arg-numerical"></a></dt>
@@ -126,7 +127,7 @@ integer ranks from 1 to the corresponding level count, or NA.</p></dd>
 
 
 <dt id="arg-nmin">nMin<a class="anchor" aria-label="anchor" href="#arg-nmin"></a></dt>
-<dd><p>integer number of values with smallest distance to be returned</p></dd>
+<dd><p>positive integer number of values with smallest distance to be returned, no greater than the number of rows in data.x</p></dd>
 
 
 <dt id="arg-returnmin">returnMin<a class="anchor" aria-label="anchor" href="#arg-returnmin"></a></dt>
