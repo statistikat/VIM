@@ -4,8 +4,9 @@
 - Fixed shared categorical encoding in `gowerD()` (#111), skipped-target option
   alignment in `kNN()` (#113), and mixed-constant alignment, including RF-added
   predictors (#114).
-- `kNN()` and Gower neighbour selection now reject invalid counts and requests
-  exceeding the eligible donor pool instead of repeating donors (#112).
+- `kNN()` and Gower neighbour selection reject invalid counts. When the
+  requested count exceeds a nonempty donor pool, they warn and repeat the
+  first eligible donor to fill the remaining slots (#112).
 - Gower entry points now validate weights, dimensions and native metadata before
   distance computation. Weights follow selected columns; excluded columns no
   longer contribute to the weight total. Invalid inputs raise errors (#115).

@@ -17,7 +17,9 @@
 #' integer ranks from 1 to the corresponding level count, or NA.
 #' @param mixed.constant 	vector with length equal to the number of semi-continuous variables specifying the point of the semi-continuous distribution with non-zero probability
 #' @param returnIndex logical if TRUE return the index of the minimum distance
-#' @param nMin positive integer number of values with smallest distance to be returned, no greater than the number of rows in data.x
+#' @param nMin positive integer number of values with smallest distance to be returned.
+#' If this exceeds the number of donors, a warning is issued and the first donor
+#' fills the remaining slots with infinite distances.
 #' @param returnMin logical if the computed distances for the indices should be returned
 #' @param methodStand character either "range" or "iqr", iqr is more robust for outliers
 #' @details Numerical and semi-continuous (mixed) variables are standardised by
@@ -227,6 +229,6 @@ validate_neighbor_count <- function(n, available = Inf, name = "k") {
   if (!is.numeric(n) || length(n) != 1L || is.na(n) || !is.finite(n) ||
       n < 1 || n != floor(n) || n > .Machine$integer.max)
     stop("'", name, "' must be a single positive integer")
-  if (n > available)
-    stop("'", name, "' exceeds the number of eligible donors (", available, ")")
+  if (available == 0)
+    stop("'", name, "' has no eligible donors")
 }

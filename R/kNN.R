@@ -79,7 +79,9 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,
 #' `options(VIM.ncores = )` (at most 2 during `R CMD check`); see there.
 #' @param data data.frame or matrix
 #' @param variable variables where missing values should be imputed
-#' @param k number of nearest neighbours used; a positive integer no greater than the number of eligible donors for each target
+#' @param k positive integer number of nearest neighbours used. If fewer donors
+#' are eligible, a warning is issued and the first eligible donor fills the
+#' remaining slots.
 #' @param dist_var names or variables to be used for distance calculation
 #' @param weights weights for the variables for distance calculation.
 #' If `weights = "auto"` weights will be selected based on variable importance from random forest regression, using function [ranger::ranger()].
@@ -487,8 +489,13 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
           }else{
             #all weights <= 0: rank-preserving finite positive weights so the
             #nearer donors still dominate (larger 1-dist = nearer)
-            rng <- max(x)-min(x)
-            if(rng==0) rep(1,length(x)) else (x-min(x))/rng+1e-6
+            observed <- is.finite(x)
+            # Reused donors have infinite placeholder distances.
+            low <- min(x[observed])
+            rng <- max(x[observed]) - low
+            adjusted <- rep(1e-6, length(x))
+            adjusted[observed] <- if (rng == 0) 1 else (x[observed] - low) / rng + 1e-6
+            adjusted
           }
         })
         imputed <- sapply(recipients, function(i) {

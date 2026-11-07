@@ -79,8 +79,10 @@ static int neighbor_count(SEXP value, R_xlen_t available) {
   const double n = as<double>(value);
   if (!R_FINITE(n) || n < 1 || n != std::floor(n) || n > INT_MAX)
     stop("Neighbour count must be a single positive integer");
+  if (available == 0)
+    stop("There are no eligible donors");
   if (n > available)
-    stop("Neighbour count exceeds the number of eligible donors");
+    warning("Neighbour count exceeds the number of eligible donors; reusing the first eligible donor");
   return static_cast<int>(n);
 }
 
@@ -143,19 +145,16 @@ static std::vector<double> pack_gower_rows(const NumericMatrix& matrix) {
 }
 
 void whichminN_impl(std::vector<double>& x, int n, double* out, double* outMin=nullptr) {
-  std::vector<double>::iterator it = min_element(x.begin(), x.end());
-  out[0] = static_cast<double>(it - x.begin() + 1);
-  if (outMin != nullptr) {
-    outMin[0] = x[it - x.begin()];
+  const int distinct = std::min<size_t>(n, x.size());
+  for (int i = 0; i < distinct; ++i) {
+    auto it = min_element(x.begin(), x.end());
+    out[i] = static_cast<double>(it - x.begin() + 1);
+    if (outMin) outMin[i] = *it;
+    *it = R_PosInf;
   }
-  x[it - x.begin()] = R_PosInf;
-  for (int i=2; i<=n; i++) {
-    it = min_element(x.begin(), x.end());
-    out[i-1] = static_cast<double>(it - x.begin() + 1);
-    if (outMin != nullptr) {
-      outMin[i-1] = x[it - x.begin()];
-    }
-    x[it - x.begin()] = R_PosInf;
+  for (int i = distinct; i < n; ++i) {
+    out[i] = 1;
+    if (outMin) outMin[i] = R_PosInf;
   }
 }
 // [[Rcpp::export]]
@@ -229,6 +228,7 @@ RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SE
   const int nx = donors.nrow();
   const int ny = recipients.nrow();
   const int n = neighbor_count(nR, nx);
+  const int distinct = std::min(n, nx);
   const double sum = validate_gower_inputs(donors, recipients, weight, counts,
                                            levels, constants);
   const GowerKernel kernel(weight, counts, levels, constants, sum);
@@ -246,7 +246,7 @@ RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SE
   const int nth = std::min(vim_omp_threads(nthreads), std::max(1, ny));
   std::vector<std::vector<Candidate>> scratch;
   if (n > 1 && ny > 0)
-    scratch.resize(nth, std::vector<Candidate>(n));
+    scratch.resize(nth, std::vector<Candidate>(distinct));
 
   // Pack once so the streaming search can read both rows contiguously.
   const R_xlen_t columns = donors.ncol();
@@ -286,20 +286,26 @@ RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SE
         continue;
       }
       const Candidate candidate(distance, i);
-      if (size < n) {
+      if (size < distinct) {
         heap[size++] = candidate;
-        if (size == n) std::make_heap(heap, heap + n);
+        if (size == distinct) std::make_heap(heap, heap + distinct);
       } else if (candidate < heap[0]) {
-        std::pop_heap(heap, heap + n);
-        heap[n - 1] = candidate;
-        std::push_heap(heap, heap + n);
+        std::pop_heap(heap, heap + distinct);
+        heap[distinct - 1] = candidate;
+        std::push_heap(heap, heap + distinct);
       }
     }
-    if (size < n) continue;  // A non-finite distance will trigger an error.
-    std::sort_heap(heap, heap + n);
-    for (int k = 0; k < n; ++k) {
+    if (size < distinct) continue;  // A non-finite distance will trigger an error.
+    std::sort_heap(heap, heap + distinct);
+    for (int k = 0; k < distinct; ++k) {
       index_out[offset + k] = heap[k].second + 1;
       if (min_out) min_out[offset + k] = heap[k].first;
+    }
+    // Legacy repeated-minimum selection replaces each used distance with
+    // infinity. After all donors are used it keeps selecting row one.
+    for (int k = distinct; k < n; ++k) {
+      index_out[offset + k] = 1;
+      if (min_out) min_out[offset + k] = R_PosInf;
     }
   }
   if (invalid_distance) stop("Distances must contain finite values");

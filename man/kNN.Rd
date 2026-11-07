@@ -58,7 +58,9 @@ kNN(
 
 \item{variable}{variables where missing values should be imputed}
 
-\item{k}{number of nearest neighbours used; a positive integer no greater than the number of eligible donors for each target}
+\item{k}{positive integer number of nearest neighbours used. If fewer donors
+are eligible, a warning is issued and the first eligible donor fills the
+remaining slots.}
 
 \item{dist_var}{names or variables to be used for distance calculation}
 
