@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <numeric>
 #include <vector>
+#include <utility>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -211,43 +212,81 @@ RcppExport SEXP whichminN(SEXP xR, SEXP nR, int returnValue) {
 RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SEXP levOrders,
   SEXP mixedConstants,SEXP nR,SEXP returnMinR, int nthreads = 0){
   BEGIN_RCPP
-  NumericMatrix donors(dataX);
-  int n = neighbor_count(nR, donors.nrow());
-  List dist = gowerd( dataX,  dataY, weights, ncolNUMFAC, levOrders, mixedConstants, nthreads);
-  NumericMatrix delta = as<NumericMatrix>(dist["delta"]);
-  int nc=delta.cols();
-  int returnMin = as<int>(returnMinR);
-  NumericMatrix inds(n,nc);
-  const int nth = vim_omp_threads(nthreads);
-  (void)nth;  // only used by the OpenMP pragmas
-  if(returnMin==0){
-#pragma omp parallel for if (nc > 1) num_threads(nth)
-    for (int i=0; i<nc; i++) {
-      std::vector<double> column(delta.rows());
-      std::copy(delta.begin() + static_cast<R_xlen_t>(i) * delta.rows(),
-                delta.begin() + static_cast<R_xlen_t>(i + 1) * delta.rows(),
-                column.begin());
-      whichminN_impl(column, n, inds.begin() + static_cast<R_xlen_t>(i) * n);
+  const NumericMatrix donors(dataX);
+  const NumericMatrix recipients(dataY);
+  const NumericVector weight(weights), counts(ncolNUMFAC);
+  const NumericVector levels(levOrders), constants(mixedConstants);
+  const int nx = donors.nrow();
+  const int ny = recipients.nrow();
+  const int n = neighbor_count(nR, nx);
+  validate_gower_inputs(donors, recipients, weight, counts, levels, constants);
+
+  const bool returnMin = as<int>(returnMinR) != 0;
+  NumericMatrix inds(n, ny);
+  NumericMatrix mins;
+  if (returnMin) mins = NumericMatrix(n, ny);
+  double* const index_out = inds.begin();
+  double* const min_out = returnMin ? mins.begin() : nullptr;
+
+  // Each worker reuses its own heap. Lexicographic order breaks distance ties
+  // by original donor row, so the root is always the worst retained candidate.
+  using Candidate = std::pair<double, int>;
+  const int nth = std::min(vim_omp_threads(nthreads), std::max(1, ny));
+  std::vector<std::vector<Candidate>> scratch;
+  if (n > 1 && ny > 0)
+    scratch.resize(nth, std::vector<Candidate>(n));
+
+  int invalid_distance = 0;
+#pragma omp parallel for if (nth > 1) num_threads(nth) reduction(|:invalid_distance)
+  for (int j = 0; j < ny; ++j) {
+    const R_xlen_t offset = static_cast<R_xlen_t>(j) * n;
+    const auto distance_to = [&](int i) {
+      return distW1(donors, recipients, i, j, weight, levels,
+                    donors.ncol(), counts, constants);
+    };
+    if (n == 1) {
+      Candidate best(R_PosInf, 0);
+      for (int i = 0; i < nx; ++i) {
+        const double distance = distance_to(i);
+        if (!R_FINITE(distance)) invalid_distance = 1;
+        else if (distance < best.first) best = Candidate(distance, i);
+      }
+      index_out[offset] = best.second + 1;
+      if (min_out) min_out[offset] = best.first;
+      continue;
     }
-    return List::create(
-        Named( "ind" ) = inds
-    );
-  }else{
-    NumericMatrix mins(n,nc);
-#pragma omp parallel for if (nc > 1) num_threads(nth)
-    for (int i=0; i<nc; i++) {
-      std::vector<double> column(delta.rows());
-      std::copy(delta.begin() + static_cast<R_xlen_t>(i) * delta.rows(),
-                delta.begin() + static_cast<R_xlen_t>(i + 1) * delta.rows(),
-                column.begin());
-      whichminN_impl(column, n,
-                     inds.begin() + static_cast<R_xlen_t>(i) * n,
-                     mins.begin() + static_cast<R_xlen_t>(i) * n);
+
+    int worker = 0;
+#ifdef _OPENMP
+    worker = omp_get_thread_num();
+#endif
+    Candidate* const heap = scratch[worker].data();
+    int size = 0;
+    for (int i = 0; i < nx; ++i) {
+      const double distance = distance_to(i);
+      if (!R_FINITE(distance)) {
+        invalid_distance = 1;
+        continue;
+      }
+      const Candidate candidate(distance, i);
+      if (size < n) {
+        heap[size++] = candidate;
+        if (size == n) std::make_heap(heap, heap + n);
+      } else if (candidate < heap[0]) {
+        std::pop_heap(heap, heap + n);
+        heap[n - 1] = candidate;
+        std::push_heap(heap, heap + n);
+      }
     }
-    return List::create(
-        Named( "ind" ) = inds,
-        Named( "min" ) = mins
-    );
+    if (size < n) continue;  // A non-finite distance will trigger an error.
+    std::sort_heap(heap, heap + n);
+    for (int k = 0; k < n; ++k) {
+      index_out[offset + k] = heap[k].second + 1;
+      if (min_out) min_out[offset + k] = heap[k].first;
+    }
   }
+  if (invalid_distance) stop("Distances must contain finite values");
+  if (returnMin) return List::create(Named("ind") = inds, Named("min") = mins);
+  return List::create(Named("ind") = inds);
   END_RCPP
 }
