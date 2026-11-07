@@ -1,6 +1,7 @@
 #include <Rcpp.h>
 #include <string>
 #include <cmath>
+#include <climits>
 #include <algorithm>
 #include <numeric>
 #include <vector>
@@ -28,6 +29,48 @@ void R_init_VIM(DllInfo* info) {
 
 using namespace std;
 using namespace Rcpp;
+static void validate_gower_inputs(const NumericMatrix& x, const NumericMatrix& y,
+                                 const NumericVector& weights,
+                                 const NumericVector& counts,
+                                 const NumericVector& levels,
+                                 const NumericVector& constants) {
+  if (x.ncol() != y.ncol() || x.ncol() == 0)
+    stop("Distance matrices must have the same positive number of columns");
+  if (counts.size() != 4)
+    stop("Type counts must contain four nonnegative integers");
+  double total = 0;
+  for (double count : counts) {
+    if (!R_FINITE(count) || count < 0 || count != std::floor(count))
+      stop("Type counts must contain four nonnegative integers");
+    total += count;
+  }
+  if (total != x.ncol())
+    stop("Type counts must sum to the number of matrix columns");
+  if (weights.size() != x.ncol())
+    stop("Weights must contain one value per matrix column");
+  double weight_sum = 0;
+  for (double weight : weights) {
+    if (!R_FINITE(weight) || weight < 0)
+      stop("Weights must be finite and nonnegative with a positive finite total");
+    weight_sum += weight;
+  }
+  if (!R_FINITE(weight_sum) || weight_sum <= 0)
+    stop("Weights must be finite and nonnegative with a positive finite total");
+  if (levels.size() != counts[2])
+    stop("Ordinal level counts must match the number of ordinal columns");
+  for (double level : levels)
+    if (!R_FINITE(level) || level < 1 || level != std::floor(level))
+      stop("Ordinal level counts must be positive finite integers");
+  if (constants.size() != counts[3])
+    stop("Mixed constants must match the number of mixed columns");
+  for (double constant : constants)
+    if (!R_FINITE(constant)) stop("Mixed constants must be finite");
+  for (double value : x)
+    if (!R_FINITE(value)) stop("Distance matrices must contain finite values");
+  for (double value : y)
+    if (!R_FINITE(value)) stop("Distance matrices must contain finite values");
+}
+
 static int neighbor_count(SEXP value, R_xlen_t available) {
   if ((TYPEOF(value) != INTSXP && TYPEOF(value) != REALSXP) ||
       Rf_xlength(value) != 1)
@@ -116,6 +159,7 @@ RcppExport SEXP gowerd(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,
   NumericVector weight(weights);	// creates Rcpp matrix from SEXP
   NumericVector levOrder(levOrders);  // creates Rcpp matrix from SEXP
   NumericVector mixedConstant(mixedConstants);
+  validate_gower_inputs(xMat, yMat, weight, ncolVAR, levOrder, mixedConstant);
   int nx = xMat.nrow();
   int ny = yMat.nrow();
   NumericMatrix delta(nx,ny);
@@ -143,6 +187,8 @@ RcppExport SEXP whichminN(SEXP xR, SEXP nR, int returnValue) {
   BEGIN_RCPP
   NumericVector x(xR);  // creates Rcpp matrix from SEXP
   int n = neighbor_count(nR, x.size());
+  for (double value : x)
+    if (!R_FINITE(value)) stop("Distances must contain finite values");
   NumericVector out(n);
   std::vector<double> xCopy(x.begin(), x.end());
   if(returnValue==1){

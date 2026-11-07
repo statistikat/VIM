@@ -25,7 +25,8 @@ gowerD(
 
 \item{data.y}{data frame}
 
-\item{weights}{numeric vector providing weights for the observations in x}
+\item{weights}{finite nonnegative numeric weights, one per input column,
+with a positive finite total over the selected distance variables}
 
 \item{numerical}{names of numerical variables}
 

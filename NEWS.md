@@ -1,6 +1,14 @@
 # VIM 7.5.1
 
 ## Changes
+- Fixed shared categorical encoding in `gowerD()` (#111), skipped-target option
+  alignment in `kNN()` (#113), and mixed-constant alignment, including RF-added
+  predictors (#114).
+- `kNN()` and Gower neighbour selection now reject invalid counts and requests
+  exceeding the eligible donor pool instead of repeating donors (#112).
+- Gower entry points now validate weights, dimensions and native metadata before
+  distance computation. Weights follow selected columns; excluded columns no
+  longer contribute to the weight total. Invalid inputs raise errors (#115).
 - Added `tabiclImpute()` and `vimpute(method = "tabicl2")` for TabICL 2.2
   regression and classification, with optional dataset fine-tuning via
   `learner_params = list(tabicl2 = list(finetune = TRUE))`. Python dependencies

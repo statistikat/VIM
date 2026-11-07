@@ -5,7 +5,8 @@
 #'
 #' @param data.x data frame
 #' @param data.y data frame
-#' @param weights numeric vector providing weights for the observations in x
+#' @param weights finite nonnegative numeric weights, one per input column,
+#' with a positive finite total over the selected distance variables
 #' @param numerical names of numerical variables
 #' @param factors names of factor variables
 #' @param orders names of ordered variables
@@ -74,6 +75,42 @@ gowerD <- function(data.x, data.y = data.x,
                    returnMin=FALSE,
                    methodStand="range") {
   stopifnot(length(methodStand)==1&&methodStand%in%c("range", "iqr"))
+  if (!is.data.frame(data.x) || !is.data.frame(data.y) ||
+      ncol(data.x) != ncol(data.y) || anyDuplicated(names(data.x)) ||
+      anyDuplicated(names(data.y)) || !setequal(names(data.x), names(data.y)))
+    stop("'data.x' and 'data.y' must be data frames with matching unique column names")
+  data.y <- data.y[, names(data.x), drop = FALSE]
+  if (!is.numeric(weights) || length(weights) != ncol(data.x) ||
+      anyNA(weights) || any(!is.finite(weights)) || any(weights < 0) ||
+      !is.finite(sum(weights)) || sum(weights) <= 0)
+    stop("'weights' must contain one finite nonnegative value per input column with a positive finite total")
+  resolve_columns <- function(cols) {
+    if (!length(cols)) return(character())
+    if (is.numeric(cols)) {
+      if (anyNA(cols) || any(!is.finite(cols)) ||
+          any(cols != floor(cols) | cols < 1 | cols > ncol(data.x)))
+        stop("Distance variable indices must identify existing columns")
+      return(names(data.x)[cols])
+    }
+    if (!is.character(cols) || anyNA(cols) || any(!cols %in% names(data.x)))
+      stop("Distance variables must identify existing columns")
+    cols
+  }
+  numerical <- resolve_columns(numerical)
+  factors <- resolve_columns(factors)
+  orders <- resolve_columns(orders)
+  mixed <- resolve_columns(mixed)
+  distance_columns <- c(numerical, factors, orders, mixed)
+  if (!length(distance_columns) || anyDuplicated(distance_columns))
+    stop("Distance variables must be nonempty and belong to exactly one type")
+  if (length(mixed)) {
+    if (!is.numeric(mixed.constant) || length(mixed.constant) != length(mixed) ||
+        anyNA(mixed.constant) || any(!is.finite(mixed.constant)))
+      stop("'mixed.constant' must contain one finite value per mixed variable")
+  } else {
+    # Historically callers could pass an unused scalar constant.
+    mixed.constant <- numeric()
+  }
   if (returnIndex)
     validate_neighbor_count(nMin, nrow(data.x), "nMin")
   if ((!is.numeric(levOrders) && length(levOrders) > 0L) ||
@@ -147,7 +184,7 @@ gowerD <- function(data.x, data.y = data.x,
     data.x[,i] <- as.numericX(data.x[,i])
     data.y[,i] <- as.numericX(data.y[,i])
   }
-  weightind <- order(match(colnames(data.x),c(numerical,factors,orders,mixed)))
+  weightind <- match(distance_columns, colnames(data.x))
   data.x <- data.x[,c(numerical,factors,orders,mixed),drop=FALSE]
   data.y <- data.y[,c(numerical,factors,orders,mixed),drop=FALSE]
   if(length(numerical)>0){
