@@ -3,7 +3,6 @@
 #include <cmath>
 #include <climits>
 #include <algorithm>
-#include <numeric>
 #include <vector>
 #include <utility>
 #ifdef _OPENMP
@@ -30,7 +29,7 @@ void R_init_VIM(DllInfo* info) {
 
 using namespace std;
 using namespace Rcpp;
-static void validate_gower_inputs(const NumericMatrix& x, const NumericMatrix& y,
+static double validate_gower_inputs(const NumericMatrix& x, const NumericMatrix& y,
                                  const NumericVector& weights,
                                  const NumericVector& counts,
                                  const NumericVector& levels,
@@ -70,6 +69,7 @@ static void validate_gower_inputs(const NumericMatrix& x, const NumericMatrix& y
     if (!R_FINITE(value)) stop("Distance matrices must contain finite values");
   for (double value : y)
     if (!R_FINITE(value)) stop("Distance matrices must contain finite values");
+  return weight_sum;
 }
 
 static int neighbor_count(SEXP value, R_xlen_t available) {
@@ -84,54 +84,62 @@ static int neighbor_count(SEXP value, R_xlen_t available) {
   return static_cast<int>(n);
 }
 
-double distW(double x,double y, int type, double weight=1, double weightsum=1,double levOrder=1,
-  double mixedConstant=0){
-  double out=0;
-  if(type==0){ //NUMERIC
-    out = weight*abs(x-y)/weightsum;
-  }else if(type==1){ //Categorical
-    if(x!=y){
-      out=weight/weightsum;
-    }
-  }else if(type==2){  //Ordered
-    // A single-level scale is constant for observed values. Use denominator 1
-    // to avoid 0/0 while retaining the missing-value sentinel contribution.
-    if(levOrder > 1){
-      out=abs(x-y)/(levOrder-1)*weight/weightsum;
-    }else{
-      out=abs(x-y)*weight/weightsum;
-    }
-  }else if(type==3){  //Semi-Continous
-    if(
-      ((x==mixedConstant)&(y!=mixedConstant))|
-        ((x!=mixedConstant)&(y==mixedConstant))
-    ){
-      out=weight/weightsum;
-    }else if((x!=mixedConstant)&(y!=mixedConstant)){
-      out=weight*abs(x-y)/weightsum;
-    }
+// Prepared once per call, then shared read-only across all pairs and workers.
+class GowerKernel {
+  const double* const weights;
+  const double* const mixed_constants;
+  const double weight_sum;
+  const int numeric_end, categorical_end, ordered_end, mixed_end;
+  std::vector<double> ordered_denominators;
+
+public:
+  GowerKernel(const NumericVector& weight, const NumericVector& counts,
+              const NumericVector& levels, const NumericVector& constants,
+              double sum)
+    : weights(weight.begin()), mixed_constants(constants.begin()), weight_sum(sum),
+      numeric_end(counts[0]), categorical_end(numeric_end + counts[1]),
+      ordered_end(categorical_end + counts[2]), mixed_end(ordered_end + counts[3]),
+      ordered_denominators(levels.size()) {
+    for (R_xlen_t i = 0; i < levels.size(); ++i)
+      ordered_denominators[i] = levels[i] > 1 ? levels[i] - 1 : 1;
   }
-//  Rprintf("xval %f, yval %f, dist %f \n",x,y,out);
-  return out;
-}
-double distW1(const NumericMatrix& xMat, const NumericMatrix& yMat, int i, int j,
-              const NumericVector& weight, const NumericVector& levOrder,
-              double ncolMAX, const NumericVector& ncolVAR, const NumericVector& mixedConstant){
-  double out=0;
-  double weightsum = accumulate( weight.begin(), weight.end(), 0.0 );
-  // compute the distance contribution of each variable
-  for (int k=0; k<ncolMAX; k++) {
-    if(k<ncolVAR(0)){ //NUMERIC
-      out+=distW(xMat(i, k), yMat(j, k), 0, weight(k), weightsum);
-    }else if(k<(ncolVAR(0)+ncolVAR(1))){ //Categorical
-      out+=distW(xMat(i, k), yMat(j, k), 1, weight(k), weightsum);
-    }else if(k<(ncolVAR(0)+ncolVAR(1)+ncolVAR(2))){  //Ordered
-      out+=distW(xMat(i, k), yMat(j, k), 2, weight(k), weightsum,levOrder(k-(ncolVAR(0)+ncolVAR(1))));
-    }else if(k<(ncolVAR(0)+ncolVAR(1)+ncolVAR(2)+ncolVAR(3))){  //Semi-Continous
-      out+=distW(xMat(i, k), yMat(j, k), 3, weight(k), weightsum,1,mixedConstant(k-(ncolVAR(0)+ncolVAR(1)+ncolVAR(2))));
+
+  // Strides are one for packed rows and the row count for R matrices.
+  double distance(const double* x, const double* y,
+                  R_xlen_t x_stride, R_xlen_t y_stride) const {
+    double out = 0;
+    int col = 0;
+    // Preserve contribution order and the order of arithmetic within each
+    // contribution so rounding cannot change ties or donor rankings.
+    for (; col < numeric_end; ++col)
+      out += weights[col] * std::abs(x[col * x_stride] - y[col * y_stride]) / weight_sum;
+    for (; col < categorical_end; ++col)
+      if (x[col * x_stride] != y[col * y_stride])
+        out += weights[col] / weight_sum;
+    for (; col < ordered_end; ++col)
+      out += std::abs(x[col * x_stride] - y[col * y_stride]) /
+        ordered_denominators[col - categorical_end] * weights[col] / weight_sum;
+    for (; col < mixed_end; ++col) {
+      const double a = x[col * x_stride], b = y[col * y_stride];
+      const double point_mass = mixed_constants[col - ordered_end];
+      const bool a_at_mass = a == point_mass, b_at_mass = b == point_mass;
+      if (a_at_mass != b_at_mass)
+        out += weights[col] / weight_sum;
+      else if (!a_at_mass)
+        out += weights[col] * std::abs(a - b) / weight_sum;
     }
+    return out;
   }
-  return out;
+};
+
+static std::vector<double> pack_gower_rows(const NumericMatrix& matrix) {
+  const R_xlen_t nr = matrix.nrow(), nc = matrix.ncol();
+  const double* const input = matrix.begin();
+  std::vector<double> rows(matrix.size());
+  for (R_xlen_t row = 0; row < nr; ++row)
+    for (R_xlen_t col = 0; col < nc; ++col)
+      rows[row * nc + col] = input[col * nr + row];
+  return rows;
 }
 
 void whichminN_impl(std::vector<double>& x, int n, double* out, double* outMin=nullptr) {
@@ -160,18 +168,20 @@ RcppExport SEXP gowerd(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,
   NumericVector weight(weights);	// creates Rcpp matrix from SEXP
   NumericVector levOrder(levOrders);  // creates Rcpp matrix from SEXP
   NumericVector mixedConstant(mixedConstants);
-  validate_gower_inputs(xMat, yMat, weight, ncolVAR, levOrder, mixedConstant);
-  int nx = xMat.nrow();
-  int ny = yMat.nrow();
-  NumericMatrix delta(nx,ny);
-  double ncolMAX = ncolVAR(0)+ncolVAR(1)+ncolVAR(2)+ncolVAR(3);
+  const double sum = validate_gower_inputs(xMat, yMat, weight, ncolVAR, levOrder,
+                                           mixedConstant);
+  const GowerKernel kernel(weight, ncolVAR, levOrder, mixedConstant, sum);
+  const R_xlen_t nx = xMat.nrow(), ny = yMat.nrow();
+  NumericMatrix delta(xMat.nrow(), yMat.nrow());
+  const double* const x = xMat.begin();
+  const double* const y = yMat.begin();
+  double* const out = delta.begin();
   const int nth = vim_omp_threads(nthreads);
   (void)nth;  // only used by the OpenMP pragma
-#pragma omp parallel for collapse(2) if (nx * ny > 1) num_threads(nth)
-  for (int i=0; i<nx; i++) {
-    for (int j=0; j<ny; j++) {
-        delta(i,j)=distW1(xMat, yMat, i, j, weight, levOrder,
-              ncolMAX, ncolVAR, mixedConstant);
+#pragma omp parallel for collapse(2) if (nth > 1 && (nx > 1 || ny > 1)) num_threads(nth)
+  for (R_xlen_t j = 0; j < ny; ++j) {
+    for (R_xlen_t i = 0; i < nx; ++i) {
+      out[j * nx + i] = kernel.distance(x + i, y + j, nx, ny);
     }
   }
 
@@ -219,7 +229,9 @@ RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SE
   const int nx = donors.nrow();
   const int ny = recipients.nrow();
   const int n = neighbor_count(nR, nx);
-  validate_gower_inputs(donors, recipients, weight, counts, levels, constants);
+  const double sum = validate_gower_inputs(donors, recipients, weight, counts,
+                                           levels, constants);
+  const GowerKernel kernel(weight, counts, levels, constants, sum);
 
   const bool returnMin = as<int>(returnMinR) != 0;
   NumericMatrix inds(n, ny);
@@ -236,13 +248,18 @@ RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SE
   if (n > 1 && ny > 0)
     scratch.resize(nth, std::vector<Candidate>(n));
 
+  // Pack once so the streaming search can read both rows contiguously.
+  const R_xlen_t columns = donors.ncol();
+  const auto donor_rows = ny > 0 ? pack_gower_rows(donors) : std::vector<double>();
+  const auto recipient_rows = pack_gower_rows(recipients);
+
   int invalid_distance = 0;
 #pragma omp parallel for if (nth > 1) num_threads(nth) reduction(|:invalid_distance)
   for (int j = 0; j < ny; ++j) {
     const R_xlen_t offset = static_cast<R_xlen_t>(j) * n;
+    const double* const recipient = recipient_rows.data() + j * columns;
     const auto distance_to = [&](int i) {
-      return distW1(donors, recipients, i, j, weight, levels,
-                    donors.ncol(), counts, constants);
+      return kernel.distance(donor_rows.data() + i * columns, recipient, 1, 1);
     };
     if (n == 1) {
       Candidate best(R_PosInf, 0);
