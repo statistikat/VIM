@@ -309,6 +309,8 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
         features_added <- c(features_added,new_feature)
 
         if(variable[i]%in%mixed){
+          if (!is.null(mixed.constant))
+            mixed.constant <- c(mixed.constant, mixed.constant[match(variable[i], mixed)])
           mixed <- c(mixed,new_feature)
         }else if(variable[i]%in%numerical){
           numerical <- c(numerical,new_feature)
@@ -444,9 +446,11 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
       levOrdersX <- levOrders[orders%in%dist_varx]
       #print(levOrdersX)
       mixedX <-mixed[mixed%in%dist_varx]
+      mixed.constantX <- if (is.null(mixed.constant)) NULL else
+        mixed.constant[match(mixedX, mixed)]
       #dist_single provide the rows of the k nearest neighbours and the corresponding distances
       mindi <- dist_single(as.data.frame(don_dist_var),as.data.frame(imp_dist_var),numericalX,factorsX,ordersX,mixedX,levOrdersX,
-          don_index,imp_index,weightsx,k,mixed.constant,provideMins=weightDist,
+          don_index,imp_index,weightsx,k,mixed.constantX,provideMins=weightDist,
           methodStand = methodStand)
       if (return_donor) {
         ids <- if (k == 1) {
