@@ -128,6 +128,19 @@ gowerD <- function(data.x, data.y = data.x,
     return(as.numeric(x,...))
   }
   #weights <- rep(1,ncol(data.x))
+  # Nominal labels must have the same codes in both populations. In
+  # particular, independent factorization of character subsets is unsafe.
+  for (v in factors) {
+    x <- data.x[[v]]
+    y <- data.y[[v]]
+    if (is.character(x) || is.character(y) || is.factor(x) || is.factor(y)) {
+      x <- as.character(x)
+      y <- as.character(y)
+      labels <- unique(c(x[!is.na(x)], y[!is.na(y)]))
+      data.x[[v]] <- match(x, labels)
+      data.y[[v]] <- match(y, labels)
+    }
+  }
   for(i in 1:ncol(data.x)){
     data.x[,i] <- as.numericX(data.x[,i])
     data.y[,i] <- as.numericX(data.y[,i])
