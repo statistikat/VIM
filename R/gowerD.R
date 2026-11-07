@@ -16,7 +16,7 @@
 #' integer ranks from 1 to the corresponding level count, or NA.
 #' @param mixed.constant 	vector with length equal to the number of semi-continuous variables specifying the point of the semi-continuous distribution with non-zero probability
 #' @param returnIndex logical if TRUE return the index of the minimum distance
-#' @param nMin integer number of values with smallest distance to be returned
+#' @param nMin positive integer number of values with smallest distance to be returned, no greater than the number of rows in data.x
 #' @param returnMin logical if the computed distances for the indices should be returned
 #' @param methodStand character either "range" or "iqr", iqr is more robust for outliers
 #' @details Numerical and semi-continuous (mixed) variables are standardised by
@@ -74,6 +74,8 @@ gowerD <- function(data.x, data.y = data.x,
                    returnMin=FALSE,
                    methodStand="range") {
   stopifnot(length(methodStand)==1&&methodStand%in%c("range", "iqr"))
+  if (returnIndex)
+    validate_neighbor_count(nMin, nrow(data.x), "nMin")
   if ((!is.numeric(levOrders) && length(levOrders) > 0L) ||
       length(levOrders) != length(orders) ||
       anyNA(levOrders) || any(!is.finite(levOrders)) ||
@@ -227,4 +229,12 @@ gowerD <- function(data.x, data.y = data.x,
       out <- out$delta
   }
   return(out)
+}
+
+validate_neighbor_count <- function(n, available = Inf, name = "k") {
+  if (!is.numeric(n) || length(n) != 1L || is.na(n) || !is.finite(n) ||
+      n < 1 || n != floor(n) || n > .Machine$integer.max)
+    stop("'", name, "' must be a single positive integer")
+  if (n > available)
+    stop("'", name, "' exceeds the number of eligible donors (", available, ")")
 }

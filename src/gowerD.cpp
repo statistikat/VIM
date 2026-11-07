@@ -28,6 +28,18 @@ void R_init_VIM(DllInfo* info) {
 
 using namespace std;
 using namespace Rcpp;
+static int neighbor_count(SEXP value, R_xlen_t available) {
+  if ((TYPEOF(value) != INTSXP && TYPEOF(value) != REALSXP) ||
+      Rf_xlength(value) != 1)
+    stop("Neighbour count must be a single positive integer");
+  const double n = as<double>(value);
+  if (!R_FINITE(n) || n < 1 || n != std::floor(n) || n > INT_MAX)
+    stop("Neighbour count must be a single positive integer");
+  if (n > available)
+    stop("Neighbour count exceeds the number of eligible donors");
+  return static_cast<int>(n);
+}
+
 double distW(double x,double y, int type, double weight=1, double weightsum=1,double levOrder=1,
   double mixedConstant=0){
   double out=0;
@@ -130,7 +142,7 @@ RcppExport SEXP gowerd(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,
 RcppExport SEXP whichminN(SEXP xR, SEXP nR, int returnValue) {
   BEGIN_RCPP
   NumericVector x(xR);  // creates Rcpp matrix from SEXP
-  int n = as<int>(nR);
+  int n = neighbor_count(nR, x.size());
   NumericVector out(n);
   std::vector<double> xCopy(x.begin(), x.end());
   if(returnValue==1){
@@ -153,10 +165,11 @@ RcppExport SEXP whichminN(SEXP xR, SEXP nR, int returnValue) {
 RcppExport SEXP gowerDind(SEXP dataX, SEXP dataY,SEXP weights,SEXP ncolNUMFAC,SEXP levOrders,
   SEXP mixedConstants,SEXP nR,SEXP returnMinR, int nthreads = 0){
   BEGIN_RCPP
+  NumericMatrix donors(dataX);
+  int n = neighbor_count(nR, donors.nrow());
   List dist = gowerd( dataX,  dataY, weights, ncolNUMFAC, levOrders, mixedConstants, nthreads);
   NumericMatrix delta = as<NumericMatrix>(dist["delta"]);
   int nc=delta.cols();
-  int n = as<int>(nR);
   int returnMin = as<int>(returnMinR);
   NumericMatrix inds(n,nc);
   const int nth = vim_omp_threads(nthreads);

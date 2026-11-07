@@ -83,7 +83,7 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,
 #' `options(VIM.ncores = )` (at most 2 during `R CMD check`); see there.
 #' @param data data.frame or matrix
 #' @param variable variables where missing values should be imputed
-#' @param k number of Nearest Neighbours used
+#' @param k number of nearest neighbours used; a positive integer no greater than the number of eligible donors for each target
 #' @param dist_var names or variables to be used for distance calculation
 #' @param weights weights for the variables for distance calculation.
 #' If `weights = "auto"` weights will be selected based on variable importance from random forest regression, using function [ranger::ranger()].
@@ -146,6 +146,7 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
                 methodStand = "range",
                 ordFun = medianSamp, id_var = NULL, return_donor = FALSE) {
   check_data(data)
+  validate_neighbor_count(k)
   if (!is.null(id_var) &&
       (!is.character(id_var) || length(id_var) != 1L || is.na(id_var) ||
        !id_var %in% colnames(data))) {
@@ -422,6 +423,8 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
         don_index <- INDEX[TF]
       }
       TF_imp <- indexNA2s[,variable[j]]
+      validate_neighbor_count(k, length(don_index),
+                              paste0("k for target ", variable[j]))
       imp_dist_var <- data[TF_imp,dist_varx,with=FALSE]
       imp_index <- INDEX[TF_imp]
 

@@ -44,7 +44,7 @@ integer ranks from 1 to the corresponding level count, or NA.}
 
 \item{returnIndex}{logical if TRUE return the index of the minimum distance}
 
-\item{nMin}{integer number of values with smallest distance to be returned}
+\item{nMin}{positive integer number of values with smallest distance to be returned, no greater than the number of rows in data.x}
 
 \item{returnMin}{logical if the computed distances for the indices should be returned}
 
