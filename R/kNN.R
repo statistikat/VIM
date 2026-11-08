@@ -30,10 +30,6 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,
   gd$ind[,] <- don_index[gd$ind]
   erg <- as.matrix(gd$ind)
 
-  if(k==1){
-    erg <- t(erg)
-    erg2 <- t(erg2)
-  }
   list(erg,erg2)
 }
 
@@ -83,7 +79,9 @@ dist_single <- function(don_dist_var,imp_dist_var,numericalX,
 #' `options(VIM.ncores = )` (at most 2 during `R CMD check`); see there.
 #' @param data data.frame or matrix
 #' @param variable variables where missing values should be imputed
-#' @param k number of Nearest Neighbours used
+#' @param k positive integer number of nearest neighbours used. If fewer donors
+#' are eligible, a warning is issued and the first eligible donor fills the
+#' remaining slots.
 #' @param dist_var names or variables to be used for distance calculation
 #' @param weights weights for the variables for distance calculation.
 #' If `weights = "auto"` weights will be selected based on variable importance from random forest regression, using function [ranger::ranger()].
@@ -146,6 +144,7 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
                 methodStand = "range",
                 ordFun = medianSamp, id_var = NULL, return_donor = FALSE) {
   check_data(data)
+  validate_neighbor_count(k)
   if (!is.null(id_var) &&
       (!is.character(id_var) || length(id_var) != 1L || is.na(id_var) ||
        !id_var %in% colnames(data))) {
@@ -224,13 +223,14 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
         data[,imp_vars[i]:=as.logical(data[,imp_vars[i]])]#,with=FALSE]
     }
   }
+  active_targets <- seq_along(variable)
   for(v in variable){
     if(data[,sapply(.SD,function(x)all(is.na(x))),.SDcols=v]){
       warning(paste("All observations of",v,"are missing, therefore the variable will not be imputed!\n"))
-      variable <- variable[variable!=v]
+      active_targets <- active_targets[variable[active_targets] != v]
     }
   }
-  if(length(variable)==0){
+  if(length(active_targets)==0){
     warning(paste("Nothing is imputed, because all variables to be imputed only contains missings."))
     if (return_donor)
       data[, (names(donor_ids)) := donor_ids]
@@ -275,7 +275,7 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
     dataRF <- suppressWarnings(kNN(data[,unique(c(unlist(dist_var)
                                                   ,variable)),with=FALSE],imp_var = FALSE))
 
-    for(i in 1:nvar){
+    for(i in active_targets){
 
       if(any(indexNA2s[,variable[i]])){
         if(is.list(dist_var)){
@@ -307,6 +307,8 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
         features_added <- c(features_added,new_feature)
 
         if(variable[i]%in%mixed){
+          if (!is.null(mixed.constant))
+            mixed.constant <- c(mixed.constant, mixed.constant[match(variable[i], mixed)])
           mixed <- c(mixed,new_feature)
         }else if(variable[i]%in%numerical){
           numerical <- c(numerical,new_feature)
@@ -360,7 +362,7 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
     weights_new <- list()
     dist_var_new <- list()
 
-    for(i in 1:nvar){
+    for(i in active_targets){
       if(any(indexNA2s[,variable[i]])){
 
         if(is.list(dist_var)){
@@ -397,7 +399,7 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
       weights <- c(weights,min(weights)/(sum(weights)+1))
     }
   }
-  for(j in 1:nvar){
+  for(j in active_targets){
 
     if(any(indexNA2s[,variable[j]])){
       if(is.list(dist_var)){
@@ -422,6 +424,8 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
         don_index <- INDEX[TF]
       }
       TF_imp <- indexNA2s[,variable[j]]
+      validate_neighbor_count(k, length(don_index),
+                              paste0("k for target ", variable[j]))
       imp_dist_var <- data[TF_imp,dist_varx,with=FALSE]
       imp_index <- INDEX[TF_imp]
 
@@ -440,9 +444,11 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
       levOrdersX <- levOrders[orders%in%dist_varx]
       #print(levOrdersX)
       mixedX <-mixed[mixed%in%dist_varx]
+      mixed.constantX <- if (is.null(mixed.constant)) NULL else
+        mixed.constant[match(mixedX, mixed)]
       #dist_single provide the rows of the k nearest neighbours and the corresponding distances
       mindi <- dist_single(as.data.frame(don_dist_var),as.data.frame(imp_dist_var),numericalX,factorsX,ordersX,mixedX,levOrdersX,
-          don_index,imp_index,weightsx,k,mixed.constant,provideMins=weightDist,
+          don_index,imp_index,weightsx,k,mixed.constantX,provideMins=weightDist,
           methodStand = methodStand)
       if (return_donor) {
         ids <- if (k == 1) {
@@ -452,15 +458,18 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
         }
         donor_ids[[paste0(variable[j], "_donor_id")]][imp_index] <- ids
       }
-      getI <- function(x)data[x,variable[j],with=FALSE]
       if(trace)
-        message(sum(indexNA2s[,variable[j]]),"items of","variable:",variable[j]," imputed\n")
-      #Fetching the actual values of the kNNs for the indices provided by dist_single
-      getI <- function(x)data[x,variable[j],with=FALSE]
-      kNNs <- do.call("cbind",apply(mindi[[1]],2,getI))
-      if(k==1){
-        kNNs <- t(kNNs)
-      }
+        message(length(imp_index),"items of","variable:",variable[j]," imputed\n")
+
+      target <- variable[j]
+      target_values <- data[[target]]
+      neighbors <- mindi[[1]]
+      nominal <- target %in% factors
+      ordinal <- target %in% orders
+      aggregate_fun <- match.fun(if (nominal) catFun else if (ordinal) ordFun else numFun)
+      # Preserve the names supplied by the former donor columns to callbacks.
+      donor_names <- paste(colnames(neighbors), target, sep = ".")
+      recipients <- seq_along(imp_index)
 
       if(weightDist&k>1){
         if(length(factors)<length(variable)&!"weights"%in%names(as.list(args(numFun)))){
@@ -473,36 +482,56 @@ kNN <- function(data, variable=colnames(data), k=5, dist_var=colnames(data),weig
         #all k distances are >= 1 (methodStand="iqr", NA sentinels, or mixed
         #distance variables): then every 1-dist <= 0, min(x[x>0]) is an empty
         #min = Inf, and the weights become Inf -> NaN imputations.
-        mindi[[2]] <- apply(1-mindi[[2]], 2, function(x){
+        donor_weights <- apply(1-mindi[[2]], 2, function(x){
           pos <- x[x>0]
           if(length(pos)>0){
             pmax(min(pos)/10,x)
           }else{
             #all weights <= 0: rank-preserving finite positive weights so the
             #nearer donors still dominate (larger 1-dist = nearer)
-            rng <- max(x)-min(x)
-            if(rng==0) rep(1,length(x)) else (x-min(x))/rng+1e-6
+            observed <- is.finite(x)
+            # Reused donors have infinite placeholder distances.
+            low <- min(x[observed])
+            rng <- max(x[observed]) - low
+            adjusted <- rep(1e-6, length(x))
+            adjusted[observed] <- if (rng == 0) 1 else (x[observed] - low) / rng + 1e-6
+            adjusted
           }
         })
-        ### warning if there is no argument named weights
-        if(variable[j]%in%factors){
-          data[indexNA2s[,variable[j]],variable[j]] <- sapply(1:ncol(kNNs),function(x)do.call("catFun",list(unlist(kNNs[,x,with=FALSE]),mindi[[2]][,x])))
-        }else if(variable[j]%in%orders){
-          data[indexNA2s[,variable[j]],variable[j]] <- sapply(1:ncol(kNNs),function(x)do.call("ordFun",list(unlist(kNNs[,x,with=FALSE]),mindi[[2]][,x])))
-        }else if(is.integer(data[,variable[j]])){
-          data[indexNA2s[,variable[j]],variable[j]] <- round(sapply(1:ncol(kNNs),function(x)do.call("numFun",list(unlist(kNNs[,x,with=FALSE]),mindi[[2]][,x]))))
-        }else
-          data[indexNA2s[,variable[j]],variable[j]] <- sapply(1:ncol(kNNs),function(x)do.call("numFun",list(unlist(kNNs[,x,with=FALSE]),mindi[[2]][,x])))
-      }else{
-        if(variable[j]%in%factors){
-          data[indexNA2s[,variable[j]],variable[j]] <- apply(kNNs,2,catFun)
-        }else if(variable[j]%in%orders){
-          data[indexNA2s[,variable[j]],variable[j]] <- sapply(kNNs, ordFun)
-        }else if(is.integer(data[,variable[j]])){
-          data[indexNA2s[,variable[j]],variable[j]] <- round(apply(kNNs,2,numFun))
-        }else
-          data[indexNA2s[,variable[j]],variable[j]] <- apply(kNNs,2,numFun)
+        imputed <- sapply(recipients, function(i) {
+          # The old weighted path unlisted a named donor column, which
+          # retains factor levels but drops the ordered class.
+          values <- unlist(setNames(list(target_values[neighbors[, i]]),
+                                    donor_names[i]))
+          do.call(aggregate_fun, list(values, donor_weights[, i]))
+        })
+      } else if (ordinal && k > 1L) {
+        imputed <- sapply(setNames(recipients, donor_names), function(i) {
+          aggregate_fun(target_values[neighbors[, i]])
+        })
+      } else {
+        values <- target_values[as.vector(neighbors)]
+        row_names <- if (k == 1L) target else NULL
+        col_names <- if (k == 1L) NULL else donor_names
+        # Match the coercion of apply() on the old donor table. In
+        # particular, unweighted nominal factors reach catFun as labels.
+        if (is.factor(values)) values <- as.character(values)
+        if (!is.object(values) && (is.numeric(values) || is.complex(values) ||
+                                   is.logical(values) || is.character(values))) {
+          donor_matrix <- matrix(values, nrow = k,
+                                 dimnames = list(row_names, col_names))
+        } else if (k == 1L) {
+          donor_matrix <- t(as.matrix(as.data.table(setNames(list(values), target))))
+        } else {
+          # Let data.table handle formatting of less common classes such
+          # as Date, with one table construction for the entire target.
+          columns <- lapply(recipients, function(i) target_values[neighbors[, i]])
+          donor_matrix <- as.matrix(as.data.table(setNames(columns, donor_names)))
+        }
+        imputed <- if (ordinal) sapply(donor_matrix, aggregate_fun) else
+          apply(donor_matrix, 2, aggregate_fun)
       }
+      data[imp_index, target] <- imputed
 
     }else{
       if(trace)

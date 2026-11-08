@@ -56,13 +56,13 @@ d[13:18,2] <- d[13:18,2]*2
 
 # kNN Tests donorcond",{
   d <- setna(dorig,7:12,2)
-  d2 <- kNN(d,k=5,donorcond = list(">3"),variable = "y")
+  d2 <- kNN(d,k=3,donorcond = list(">3"),variable = "y")
   expect_true(all(d2[d2$y_imp,"y"]>3))
 # 
 
 # kNN Tests donorcond multiple",{
   d <- setna(dorig,7:12,2)
-  d2 <- kNN(d,k=5,donorcond = list(c(">3","<6")),variable = "y")
+  d2 <- kNN(d,k=2,donorcond = list(c(">3","<6")),variable = "y")
   expect_true(all(d2[d2$y_imp,"y"]>3))
   expect_true(all(d2[d2$y_imp,"y"]<6))
 # 
@@ -76,11 +76,11 @@ d[13:18,2] <- d[13:18,2]*2
 # kNN Tests donorcond for one var out of two",{
   d <- setna(dorig,7:12,2)
   d <- setna(d,1:3,3)
-  d2 <- kNN(d,k=5,donorcond = list(c(">3","<6"), NULL),variable = c("y","z"))
+  d2 <- kNN(d,k=2,donorcond = list(c(">3","<6"), NULL),variable = c("y","z"))
   expect_true(all(d2[d2$y_imp,"y"]>3))
   expect_true(all(d2[d2$y_imp,"y"]<6))
   
-  d2 <- kNN(d,k=5,donorcond = list(NULL, c(">3","<6")),variable = c("y","z"))
+  d2 <- kNN(d,k=2,donorcond = list(NULL, c(">3","<6")),variable = c("y","z"))
   expect_true(all(d2[d2$z_imp,"z"]>3))
   expect_true(all(d2[d2$z_imp,"z"]<6))
   
@@ -177,7 +177,7 @@ d[13:18,2] <- d[13:18,2]*2
 
 # kNN Tests donorcond - StringsAsFactors",{
   d <- setna(dorig,7:12,2)
-  d2 <- kNN(d,k=5,donorcond = list(">3"),variable = "y")
+  d2 <- kNN(d,k=3,donorcond = list(">3"),variable = "y")
   expect_true(all(d2[d2$y_imp,"y"]>3))
 # 
 
@@ -234,13 +234,13 @@ d[13:18,2] <- d[13:18,2]*2
 ## Test for NULL colnames
 # kNN Test - matrix, data frame and data table with NULL colnames", {
   ds_matrix <- matrix(c(NA, 2:6), ncol = 3)
-  expect_equal(kNN(ds_matrix, imp_var = FALSE)[1, 1], 2)
+  expect_equal(kNN(ds_matrix, k = 1, imp_var = FALSE)[1, 1], 2)
   ds_df <- as.data.frame(ds_matrix)
   colnames(ds_df) <- NULL # as.data.frame() creates column names
-  expect_equal(kNN(ds_df, imp_var = FALSE)[1, 1], 2)
+  expect_equal(kNN(ds_df, k = 1, imp_var = FALSE)[1, 1], 2)
   ds_dt <- as.data.table(ds_matrix)
   colnames(ds_dt) <- NULL
-  expect_equal(as.numeric(kNN(ds_dt, imp_var = FALSE)[1, 1]), 2)
+  expect_equal(as.numeric(kNN(ds_dt, k = 1, imp_var = FALSE)[1, 1]), 2)
 # 
 
   message("weighted catFun without missings in the distance variables")

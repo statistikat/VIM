@@ -25,7 +25,8 @@ gowerD(
 
 \item{data.y}{data frame}
 
-\item{weights}{numeric vector providing weights for the observations in x}
+\item{weights}{finite nonnegative numeric weights, one per input column,
+with a positive finite total over the selected distance variables}
 
 \item{numerical}{names of numerical variables}
 
@@ -44,7 +45,9 @@ integer ranks from 1 to the corresponding level count, or NA.}
 
 \item{returnIndex}{logical if TRUE return the index of the minimum distance}
 
-\item{nMin}{integer number of values with smallest distance to be returned}
+\item{nMin}{positive integer number of values with smallest distance to be returned.
+If this exceeds the number of donors, a warning is issued and the first donor
+fills the remaining slots with infinite distances.}
 
 \item{returnMin}{logical if the computed distances for the indices should be returned}
 
