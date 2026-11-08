@@ -1,6 +1,10 @@
 # VIM 7.5.1
 
 ## Changes
+- The TabICL2 benchmark now includes RF-importance-weighted kNN and cellwise
+  imputation with one or up to ten passes. Both kNN variants were recomputed
+  after the Gower fixes. Cellwise learners handle unseen predictor categories
+  with the training mode by default (`new_levels = "error"` opts into rejection).
 - Cellwise learners now guard extreme numeric predictor cells using frozen
   training medians/scales. Cellwise PMM and midastouch screen response donors
   using robust training residual calibration, including bootstrap/pipeline

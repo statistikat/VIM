@@ -4,6 +4,7 @@
     inherit = mlr3::LearnerClassif,
     public = list(initialize = function() {
       ps <- paradox::ps(
+        new_levels = paradox::p_fct(c("mode", "error"), default = "mode", tags = "train"),
         clean_predictors = paradox::p_lgl(default = TRUE, tags = "train"),
         predictor_cutoff = paradox::p_dbl(lower = 1, default = 4.5, tags = "train"),
         init_weights = paradox::p_fct(c("mcd", "univariate"), default = "mcd", tags = "train"),
@@ -13,7 +14,7 @@
         decay = paradox::p_dbl(lower = 0, default = 0, tags = "train"),
         MaxNWts = paradox::p_int(lower = 1L, default = 10000L, tags = "train")
       )
-      ps$values <- list(clean_predictors = TRUE, predictor_cutoff = 4.5, init_weights = "mcd", weight_function = "tukey",
+      ps$values <- list(new_levels = "mode", clean_predictors = TRUE, predictor_cutoff = 4.5, init_weights = "mcd", weight_function = "tukey",
                         maxit = 200L, decay = 0, MaxNWts = 10000L)
       super$initialize(id = "classif.cellwise", param_set = ps,
         feature_types = c("numeric", "integer", "factor", "ordered"),
@@ -49,6 +50,9 @@
         model <- list(features = original, kept_features = features,
                       classes = classes, factor_levels = sanitized$factor_levels,
                       row_weights = row_weights, prior = prior,
+                      new_levels = pv$new_levels,
+                      factor_modes = lapply(data[names(sanitized$factor_levels)],
+                        function(x) names(which.max(table(x)))),
                       predictor_guard = .cellwise_predictor_guard(data, features,
                         pv$clean_predictors, pv$predictor_cutoff))
         if (sum(counts > 0) == 1L || !length(features)) return(model)
@@ -72,12 +76,8 @@
         } else {
           data <- as.data.frame(task$data(cols = model$features))
           names(data) <- .cw_safe_names(length(model$features) + 1L)[-1L]
-          for (v in names(model$factor_levels)) {
-            values <- as.character(data[[v]])
-            if (any(!is.na(values) & !values %in% model$factor_levels[[v]]))
-              stop("Unseen factor levels in cellwise prediction: ", v)
-            data[[v]] <- factor(values, levels = model$factor_levels[[v]])
-          }
+          data <- .cellwise_prepare_factors(data, model$factor_levels,
+                                            model$factor_modes, model$new_levels)
           if (anyNA(data[model$kept_features]))
             stop("Cellwise prediction requires complete predictors.")
           data <- .cellwise_guard_predictors(data, model$predictor_guard)

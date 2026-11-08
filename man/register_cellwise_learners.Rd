@@ -14,8 +14,10 @@ Registers \code{regr.cellwise} and \code{classif.cellwise}, used by \code{vimput
 Training uses only the rows supplied by mlr3; prediction never refits the
 model or uses the response. Predictors must be complete (vimpute supplies
 its current completed predictors). Numeric, integer and factor predictors
-are supported. Constant predictors are removed; unseen factor levels at
-prediction time are rejected.
+are supported. Constant predictors are removed. Predictor levels in the
+task schema but absent from training rows map internally to the training
+mode; set \code{new_levels = "error"}
+for strict rejection. Observed input cells are never modified.
 }
 \details{
 Learner parameters:

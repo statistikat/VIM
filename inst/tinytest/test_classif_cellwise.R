@@ -78,6 +78,7 @@ expect_false(any(grepl("fallback|falling back|ignored|not supported", warnings, 
 # MCD weighting is also computed solely from continuous predictors.
 l <- mlr3::lrn("classif.cellwise", predict_type = "prob", init_weights = "mcd")
 complete <- d[1:150, ]
+complete$f <- factor(complete$f, levels = c(levels(complete$f), "unseen"))
 set.seed(19)
 l$train(mlr3::as_task_classif(complete, target = "y"))
 set.seed(19)
@@ -85,8 +86,11 @@ W <- VIM:::cellWeightsMCD(as.matrix(complete[c("x", "z")]), method = "tukey")
 expect_equal(l$model$row_weights, exp(rowMeans(log(pmax(W, 1e-10)))),
              check.attributes = FALSE)
 nd <- complete[1, ]
-nd$f <- factor("unseen")
-expect_error(l$predict_newdata(nd))
+nd$f <- factor("unseen", levels = levels(complete$f))
+expect_true(all(is.finite(l$predict_newdata(nd)$prob)))
+strict <- mlr3::lrn("classif.cellwise", predict_type = "prob", new_levels = "error")
+strict$train(mlr3::as_task_classif(complete, target = "y"))
+expect_error(strict$predict_newdata(nd))
 nd <- complete[1, ]
 nd$x <- NA_real_
 expect_error(l$predict_newdata(nd))

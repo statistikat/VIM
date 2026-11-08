@@ -20,7 +20,7 @@ stopifnot(requireNamespace("ggplot2", quietly = TRUE))
 config <- uci_config()
 config$n <- c(250L, 500L, 1000L, 2000L)
 config$repetitions <- 3L
-result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-typed-predictors-3reps")
+result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-cellwise-knn-3reps")
 cache_dir <- Sys.getenv("VIM_TABICL2_DATA", "../.local/benchmarks/tabicl2-cache")
 # The local checkpoint cache resumes matching completed scenarios. The generated
 # .Rmd embeds the outputs, so normal rendering never executes the benchmark.
@@ -48,6 +48,11 @@ for (f in c("config.rds", "runs.csv", "metrics.csv", "distributions.csv",
 ```
 
 ```{r protocol-status, echo=FALSE, results='asis'}
+if (!identical(config$methods, uci_config()$methods)) {
+  cat("> **Different method set:** This cache does not contain the current ",
+      "12-method comparison. Refresh the missing comparators before interpreting ",
+      "it as the updated benchmark.\n\n")
+}
 if (!identical(config$protocol, uci_config()$protocol)) {
   cat("> **Superseded results:** These cached results predate the TabICL predictor ",
       "preprocessing fixes (original features, consistent missing-value handling ",
@@ -64,7 +69,8 @@ table { display: block; max-width: 100%; overflow-x: auto; }
 
 This benchmark is adapted from `transformerImpute-benchmark.Rmd` on the
 `transformerImpute-rebased` branch. It retains the Adult/Bank samples, common
-MCAR/MAR masks and scoring protocol, and compares kNN, ranger, ranger_seq10, xgboost, xgboost_seq10 and four
+MCAR/MAR masks and scoring protocol, and compares plain and RF-importance-weighted kNN, cellwise and cellwise_seq10,
+ranger, ranger_seq10, xgboost, xgboost_seq10 and four
 TabICL variants: pretrained/fine-tuned, each with one or up to ten passes.
 
 Like `vimpute-benchmark.Rmd`, this document is precomputed from its
@@ -94,10 +100,43 @@ internal validation split never receives hidden imputation truth. The seq10
 variants use `sequential = TRUE, nseq = 10`; vimpute's convergence rule may
 stop earlier. Fine-tuning occurs afresh at each fitted iteration.
 
-kNN uses five neighbours. Ranger uses 100 trees and XGBoost 30 boosting rounds.
+Both kNN variants use five neighbours, range-standardized Gower distances,
+median numeric aggregation and modal categorical aggregation. Each target
+uses the original incomplete table, all other columns as distance variables,
+and `useImputedDist = FALSE`. `kNN_rf` adds `weights = "auto"`: target-specific
+random-forest impurity importances fitted on complete cases provide the
+predictor weights (ranger's default 500 trees). This does not add RF predictions
+as distance variables. Plain `kNN` uses equal predictor weights.
+
+`cellwise` uses cell-weighted MM regression for numeric targets and weighted
+multinomial classification for factors, with training-based predictor screening.
+`cellwise_seq10` uses the same learners for up to ten sequential passes; it may
+stop early at convergence. Both disable PMM and residual noise (`uncert = "none"`)
+to match this benchmark's other vimpute variants, so donor screening is inactive.
+Categorical imputation chooses the most probable class. Predictor categories
+present in the task schema but absent from a target's observed training rows
+are mapped internally to that predictor's training mode; supplied observed
+cells remain unchanged.
+
+The kNN results were recomputed after merging the local master kNN/Gower fixes.
+The two cellwise variants and `kNN_rf` were newly computed on the existing saved
+samples and masks. Previously computed ranger, XGBoost and TabICL results were
+retained unchanged; their original timings were not remeasured. Session metadata
+records the selective refresh. Comparisons are thus paired on data and seeds,
+but timings across refresh sessions should be interpreted cautiously.
+
+Ranger uses 100 trees and XGBoost 30 boosting rounds.
 The seq10 variants use up to ten sequential passes; the other ranger/XGBoost variants
 predict each target from the same incomplete table. TabICL's pretrained budget
 differs from these fitted models, so this is a practical method comparison.
+
+To refresh just these four methods from an existing complete v3 cache, use
+`uci_refresh_methods()` in `dev-notes/benchmarks/tabicl2-refresh.R` after sourcing
+`tabicl2.R`. Supply separate `source` and `output` directories; the original is
+read-only. Completed refreshed fits are checkpointed, so rerunning the same
+call resumes without refitting them. The report can then be regenerated with
+`VIM_TABICL2_CACHED_ONLY=true` and `VIM_TABICL2_RESULTS` set to the output directory,
+without initializing Python.
 
 Python >= 3.10 and the optional R package `reticulate` are required for TabICL.
 Install dependencies explicitly in the environment selected by reticulate:
@@ -238,13 +277,27 @@ masked cells only:
 The saved run contains `r nrow(runs)` method/scenario attempts,
 `r sum(runs$status == "ok")` successful completions and
 `r sum(runs$status != "ok")` recorded failures. Every method in a scenario
-uses the same `makeMissing()` mask.
+uses the same `makeMissing()` mask. A successful completion means that the
+completed table passed schema, observed-value and finite-score checks; it does
+not imply optimizer convergence. Numerical warnings are retained in `runs.csv`.
+The warning summary below makes nonconverged fits and explicit fallbacks visible.
 
 ```{r status, echo=FALSE}
 knitr::kable(as.data.frame(table(runs$n, runs$dataset, runs$method, runs$status)),
              col.names = c("Rows", "Dataset", "Method", "Status", "Runs"))
 failed <- runs[runs$status != "ok", c("n", "dataset", "repetition", "mechanism", "rate", "method", "error")]
 if (nrow(failed)) knitr::kable(failed)
+```
+
+```{r warning-summary, echo=FALSE}
+warning_text <- ifelse(is.na(runs$warnings), "", runs$warnings)
+warning_counts <- aggregate(cbind(
+  warned = as.integer(nzchar(warning_text)),
+  convergence_warning = as.integer(grepl("converg", warning_text, ignore.case = TRUE)),
+  fallback_warning = as.integer(grepl("fallback|falling back", warning_text, ignore.case = TRUE))) ~
+  method, data = runs, FUN = sum)
+knitr::kable(warning_counts, row.names = FALSE,
+  caption = "Runs with recorded warnings (counts may overlap).")
 ```
 
 The following tables retain number of rows, dataset, mechanism and nominal rate. Scores are
@@ -304,7 +357,7 @@ ggplot(numeric_scores, aes(factor(rate), nrmse, colour = method, group = method)
   scale_y_continuous(trans = "log1p") +
   labs(x = "Nominal missing fraction", y = "VIM masked-reference NRMSE (log1p scale)",
        colour = "Method", caption = "Points: repetitions; lines: means. Lower is better.") +
-  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2))
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 3))
 ```
 
 ```{r categorical-plot, echo=FALSE, eval=have_results && has_ggplot, fig.height=12}
@@ -315,15 +368,15 @@ ggplot(subset(metrics, type == "categorical"),
   geom_point(position = position_dodge(width = .25), alpha = .65) +
   facet_grid(n + dataset ~ mechanism) + ylim(0, 1) +
   labs(x = "Nominal missing fraction", y = "Masked-cell accuracy", colour = "Method") +
-  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2))
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 3))
 ```
 
-```{r runtime-plot, echo=FALSE, eval=have_results && has_ggplot, fig.height=12}
+```{r runtime-plot, echo=FALSE, eval=have_results && has_ggplot, fig.height=18}
 ggplot(subset(runs, status == "ok"), aes(method, elapsed, colour = factor(rate))) +
   geom_point(position = position_jitter(width = .15, height = 0, seed = 1)) +
   facet_grid(n + dataset ~ mechanism) + scale_y_log10() + coord_flip() +
   labs(x = NULL, y = "Seconds for both targets (log scale)", colour = "Missing fraction") +
-  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2))
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 3))
 ```
 
 ```{r structure-plot, echo=FALSE, eval=have_results && has_ggplot, fig.height=18}
@@ -334,7 +387,7 @@ ggplot(metrics, aes(factor(rate), marginal_distance, colour = method, group = me
   facet_grid(n + dataset + type ~ mechanism) +
   labs(x = "Nominal missing fraction", y = "Whole-table marginal distance",
        colour = "Method", caption = "Numeric: ECDF distance; categorical: total variation. Lower is better.") +
-  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2))
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 3))
 ```
 
 ```{r scaling-note, echo=FALSE, results='asis'}
@@ -354,7 +407,7 @@ ggplot(subset(metrics, type == "numeric"),
   scale_x_log10(breaks = config$n) + scale_y_continuous(trans = "log1p") +
   labs(x = "Number of rows (log scale)", y = "VIM masked-reference NRMSE",
        colour = "Method") +
-  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 3)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 ```{r size-accuracy, echo=FALSE, eval=have_results && has_ggplot && length(config$n) > 1L, fig.height=10}
@@ -366,7 +419,7 @@ ggplot(subset(metrics, type == "categorical"),
   scale_x_log10(breaks = config$n) + ylim(0, 1) +
   labs(x = "Number of rows (log scale)", y = "Masked-cell accuracy",
        colour = "Method") +
-  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 3)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 ```{r size-runtime, echo=FALSE, eval=have_results && has_ggplot && length(config$n) > 1L, fig.height=10}
@@ -378,7 +431,7 @@ ggplot(subset(runs, status == "ok"),
   scale_x_log10(breaks = config$n) + scale_y_log10() +
   labs(x = "Number of rows (log scale)", y = "Median seconds (log scale)",
        colour = "Method") +
-  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 3)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 For predeclared illustrative scenarios (repetition 1, MAR, 20% at each size), the next
@@ -393,10 +446,10 @@ ggplot(subset(distributions, type == "numeric"),
   geom_line() + geom_point(size = 1) + facet_wrap(~n + dataset + variable, scales = "free_y") +
   scale_y_continuous(trans = "asinh") +
   labs(x = "Quantile probability", y = "Whole-table quantile (asinh scale)",
-       colour = "Method", linetype = "Complete reference") + theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 2))
+       colour = "Method", linetype = "Complete reference") + theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 3))
 ```
 
-```{r proportions-plot, echo=FALSE, eval=have_results && has_ggplot, fig.height=10}
+```{r proportions-plot, echo=FALSE, eval=have_results && has_ggplot, fig.height=14}
 ggplot(subset(distributions, type == "categorical"), aes(method, value, fill = category)) +
   geom_col() + facet_wrap(~n + dataset + variable) + coord_flip() +
   labs(x = NULL, y = "Whole-table category proportion", fill = "Category") + theme_minimal() + theme(legend.position = "bottom")

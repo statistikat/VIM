@@ -60,3 +60,19 @@ cp <- cl$predict_newdata(nd)$prob
 expect_equal(cp[1, ], cp[2, ])
 expect_equal(cl$predict_newdata(nd[1, , drop = FALSE])$prob,
              cp[1, , drop = FALSE], check.attributes = FALSE)
+
+# Rare predictor levels absent from training map only the internal frame to
+# the training mode. Strict callers can still request the previous error.
+set.seed(81)
+fdata <- data.frame(x = rnorm(80), group = factor(c(rep("a", 50), rep("b", 29), "rare")))
+fdata$y <- 2*fdata$x + (fdata$group == "b") + rnorm(80, sd = .1)
+ft <- mlr3::as_task_regr(fdata, target = "y")
+fl <- mlr3::lrn("regr.cellwise", engine = "cellwise-mm")
+fl$train(ft, row_ids = 1:79)
+pred_rare <- fl$predict(ft, row_ids = 80)$response
+mode_row <- fdata[80, ]; mode_row$group <- factor("a", levels = levels(fdata$group))
+expect_equal(pred_rare, fl$predict_newdata(mode_row)$response)
+expect_identical(as.character(ft$data(rows = 80, cols = "group")$group), "rare")
+fl_strict <- mlr3::lrn("regr.cellwise", engine = "cellwise-mm", new_levels = "error")
+fl_strict$train(ft, row_ids = 1:79)
+expect_error(fl_strict$predict(ft, row_ids = 80), "Unseen factor levels")

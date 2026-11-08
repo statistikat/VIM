@@ -5,7 +5,7 @@ uci_config <- function(full = FALSE) {
        n = c(250L, 500L, 1000L, 2000L), rates = c(.1, .2, .4),
        repetitions = if (full) 10L else 3L, mechanisms = c("MCAR", "MAR"),
        seed = 20261010L,
-       methods = c("kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
+       methods = c("kNN", "kNN_rf", "cellwise", "cellwise_seq10", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
                    "vimpute_tabicl2_finetune", "vimpute_tabicl2_seq10",
                    "vimpute_tabicl2_finetune_seq10"),
        tabicl2 = list(input_type = "dataframe", finetune = FALSE, n_estimators = 8L, device = "cpu", n_jobs = 1L),
@@ -62,7 +62,7 @@ uci_prepare <- function(cache, download = FALSE) {
 }
 
 uci_methods <- function(config) {
-  allowed <- c("kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
+  allowed <- c("kNN", "kNN_rf", "cellwise", "cellwise_seq10", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
                    "vimpute_tabicl2_finetune", "vimpute_tabicl2_seq10",
                    "vimpute_tabicl2_finetune_seq10")
   if (any(!config$methods %in% allowed)) stop("Unknown benchmark method")
@@ -77,6 +77,16 @@ uci_methods <- function(config) {
         pars$finetune <- fine
         return(uci_prediction_table(as.data.frame(VIM::vimpute(d, method = "tabicl2",
           learner_params = list(tabicl2 = pars), sequential = seq10,
+          nseq = if (seq10) 10L else 1L, pmm = FALSE, uncert = "none",
+          seed = seed, imp_var = FALSE)), d, targets))
+      }
+      if (method %in% c("cellwise", "cellwise_seq10")) {
+        numeric_targets <- targets[vapply(d[targets], is.numeric, logical(1))]
+        pars <- setNames(lapply(numeric_targets, function(v)
+          list(engine = "cellwise-mm")), numeric_targets)
+        seq10 <- endsWith(method, "seq10")
+        return(uci_prediction_table(as.data.frame(VIM::vimpute(d, method = "cellwise",
+          learner_params = pars, sequential = seq10,
           nseq = if (seq10) 10L else 1L, pmm = FALSE, uncert = "none",
           seed = seed, imp_var = FALSE)), d, targets))
       }
@@ -95,6 +105,8 @@ uci_methods <- function(config) {
         ans <- switch(method,
           kNN = VIM::kNN(d, variable = v, dist_var = predictors, k = 5L,
                         imp_var = FALSE, useImputedDist = FALSE),
+          kNN_rf = VIM::kNN(d, variable = v, dist_var = predictors, k = 5L,
+                           weights = "auto", imp_var = FALSE, useImputedDist = FALSE),
           ranger = VIM::rangerImpute(form, d, imp_var = FALSE,
                                     num.trees = config$trees, num.threads = 1L),
           xgboost = VIM::xgboostImpute(form, d, imp_var = FALSE,

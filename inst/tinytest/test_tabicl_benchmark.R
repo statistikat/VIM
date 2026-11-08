@@ -11,11 +11,11 @@ sys.source(benchmark_paths[1L], e)
 config <- e$uci_config()
 expect_equal(config$n, c(250L, 500L, 1000L, 2000L))
 expect_equal(config$repetitions, 3L)
-expect_equal(config$methods, c("kNN", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
+expect_equal(config$methods, c("kNN", "kNN_rf", "cellwise", "cellwise_seq10", "ranger", "ranger_seq10", "xgboost", "xgboost_seq10", "vimpute_tabicl2",
  "vimpute_tabicl2_finetune", "vimpute_tabicl2_seq10", "vimpute_tabicl2_finetune_seq10"))
 expect_error(e$uci_validate_sizes(c(50L, 50L)), "distinct")
 expect_error(e$uci_methods(utils::modifyList(config, list(methods = "transformerImpute"))), "Unknown")
-# Deterministic API double lets all nine methods run without model downloads.
+# Deterministic API double lets all twelve methods run without model downloads.
 reg <- function(...) {
   a <- new.env()
   a$fit <- function(x, y) { a$mean <- mean(y); invisible(a) }

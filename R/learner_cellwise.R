@@ -4,8 +4,10 @@
 #' Training uses only the rows supplied by mlr3; prediction never refits the
 #' model or uses the response. Predictors must be complete (vimpute supplies
 #' its current completed predictors). Numeric, integer and factor predictors
-#' are supported. Constant predictors are removed; unseen factor levels at
-#' prediction time are rejected.
+#' are supported. Constant predictors are removed. Predictor levels in the
+#' task schema but absent from training rows map internally to the training
+#' mode; set `new_levels = "error"`
+#' for strict rejection. Observed input cells are never modified.
 #'
 #' @details
 #' Learner parameters:
@@ -77,6 +79,7 @@ register_cellwise_learners <- function() {
     inherit = mlr3::LearnerRegr,
     public = list(initialize = function() {
       ps <- paradox::ps(
+        new_levels = paradox::p_fct(c("mode", "error"), default = "mode", tags = "train"),
         clean_predictors = paradox::p_lgl(default = TRUE, tags = "train"),
         predictor_cutoff = paradox::p_dbl(lower = 1, default = 4.5, tags = "train"),
         donor_cutoff = paradox::p_dbl(lower = 1, default = 4.5, tags = "train"),
@@ -89,7 +92,7 @@ register_cellwise_learners <- function() {
         maxit_irwls = paradox::p_int(lower = 1L, default = 50L, tags = "train"),
         eps_irwls = paradox::p_dbl(lower = .Machine$double.eps, default = 1e-6, tags = "train")
       )
-      ps$values <- list(clean_predictors = TRUE, predictor_cutoff = 4.5, donor_cutoff = 4.5,
+      ps$values <- list(new_levels = "mode", clean_predictors = TRUE, predictor_cutoff = 4.5, donor_cutoff = 4.5,
                         engine = "crm", init_weights = "mcd",
                         weight_function = "tukey", max_shooting = 5L,
                         maxit_irwls = 50L, eps_irwls = 1e-6)
@@ -125,6 +128,9 @@ register_cellwise_learners <- function() {
         model <- list(features = original, terms = terms,
                       xlevels = lapply(mf[vapply(mf, is.factor, logical(1))], levels),
                       contrasts = attr(design, "contrasts"), engine = pv$engine,
+                      new_levels = pv$new_levels,
+                      factor_modes = lapply(data[names(sanitized$factor_levels)],
+                        function(x) names(which.max(table(x)))),
                       predictor_guard = .cellwise_predictor_guard(data, features,
                         pv$clean_predictors, pv$predictor_cutoff))
         if (!ncol(X) || length(unique(y)) == 1L) {

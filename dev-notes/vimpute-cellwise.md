@@ -43,7 +43,8 @@ Factor encoding and contrasts are learned at training time and reused for new
 rows. Constant predictors are dropped; a predictor-free or constant-response
 fit returns the training response median. Missing predictors are completed by
 vimpute, not by the learner. Direct mlr3 callers must provide complete predictors;
-unseen factor levels are rejected.
+unseen predictor levels map internally to the training mode by default
+(`new_levels = "error"` requests strict rejection).
 
 This is an inductive per-target implementation, not numerical equivalence with
 an entire standalone imputer. In particular, the old imputeCellReg engines fit

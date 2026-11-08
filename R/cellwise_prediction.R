@@ -20,6 +20,7 @@
 
 .cellwise_regression_response <- function(model, data) {
   if (!is.null(model$constant)) return(rep(model$constant, nrow(data)))
+  data <- .cellwise_prepare_factors(data, model$xlevels, model$factor_modes, model$new_levels)
   data <- .cellwise_guard_predictors(data, model$predictor_guard)
   mf <- stats::model.frame(model$terms, data, xlev = model$xlevels,
                            na.action = stats::na.pass)
@@ -69,4 +70,19 @@
   valid <- is.finite(y) & is.finite(scores)
   if (is.null(guard) || is.infinite(guard$cutoff)) return(valid)
   valid & abs(y - scores - guard$center) <= guard$cutoff * guard$scale
+}
+
+# New predictor levels have no fitted coefficient. Use a training-only mode
+# by default; strict callers can request an error instead.
+.cellwise_prepare_factors <- function(data, levels, modes, policy = "mode") {
+  for (v in names(levels)) {
+    values <- as.character(data[[v]])
+    unknown <- !is.na(values) & !values %in% levels[[v]]
+    if (any(unknown)) {
+      if (policy == "error") stop("Unseen factor levels in cellwise prediction: ", v)
+      values[unknown] <- modes[[v]]
+    }
+    data[[v]] <- factor(values, levels = levels[[v]])
+  }
+  data
 }
