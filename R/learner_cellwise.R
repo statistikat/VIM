@@ -9,6 +9,18 @@
 #'
 #' @details
 #' Learner parameters:
+#' * `clean_predictors`: `TRUE` (both learners). At prediction, numeric
+#'   predictor cells farther than `predictor_cutoff` (4.5) robust scales from
+#'   their training median are replaced internally by that median. The scale
+#'   is MAD, with IQR and unit-scale fallbacks as in VIM's cell-weight helpers.
+#'   Statistics are frozen at training time; factors and caller data are unchanged.
+#'   Set `clean_predictors = FALSE` to recover raw-design prediction.
+#' * `donor_cutoff`: 4.5 (regression only). In vimpute, PMM (including
+#'   `pmm = TRUE`) and midastouch reject observed numeric donors whose residual
+#'   exceeds this many training residual scales from the training residual
+#'   median. Calibration uses the guarded model predictions, MAD (IQR fallback)
+#'   and a numerical scale floor. `Inf` disables donor screening. If no donors
+#'   qualify, vimpute warns and retains the point prediction.
 #' * `engine`: `"crm"` (default, requires crmReg), `"cellwise-mm"`,
 #'   `"shooting-s"`, or `"irwls"`.
 #' * `init_weights`: `"mcd"` (default) or `"univariate"`, for cellwise-mm
@@ -27,8 +39,12 @@
 #' IRWLS uses [cellIRWLS()] from [imputeCellM()] directly. Dummy columns inherit
 #' weight one, while continuous predictors receive cell weights.
 #' These are independent per-target fits: they do not carry a shared cell-weight
-#' matrix between vimpute sweeps. Prediction uses the raw predictor design,
-#' as in imputeCellReg; it does not repair contaminated new predictor cells.
+#' matrix between vimpute sweeps. Robust fitting still uses the original training
+#' design and cell weights; the prediction guard protects new predictor cells.
+#' The guard is a marginal gross-outlier screen, not conditional cellwise
+#' outlier detection. Legitimate tail values may be replaced; raise the cutoff
+#' or disable it when extrapolation is intended. Donor screening can narrow
+#' the imputation distribution and does not establish proper multiple imputation.
 #'
 #' The learner returns deterministic responses. Iteration, bootstrap and
 #' uncertainty (including PMM) remain the responsibility of vimpute.
@@ -61,6 +77,9 @@ register_cellwise_learners <- function() {
     inherit = mlr3::LearnerRegr,
     public = list(initialize = function() {
       ps <- paradox::ps(
+        clean_predictors = paradox::p_lgl(default = TRUE, tags = "train"),
+        predictor_cutoff = paradox::p_dbl(lower = 1, default = 4.5, tags = "train"),
+        donor_cutoff = paradox::p_dbl(lower = 1, default = 4.5, tags = "train"),
         engine = paradox::p_fct(c("crm", "cellwise-mm", "shooting-s", "irwls"),
                                default = "crm", tags = "train"),
         init_weights = paradox::p_fct(c("mcd", "univariate"), default = "mcd", tags = "train"),
@@ -70,7 +89,8 @@ register_cellwise_learners <- function() {
         maxit_irwls = paradox::p_int(lower = 1L, default = 50L, tags = "train"),
         eps_irwls = paradox::p_dbl(lower = .Machine$double.eps, default = 1e-6, tags = "train")
       )
-      ps$values <- list(engine = "crm", init_weights = "mcd",
+      ps$values <- list(clean_predictors = TRUE, predictor_cutoff = 4.5, donor_cutoff = 4.5,
+                        engine = "crm", init_weights = "mcd",
                         weight_function = "tukey", max_shooting = 5L,
                         maxit_irwls = 50L, eps_irwls = 1e-6)
       super$initialize(id = "regr.cellwise", param_set = ps,
@@ -104,10 +124,13 @@ register_cellwise_learners <- function() {
         y <- data[[target]]
         model <- list(features = original, terms = terms,
                       xlevels = lapply(mf[vapply(mf, is.factor, logical(1))], levels),
-                      contrasts = attr(design, "contrasts"), engine = pv$engine)
+                      contrasts = attr(design, "contrasts"), engine = pv$engine,
+                      predictor_guard = .cellwise_predictor_guard(data, features,
+                        pv$clean_predictors, pv$predictor_cutoff))
         if (!ncol(X) || length(unique(y)) == 1L) {
           model$constant <- stats::median(y)
-          return(model)
+          return(.cellwise_calibrate_donors(model, y, rep(model$constant, length(y)),
+                                             pv$donor_cutoff))
         }
         # Build cell weights before dummy expansion: categorical contrasts must
         # not enter a continuous MCD scatter estimate.
@@ -139,25 +162,16 @@ register_cellwise_learners <- function() {
         model$coefficients <- result$coefficients
         model$cell_flags <- result$cell_flags
         model$response_weights <- result$response_weights
-        model
+        .cellwise_calibrate_donors(model, y, .cellwise_regression_response(model, data),
+                                   pv$donor_cutoff)
       },
       .predict = function(task) {
         model <- self$model
         data <- as.data.frame(task$data(cols = model$features))
         names(data) <- .cw_safe_names(length(model$features) + 1L)[-1L]
-        if (!is.null(model$constant)) return(list(response = rep(model$constant, task$nrow)))
-        mf <- stats::model.frame(model$terms, data, xlev = model$xlevels,
-                                 na.action = stats::na.pass)
-        X <- stats::model.matrix(model$terms, mf, contrasts.arg = model$contrasts)
-        if (anyNA(X)) stop("Cellwise prediction requires complete predictors.")
-        if (model$engine %in% c("shooting-s", "irwls")) {
-          response <- as.numeric(X %*% model$coefficients)
-        } else {
-          newdata <- as.data.frame(X[, -1L, drop = FALSE])
-          names(newdata) <- model$design_names
-          response <- as.numeric(stats::predict(model$fit, newdata = newdata))
-        }
-        list(response = response)
+        if (!length(model$features))
+          return(list(response = rep(model$constant, task$nrow)))
+        list(response = .cellwise_regression_response(model, data))
       }
     ))
   mlr3::mlr_learners$add("regr.cellwise", learner)

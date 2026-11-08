@@ -2579,14 +2579,26 @@ predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, featur
         boot = boot, lhs_transformation = lhs_transformation)
       if (is.null(donor_scores) || length(donor_scores) != length(obs_idx) ||
           !is.numeric(donor_scores)) {
-        warning(sprintf(
-          "Could not score the donors of '%s' by prediction; matching on observed values instead.",
-          var))
-        donor_scores <- score_current[obs_idx]
+        if (method_var == "cellwise") {
+          warning("Could not screen cellwise donors; keeping model predictions.")
+          donor_scores <- rep(NA_real_, length(obs_idx))
+        } else {
+          warning(sprintf(
+            "Could not score the donors of '%s' by prediction; matching on observed values instead.",
+            var))
+          donor_scores <- score_current[obs_idx]
+        }
       }
       if (exists("decimal_places")) {
         donor_scores <- round(donor_scores, decimal_places)
       }
+    }
+
+    # Cellwise's training-calibrated residual screen excludes contaminated
+    # responses from donor pools. NA scores are excluded by both donor paths.
+    if (method_var == "cellwise" && uncert %in% c("pmm", "midastouch")) {
+      ok <- .cellwise_valid_donors(learner, data[[var]][obs_idx], donor_scores)
+      donor_scores[!ok] <- NA_real_
     }
 
     if (uncert == "pmm") {
@@ -2646,6 +2658,18 @@ predict_imputations <- function(is_sc, var, data, data_temp, missing_idx, featur
     }
 
     valid_obs <- !is.na(data[[var]][obs_idx]) & is.finite(score_current[obs_idx])
+    if (method_var == "cellwise") {
+      donor_scores <- pmm_observed_scores(learner, data_temp, obs_idx,
+        feature_cols, target_col, factor_levels, method_var, boot,
+        lhs_transformation = lhs_transformation)
+      if (is.null(donor_scores)) {
+        warning("Could not screen cellwise PMM donors; keeping model predictions.")
+        valid_obs[] <- FALSE
+      } else {
+        valid_obs <- valid_obs & .cellwise_valid_donors(
+          learner, data[[var]][obs_idx], donor_scores)
+      }
+    }
     obs_idx <- obs_idx[valid_obs]
     y_obs <- data[[var]][obs_idx]
     if (length(y_obs) == 0L) {

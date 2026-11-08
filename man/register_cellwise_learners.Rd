@@ -20,6 +20,18 @@ prediction time are rejected.
 \details{
 Learner parameters:
 \itemize{
+\item \code{clean_predictors}: \code{TRUE} (both learners). At prediction, numeric
+predictor cells farther than \code{predictor_cutoff} (4.5) robust scales from
+their training median are replaced internally by that median. The scale
+is MAD, with IQR and unit-scale fallbacks as in VIM's cell-weight helpers.
+Statistics are frozen at training time; factors and caller data are unchanged.
+Set \code{clean_predictors = FALSE} to recover raw-design prediction.
+\item \code{donor_cutoff}: 4.5 (regression only). In vimpute, PMM (including
+\code{pmm = TRUE}) and midastouch reject observed numeric donors whose residual
+exceeds this many training residual scales from the training residual
+median. Calibration uses the guarded model predictions, MAD (IQR fallback)
+and a numerical scale floor. \code{Inf} disables donor screening. If no donors
+qualify, vimpute warns and retains the point prediction.
 \item \code{engine}: \code{"crm"} (default, requires crmReg), \code{"cellwise-mm"},
 \code{"shooting-s"}, or \code{"irwls"}.
 \item \code{init_weights}: \code{"mcd"} (default) or \code{"univariate"}, for cellwise-mm
@@ -39,8 +51,12 @@ Cellwise-MM aggregates initial cell weights to row weights for \code{lmrob};
 IRWLS uses \code{\link[=cellIRWLS]{cellIRWLS()}} from \code{\link[=imputeCellM]{imputeCellM()}} directly. Dummy columns inherit
 weight one, while continuous predictors receive cell weights.
 These are independent per-target fits: they do not carry a shared cell-weight
-matrix between vimpute sweeps. Prediction uses the raw predictor design,
-as in imputeCellReg; it does not repair contaminated new predictor cells.
+matrix between vimpute sweeps. Robust fitting still uses the original training
+design and cell weights; the prediction guard protects new predictor cells.
+The guard is a marginal gross-outlier screen, not conditional cellwise
+outlier detection. Legitimate tail values may be replaced; raise the cutoff
+or disable it when extrapolation is intended. Donor screening can narrow
+the imputation distribution and does not establish proper multiple imputation.
 
 The learner returns deterministic responses. Iteration, bootstrap and
 uncertainty (including PMM) remain the responsibility of vimpute.

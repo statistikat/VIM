@@ -152,18 +152,18 @@ Table: Mean NRMSE over the amputed cells and mean runtime (seconds), 3 replicati
 
 |method         |mechanism | nrmse| seconds|
 |:--------------|:---------|-----:|-------:|
-|missRanger     |MAR       | 0.513|   0.087|
-|VIM kNN        |MAR       | 0.589|   0.029|
-|VIM ranger     |MAR       | 0.731|   0.293|
-|VIM robust     |MAR       | 0.756|   0.287|
-|VIM cellwise   |MAR       | 0.783|   0.298|
-|mice (default) |MAR       | 0.808|   0.016|
-|VIM kNN        |MCAR      | 0.565|   0.085|
-|missRanger     |MCAR      | 0.565|   0.081|
-|VIM robust     |MCAR      | 0.703|   0.660|
-|VIM cellwise   |MCAR      | 0.717|   0.323|
-|mice (default) |MCAR      | 0.740|   0.015|
-|VIM ranger     |MCAR      | 0.751|   0.463|
+|missRanger     |MAR       | 0.513|   0.081|
+|VIM kNN        |MAR       | 0.589|   0.035|
+|VIM cellwise   |MAR       | 0.696|   0.293|
+|VIM ranger     |MAR       | 0.731|   0.283|
+|VIM robust     |MAR       | 0.756|   0.276|
+|mice (default) |MAR       | 0.808|   0.013|
+|VIM kNN        |MCAR      | 0.565|   0.077|
+|missRanger     |MCAR      | 0.565|   0.080|
+|VIM cellwise   |MCAR      | 0.694|   0.303|
+|VIM robust     |MCAR      | 0.703|   0.591|
+|mice (default) |MCAR      | 0.740|   0.016|
+|VIM ranger     |MCAR      | 0.751|   0.418|
 
 
 
@@ -294,18 +294,18 @@ Table: Mixed-data mean NRMSE, binary/multiclass PFC, and runtime (seconds), 3 re
 
 |method         |mechanism | nrmse| pfc_binary| pfc_multiclass| seconds|
 |:--------------|:---------|-----:|----------:|--------------:|-------:|
-|missRanger     |MAR       | 0.476|      0.239|          0.489|   0.069|
-|VIM robust     |MAR       | 0.530|      0.339|          0.500|   0.248|
-|VIM kNN        |MAR       | 0.802|      0.333|          0.511|   0.035|
-|mice (default) |MAR       | 0.552|      0.322|          0.528|   0.045|
-|VIM ranger     |MAR       | 0.616|      0.294|          0.544|   0.278|
-|VIM cellwise   |MAR       | 0.539|      0.289|          0.572|   0.278|
-|missRanger     |MCAR      | 0.475|      0.256|          0.439|   0.083|
-|VIM kNN        |MCAR      | 0.752|      0.261|          0.472|   0.034|
-|VIM robust     |MCAR      | 0.487|      0.267|          0.472|   0.238|
-|mice (default) |MCAR      | 0.474|      0.261|          0.483|   0.040|
-|VIM cellwise   |MCAR      | 0.513|      0.267|          0.483|   0.284|
-|VIM ranger     |MCAR      | 0.579|      0.294|          0.483|   0.310|
+|missRanger     |MAR       | 0.476|      0.239|          0.489|   0.062|
+|VIM robust     |MAR       | 0.530|      0.339|          0.500|   0.213|
+|VIM kNN        |MAR       | 0.802|      0.333|          0.511|   0.033|
+|mice (default) |MAR       | 0.552|      0.322|          0.528|   0.037|
+|VIM ranger     |MAR       | 0.616|      0.294|          0.544|   0.254|
+|VIM cellwise   |MAR       | 0.539|      0.289|          0.572|   0.256|
+|missRanger     |MCAR      | 0.475|      0.256|          0.439|   0.115|
+|VIM kNN        |MCAR      | 0.752|      0.261|          0.472|   0.035|
+|VIM robust     |MCAR      | 0.487|      0.267|          0.472|   0.222|
+|mice (default) |MCAR      | 0.474|      0.261|          0.483|   0.039|
+|VIM cellwise   |MCAR      | 0.513|      0.267|          0.483|   0.250|
+|VIM ranger     |MCAR      | 0.579|      0.294|          0.483|   0.248|
 
 
 
@@ -341,8 +341,14 @@ levels and methods; the 5% contaminated set is nested in the 10% set. The clean
 baseline reuses the mixed-data runs above. Shifts are applied only to observed
 cells, including observed predictors of rows requiring imputation. Thus this
 is a stress test of both robust fitting and prediction with contaminated
-predictors, not just robustness to contaminated training responses. The current
-cellwise learners do not repair predictor cells at prediction time.
+predictors, not just robustness to contaminated training responses. The cellwise learners use training-median replacement for grossly outlying
+numeric predictor cells at prediction time (`clean_predictors = TRUE`,
+`predictor_cutoff = 4.5`). Their training fit retains the original design and
+cell weights. Cellwise PMM also screens donors using training-calibrated
+response residuals (`donor_cutoff = 4.5`), so robust fitting is not undone by
+drawing a grossly contaminated observed response. Set `clean_predictors = FALSE`
+and `donor_cutoff = Inf` to recover the earlier prediction/donor behavior.
+These safeguards use no clean truth or simulation contamination labels.
 
 All scores use the **original, uncontaminated truth at the originally missing
 cells**. Corrupted observed cells are not scored as imputation errors, and
@@ -454,42 +460,42 @@ Table: Mean scores under numeric cellwise contamination (0, 0.05, 0.10); lower i
 
 |method         |mechanism | contamination| nrmse| pfc_binary| pfc_multiclass| seconds|
 |:--------------|:---------|-------------:|-----:|----------:|--------------:|-------:|
-|missRanger     |MAR       |          0.00| 0.476|      0.239|          0.489|   0.069|
-|VIM robust     |MAR       |          0.00| 0.530|      0.339|          0.500|   0.248|
-|VIM cellwise   |MAR       |          0.00| 0.539|      0.289|          0.572|   0.278|
-|mice (default) |MAR       |          0.00| 0.552|      0.322|          0.528|   0.045|
-|VIM ranger     |MAR       |          0.00| 0.616|      0.294|          0.544|   0.278|
-|VIM kNN        |MAR       |          0.00| 0.802|      0.333|          0.511|   0.035|
-|VIM kNN        |MAR       |          0.05| 0.811|      0.372|          0.456|   0.050|
+|missRanger     |MAR       |          0.00| 0.476|      0.239|          0.489|   0.062|
+|VIM robust     |MAR       |          0.00| 0.530|      0.339|          0.500|   0.213|
+|VIM cellwise   |MAR       |          0.00| 0.539|      0.289|          0.572|   0.256|
+|mice (default) |MAR       |          0.00| 0.552|      0.322|          0.528|   0.037|
+|VIM ranger     |MAR       |          0.00| 0.616|      0.294|          0.544|   0.254|
+|VIM kNN        |MAR       |          0.00| 0.802|      0.333|          0.511|   0.033|
+|VIM cellwise   |MAR       |          0.05| 0.561|      0.350|          0.578|   0.296|
+|VIM kNN        |MAR       |          0.05| 0.811|      0.372|          0.456|   0.043|
 |missRanger     |MAR       |          0.05| 0.864|      0.256|          0.506|   0.074|
-|VIM ranger     |MAR       |          0.05| 1.574|      0.344|          0.572|   0.330|
-|VIM robust     |MAR       |          0.05| 2.053|      0.356|          0.506|   0.262|
-|VIM cellwise   |MAR       |          0.05| 2.152|      0.422|          0.544|   0.303|
-|mice (default) |MAR       |          0.05| 2.199|      0.439|          0.567|   0.045|
-|VIM kNN        |MAR       |          0.10| 0.841|      0.378|          0.500|   0.050|
-|missRanger     |MAR       |          0.10| 0.974|      0.256|          0.500|   0.066|
-|VIM ranger     |MAR       |          0.10| 1.883|      0.356|          0.528|   0.328|
-|mice (default) |MAR       |          0.10| 2.491|      0.489|          0.611|   0.048|
-|VIM robust     |MAR       |          0.10| 3.112|      0.517|          0.583|   0.264|
-|VIM cellwise   |MAR       |          0.10| 3.229|      0.411|          0.556|   0.294|
-|mice (default) |MCAR      |          0.00| 0.474|      0.261|          0.483|   0.040|
-|missRanger     |MCAR      |          0.00| 0.475|      0.256|          0.439|   0.083|
-|VIM robust     |MCAR      |          0.00| 0.487|      0.267|          0.472|   0.238|
-|VIM cellwise   |MCAR      |          0.00| 0.513|      0.267|          0.483|   0.284|
-|VIM ranger     |MCAR      |          0.00| 0.579|      0.294|          0.483|   0.310|
-|VIM kNN        |MCAR      |          0.00| 0.752|      0.261|          0.472|   0.034|
-|missRanger     |MCAR      |          0.05| 0.763|      0.217|          0.411|   0.052|
-|VIM kNN        |MCAR      |          0.05| 0.789|      0.294|          0.511|   0.043|
-|VIM ranger     |MCAR      |          0.05| 1.169|      0.367|          0.467|   0.311|
-|mice (default) |MCAR      |          0.05| 1.733|      0.356|          0.583|   0.043|
-|VIM cellwise   |MCAR      |          0.05| 2.006|      0.333|          0.572|   0.300|
-|VIM robust     |MCAR      |          0.05| 2.109|      0.428|          0.522|   0.270|
-|VIM kNN        |MCAR      |          0.10| 0.973|      0.283|          0.539|   0.049|
-|missRanger     |MCAR      |          0.10| 0.976|      0.256|          0.467|   0.073|
-|VIM ranger     |MCAR      |          0.10| 1.989|      0.356|          0.478|   0.311|
-|VIM cellwise   |MCAR      |          0.10| 2.336|      0.367|          0.528|   0.288|
-|VIM robust     |MCAR      |          0.10| 2.727|      0.478|          0.544|   0.239|
-|mice (default) |MCAR      |          0.10| 3.214|      0.394|          0.611|   0.041|
+|VIM ranger     |MAR       |          0.05| 1.574|      0.344|          0.572|   0.309|
+|VIM robust     |MAR       |          0.05| 2.053|      0.356|          0.506|   0.261|
+|mice (default) |MAR       |          0.05| 2.199|      0.439|          0.567|   0.048|
+|VIM cellwise   |MAR       |          0.10| 0.640|      0.350|          0.572|   0.301|
+|VIM kNN        |MAR       |          0.10| 0.841|      0.378|          0.500|   0.051|
+|missRanger     |MAR       |          0.10| 0.974|      0.256|          0.500|   0.109|
+|VIM ranger     |MAR       |          0.10| 1.883|      0.356|          0.528|   0.314|
+|mice (default) |MAR       |          0.10| 2.491|      0.489|          0.611|   0.038|
+|VIM robust     |MAR       |          0.10| 3.112|      0.517|          0.583|   0.253|
+|mice (default) |MCAR      |          0.00| 0.474|      0.261|          0.483|   0.039|
+|missRanger     |MCAR      |          0.00| 0.475|      0.256|          0.439|   0.115|
+|VIM robust     |MCAR      |          0.00| 0.487|      0.267|          0.472|   0.222|
+|VIM cellwise   |MCAR      |          0.00| 0.513|      0.267|          0.483|   0.250|
+|VIM ranger     |MCAR      |          0.00| 0.579|      0.294|          0.483|   0.248|
+|VIM kNN        |MCAR      |          0.00| 0.752|      0.261|          0.472|   0.035|
+|VIM cellwise   |MCAR      |          0.05| 0.541|      0.306|          0.517|   0.267|
+|missRanger     |MCAR      |          0.05| 0.763|      0.217|          0.411|   0.046|
+|VIM kNN        |MCAR      |          0.05| 0.789|      0.294|          0.511|   0.037|
+|VIM ranger     |MCAR      |          0.05| 1.169|      0.367|          0.467|   0.270|
+|mice (default) |MCAR      |          0.05| 1.733|      0.356|          0.583|   0.046|
+|VIM robust     |MCAR      |          0.05| 2.109|      0.428|          0.522|   0.228|
+|VIM cellwise   |MCAR      |          0.10| 0.585|      0.317|          0.489|   0.271|
+|VIM kNN        |MCAR      |          0.10| 0.973|      0.283|          0.539|   0.035|
+|missRanger     |MCAR      |          0.10| 0.976|      0.256|          0.467|   0.075|
+|VIM ranger     |MCAR      |          0.10| 1.989|      0.356|          0.478|   0.279|
+|VIM robust     |MCAR      |          0.10| 2.727|      0.478|          0.544|   0.237|
+|mice (default) |MCAR      |          0.10| 3.214|      0.394|          0.611|   0.045|
 
 
 
@@ -510,25 +516,25 @@ Table: Mean paired changes relative to clean data. Positive values indicate dete
 |:--------------|:---------|-------------:|-----------:|----------------:|--------------------:|
 |mice (default) |MAR       |          0.05|       1.647|            0.117|                0.039|
 |missRanger     |MAR       |          0.05|       0.388|            0.017|                0.017|
-|VIM cellwise   |MAR       |          0.05|       1.613|            0.133|               -0.028|
+|VIM cellwise   |MAR       |          0.05|       0.022|            0.061|                0.006|
 |VIM kNN        |MAR       |          0.05|       0.008|            0.039|               -0.056|
 |VIM ranger     |MAR       |          0.05|       0.958|            0.050|                0.028|
 |VIM robust     |MAR       |          0.05|       1.523|            0.017|                0.006|
 |mice (default) |MCAR      |          0.05|       1.259|            0.094|                0.100|
 |missRanger     |MCAR      |          0.05|       0.288|           -0.039|               -0.028|
-|VIM cellwise   |MCAR      |          0.05|       1.494|            0.067|                0.089|
+|VIM cellwise   |MCAR      |          0.05|       0.028|            0.039|                0.033|
 |VIM kNN        |MCAR      |          0.05|       0.036|            0.033|                0.039|
 |VIM ranger     |MCAR      |          0.05|       0.590|            0.072|               -0.017|
 |VIM robust     |MCAR      |          0.05|       1.622|            0.161|                0.050|
 |mice (default) |MAR       |          0.10|       1.939|            0.167|                0.083|
 |missRanger     |MAR       |          0.10|       0.498|            0.017|                0.011|
-|VIM cellwise   |MAR       |          0.10|       2.690|            0.122|               -0.017|
+|VIM cellwise   |MAR       |          0.10|       0.102|            0.061|                0.000|
 |VIM kNN        |MAR       |          0.10|       0.039|            0.044|               -0.011|
 |VIM ranger     |MAR       |          0.10|       1.267|            0.061|               -0.017|
 |VIM robust     |MAR       |          0.10|       2.582|            0.178|                0.083|
 |mice (default) |MCAR      |          0.10|       2.740|            0.133|                0.128|
 |missRanger     |MCAR      |          0.10|       0.500|            0.000|                0.028|
-|VIM cellwise   |MCAR      |          0.10|       1.824|            0.100|                0.044|
+|VIM cellwise   |MCAR      |          0.10|       0.072|            0.050|                0.006|
 |VIM kNN        |MCAR      |          0.10|       0.220|            0.022|                0.067|
 |VIM ranger     |MCAR      |          0.10|       1.411|            0.061|               -0.006|
 |VIM robust     |MCAR      |          0.10|       2.240|            0.211|                0.072|

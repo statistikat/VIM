@@ -92,6 +92,9 @@
 #'  Categorical targets use `classif.cellwise` with `init_weights`,
 #'  `weight_function`, `alpha`, `maxit`, `decay`, and `MaxNWts`. Supply
 #'  regression-only parameters such as `engine` per numeric target for mixed data.
+#'  Both cellwise learners guard extreme prediction-time numeric cells with
+#'  `clean_predictors = TRUE` and `predictor_cutoff = 4.5`. Regression uses
+#'  `donor_cutoff = 4.5` to screen PMM/midastouch donors; `Inf` disables it.
 #'  See [register_cellwise_learners()] for weighting and iteration parameters.
 #'  For `restricted`, set `save_optimization_problem = TRUE` to attach the
 #'  exact ECOS problem arguments to the returned object under the

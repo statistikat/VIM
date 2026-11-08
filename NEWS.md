@@ -1,6 +1,11 @@
 # VIM 7.5.1
 
 ## Changes
+- Cellwise learners now guard extreme numeric predictor cells using frozen
+  training medians/scales. Cellwise PMM and midastouch screen response donors
+  using robust training residual calibration, including bootstrap/pipeline
+  models. `clean_predictors = FALSE` and `donor_cutoff = Inf` recover the old
+  prediction/donor behavior. Added paired contamination ablations and tests.
 - Added `classif.cellwise` to `vimpute(method = "cellwise")` for weighted
   multinomial classification, with training-only continuous predictor weights
   and named class probabilities. Categorical targets no longer default to the

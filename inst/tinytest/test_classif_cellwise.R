@@ -34,7 +34,8 @@ for (multi in c(FALSE, TRUE)) {
 }
 # Check actual row weighting and numerical equivalence to weighted multinom.
 d[[1]][1] <- 1000
-l <- mlr3::lrn("classif.cellwise", predict_type = "prob", init_weights = "univariate")
+l <- mlr3::lrn("classif.cellwise", predict_type = "prob", init_weights = "univariate",
+                clean_predictors = FALSE)
 l$train(mlr3::as_task_classif(d, target = "y"))
 W <- VIM:::cellWeights(as.matrix(d[c(1, 2)]), method = "tukey")
 w <- exp(rowMeans(log(pmax(W, 1e-10))))

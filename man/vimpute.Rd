@@ -123,6 +123,9 @@ For \code{cellwise}, select \code{engine = "crm"} (default; requires crmReg),
 Categorical targets use \code{classif.cellwise} with \code{init_weights},
 \code{weight_function}, \code{alpha}, \code{maxit}, \code{decay}, and \code{MaxNWts}. Supply
 regression-only parameters such as \code{engine} per numeric target for mixed data.
+Both cellwise learners guard extreme prediction-time numeric cells with
+\code{clean_predictors = TRUE} and \code{predictor_cutoff = 4.5}. Regression uses
+\code{donor_cutoff = 4.5} to screen PMM/midastouch donors; \code{Inf} disables it.
 See \code{\link[=register_cellwise_learners]{register_cellwise_learners()}} for weighting and iteration parameters.
 For \code{restricted}, set \code{save_optimization_problem = TRUE} to attach the
 exact ECOS problem arguments to the returned object under the

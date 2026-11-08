@@ -289,8 +289,14 @@ levels and methods; the 5% contaminated set is nested in the 10% set. The clean
 baseline reuses the mixed-data runs above. Shifts are applied only to observed
 cells, including observed predictors of rows requiring imputation. Thus this
 is a stress test of both robust fitting and prediction with contaminated
-predictors, not just robustness to contaminated training responses. The current
-cellwise learners do not repair predictor cells at prediction time.
+predictors, not just robustness to contaminated training responses. The cellwise learners use training-median replacement for grossly outlying
+numeric predictor cells at prediction time (`clean_predictors = TRUE`,
+`predictor_cutoff = 4.5`). Their training fit retains the original design and
+cell weights. Cellwise PMM also screens donors using training-calibrated
+response residuals (`donor_cutoff = 4.5`), so robust fitting is not undone by
+drawing a grossly contaminated observed response. Set `clean_predictors = FALSE`
+and `donor_cutoff = Inf` to recover the earlier prediction/donor behavior.
+These safeguards use no clean truth or simulation contamination labels.
 
 All scores use the **original, uncontaminated truth at the originally missing
 cells**. Corrupted observed cells are not scored as imputation errors, and

@@ -50,8 +50,12 @@ an entire standalone imputer. In particular, the old imputeCellReg engines fit
 all rows of the initialized dataset, including provisional response values.
 The new learner intentionally excludes those provisional targets. Independent
 fits do not exchange the standalone routines' shared cell weights or damping
-state. Prediction uses the raw design, as the existing engines do; it does not
-clean contaminated predictor cells in new rows. Dummy-coded factor columns
+state. Prediction now replaces gross marginal numeric anomalies with training
+medians (`clean_predictors = TRUE`, `predictor_cutoff = 4.5`). This changes
+only the learner's internal prediction frame, not supplied observed cells.
+Numeric donor selection screens residuals against training calibration
+(`donor_cutoff = 4.5`; `Inf` disables). See `cellwise-robustness-investigation.md`
+for the paired ablation, scope and limitations. Dummy-coded factor columns
 receive initial cell weight one rather than entering continuous MCD estimation.
 Shooting-S preserves the repository's approximation; it is not a claim to
 implement the full published coordinate-wise shooting S algorithm.
@@ -97,8 +101,8 @@ not establish statistical properness of multiple imputation.
 1. Benchmark and assess calibration of the implemented weighted multinomial
    classifier, particularly with rare classes and contaminated predictors.
 2. Benchmark the four current engines on contaminated training and prediction
-   cells, including rank-deficient designs and mixed data. Study prediction-time
-   cleaning separately; training robustness does not imply robust new-row scoring.
+   cells, including rank-deficient designs and mixed data. Assess the new prediction-time guard on legitimate heavy tails and
+   conditional anomalies; marginal screening is not full cellwise detection.
 3. Extract a frozen joint fit/predict interface for EM and GLoc before adding
    either as a vimpute method. Do not call the full imputer on a combined
    training/test dataset, which leaks held-out observations into estimation.

@@ -4,6 +4,8 @@
     inherit = mlr3::LearnerClassif,
     public = list(initialize = function() {
       ps <- paradox::ps(
+        clean_predictors = paradox::p_lgl(default = TRUE, tags = "train"),
+        predictor_cutoff = paradox::p_dbl(lower = 1, default = 4.5, tags = "train"),
         init_weights = paradox::p_fct(c("mcd", "univariate"), default = "mcd", tags = "train"),
         weight_function = paradox::p_fct(c("tukey", "huber"), default = "tukey", tags = "train"),
         alpha = paradox::p_dbl(lower = .Machine$double.eps, tags = "train"),
@@ -11,7 +13,7 @@
         decay = paradox::p_dbl(lower = 0, default = 0, tags = "train"),
         MaxNWts = paradox::p_int(lower = 1L, default = 10000L, tags = "train")
       )
-      ps$values <- list(init_weights = "mcd", weight_function = "tukey",
+      ps$values <- list(clean_predictors = TRUE, predictor_cutoff = 4.5, init_weights = "mcd", weight_function = "tukey",
                         maxit = 200L, decay = 0, MaxNWts = 10000L)
       super$initialize(id = "classif.cellwise", param_set = ps,
         feature_types = c("numeric", "integer", "factor", "ordered"),
@@ -46,7 +48,9 @@
         prior <- counts / sum(counts)
         model <- list(features = original, kept_features = features,
                       classes = classes, factor_levels = sanitized$factor_levels,
-                      row_weights = row_weights, prior = prior)
+                      row_weights = row_weights, prior = prior,
+                      predictor_guard = .cellwise_predictor_guard(data, features,
+                        pv$clean_predictors, pv$predictor_cutoff))
         if (sum(counts > 0) == 1L || !length(features)) return(model)
         # Store weights in the model frame, so multinom's nonstandard
         # evaluation resolves them independently of the formula environment.
@@ -76,6 +80,7 @@
           }
           if (anyNA(data[model$kept_features]))
             stop("Cellwise prediction requires complete predictors.")
+          data <- .cellwise_guard_predictors(data, model$predictor_guard)
           p <- stats::predict(model$fit, newdata = data, type = "probs")
           lev <- model$fit$lev
           if (length(lev) == 2L) {
