@@ -414,7 +414,7 @@ register_builtin_vimpute_methods <- function() {
       supports_formula = TRUE)
 
   put("cellwise",
-      learner = list(regr = "regr.cellwise"),
+      learner = list(regr = "regr.cellwise", classif = "classif.cellwise"),
       setup = function() register_cellwise_learners())
 
   put("restricted",

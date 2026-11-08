@@ -1,6 +1,10 @@
 # VIM 7.5.1
 
 ## Changes
+- Added `classif.cellwise` to `vimpute(method = "cellwise")` for weighted
+  multinomial classification, with training-only continuous predictor weights
+  and named class probabilities. Categorical targets no longer default to the
+  robust learner. No categorical EM is included.
 - Added `vimpute(method = "cellwise")` and the mlr3 learner `regr.cellwise`,
   with CRM, cell-weighted MM, the existing shooting-S approximation, and
   cellIRWLS regression engines. Select the engine through `learner_params`.

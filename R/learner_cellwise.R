@@ -1,6 +1,6 @@
-#' Register the cellwise regression learner for mlr3
+#' Register cellwise regression and classification learners for mlr3
 #'
-#' Registers `regr.cellwise`, also used by `vimpute(method = "cellwise")`.
+#' Registers `regr.cellwise` and `classif.cellwise`, used by `vimpute(method = "cellwise")`.
 #' Training uses only the rows supplied by mlr3; prediction never refits the
 #' model or uses the response. Predictors must be complete (vimpute supplies
 #' its current completed predictors). Numeric, integer and factor predictors
@@ -32,8 +32,17 @@
 #'
 #' The learner returns deterministic responses. Iteration, bootstrap and
 #' uncertainty (including PMM) remain the responsibility of vimpute.
-#' Categorical targets requested with `method = "cellwise"` use vimpute's
-#' existing `"robust"` fallback; this is a regression-only learner.
+#' Categorical targets use weighted multinomial logistic regression via
+#' `nnet::multinom()`. The classifier supports `init_weights`,
+#' `weight_function` and `alpha` as above, plus `maxit` (200), `decay` (0)
+#' and `MaxNWts` (10000). Its row weights are the geometric mean of cell
+#' weights of continuous predictors, estimated on training rows only.
+#' With no continuous predictors all row weights equal one. It returns
+#' class probabilities or the most probable class; vimpute handles sampling.
+#' Missing training classes receive probability zero, and a single observed
+#' class produces a constant prediction. This does not detect misclassified
+#' categorical cells or implement categorical EM. Regression-only parameters
+#' such as `engine` should be supplied per numeric target in mixed data.
 #'
 #' @return Invisibly, `NULL`. The learner is added to `mlr3::mlr_learners`.
 #' @examplesIf requireNamespace("mlr3", quietly = TRUE) && requireNamespace("paradox", quietly = TRUE)
@@ -152,5 +161,6 @@ register_cellwise_learners <- function() {
       }
     ))
   mlr3::mlr_learners$add("regr.cellwise", learner)
+  .register_cellwise_classifier()
   invisible(NULL)
 }

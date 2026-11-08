@@ -2,7 +2,7 @@
 % Please edit documentation in R/learner_cellwise.R
 \name{register_cellwise_learners}
 \alias{register_cellwise_learners}
-\title{Register the cellwise regression learner for mlr3}
+\title{Register cellwise regression and classification learners for mlr3}
 \usage{
 register_cellwise_learners()
 }
@@ -10,7 +10,7 @@ register_cellwise_learners()
 Invisibly, \code{NULL}. The learner is added to \code{mlr3::mlr_learners}.
 }
 \description{
-Registers \code{regr.cellwise}, also used by \code{vimpute(method = "cellwise")}.
+Registers \code{regr.cellwise} and \code{classif.cellwise}, used by \code{vimpute(method = "cellwise")}.
 Training uses only the rows supplied by mlr3; prediction never refits the
 model or uses the response. Predictors must be complete (vimpute supplies
 its current completed predictors). Numeric, integer and factor predictors
@@ -44,8 +44,17 @@ as in imputeCellReg; it does not repair contaminated new predictor cells.
 
 The learner returns deterministic responses. Iteration, bootstrap and
 uncertainty (including PMM) remain the responsibility of vimpute.
-Categorical targets requested with \code{method = "cellwise"} use vimpute's
-existing \code{"robust"} fallback; this is a regression-only learner.
+Categorical targets use weighted multinomial logistic regression via
+\code{nnet::multinom()}. The classifier supports \code{init_weights},
+\code{weight_function} and \code{alpha} as above, plus \code{maxit} (200), \code{decay} (0)
+and \code{MaxNWts} (10000). Its row weights are the geometric mean of cell
+weights of continuous predictors, estimated on training rows only.
+With no continuous predictors all row weights equal one. It returns
+class probabilities or the most probable class; vimpute handles sampling.
+Missing training classes receive probability zero, and a single observed
+class produces a constant prediction. This does not detect misclassified
+categorical cells or implement categorical EM. Regression-only parameters
+such as \code{engine} should be supplied per numeric target in mixed data.
 }
 \examples{
 \dontshow{if (requireNamespace("mlr3", quietly = TRUE) && requireNamespace("paradox", quietly = TRUE)) withAutoprint(\{ # examplesIf}

@@ -67,8 +67,8 @@ Built-in methods:
 \item tabicl2 (TabICL 2.2 pretrained regression/classification; see \code{\link[=tabiclImpute]{tabiclImpute()}})
 \item regularized (glmnet regression/classification)
 \item robust (robustbase::lmrob / glmrob)
-\item cellwise (cellwise-robust regression; see \code{\link[=register_cellwise_learners]{register_cellwise_learners()}};
-categorical targets fall back to robust)
+\item cellwise (cellwise-robust regression and weighted multinomial classification;
+see \code{\link[=register_cellwise_learners]{register_cellwise_learners()}})
 \item gam (Generalized Additive Model via mgcv::gam)
 \item robgam (Robust GAM with outlier downweighting, simple or iterative reweighting)
 \item restricted (ECOSolveR least-squares regression with validate rules)
@@ -120,6 +120,9 @@ Can be provided in \strong{three ways}:
 For \code{cellwise}, select \code{engine = "crm"} (default; requires crmReg),
 \code{"cellwise-mm"}, \code{"shooting-s"}, or \code{"irwls"}, for example
 \code{learner_params = list(cellwise = list(engine = "cellwise-mm"))}.
+Categorical targets use \code{classif.cellwise} with \code{init_weights},
+\code{weight_function}, \code{alpha}, \code{maxit}, \code{decay}, and \code{MaxNWts}. Supply
+regression-only parameters such as \code{engine} per numeric target for mixed data.
 See \code{\link[=register_cellwise_learners]{register_cellwise_learners()}} for weighting and iteration parameters.
 For \code{restricted}, set \code{save_optimization_problem = TRUE} to attach the
 exact ECOS problem arguments to the returned object under the

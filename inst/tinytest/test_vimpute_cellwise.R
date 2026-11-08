@@ -67,7 +67,7 @@ out <- suppressWarnings(vimpute(d, method = "cellwise",
 expect_true(all(vapply(out$y[81:90], function(y)
   min(abs(y - d$y[-(81:90)])) < 1e-12, logical(1))))
 
-# A categorical target follows the registry's documented robust fallback.
+# A mixed-data run uses the cellwise classifier for the categorical target.
 d$group[91:95] <- NA
 out <- suppressWarnings(vimpute(d, method = "cellwise",
   learner_params = list(y = list(engine = "cellwise-mm")),

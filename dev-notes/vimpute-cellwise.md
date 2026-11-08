@@ -2,8 +2,8 @@
 
 ## Implemented
 
-`vimpute(method = "cellwise")` uses the regression-only mlr3 learner
-`regr.cellwise`. Register it for direct mlr3 use with
+`vimpute(method = "cellwise")` uses the mlr3 learners
+`regr.cellwise` and `classif.cellwise`. Register it for direct mlr3 use with
 `VIM::register_cellwise_learners()`.
 
 ```r
@@ -56,10 +56,20 @@ receive initial cell weight one rather than entering continuous MCD estimation.
 Shooting-S preserves the repository's approximation; it is not a claim to
 implement the full published coordinate-wise shooting S algorithm.
 
-Categorical targets use the registry's explicit `robust` fallback. To avoid
-sharing regression-only parameter settings with that fallback, use per-variable
-parameters or specify numeric targets as `cellwise` and factors as `robust` in
-a method list. A cell-weighted multinomial learner is a separate follow-up.
+Categorical targets use `classif.cellwise`, a weighted `nnet::multinom()`
+classifier. Continuous predictor cell weights are estimated on training rows
+only, using `init_weights = "mcd"` or `"univariate"`, `weight_function` and
+`alpha`. Their geometric mean is the row weight (each cell weight is floored
+at 1e-10 before taking logs, matching the standalone code). Categorical-only
+predictors receive row weight one. Additional parameters are `maxit = 200`,
+`decay = 0` and `MaxNWts = 10000`. Prediction supplies named class probabilities;
+vimpute chooses classes or samples according to its uncertainty setting.
+Missing training classes receive probability zero; a single-class training fold
+returns that class, and featureless fits return weighted class proportions.
+Nonconverged multinomial fits warn; fitting errors propagate to the caller's
+existing fallback mechanism. No categorical EM or categorical outlier detection
+is included. Use per-target parameters for regression-only settings such as
+`engine`; method-wide weighting settings work for both learner types.
 
 Plain predictor selection works through vimpute's `predictors` or grammar.
 Transformed model formulas are not enabled for this method. Automatic default
@@ -74,7 +84,7 @@ not establish statistical properness of multiple imputation.
 | Entry point / source | Reusable part | Integration decision |
 | --- | --- | --- |
 | `imputeCellReg` / `R/imputeCellReg.R` | CRM, cell-weighted MM, shooting-S approximation | Implemented as three engines of one learner; separate vimpute method names would duplicate routing. |
-| `imputeCellM` / `R/imputeCellwise.R` | Single-response `cellIRWLS`; weighted multinomial for categorical responses | Numeric fitting implemented as `engine = "irwls"`. Formula parsing, initialization, and uncertainty belong outside the learner. A future `classif.cellwise` could reuse weighted multinomial fitting with training-only weights. |
+| `imputeCellM` / `R/imputeCellwise.R` | Single-response `cellIRWLS`; weighted multinomial for categorical responses | Numeric fitting implemented as `engine = "irwls"`. Formula parsing, initialization, and uncertainty belong outside the learner. `classif.cellwise` now provides weighted multinomial fitting with training-only weights. |
 | `imputeCellIRMI` / `R/imputeCellwise.R` | Same IRWLS fit with predictor-cell weights, iterative residual weights and damping across sweeps | Reuse the regression kernel as `irwls`. Do not nest its outer IRMI loop inside vimpute. Shared cross-variable weight updates would need a vimpute sweep-state extension. |
 | `imputeCellMM` / `R/imputeCellMM.R` | MM fitting, MCD/univariate initialization, geometric row weights | Covered at the regression level by `cellwise-mm` and its initialization parameters. Its damped multivariate weight updates and final unweighted uncertainty refit are not reproduced. |
 | `imputeCellMCD` / `R/imputeCellEM.R` | MCD/weighted/pairwise scatter initialization and updates, followed by per-target `cellIRWLS` regressions | The regression core is covered by `irwls` with MCD initialization. Full parity requires shared scatter/weights. `hard_threshold` can turn observed outliers into missing values: expose this as an explicit preprocessing option, never silently in a learner. The current `boot` option resamples scatter without effectively bootstrapping regression coefficients; retain vimpute's actual model bootstrap instead. |
@@ -84,9 +94,8 @@ not establish statistical properness of multiple imputation.
 
 ## Follow-up priority
 
-1. Add a training-only weighted multinomial learner for categorical targets,
-   with calibrated probabilities and consistent class/level mapping. This would
-   replace the current documented robust fallback.
+1. Benchmark and assess calibration of the implemented weighted multinomial
+   classifier, particularly with rare classes and contaminated predictors.
 2. Benchmark the four current engines on contaminated training and prediction
    cells, including rank-deficient designs and mixed data. Study prediction-time
    cleaning separately; training robustness does not imply robust new-row scoring.
