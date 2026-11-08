@@ -1,7 +1,7 @@
 ---
 title: "Benchmarking imputation methods with makeMissing() and evaluation()"
 author: "Matthias Templ"
-date: "2026-08-28"
+date: "2026-11-08"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Benchmarking imputation methods with makeMissing() and evaluation()}
@@ -53,7 +53,10 @@ every method impute, and scores the per-variable NRMSE on the amputed cells.
 ## The harness
 
 Each method is one function `data.frame -> data.frame`; adding a competitor
-is one more list entry.
+is one more list entry. The cellwise entry uses the cell-weighted MM
+regression engine (`engine = "cellwise-mm"`), which does not require the
+optional `crmReg` package. These targets are all numeric, so this benchmark
+does not assess `classif.cellwise` or categorical imputation.
 
 
 ``` r
@@ -66,6 +69,11 @@ methods <- list(
     suppressWarnings(
       vimpute(d, method = "robust", sequential = FALSE,
               imp_var = FALSE, verbose = FALSE))
+  },
+  "VIM cellwise" = function(d) {
+    vimpute(d, method = "cellwise",
+            learner_params = list(cellwise = list(engine = "cellwise-mm")),
+            sequential = FALSE, imp_var = FALSE, verbose = FALSE)
   },
   "VIM kNN" = function(d) kNN(d, k = 5, imp_var = FALSE)
 )
@@ -90,10 +98,14 @@ score_run <- function(truth, amputed, imputed) {
 run_benchmark <- function(mechanism) {
   out <- list()
   for (r in seq_len(NREP)) {
+    # Fix the sampled data independently of each method's RNG consumption.
+    run_seed <- 2026L + r + if (mechanism == "MAR") 10000L else 0L
+    set.seed(run_seed)
     truth <- full[sample(nrow(full), N), ]
     amp <- makeMissing(truth, prop = 0.2, mechanism = mechanism,
                        vars = targets, seed = 1000 + r)
     for (mth in names(methods)) {
+      set.seed(run_seed + 100000L)
       t0 <- proc.time()[["elapsed"]]
       imp <- as.data.frame(methods[[mth]](amp))
       secs <- proc.time()[["elapsed"]] - t0
@@ -126,18 +138,20 @@ knitr::kable(summary_tab, digits = 3, row.names = FALSE,
 
 Table: Mean NRMSE over the amputed cells and mean runtime (seconds), 3 replications -- demo scale.
 
-|method     |mechanism | nrmse| seconds|
-|:----------|:---------|-----:|-------:|
-|missRanger |MAR       | 0.723|   0.078|
-|VIM kNN    |MAR       | 0.730|   0.036|
-|VIM ranger |MAR       | 0.803|   0.295|
-|mice pmm   |MAR       | 0.840|   0.017|
-|VIM robust |MAR       | 0.855|   0.290|
-|VIM kNN    |MCAR      | 0.530|   0.038|
-|missRanger |MCAR      | 0.566|   0.083|
-|mice pmm   |MCAR      | 0.762|   0.023|
-|VIM ranger |MCAR      | 0.773|   0.327|
-|VIM robust |MCAR      | 0.815|   0.312|
+|method       |mechanism | nrmse| seconds|
+|:------------|:---------|-----:|-------:|
+|missRanger   |MAR       | 0.513|   0.083|
+|VIM kNN      |MAR       | 0.589|   0.038|
+|VIM ranger   |MAR       | 0.731|   0.310|
+|VIM robust   |MAR       | 0.756|   0.306|
+|VIM cellwise |MAR       | 0.783|   0.355|
+|mice pmm     |MAR       | 0.808|   0.015|
+|VIM kNN      |MCAR      | 0.565|   0.086|
+|missRanger   |MCAR      | 0.565|   0.078|
+|VIM robust   |MCAR      | 0.703|   0.633|
+|VIM cellwise |MCAR      | 0.717|   0.328|
+|mice pmm     |MCAR      | 0.740|   0.016|
+|VIM ranger   |MCAR      | 0.751|   0.428|
 
 
 
@@ -158,6 +172,8 @@ publication-grade comparisons. Other packages drop in the same way — e.g. a
 ## Notes on fairness
 
 - All methods see identical amputed datasets (`seed` in `makeMissing()`).
+  Sampling and method runs have explicit replication seeds, so adding a
+  method does not change the data or random draws seen by the others.
 - NRMSE is computed on the amputed cells only, against the withheld truth,
   and is scale-free (RMSE divided by the standard deviation of the true
   values), so it can be averaged over variables.
