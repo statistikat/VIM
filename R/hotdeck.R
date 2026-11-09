@@ -151,9 +151,10 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
                      impNAX,makeNAX, ord_varX, donorcond){
   donor_applicable <- OriginalSortingVariable <- weirdandlongname <- UniqueIdForImputation <- NULL#empty init
   J <- function()NULL#empty init
-  xx$UniqueIdForImputation <- 1:nrow(xx)
-  prevKey <- key(xx)
+  xx$UniqueIdForImputation <- seq_len(nrow(xx))
   for(v in variableX){
+    if(!impNAX)
+      setkey(xx,UniqueIdForImputation)
     xx[, donor_applicable := !is.na(xx[[v]])]
     if (!is.null(donorcond)) {
       if(!is.null(donorcond[[match(v,variableX)]])){
@@ -163,24 +164,18 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
       }
     }
     if(!impNAX){
-      setkeyv(xx,v)
       if(is.null(makeNAX))
         stop("If impNA=FALSE a list of values to be imputed must be provided.")
-      ## NAs should not be imputed
-      if(varTypeX[v]%in%c("numeric","integer")){
-        NAs <- xx[J(NA_real_),.I,nomatch=FALSE]# get the Index of the NAS
-      }else{
-        NAs <- xx[J(NA_character_),.I,nomatch=FALSE]# get the Index of the NAS
+      # Exclude original NAs without sorting by the target column.
+      originalNAs <- which(is.na(xx[[v]]))
+      if(length(originalNAs)==nrow(xx))
+        next
+      if(length(originalNAs)>0){
+        xxna <- xx[originalNAs]
+        xx <- xx[-originalNAs]
+        keptIds <- xx$UniqueIdForImputation
+        xx$UniqueIdForImputation <- seq_len(nrow(xx))
       }
-      #NAs hold the index of observations with NAs in the current variable
-      if(length(NAs)>0){
-        xxna <- xx[NAs] # move observation to a temp data set
-        xx <- xx[-NAs]  # just keep the non NA obs
-      }else{#if no NA xx is unchanged and xxna is just an empty data.table
-        xxna <- data.table()
-      }
-      setkeyv(xx,prevKey)
-      xx$UniqueIdForImputation <- 1:nrow(xx)
     }
 
     if(!is.null(makeNAX)){
@@ -260,8 +255,11 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
       }
       xx[impPart,v] <- Don
     }
-    if(!impNAX)
+    if(!impNAX && length(originalNAs)>0){
+      # Restore group positions before processing the next target.
+      xx$UniqueIdForImputation <- keptIds[xx$UniqueIdForImputation]
       xx <- rbindlist(list(xx,xxna))
+    }
   }
   xx[,UniqueIdForImputation:=NULL]
   setkey(xx,OriginalSortingVariable)

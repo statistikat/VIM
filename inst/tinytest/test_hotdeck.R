@@ -103,3 +103,20 @@ sentinel_result <- hotdeck(sentinel_data, ord_var = "order", impNA = FALSE,
 expect_identical(sentinel_result$value, c(4, 4, 4, NA, 7))
 expect_identical(sentinel_result$value_imp, c(FALSE, TRUE, TRUE, FALSE, FALSE))
 
+# Ties in the requested ordering retain the input row order.
+tied_data <- data.frame(order = c(1L, 1L, 1L, 2L), value = c(2, 99, 3, 4))
+tied_result <- hotdeck(tied_data, ord_var = "order", impNA = FALSE,
+                       makeNA = list(99))
+expect_identical(tied_result$value, c(2, 2, 3, 4))
+
+# Removing NAs for one target must not change the donor order for the next.
+tied_data <- data.frame(
+  group = rep(c("a", "b"), each = 4L), order = rep(c(1L, 1L, 1L, 2L), 2L),
+  first = c(NA_real_, 2, NaN, 4, rep(NA_real_, 4L)),
+  second = rep(c(10, 99, 30, 40), 2L)
+)
+tied_result <- hotdeck(tied_data, ord_var = "order", domain_var = "group",
+                       impNA = FALSE, makeNA = list(NULL, 99))
+expect_identical(tied_result$first, tied_data$first)
+expect_identical(tied_result$second, rep(c(10, 10, 30, 40), 2L))
+
