@@ -204,9 +204,23 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
       impDon <- impPart-1
       impDon[impDon<1] <- impPart[impDon<1]+1
       setkey(xx,UniqueIdForImputation)
-      Don <- data.frame(xx[impDon,v,with=FALSE])[,1]
-
-      TFindex <- xx[impDon, !donor_applicable]
+      donorValues <- xx[[v]]
+      donorEligible <- xx[["donor_applicable"]]
+      # Keep the table-to-data.frame conversion for columns with custom
+      # attributes or subsetting methods.
+      plainFactor <- identical(class(donorValues), "factor") ||
+        identical(class(donorValues), c("ordered", "factor"))
+      useVectors <- is.null(attributes(donorEligible)) &&
+        ((is.atomic(donorValues) && is.null(attributes(donorValues))) ||
+         (plainFactor && identical(attributes(donorValues),
+           list(levels = levels(donorValues), class = class(donorValues)))))
+      if(useVectors){
+        Don <- donorValues[impDon]
+        TFindex <- !donorEligible[impDon]
+      }else{
+        Don <- data.frame(xx[impDon,v,with=FALSE])[,1]
+        TFindex <- xx[impDon, !donor_applicable]
+      }
       TF <- any(TFindex)
       if(TF){
         add <- 2
@@ -218,8 +232,13 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
           }
           impDon[TFindex][impDon[TFindex]<1] <- impPart[TFindex][impDon[TFindex]<1]-add+nrow(xx)
           impDon2 <- impDon[TFindex]
-          Don[TFindex] <- data.frame(xx[impDon2,v,with=FALSE])[,1]
-          TFindex[TFindex] <- xx[impDon2, !donor_applicable]
+          if(useVectors){
+            Don[TFindex] <- donorValues[impDon2]
+            TFindex[TFindex] <- !donorEligible[impDon2]
+          }else{
+            Don[TFindex] <- data.frame(xx[impDon2,v,with=FALSE])[,1]
+            TFindex[TFindex] <- xx[impDon2, !donor_applicable]
+          }
           TF <- any(TFindex)
           if(add>min(50, nrow(xx))){
             TF <- FALSE
