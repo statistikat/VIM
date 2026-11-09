@@ -36,8 +36,9 @@
 #' status
 #' @return the imputed data set.
 #' @author Alexander Kowarik
-#' @note If the sequential hotdeck does not lead to a suitable,
-#' a random donor in the group will be used.
+#' @note If the sequential search leaves unresolved rows, one eligible donor
+#' is sampled from the group and used for those rows. If `ord_var` was supplied,
+#' a warning is issued when this fallback is used.
 #' @references A. Kowarik, M. Templ (2016) Imputation with
 #' R package VIM.  *Journal of
 #' Statistical Software*, 74(7), 1-16.
@@ -235,20 +236,22 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
             TFindex[TFindex] <- xx[impDon2, !donor_applicable]
           }
           TF <- any(TFindex)
-          if(add>min(50, nrow(xx))){
-            TF <- FALSE
-            
-            # remaining missing values will be set to a random value from the group
-            if(length(Don)>0){
-              if(sum(!TFindex)==0){
-                stop("No donor available for ", v, " in a certain group.")
-              }
-              Don[TFindex] <- Don[!TFindex][sample(sum(!TFindex),1)]    
+          if(TF && add>min(50, nrow(xx))){
+            eligibleRows <- which(donorEligible)
+            if(length(eligibleRows)==0L)
+              stop("No donor available for ", v, " in a certain group.")
+
+            # Use one random donor from the group for the unresolved rows.
+            randomDonor <- eligibleRows[sample.int(length(eligibleRows), 1L)]
+            Don[TFindex] <- if(useVectors){
+              donorValues[randomDonor]
+            }else{
+              data.frame(xx[randomDonor,v,with=FALSE])[,1]
             }
-            
             if(!identical(ord_varX, "RandomVariableForImputationWithHotdeck")){
               warning(paste("For variable",v,"the ordering is ignored for at least one imputation."))
             }
+            break
           }
           add <- add +1
         }

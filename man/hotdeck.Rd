@@ -50,8 +50,9 @@ Implementation of the popular Sequential, Random (within a domain) hot-deck
 algorithm for imputation.
 }
 \note{
-If the sequential hotdeck does not lead to a suitable,
-a random donor in the group will be used.
+If the sequential search leaves unresolved rows, one eligible donor
+is sampled from the group and used for those rows. If \code{ord_var} was supplied,
+a warning is issued when this fallback is used.
 }
 \examples{
 

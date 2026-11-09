@@ -19,11 +19,31 @@ df2 <- data.frame(unit_id=c(NA,101:104), state=rep("NSW",5), wages01=c(NA,NA,NA,
   expect_identical(df.out2,na.omit(df.out2))
 
 
-# hotdeck should fill all values but give a warning", {
+# The final sequential search step can succeed without a warning or RNG draw.
   set.seed(104)
-  expect_warning(df.out <- hotdeck(dfx, variable="wages01", domain_var="state",ord_var = "r"))
+  rng_before <- .Random.seed
+  expect_silent(df.out <- hotdeck(dfx, variable="wages01", domain_var="state",ord_var = "r"))
+  expect_identical(.Random.seed, rng_before)
   expect_identical(df.out,na.omit(df.out))
 
+# Both missing rows are beyond the search limit for all eligible donors.
+# The pool is confined to the current group and excludes recoded sentinels.
+fallback_data <- data.frame(
+  group = rep(c("a", "b"), each = 100L),
+  order = rep(seq_len(100L), 2L),
+  value = c(1, 8, 9, rep(1, 57L), NA, 99, rep(1, 38L),
+            1, 11, 12, rep(1, 57L), NA, 99, rep(1, 38L))
+)
+set.seed(104)
+expected <- c(c(8, 9)[sample.int(2L, 1L)], c(11, 12)[sample.int(2L, 1L)])
+set.seed(104)
+expect_warning(
+  fallback_result <- hotdeck(fallback_data, ord_var = "order", domain_var = "group",
+                             makeNA = list(99), donorcond = list("> 5")),
+  "For variable value the ordering is ignored"
+)
+expect_identical(fallback_result$value[fallback_result$value_imp],
+                 rep(expected, each = 2L))
 
 # hotdeck with colnames starting with a number", {
   dfx = data.frame(Id = 1:3, x = c(NA, 0.2, 0.3))
