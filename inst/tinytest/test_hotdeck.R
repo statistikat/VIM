@@ -89,3 +89,17 @@ df2 <- data.frame(unit_id=c(NA,101:104), state=rep("NSW",5), wages01=c(NA,NA,NA,
   expect_true(all(sleepI3[,"Dream"][sleepI3$Dream_imp]<6))
   expect_true(all(sleepI3[,"Dream"][sleepI3$Dream_imp]>1))
 
+# A recoded sentinel cannot donate to the next row, even if it passes donorcond.
+sentinel_data <- data.frame(order = 1:4, value = c(4, 99, NA, 7))
+sentinel_result <- hotdeck(sentinel_data, ord_var = "order", makeNA = list(99),
+                           donorcond = list("> 0"))
+expect_identical(sentinel_result$value, c(4, 4, 4, 7))
+expect_identical(sentinel_result$value_imp, c(FALSE, TRUE, TRUE, FALSE))
+
+# Consecutive sentinels are filled while the original NA is preserved.
+sentinel_data <- data.frame(order = 1:5, value = c(4, -99, -98, NA, 7))
+sentinel_result <- hotdeck(sentinel_data, ord_var = "order", impNA = FALSE,
+                           makeNA = list(c(-99, -98)))
+expect_identical(sentinel_result$value, c(4, 4, 4, NA, 7))
+expect_identical(sentinel_result$value_imp, c(FALSE, TRUE, TRUE, FALSE, FALSE))
+

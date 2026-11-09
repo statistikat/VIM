@@ -184,9 +184,10 @@ imputeHD <- function(xx,variableX,varTypeX,imp_varX,imp_suffixX,
     }
 
     if(!is.null(makeNAX)){
-      # eval(parse(text="xx[xx>1]"))
       setnames(xx,v,"weirdandlongname")
-      xx[weirdandlongname%in%makeNAX[[match(v,variableX)]],weirdandlongname:=NA]
+      # Values recoded as missing must also be removed from the donor pool.
+      xx[weirdandlongname %in% makeNAX[[match(v,variableX)]],
+         `:=`(weirdandlongname = NA, donor_applicable = FALSE)]
       setnames(xx,"weirdandlongname",v)
     }
     setkeyv(xx,v)
