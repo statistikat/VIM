@@ -19,8 +19,8 @@ stopifnot(requireNamespace("ggplot2", quietly = TRUE))
 ```{r benchmark, include=FALSE}
 config <- uci_config()
 config$n <- c(250L, 500L, 1000L, 2000L)
-config$repetitions <- 3L
-result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-cellwise-knn-3reps")
+config$repetitions <- 20L
+result_dir <- Sys.getenv("VIM_TABICL2_RESULTS", "../.local/benchmarks/tabicl2-20reps")
 cache_dir <- Sys.getenv("VIM_TABICL2_DATA", "../.local/benchmarks/tabicl2-cache")
 # The local checkpoint cache resumes matching completed scenarios. The generated
 # .Rmd embeds the outputs, so normal rendering never executes the benchmark.
@@ -48,6 +48,10 @@ for (f in c("config.rds", "runs.csv", "metrics.csv", "distributions.csv",
 ```
 
 ```{r protocol-status, echo=FALSE, results='asis'}
+if (config$repetitions != 20L) {
+  cat("> **Preliminary results:** This saved report contains ", config$repetitions,
+      " repetitions. The requested 20-repetition experiment is not represented here yet.\n\n", sep = "")
+}
 if (!identical(config$methods, uci_config()$methods)) {
   cat("> **Different method set:** This cache does not contain the current ",
       "12-method comparison. Refresh the missing comparators before interpreting ",
@@ -67,17 +71,30 @@ table { display: block; max-width: 100%; overflow-x: auto; }
 
 ## Introduction
 
-This benchmark is adapted from `transformerImpute-benchmark.Rmd` on the
-`transformerImpute-rebased` branch. It retains the Adult/Bank samples, common
-MCAR/MAR masks and scoring protocol, and compares plain and RF-importance-weighted kNN, cellwise and cellwise_seq10,
-ranger, ranger_seq10, xgboost, xgboost_seq10 and four
-TabICL variants: pretrained/fine-tuned, each with one or up to ten passes.
+This benchmark compares 12 imputation methods on numeric and categorical targets
+in the Adult and Bank datasets, using shared samples and missingness masks.
+The experiment uses 20 repetitions for each dataset, row count, missingness
+mechanism and missingness rate. Results are evaluated on deliberately hidden
+cells, whose true values are reserved for scoring.
 
-Like `vimpute-benchmark.Rmd`, this document is precomputed from its
-`.Rmd.orig` source using `vignettes/precompute.R`. The generated `.Rmd`
-contains static code examples, tables and figures. Package builds and checks
-render these cached outputs without loading Python or fitting models.
-Edit the `.Rmd.orig` source to change the experiment, then precompute again.
+| Method | Short explanation |
+|:--|:--|
+| `kNN` | Five nearest neighbours using equally weighted Gower distances; numeric medians and categorical modes. |
+| `kNN_rf` | The same five-neighbour imputation with target-specific random-forest importance weights for the distances. |
+| `cellwise` | Cell-weighted MM regression for numeric targets and weighted multinomial classification for categorical targets, in one pass. |
+| `cellwise_seq10` | The same cellwise learners with up to ten sequential imputation passes. |
+| `ranger` | Random-forest imputation with 100 trees, predicting each target from the original incomplete table. |
+| `ranger_seq10` | Random-forest imputation with up to ten sequential passes. |
+| `xgboost` | Gradient-boosted trees with 30 boosting rounds, predicting each target from the original incomplete table. |
+| `xgboost_seq10` | Gradient-boosted tree imputation with up to ten sequential passes. |
+| `vimpute_tabicl2` | Pretrained TabICL2 regression or classification with eight inference ensemble members, in one pass. |
+| `vimpute_tabicl2_finetune` | TabICL2 fine-tuned on observed target values for up to five epochs, in one pass. |
+| `vimpute_tabicl2_seq10` | Pretrained TabICL2 with up to ten sequential imputation passes. |
+| `vimpute_tabicl2_finetune_seq10` | TabICL2 fine-tuned afresh at each fitted iteration, with up to ten sequential passes. |
+
+This document is precomputed from its `.Rmd.orig` source. The generated `.Rmd`
+contains static tables and figures, so rendering the saved report does not
+initialize Python or fit models.
 
 ## Models and regeneration
 
@@ -118,25 +135,22 @@ present in the task schema but absent from a target's observed training rows
 are mapped internally to that predictor's training mode; supplied observed
 cells remain unchanged.
 
-The kNN results were recomputed after merging the local master kNN/Gower fixes.
-The two cellwise variants and `kNN_rf` were newly computed on the existing saved
-samples and masks. Previously computed ranger, XGBoost and TabICL results were
-retained unchanged; their original timings were not remeasured. Session metadata
-records the selective refresh. Comparisons are thus paired on data and seeds,
-but timings across refresh sessions should be interpreted cautiously.
+The 20-repetition experiment recomputes all methods with the same configuration
+and shared seed schedule. Earlier caches are preserved separately. Runtime
+comparisons describe this hardware and execution environment and should not be
+interpreted as universal speed ratios.
 
 Ranger uses 100 trees and XGBoost 30 boosting rounds.
 The seq10 variants use up to ten sequential passes; the other ranger/XGBoost variants
 predict each target from the same incomplete table. TabICL's pretrained budget
 differs from these fitted models, so this is a practical method comparison.
 
-To refresh just these four methods from an existing complete v3 cache, use
-`uci_refresh_methods()` in `dev-notes/benchmarks/tabicl2-refresh.R` after sourcing
-`tabicl2.R`. Supply separate `source` and `output` directories; the original is
-read-only. Completed refreshed fits are checkpointed, so rerunning the same
-call resumes without refitting them. The report can then be regenerated with
-`VIM_TABICL2_CACHED_ONLY=true` and `VIM_TABICL2_RESULTS` set to the output directory,
-without initializing Python.
+The full run is checkpointed by complete scenario. Restarting with the same
+configuration and `resume = TRUE` retains completed scenarios and reruns an
+interrupted scenario. Use a separate output directory when changing the
+configuration. The report can be regenerated with `VIM_TABICL2_CACHED_ONLY=true`
+and `VIM_TABICL2_RESULTS` set to a completed output directory without initializing
+Python.
 
 Python >= 3.10 and the optional R package `reticulate` are required for TabICL.
 Install dependencies explicitly in the environment selected by reticulate:
@@ -282,6 +296,82 @@ completed table passed schema, observed-value and finite-score checks; it does
 not imply optimizer convergence. Numerical warnings are retained in `runs.csv`.
 The warning summary below makes nonconverged fits and explicit fallbacks visible.
 
+### Summary
+
+```{r overview-values, include=FALSE}
+num_summary <- aggregate(nrmse_reference ~ dataset + method,
+                         subset(metrics, type == "numeric"), mean)
+cat_summary <- aggregate(accuracy ~ dataset + method,
+                         subset(metrics, type == "categorical"), mean)
+time_summary <- aggregate(elapsed ~ method, runs, median)
+overview <- data.frame(Method = config$methods)
+for (ds in c("Adult", "Bank")) {
+  a <- subset(num_summary, dataset == ds)
+  b <- subset(cat_summary, dataset == ds)
+  overview[[paste(ds, "numeric error")]] <- sprintf("%.3f", a$nrmse_reference[match(overview$Method, a$method)])
+  overview[[paste(ds, "accuracy")]] <- sprintf("%.1f%%", 100 * b$accuracy[match(overview$Method, b$method)])
+}
+med_seconds <- function(method) sprintf("%.3f", time_summary$elapsed[match(method, time_summary$method)])
+```
+
+The following overview averages equally across the saved sample sizes,
+missingness mechanisms, missingness rates and repetitions. Numeric error is
+RMSE divided by the complete target's standard deviation; lower is better.
+Categorical accuracy is measured on hidden cells; higher is better. This table
+summarizes **`r config$repetitions` repetitions**, not independent datasets.
+
+```{r overview-table, echo=FALSE}
+knitr::kable(overview, row.names = FALSE)
+```
+
+Across 20 repetitions, TabICL2 has the lowest average numeric errors among these
+methods and the highest or essentially tied highest categorical accuracies.
+Basic TabICL2 achieves normalized numeric errors of 0.899 on Adult and 0.991 on
+Bank, with categorical accuracies of 82.4% and 90.0%. Fine-tuning gives only tiny
+average numeric improvements (0.899 and 0.989); sequential TabICL2 increases
+numeric error on both datasets. These are descriptive comparisons, not claims
+of statistical significance.
+
+RF weighting gives kNN modest improvements: Adult numeric error falls from
+0.986 to 0.980 and Bank from 1.042 to 1.040. Adult categorical accuracy remains
+about 78.3%, while Bank accuracy increases from 88.7% to 89.1%. Median runtime
+increases from `r med_seconds("kNN")` to `r med_seconds("kNN_rf")` seconds.
+
+Cellwise exhibits serious numeric instability. Single-pass Cellwise has a
+normalized error of approximately 4.19e11 in one Adult scenario with 2,000 rows
+and 40% missingness, driving its overall Adult mean to approximately 8.72e8.
+Thus instability is not confined to the smallest sample size. Sequential
+Cellwise avoids that particular extreme but still reaches about 900 at 250
+rows; its overall Adult mean is 3.686. Restricting sequential Cellwise to at
+least 500 rows gives an Adult mean of 0.991, still above kNN and TabICL2.
+Bank numeric errors average 1.226 and 1.162 for single-pass and sequential
+Cellwise. These extreme values are retained in all summaries and plots.
+
+Categorical Cellwise also trails kNN on both datasets in the expanded experiment:
+its single-pass accuracies are 77.7% on Adult and 86.5% on Bank, versus 78.3%
+and 88.7% for kNN. Sequential Cellwise changes these to 77.6% and 86.6%.
+Convergence warnings occur in 298 of 960 single-pass and 599 of 960 sequential
+Cellwise runs. All methods return valid completed tables, and no featureless
+fallbacks are recorded; validity does not establish numerical stability or
+optimizer convergence.
+
+Ranger offers a faster alternative with Adult accuracy of 81.7% (82.0%
+sequentially) and Bank accuracy of 89.4% (89.5% sequentially). Sequential XGBoost
+improves Adult numeric error from 0.925 to 0.914, but does not improve Bank
+numeric error on average. Basic TabICL2 takes a median
+`r med_seconds("vimpute_tabicl2")` seconds, compared with
+`r med_seconds("vimpute_tabicl2_finetune")` seconds with fine-tuning,
+`r med_seconds("vimpute_tabicl2_seq10")` seconds sequentially, and
+`r med_seconds("vimpute_tabicl2_finetune_seq10")` seconds with both.
+The additional TabICL2 computation provides little average accuracy benefit
+under these training budgets. Timings span multiple resumed execution sessions.
+
+The experiment uses two datasets and does not inject cellwise contamination.
+It evaluates ordinary imputation performance, not contamination robustness.
+Accuracy alone can conceal poor minority-class performance, and averages can
+conceal unstable individual fits. The detailed scenario tables, warnings and
+distribution diagnostics should therefore be read alongside the overview.
+
 ```{r status, echo=FALSE}
 knitr::kable(as.data.frame(table(runs$n, runs$dataset, runs$method, runs$status)),
              col.names = c("Rows", "Dataset", "Method", "Status", "Runs"))
@@ -306,8 +396,8 @@ parentheses. Counts are shown so failures cannot improve a ranking invisibly.
 The saved configuration has `r config$repetitions` repetition(s). With one
 repetition, standard deviations are unavailable; with few repetitions they
 describe variation only roughly. They are not confidence intervals or significance tests. Methods are paired by
-sample and mask, so formal comparisons would require paired analysis and more
-repetitions. Empty cells or `NA` indicate unavailable metrics: numeric error
+sample and mask, so formal comparisons would require paired analysis that accounts for the shared
+samples and masks. Empty cells or `NA` indicate unavailable metrics: numeric error
 measures do not apply to categorical targets, classification accuracy does not
 apply to numeric targets, and a standard deviation requires at least two
 successful repetitions. These are missing summary statistics, not unfilled
@@ -354,7 +444,9 @@ ggplot(numeric_scores, aes(factor(rate), nrmse, colour = method, group = method)
     data = function(d) d[d$method %in% multi_rate_methods, ]) +
   geom_point(position = position_dodge(width = .25), alpha = .65) +
   facet_grid(n + dataset ~ mechanism, scales = "free_y") +
-  scale_y_continuous(trans = "log1p") +
+  scale_y_continuous(trans = "log1p",
+    breaks = function(limits) expm1(seq(log1p(max(0, limits[1])), log1p(limits[2]), length.out = 4)),
+    labels = function(x) format(signif(x, 3), trim = TRUE)) +
   labs(x = "Nominal missing fraction", y = "VIM masked-reference NRMSE (log1p scale)",
        colour = "Method", caption = "Points: repetitions; lines: means. Lower is better.") +
   theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 3))
@@ -404,7 +496,9 @@ ggplot(subset(metrics, type == "numeric"),
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point") +
   facet_grid(dataset + mechanism ~ rate, labeller = label_both) +
-  scale_x_log10(breaks = config$n) + scale_y_continuous(trans = "log1p") +
+  scale_x_log10(breaks = config$n) + scale_y_continuous(trans = "log1p",
+    breaks = function(limits) expm1(seq(log1p(max(0, limits[1])), log1p(limits[2]), length.out = 4)),
+    labels = function(x) format(signif(x, 3), trim = TRUE)) +
   labs(x = "Number of rows (log scale)", y = "VIM masked-reference NRMSE",
        colour = "Method") +
   theme_minimal() + theme(legend.position = "bottom") + guides(colour = guide_legend(ncol = 3)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
