@@ -2,7 +2,7 @@
 % Please edit documentation in R/matchImpute.R
 \name{matchImpute}
 \alias{matchImpute}
-\title{Fast matching/imputation based on categorical variable}
+\title{Random donor imputation by exact matching}
 \usage{
 matchImpute(
   data,
@@ -13,28 +13,56 @@ matchImpute(
 )
 }
 \arguments{
-\item{data}{data.frame, data.table or matrix}
+\item{data}{A data frame, data table, or matrix.}
 
-\item{variable}{variables to be imputed}
+\item{variable}{Unique column names or positive column positions to impute.
+Defaults to all columns outside \code{match_var}. An empty selection skips
+imputation and indicator creation.}
 
-\item{match_var}{variables used for matching}
+\item{match_var}{Unique matching column names in order of decreasing
+priority. Use \code{character(0)} or \code{NULL} to start with all rows in one group.}
 
-\item{imp_var}{TRUE/FALSE if a TRUE/FALSE variables for each imputed
-variable should be created show the imputation status}
+\item{imp_var}{Logical. If \code{TRUE}, write a logical indicator for each target
+column. The indicator is \code{TRUE} where the target was originally missing.}
 
-\item{imp_suffix}{suffix for the TRUE/FALSE variables showing the imputation
-status}
+\item{imp_suffix}{A single character suffix for the indicator names. Each
+name consists of the target column name or position, an underscore, and
+this suffix. If a name already exists, choose another suffix or set
+\code{imp_var = FALSE}.}
 }
 \value{
-the imputed data set.
+The imputed data as a data table for data table input and as a data
+frame for data frame or matrix input. Row names are carried over using
+the standard data frame rules. The \code{count_missings} attribute is a matrix
+with columns \code{STEP} and \code{NA_PRESENT}. Step 1 records the total number of
+missing cells across the target columns before imputation. Each subsequent
+step records that count after one pass.
 }
 \description{
-Suitable donors are searched based on matching of the categorical variables.
-The variables are dropped in reversed order, so that the last element of
-'match_var' is dropped first and the first element of the vector is dropped last.
+Fill missing values by sampling from groups of rows with the same values in
+the matching columns. Broaden the groups when a donor is unavailable.
 }
 \details{
-The method works by sampling values from the suitable donors.
+\enumerate{
+\item Group the rows by all columns in \code{match_var}. Rows with \code{NA} in a matching
+column can share a group if their other matching values agree.
+\item For each target column within each group, use the non-missing entries in
+that column as donors. Draw one value uniformly with replacement for
+each missing cell. If there is only one donor, copy its value to every
+missing cell in the group. If there are no donors, leave those cells for
+the next pass. Each target column is imputed separately, so values filled
+in the same row can come from different donors.
+\item If any target cells are still missing, drop the last remaining matching
+column and repeat. For example, \code{c("region", "age_group")} matches on both
+columns first, then on \code{region} alone, then pools all rows if needed. Each
+pass fills only cells that are still missing. Values filled in previous
+passes enter the donor pool for later passes.
+}
+
+Matching columns with many distinct values can produce small groups and lead
+to broader fallback groups. A target column that is entirely missing causes
+an error because it has no donor even when all rows are pooled. Use
+\code{\link[=set.seed]{set.seed()}} before calling \code{matchImpute()} to reproduce the random draws.
 }
 \examples{
 
