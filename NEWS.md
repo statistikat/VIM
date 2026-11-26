@@ -15,9 +15,18 @@
     selected by the missingness pattern of the input data (and `donorcond`, as before).
   In a dataset with 200 rows and 160 observed values per variable, the models were fitted to 80
   and 120 rows in the first sweep and to 200 rows afterwards; they are now fitted to 160 rows
-  throughout. With `sequential = FALSE` only the first point applies. The first sweep of a model
-  specified by a formula still uses the complete cases. New test
-  `test_vimpute_training_rows.R`.
+  throughout. With `sequential = FALSE` only the first point applies.
+  - *Formula models.* The design matrix of a variable imputed through a `formula` was built from
+    the rows that are complete in every column and satisfy `donorcond`. Its first sweep therefore
+    used the complete cases only. The matrix also served as row reference for the donor scoring of
+    `uncert = "pmm"` and `"midastouch"`, so whenever it had fewer rows than the data (a missing
+    value in any other column during the first sweep, or a `donorcond`), the donors were matched
+    on the predictions of other rows. In a test with `y = 3 * x1` up to small noise, the imputed
+    values correlated 0.12 with the truth; they now correlate 0.998. The design matrix covers all
+    rows now, with the start values described above. In the rows to be predicted, a still-missing
+    predictor starts at the median or most frequent level and no longer at a random draw from
+    the observed histogram.
+  New test `test_vimpute_training_rows.R`.
 - Fixed shared categorical encoding in `gowerD()` (#111), skipped-target option
   alignment in `kNN()` (#113), and mixed-constant alignment, including RF-added
   predictors (#114).

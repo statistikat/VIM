@@ -110,3 +110,39 @@ tr <- training_rows(d, method = "ranger", nseq = 2, eps = 0, m = 1,
 y_rows <- tr$rows$n[tr$rows$var == "y"]
 expect_true(all(y_rows == sum(d$y >= 0, na.rm = TRUE)),
             info = "donorcond: training rows of y != observed donors")
+
+## --- (3) formula (model-matrix) path ----------------------------------------
+## The design matrix of a formula model used to be built from the rows that
+## are complete in ALL columns, so its first sweep saw 80 rows instead of 160.
+tr <- training_rows(d, method = "robust", formula = list(x1 ~ x2 + x3 + y),
+                    nseq = 3, eps = 0, m = 1, uncert = "none", seed = 1)
+expect_equal(nrow(tr$rows), 9L, info = "formula path: 3 sweeps x 3 variables")
+expect_true(all(tr$rows$n == n_obs[tr$rows$var]),
+            info = "formula path: training rows != observed-target rows")
+expect_equal(sum(is.na(tr$out)), 0L)
+
+## donorcond narrows the training rows of a formula model in every sweep
+tr <- training_rows(d, method = "robust", formula = list(x1 ~ x2 + x3 + y),
+                    nseq = 3, eps = 0, m = 1, uncert = "none", seed = 1,
+                    donorcond = list(x1 = ">= 0"))
+x1_rows <- tr$rows$n[tr$rows$var == "x1"]
+expect_true(all(x1_rows == sum(d$x1 >= 0, na.rm = TRUE)),
+            info = "formula path + donorcond: training rows of x1 != observed donors")
+
+## --- (3b) PMM donors of a formula model are scored on their own rows --------
+## The design matrix doubles as the row reference of the donor scoring. While
+## it held the complete cases only, the observed rows were looked up at the
+## wrong positions and the donors were matched on scores of other rows. With
+## y = 3 * x1 (almost exactly) a correctly matched donor is close to the truth.
+set.seed(3)
+g <- data.frame(x1 = rnorm(n), x2 = rnorm(n))
+g$y <- 3 * g$x1 + rnorm(n, sd = 0.01)
+truth_g <- g$y[1:40]
+g$y[1:40] <- NA
+g$x2[41:120] <- NA
+res <- suppressWarnings(
+  vimpute(g, method = "robust", formula = list(y ~ x1), sequential = FALSE,
+          m = 1, uncert = "pmm", imp_var = FALSE, verbose = FALSE, seed = 1))
+expect_equal(sum(is.na(res)), 0L)
+expect_true(cor(res$y[1:40], truth_g) > 0.95,
+            info = "formula path: PMM donors not matched on their own scores")

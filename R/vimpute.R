@@ -1099,82 +1099,81 @@ vimpute <- function(
         
         rewrited_formula <- rewrite_formula (selected_formula, target_col) # write formula in the correct way
         
-        # Remove missing values (na.omit)  -> for Training
-        # remove donors not fullfilling donorcond
-        data <- enforce_factor_levels(data, factor_levels)  
-        # rows of `data` behind the design matrix (kept to map the row masks)
-        mm_rows <- which(donor_mask[[target_col]] & stats::complete.cases(data))
-        data_clean <- data[mm_rows]
-        
-        check_all_factor_levels(data_clean, factor_levels)
-        
+        data <- enforce_factor_levels(data, factor_levels)
+        check_all_factor_levels(data, factor_levels)
         is_target_numeric <- is.numeric(data[[target_col]])
-        
-        if (is_target_numeric) {
-          task_mm_na_omit <- mlr3::TaskRegr$new(
-            id = "imputation_task_na_omit",
-            backend = data_clean,
-            target = target_col
-          )
-        } else {
-          task_mm_na_omit <- mlr3::TaskClassif$new(
-            id = "imputation_task_na_omit",
-            backend = data_clean,
-            target = target_col
-          )
-        }
-        
-        # modelmatrix for x variables
-        po_mm_na_omit <- mlr3pipelines::PipeOpModelMatrix$new()
-        po_mm_na_omit$param_set$values$formula <- rewrited_formula
-        rewrited_formula <- as.formula(paste("~", as.character(rewrited_formula)[3]))
-        po_mm_na_omit$param_set$values$formula <- rewrited_formula
-        
-        mm_task_na_omit <- po_mm_na_omit$train(list(task_mm_na_omit))[[1]]
-        data_temp <- mm_task_na_omit$data()
-        data_temp <- as.data.table(data_temp)
-        
-        setnames(data_temp, clean_model_matrix_colnames(names(data_temp)))
-        data_temp <- enforce_factor_levels(data_temp, factor_levels)  
-        check_all_factor_levels(data_temp, factor_levels)
-        
-        # Impute missing values (Median/Mode)  -> for prediction 
-        # Train on complete targets only (mlr3 disallows NA in target)
-        data_train_mm <- data[donor_mask[[target_col]] & !is.na(get(target_col))]
-        if (is_target_numeric) {
-          task_mm <- mlr3::TaskRegr$new(id = "imputation_task_mm", backend = data_train_mm, target = target_col)
-        } else {
-          task_mm <- mlr3::TaskClassif$new(id = "imputation_task_mm", backend = data_train_mm, target = target_col)
-        }
-        
-        pipeline_impute <- mlr3pipelines::po("imputehist") %>>%  # Histogram-based imputation for numeric variables (Median)
-          mlr3pipelines::po("imputemode") %>>%                  # Mode imputation for categorical variables
-          mlr3pipelines::po("modelmatrix", formula = rewrited_formula) #rewrited_formula  # Create design matrix
-        
-        pipeline_impute$train(task_mm)
 
-        # Predict on full data, but ensure target has no NA for task creation
-        data_pred_mm <- copy(data)
-        if (anyNA(data_pred_mm[[target_col]])) {
+        # One design matrix for ALL rows of `data`, in data order. It serves
+        # as training backend (rows `donor_ok_rows`, selected below), as
+        # prediction backend (rows `missing_idx`) and as row reference of the
+        # PMM donor scoring (pmm_observed_scores(), rows `obs_idx`), so its
+        # row i has to be row i of `data`.
+        #
+        # A predictor cell that is still missing (first sweep, or
+        # sequential = FALSE) starts at the median / most frequent level of
+        # the rows the model is trained on, as outside the formula branch.
+        # The design matrix used to be built from the rows that are complete
+        # in every column: the first sweep then trained on the complete cases
+        # only, and the row masks and donor scores pointed at other rows.
+        mm_train_rows <- donor_mask[[target_col]] & target_observed &
+          !is.na(data[[target_col]])
+        mm_feature_cols <- setdiff(names(data), target_col)
+        data_mm <- copy(data)
+        if (anyNA(data_mm[, mm_feature_cols, with = FALSE])) {
+          mm_filled <- impute_missing_values(
+            data_mm[, mm_feature_cols, with = FALSE],
+            data_mm[mm_train_rows, mm_feature_cols, with = FALSE])
+          for (col in mm_feature_cols) {
+            col_values <- mm_filled[[col]]
+            if (anyNA(col_values)) {
+              # column type without a start value in impute_missing_values()
+              # (e.g. logical): most frequent observed value
+              col_observed <- col_values[!is.na(col_values)]
+              if (length(col_observed) > 0L) {
+                col_values[is.na(col_values)] <-
+                  col_observed[which.max(tabulate(match(col_observed, col_observed)))]
+              }
+            }
+            set(data_mm, j = col, value = col_values)
+          }
+        }
+
+        # mlr3 does not allow NA in a task target: placeholder for the task
+        # only, the target of `data_temp` is restored below
+        if (anyNA(data_mm[[target_col]])) {
           if (is_target_numeric) {
-            data_pred_mm[[target_col]][is.na(data_pred_mm[[target_col]])] <-
-              median(data_pred_mm[[target_col]], na.rm = TRUE)
+            data_mm[[target_col]][is.na(data_mm[[target_col]])] <-
+              median(data_mm[[target_col]], na.rm = TRUE)
           } else {
-            mode_value <- names(which.max(table(data_pred_mm[[target_col]], useNA = "no")))
-            data_pred_mm[[target_col]][is.na(data_pred_mm[[target_col]])] <- mode_value
+            mode_value <- names(which.max(table(data_mm[[target_col]], useNA = "no")))
+            data_mm[[target_col]][is.na(data_mm[[target_col]])] <- mode_value
           }
         }
         if (is_target_numeric) {
-          task_mm_pred <- mlr3::TaskRegr$new(id = "imputation_task_mm_pred", backend = data_pred_mm, target = target_col)
+          task_mm <- mlr3::TaskRegr$new(id = "imputation_task_mm", backend = data_mm, target = target_col)
         } else {
-          task_mm_pred <- mlr3::TaskClassif$new(id = "imputation_task_mm_pred", backend = data_pred_mm, target = target_col)
+          task_mm <- mlr3::TaskClassif$new(id = "imputation_task_mm", backend = data_mm, target = target_col)
         }
-        po_task_mm <- pipeline_impute$predict(task_mm_pred)[[1]]
-        mm_data <- po_task_mm$data() # mm_data = transformed data with missings filled in, data_temp = transformed data without missings
-        mm_data <- as.data.table(mm_data)
+
+        # model matrix for the x variables (right-hand side only)
+        rewrited_formula <- as.formula(paste("~", as.character(rewrited_formula)[3]))
+        po_mm <- mlr3pipelines::PipeOpModelMatrix$new()
+        po_mm$param_set$values$formula <- rewrited_formula
+        # mm_data = design matrix of all rows, target with placeholder
+        mm_data <- as.data.table(po_mm$train(list(task_mm))[[1]]$data())
+        if (nrow(mm_data) != nrow(data)) {
+          stop(sprintf(
+            "The design matrix of the formula for '%s' has %d rows instead of %d: a predictor in the formula has missing values that cannot be given a start value.",
+            target_col, nrow(mm_data), nrow(data)))
+        }
         setnames(mm_data, clean_model_matrix_colnames(names(mm_data)))
         mm_data <- enforce_factor_levels(mm_data, factor_levels)
         check_all_factor_levels(mm_data, factor_levels)
+
+        # data_temp = the same design matrix with the target as in `data`
+        # (NA where it has not been imputed yet)
+        data_temp <- copy(mm_data)
+        set(data_temp, j = target_col, value = data[[target_col]])
         
         
         # Identify target transformation
@@ -1228,13 +1227,9 @@ vimpute <- function(
       # was observed in the input data. From the second sweep on `data` holds
       # the previous sweep's imputations, so `!is.na(target)` alone no longer
       # identifies the observed rows; without `target_observed` every model was
-      # refitted on its own imputed values. In the formula branch `data_temp`
-      # is the design matrix of the rows `mm_rows` (donor condition applied).
-      donor_ok_rows <- if (uses_model_matrix_formula) {
-        target_observed[mm_rows]
-      } else {
-        donor_mask[[target_col]] & target_observed
-      }
+      # refitted on its own imputed values. `data_temp` has one row per row of
+      # `data` in every branch (in the formula branch it is the design matrix).
+      donor_ok_rows <- donor_mask[[target_col]] & target_observed
       
       if (uses_model_matrix_formula && "Intercept" %in% colnames(data_temp)) {
         data_temp <- data_temp[, !colnames(data_temp) %in% "Intercept", with = FALSE]
