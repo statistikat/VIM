@@ -1044,6 +1044,8 @@ vimpute <- function(
       }
       
       data_before <- copy(data)
+      # TRUE for the rows whose value of `var` was observed in the input data
+      target_observed <- !(seq_len(nrow(data)) %in% missing_indices[[var]])
       if(verbose){
         message(paste("***** Select predictors"))
       }
@@ -1100,7 +1102,9 @@ vimpute <- function(
         # Remove missing values (na.omit)  -> for Training
         # remove donors not fullfilling donorcond
         data <- enforce_factor_levels(data, factor_levels)  
-        data_clean <- na.omit(data[donor_mask[[target_col]]])
+        # rows of `data` behind the design matrix (kept to map the row masks)
+        mm_rows <- which(donor_mask[[target_col]] & stats::complete.cases(data))
+        data_clean <- data[mm_rows]
         
         check_all_factor_levels(data_clean, factor_levels)
         
@@ -1220,7 +1224,17 @@ vimpute <- function(
       }
 
       uses_model_matrix_formula <- !isFALSE(selected_formula) && method_var != "restricted"
-      donor_ok_rows <- if (uses_model_matrix_formula) rep(TRUE, nrow(data_temp)) else donor_mask[[target_col]]
+      # Rows a model may be trained on: the donor condition holds and the target
+      # was observed in the input data. From the second sweep on `data` holds
+      # the previous sweep's imputations, so `!is.na(target)` alone no longer
+      # identifies the observed rows; without `target_observed` every model was
+      # refitted on its own imputed values. In the formula branch `data_temp`
+      # is the design matrix of the rows `mm_rows` (donor condition applied).
+      donor_ok_rows <- if (uses_model_matrix_formula) {
+        target_observed[mm_rows]
+      } else {
+        donor_mask[[target_col]] & target_observed
+      }
       
       if (uses_model_matrix_formula && "Intercept" %in% colnames(data_temp)) {
         data_temp <- data_temp[, !colnames(data_temp) %in% "Intercept", with = FALSE]

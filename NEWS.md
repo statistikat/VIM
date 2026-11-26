@@ -1,6 +1,23 @@
 # VIM 7.5.1
 
 ## Changes
+- **`vimpute()` now trains each variable's model on exactly the rows in which that variable was
+  observed, in every sweep.** Two defects broke this, and both change imputed values:
+  - *First sweep.* For learners without native handling of missing predictors (`"ranger"`,
+    `"robust"`, `"regularized"`, `"gam"`, ...), a row with a still-missing predictor was removed
+    from the training data, so the first sweep fitted the complete cases only and fell back to a
+    constant (with the warning "No observed values for target ...") when there were none. Such
+    predictor cells now start at the observed median or most frequent level, as they already did
+    in the rows to be predicted. The semicontinuous two-part models follow the same rule.
+  - *Later sweeps.* From the second sweep on, the working data hold the previous sweep's
+    imputations, and the training rows were selected by `!is.na(target)`. Every model was therefore
+    refitted on its own imputed values in addition to the observed ones. Training rows are now
+    selected by the missingness pattern of the input data (and `donorcond`, as before).
+  In a dataset with 200 rows and 160 observed values per variable, the models were fitted to 80
+  and 120 rows in the first sweep and to 200 rows afterwards; they are now fitted to 160 rows
+  throughout. With `sequential = FALSE` only the first point applies. The first sweep of a model
+  specified by a formula still uses the complete cases. New test
+  `test_vimpute_training_rows.R`.
 - Fixed shared categorical encoding in `gowerD()` (#111), skipped-target option
   alignment in `kNN()` (#113), and mixed-constant alignment, including RF-added
   predictors (#114).
