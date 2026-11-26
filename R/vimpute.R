@@ -1370,8 +1370,19 @@ vimpute <- function(
       # If NA in target variable --> only train with the data that has no NA in Y
       data_y_fill <- data_y_fill[donor_ok_rows & !is.na(get(target_col))]
       
-      # If the learner does not support missing values -> use na.omit()
-      data_y_fill_final <- if (supports_missing) data_y_fill else na.omit(data_y_fill)
+      # Learners without native NA support: a predictor cell that is still
+      # missing (first sweep, or sequential = FALSE) starts at the median / most
+      # frequent level, exactly as in the rows to be predicted further below
+      # (same reference: the rows with an observed target). Every row with an
+      # observed target is therefore used for training. Dropping such rows
+      # instead makes the first sweep train on the complete cases only, and
+      # fall back to a constant when there are none. na.omit() stays as a
+      # safeguard for column types that have no start value.
+      data_y_fill_final <- if (supports_missing) {
+        data_y_fill
+      } else {
+        na.omit(impute_missing_values(data_y_fill, data_y_fill))
+      }
       data_y_fill_final <- enforce_factor_levels(data_y_fill_final, factor_levels) 
       
       
@@ -2083,7 +2094,13 @@ vimpute <- function(
         supports_missing_cls <- "missings" %in% classif_learner$properties
         
         if (!supports_missing_cls) {
-          # e.g. log_reg: no nas allowed
+          # e.g. log_reg: no nas allowed. Predictors that are still missing
+          # get the median / mode start value (as in the rows to predict), so
+          # no row with an observed target is dropped; complete.cases() stays
+          # as a safeguard for column types without a start value.
+          if (anyNA(class_data)) {
+            class_data <- impute_missing_values(class_data, data_temp)
+          }
           na_rows <- !complete.cases(subset(class_data, select = relevant_features))
           if (any(na_rows)) {
             class_data <- class_data[!na_rows]
@@ -2187,7 +2204,9 @@ vimpute <- function(
         
         if (has_na_in_features && !supports_missing) {
           cols <- c(reg_features, var)
-          reg_data <- na.omit(subset(reg_data, select = cols))
+          # start values for predictors that are still missing (see above)
+          reg_data <- na.omit(impute_missing_values(
+            subset(reg_data, select = cols), data_temp))
           reg_data <- enforce_factor_levels(reg_data, factor_levels)
           check_all_factor_levels(reg_data, factor_levels)
         }
